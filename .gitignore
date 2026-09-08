@@ -10,3 +10,5 @@ build/
 test-results/
 playwright-report/
 *.log
+
+.playwright-mcp/

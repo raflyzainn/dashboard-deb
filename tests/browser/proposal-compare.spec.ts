@@ -18,6 +18,8 @@ test('compare actual PDF versions, arbitrary pairs, reverse, identical files and
   await page.goto('/campus/proposal');
   const comparison = page.getByRole('region', { name: 'Perbandingan proposal', exact: true });
   const diff = page.getByRole('region', { name: 'Hasil perbedaan teks PDF', exact: true });
+  // The first PDF worker load can exceed the default assertion timeout on a cold dev server.
+  await expect(diff).toBeVisible({ timeout: 15000 });
   await expect(diff).toContainText('Versi 2 - Dokumen simulasi');
   await expect(diff).toContainText('Versi 3 - Dokumen simulasi');
   const v4 = Buffer.from(await samplePdf('QA Anggaran Awal', 4).arrayBuffer());

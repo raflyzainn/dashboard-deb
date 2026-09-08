@@ -17,7 +17,8 @@ test('cross-role revision, PDF history, shared forum, FAQ, persistence and reset
   page.on('pageerror', e => exceptions.push(e.message));
   page.on('request', r => { if (/^https?:/.test(r.url()) && !r.url().startsWith('http://127.0.0.1:5176/')) unexpected.push(r.url()); });
   await login(page, 'admin');
-  await page.goto('/admin/indicators');
+  await page.goto('/admin/campuses/campus-001');
+  await page.getByRole('button', { name: 'Indikator', exact: true }).click();
   await page.getByRole('button', { name: 'Tinjau Pemetaan kebutuhan desa', exact: true }).click();
   await page.getByLabel('Feedback baru').fill('QA: mohon perbarui periode dan capaian.');
   await page.getByRole('button', { name: 'Kirim feedback' }).click();
@@ -39,7 +40,8 @@ test('cross-role revision, PDF history, shared forum, FAQ, persistence and reset
   await page.getByRole('button', { name: 'Tutup dialog' }).click();
   await logout(page);
   await login(page, 'admin');
-  await page.goto('/admin/indicators');
+  await page.goto('/admin/campuses/campus-001');
+  await page.getByRole('button', { name: 'Indikator', exact: true }).click();
   await page.getByRole('button', { name: 'Tinjau Pemetaan kebutuhan desa', exact: true }).click();
   await expect(page.getByText('QA: data telah diperbarui.', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Tandai selesai' }).click();
@@ -74,7 +76,7 @@ test('cross-role revision, PDF history, shared forum, FAQ, persistence and reset
   await expect(page.getByRole('button', { name: 'Lihat proposal versi 6', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Tutup pesan kesalahan' }).click();
   await page.goto('/campus/questions');
-  await expect(page.getByText('Universitas Simulasi 02', { exact: true })).toBeVisible();
+  await expect(page.locator('.question-list').getByText('Universitas Simulasi 02', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Ajukan pertanyaan' }).click();
   await page.getByLabel('Judul pertanyaan').fill('QA: kolaborasi kampus bersama');
   await page.getByLabel('Uraian pertanyaan').fill('Bagaimana berbagi hasil evaluasi program?');

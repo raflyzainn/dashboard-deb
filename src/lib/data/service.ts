@@ -2,6 +2,7 @@ import Dexie, { type Table } from 'dexie';
 import type { DataService, DemoSession, Snapshot } from '../types';
 import { createSeed, DEMO_CAMPUS, demoNotifications, NOTIFICATION_SEED_VERSION } from './seed';
 import { validateCategories } from '../forum';
+import { demoSubmissions, latestSubmission, changedSinceSubmission } from '../verification';
 
 export const DB_NAME = 'deb-prototype-v1';
 class DemoDatabase extends Dexie {
@@ -48,6 +49,10 @@ export function createMockService(name = DB_NAME): DataService {
     await database.transaction('rw', database.state, database.files, async () => {
       const existing = await database.state.get('main');
       if (existing) {
+        if (!existing.data.submissions) {
+          existing.data.submissions = demoSubmissions(existing.data);
+          await database.state.put(existing);
+        }
         // Upgrade existing browser data without resetting uploads or work history.
         if (!existing.data.notifications || existing.data.notificationSeedVersion !== NOTIFICATION_SEED_VERSION) {
           existing.data.notifications ??= [];
@@ -76,6 +81,39 @@ export function createMockService(name = DB_NAME): DataService {
     });
   }
   return {
+    async submitDeb(actor) {
+      requireRole(actor, 'campus');
+      await change(actor, data => {
+        const previous = latestSubmission(data, actor.campusId!);
+        if (previous?.status === 'pending') throw new Error('Data sedang menunggu verifikasi.');
+        if (previous?.status === 'approved' && !changedSinceSubmission(data, previous)) throw new Error('Data ini sudah terverifikasi. Perbarui data sebelum mengirim kembali.');
+        const indicators = data.indicators.filter(i => i.campusId === actor.campusId);
+        if (!indicators.length || indicators.some(i => !Number.isFinite(i.current) || i.current < 0)) throw new Error('Lengkapi data indikator sebelum mengirim.');
+        const id = uid();
+        data.submissions ??= [];
+        data.submissions.push({ id, campusId: actor.campusId!, version: (previous?.version ?? 0) + 1, status: 'pending', indicators: indicators.map(i => ({ ...i })), submittedAt: now() });
+        activity(data, actor.campusId!, 'Data DEB dikirim untuk verifikasi Admin PF.');
+        notify(data, actor.campusId!, 'admin', 'Pengajuan verifikasi DEB', 'Kampus mengirim data indikator untuk diperiksa.', `/admin/verifikasi?submission=${id}`);
+      });
+    },
+    async reviewDeb(actor, submissionId, decision, note) {
+      requireRole(actor, 'admin');
+      if (decision !== 'approved' && decision !== 'revision') throw new Error('Keputusan tidak valid.');
+      const clean = decision === 'revision' ? content(note, 'Catatan revisi') : note.trim();
+      if (clean.length > 5000) throw new Error('Catatan maksimal 5000 karakter.');
+      await change(actor, data => {
+        const submission = data.submissions?.find(s => s.id === submissionId);
+        if (!submission || submission.status !== 'pending') throw new Error('Pengajuan tidak ditemukan atau sudah diputuskan. Muat ulang data.');
+        if (changedSinceSubmission(data, submission)) throw new Error('Data berubah sejak dikirim. Muat ulang dan periksa kembali.');
+        if (decision === 'approved' && data.feedback.some(f => f.campusId === submission.campusId && f.requiresRevision && f.state !== 'closed')) throw new Error('Selesaikan feedback revisi per indikator sebelum menyetujui.');
+        submission.status = decision;
+        submission.decisionNote = clean;
+        submission.reviewedAt = now(); submission.reviewedBy = actor.name;
+        const title = decision === 'approved' ? 'Data DEB terverifikasi' : 'Revisi data DEB diminta';
+        activity(data, submission.campusId, title);
+        notify(data, submission.campusId, 'campus', title, clean || 'Admin PF telah menyetujui data indikator yang Anda kirim.', '/campus/indicators');
+      });
+    },
     async load(actor) {
       requireRole(actor);
       await ensure();
@@ -84,6 +122,7 @@ export function createMockService(name = DB_NAME): DataService {
       const data = record.data;
       data.notifications = data.notifications.filter(n => ownsNotification(actor, n));
       if (actor.role === 'campus') {
+        data.submissions = data.submissions?.filter(s => s.campusId === actor.campusId);
         // Campus names are forum author references; work data is scoped separately.
         data.indicators = data.indicators.filter(i => i.campusId === actor.campusId);
         data.proposals = data.proposals.filter(p => p.campusId === actor.campusId);
@@ -100,6 +139,7 @@ export function createMockService(name = DB_NAME): DataService {
         const item = data.indicators.find(i => i.id === id);
         if (!item) throw new Error('Indikator tidak ditemukan.');
         requireCampus(actor, item.campusId);
+        if (latestSubmission(data, item.campusId)?.status === 'pending') throw new Error('Data sedang diverifikasi. Tunggu keputusan Admin sebelum mengubah indikator.');
         item.current = current; item.note = note.trim(); item.updatedAt = now();
         data.feedback.filter(f => f.indicatorId === id && f.requiresRevision && f.state === 'open').forEach(f => { f.state = 'responded'; f.updatedAt = now(); });
         activity(data, item.campusId, 'Nilai aktual dan catatan indikator diperbarui.');

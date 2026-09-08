@@ -1,5 +1,6 @@
 import type { Snapshot, Notification } from '../types';
 import { samplePdf } from './pdf';
+import { demoSubmissions } from '../verification';
 
 export const DEMO_CAMPUS = 'campus-001';
 const timestamp = '2026-09-08T02:00:00.000Z';
@@ -78,5 +79,6 @@ export function createSeed(): { data: Snapshot; files: { id: string; blob: Blob 
   data.notifications.forEach(n => { n.simulated = true; });
   data.notifications.push(...demoNotifications());
   data.notificationSeedVersion = NOTIFICATION_SEED_VERSION;
+  data.submissions = demoSubmissions(data);
   return { data, files };
 }

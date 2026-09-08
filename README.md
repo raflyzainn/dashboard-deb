@@ -51,11 +51,11 @@ Klik **Masuk sebagai Kampus** untuk menggunakan Universitas Contoh. Tersedia das
 
 ### Admin PF
 
-Klik **Masuk sebagai Admin PF** untuk melihat ringkasan dan daftar 40 kampus. Gunakan detail kampus atau halaman Indikator untuk memberi feedback; setiap feedback terhubung ke indikator yang ditinjau. Admin dapat membaca proposal seluruh kampus, menjawab pertanyaan, serta mengelola FAQ.
+Klik **Masuk sebagai Admin PF** untuk melihat ringkasan dan daftar 40 kampus. Gunakan **Review Kampus** untuk memeriksa pengajuan, meminta revisi, dan mengonfirmasi data DEB. Admin membaca nilai isian kampus dan memberi feedback per indikator; angka hanya dapat diubah oleh kampus. Alur lengkap dan riwayat versi dijelaskan dalam [Review Kampus](docs/REVIEW-KAMPUS.md). Admin dapat membaca proposal seluruh kampus, menjawab pertanyaan, serta mengelola FAQ.
 
 ### Demo revisi lintas role
 
-1. Admin → Indikator → pilih kampus → Tinjau → isi feedback dengan **Minta revisi data** aktif.
+1. Admin → Kampus mitra → Universitas Contoh → Indikator → Tinjau → isi feedback dengan **Minta revisi data** aktif.
 2. Keluar/ganti peran → Kampus → Indikator → Perbarui nilai aktual dan catatan.
 3. Masuk kembali sebagai Admin → feedback berubah menjadi **Sudah ditanggapi**.
 4. Pilih **Tandai selesai** untuk menutup revisi. Riwayat feedback tetap tersimpan.
