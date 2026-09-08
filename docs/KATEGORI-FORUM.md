@@ -22,6 +22,7 @@ Survive/Recoverable/Pivot adalah kelompok program kampus. Putih/Biru/Hijau/Siap 
 
 ## Perilaku
 
+- Bagian **Top Rated Questions** di atas daftar forum menampilkan hingga tiga pertanyaan dengan like terbanyak (minimal satu like). Jika jumlah like sama, pertanyaan terbaru didahulukan. Bagian ini mencakup seluruh forum, terpisah dari filter daftar, dan diperbarui ketika data like berubah. Kartu menampilkan jumlah like, kategori, kampus penanya, status jawaban, dan tautan detail sesuai peran aktif. Pada ponsel, kartu disusun satu kolom.
 - Kampus memilih minimal satu kategori saat membuat pertanyaan; dapat memilih beberapa.
 - Kategori tampil sebagai label berwarna pada daftar dan detail pertanyaan.
 - Filter dapat memilih beberapa kategori. Pertanyaan lolos bila memiliki salah satu kategori terpilih (OR).
