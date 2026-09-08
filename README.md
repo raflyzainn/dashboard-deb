@@ -4,7 +4,7 @@ Prototype monitoring DEB Putih untuk Admin Pertamina Foundation dan 40 kampus mi
 
 ## Menjalankan
 
-Prasyarat: Node.js 22.12+ dan npm. Tidak memerlukan `.env`, akun, atau server PocketBase.
+Prasyarat: Node.js 22 LTS (minimal 22.13) dan npm. Tidak memerlukan `.env`, akun, atau server PocketBase.
 
 ```powershell
 cd dashboard-deb
@@ -26,10 +26,22 @@ Gunakan origin yang sama selama demo. `localhost:5176` dan `127.0.0.1:5176` memi
 | `npm run check` | TypeScript strict dan pemeriksaan Svelte |
 | `npm test` | Pengujian domain dan transaksi IndexedDB menggunakan fake-indexeddb |
 | `npm run test:e2e` | Pengujian browser Playwright, Microsoft Edge headless |
-| `npm run build` | Build melalui adapter Cloudflare |
+| `npm run build` | Build melalui adapter Vercel |
 | `npm run preview` | Preview pada port 4176 |
 
 Suite E2E memakai Microsoft Edge yang terpasang di komputer. Jika tidak tersedia, pasang browser Chromium dengan `npx playwright install chromium`, lalu hapus `channel: 'msedge'` dari konfigurasi Playwright. Suite otomatis menyalakan server dev bila belum berjalan; test port default adalah 5176.
+
+## Deployment Vercel
+
+Proyek memakai `@sveltejs/adapter-vercel`, preset `sveltekit` pada `vercel.json`, dan Node.js 22.x. Adapter menghasilkan `.vercel/output` berisi konfigurasi routing, aset statis, dan fungsi server. Folder ini diabaikan oleh Git.
+
+Pada Vercel, gunakan root repository, Framework Preset **SvelteKit**, Build Command **npm run build**, dan Output Directory **default / override dimatikan**. Jangan isi Output Directory dengan `public`, `static`, atau `.svelte-kit/output/client`. `vercel.json` mengembalikan output directory ke default framework.
+
+Deploy commit terbaru dari branch `main`. Redeploy deployment lama dapat tetap memakai commit lama yang masih menggunakan adapter Cloudflare. Log sukses harus menunjukkan `Using @sveltejs/adapter-vercel`. Verifikasi build lokal tidak menjamin deployment Vercel sudah aktif.
+
+Prototype tidak memerlukan environment variable atau backend untuk demo. Data tetap disimpan per browser dan origin; deployment baru dengan domain berbeda memiliki penyimpanan yang berbeda.
+
+Referensi: [adapter Vercel SvelteKit](https://svelte.dev/docs/kit/adapter-vercel) dan [konfigurasi Vercel](https://vercel.com/docs/project-configuration/vercel-json).
 
 ## Fitur dan alur demo
 
@@ -87,7 +99,7 @@ Seed awal: 40 kampus, 1.200 nilai indikator, 35 kampus dengan proposal, dan 10 k
 
 ## Struktur dan stack
 
-SvelteKit 2 / Svelte 5, TypeScript strict, Tailwind CSS 4, adapter Cloudflare, Dexie, dan font Plus Jakarta Sans lokal. Ilustrasi dan chart sederhana dibuat dengan SVG/CSS sehingga tidak membutuhkan layanan gambar atau chart eksternal.
+SvelteKit 2 / Svelte 5, TypeScript strict, Tailwind CSS 4, adapter Vercel, Dexie, dan font Plus Jakarta Sans lokal. Ilustrasi dan chart sederhana dibuat dengan SVG/CSS sehingga tidak membutuhkan layanan gambar atau chart eksternal.
 
 ```text
 src/lib/
