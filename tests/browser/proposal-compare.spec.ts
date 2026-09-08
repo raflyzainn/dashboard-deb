@@ -65,7 +65,7 @@ test('compare actual PDF versions, arbitrary pairs, reverse, identical files and
   await page.goto('/admin/proposal');
   await expect(comparison.getByRole('status')).toContainText('Tidak ada perbedaan pada teks');
   await page.getByLabel('Pilih kampus proposal').selectOption('campus-002');
-  await expect(diff).toContainText('Universitas Simulasi 02');
+  await expect(diff).toContainText('Universitas Gadjah Mada');
   await expect(page.getByLabel('Versi dasar', { exact: true }).locator('option')).toHaveCount(2);
   await expect(diff).not.toContainText('QA Anggaran');
   await page.getByLabel('Pilih kampus proposal').selectOption('campus-003');

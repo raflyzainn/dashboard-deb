@@ -4,22 +4,23 @@ import assert from 'node:assert/strict';
 import { average, campusStats, progress } from '../src/lib/domain';
 import { createSeed, DEMO_CAMPUS } from '../src/lib/data/seed';
 import { createMockService } from '../src/lib/data/service';
+import { CAMPUSES } from '../src/lib/data/campuses';
 import { samplePdf } from '../src/lib/data/pdf';
 import type { DemoSession } from '../src/lib/types';
 
 const admin: DemoSession = { role: 'admin', name: 'Admin PF' };
-const campus: DemoSession = { role: 'campus', name: 'Universitas Contoh', campusId: DEMO_CAMPUS };
+const campus: DemoSession = { role: 'campus', name: 'Universitas Indonesia', campusId: DEMO_CAMPUS };
 const service = () => createMockService(`deb-test-${crypto.randomUUID()}`);
-const pdf = (name = 'contoh.pdf') => new File([samplePdf('Universitas Contoh', 1)], name, { type: 'application/pdf' });
+const pdf = (name = 'contoh.pdf') => new File([samplePdf('Universitas Indonesia', 1)], name, { type: 'application/pdf' });
 
-test('seed has exactly 40 fictional campuses and 30 valid indicators per campus', () => {
+test('seed has exactly 40 roster campuses and 30 valid indicators per campus', () => {
   const { data, files } = createSeed();
   assert.equal(data.campuses.length, 40);
   assert.equal(data.definitions.length, 30);
   assert.equal(data.indicators.length, 1200);
   for (const c of data.campuses) {
     assert.equal(data.indicators.filter(i => i.campusId === c.id).length, 30);
-    assert.ok(c.name.includes('Simulasi') || c.name === 'Universitas Contoh');
+    assert.equal(c.name, CAMPUSES.find(profile => profile.id === c.id)?.name);
   }
   for (const i of data.indicators) { assert.ok(i.target > 0); assert.ok(data.definitions.some(d => d.id === i.definitionId)); }
   assert.equal(data.proposals.length, files.length);

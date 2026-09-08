@@ -76,7 +76,7 @@ test('cross-role revision, PDF history, shared forum, FAQ, persistence and reset
   await expect(page.getByRole('button', { name: 'Lihat proposal versi 6', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Tutup pesan kesalahan' }).click();
   await page.goto('/campus/questions');
-  await expect(page.locator('.question-list').getByText('Universitas Simulasi 02', { exact: true })).toBeVisible();
+  await expect(page.locator('.question-list').getByText('Universitas Gadjah Mada', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Ajukan pertanyaan' }).click();
   await page.getByLabel('Judul pertanyaan').fill('QA: kolaborasi kampus bersama');
   await page.getByLabel('Uraian pertanyaan').fill('Bagaimana berbagi hasil evaluasi program?');
@@ -143,8 +143,15 @@ test('guards, all pages, mobile drawer, search, empty and not-found states', asy
     await expect(page.locator('main')).toBeVisible();
   }
   await page.goto('/admin/campuses');
-  await page.getByRole('textbox', { name: 'Cari kampus' }).fill('Simulasi 40');
-  await expect(page.getByRole('link', { name: 'U40 Universitas Simulasi 40' })).toBeVisible();
+  await page.getByRole('textbox', { name: 'Cari kampus' }).fill('Poltek KP Sorong');
+  await expect(page.locator('.campus-name').filter({ hasText: 'Politeknik Kelautan dan Perikanan Sorong' })).toBeVisible();
+  await page.getByRole('textbox', { name: 'Cari kampus' }).fill('UGM');
+  await expect(page.locator('.campus-name').filter({ hasText: 'Universitas Gadjah Mada' })).toBeVisible();
+  await page.getByLabel('Filter wilayah kampus').selectOption('Sumatra');
+  await expect(page.getByRole('heading', { name: 'Kampus tidak ditemukan' })).toBeVisible();
+  await page.getByRole('textbox', { name: 'Cari kampus' }).fill('');
+  await expect(page.locator('.campus-name')).toHaveCount(10);
+  await expect(page.locator('.campus-name').filter({ hasText: 'Universitas Syiah Kuala' })).toBeVisible();
   await page.goto('/admin/campuses/missing');
   await expect(page.getByRole('heading', { name: 'Kampus tidak ditemukan' })).toBeVisible();
   // Explicit filesystem routes must reject nonexistent sections and extra segments.

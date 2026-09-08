@@ -3,6 +3,8 @@ import type { DataService, DemoSession, Snapshot } from '../types';
 import { createSeed, DEMO_CAMPUS, demoNotifications, NOTIFICATION_SEED_VERSION } from './seed';
 import { validateCategories } from '../forum';
 import { demoSubmissions, latestSubmission, changedSinceSubmission } from '../verification';
+import { CAMPUSES, CAMPUS_ROSTER_VERSION } from './campuses';
+import { samplePdf } from './pdf';
 
 export const DB_NAME = 'deb-prototype-v1';
 class DemoDatabase extends Dexie {
@@ -49,6 +51,27 @@ export function createMockService(name = DB_NAME): DataService {
     await database.transaction('rw', database.state, database.files, async () => {
       const existing = await database.state.get('main');
       if (existing) {
+        if (existing.data.campusRosterVersion !== CAMPUS_ROSTER_VERSION) {
+          // Keep stable IDs and all user work; only replace roster metadata and generated examples.
+          const oldCampuses = existing.data.campuses;
+          existing.data.campuses = oldCampuses.map(c => ({ ...c, ...CAMPUSES.find(profile => profile.id === c.id) }));
+          for (const old of oldCampuses) {
+            const updated = existing.data.campuses.find(c => c.id === old.id)!;
+            if (old.name === updated.name) continue;
+            for (const notice of existing.data.notifications ?? []) {
+              if (!notice.simulated) continue;
+              notice.title = notice.title.split(old.name).join(updated.name);
+              notice.body = notice.body.split(old.name).join(updated.name);
+            }
+            for (const proposal of existing.data.proposals.filter(p => p.campusId === old.id && p.simulated)) {
+              const blob = samplePdf(updated.name, proposal.version);
+              proposal.size = blob.size;
+              await database.files.put({ id: proposal.id, blob });
+            }
+          }
+          existing.data.campusRosterVersion = CAMPUS_ROSTER_VERSION;
+          await database.state.put(existing);
+        }
         if (!existing.data.submissions) {
           existing.data.submissions = demoSubmissions(existing.data);
           await database.state.put(existing);

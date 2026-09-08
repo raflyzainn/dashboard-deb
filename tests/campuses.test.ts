@@ -1,0 +1,56 @@
+import 'fake-indexeddb/auto';
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import Dexie from 'dexie';
+import { CAMPUSES, CAMPUS_REGIONS, CAMPUS_ROSTER_VERSION } from '../src/lib/data/campuses';
+import { createSeed } from '../src/lib/data/seed';
+import { createMockService } from '../src/lib/data/service';
+import { samplePdf } from '../src/lib/data/pdf';
+
+test('roster has 34 user names and six distinct additions from the Word appendix', () => {
+  assert.equal(CAMPUSES.length, 40);
+  assert.equal(new Set(CAMPUSES.map(c => c.name)).size, 40);
+  assert.equal(new Set(CAMPUSES.map(c => c.id)).size, 40);
+  assert.equal(CAMPUSES.filter(c => c.source === 'user').length, 34);
+  assert.equal(CAMPUSES.filter(c => c.source === 'document').length, 6);
+  assert.deepEqual(CAMPUS_REGIONS.map(region => CAMPUSES.filter(c => c.region === region).length), [15, 10, 7, 8]);
+  assert.equal(CAMPUSES[0].name, 'Universitas Indonesia');
+  assert.equal(CAMPUSES[39].name, 'Politeknik Kelautan dan Perikanan Sorong');
+  assert.ok(CAMPUSES.every(c => c.acronym && c.initials));
+});
+
+test('roster migration keeps user uploads, edits, review history and notification read state', async () => {
+  const name = `deb-roster-${crypto.randomUUID()}`;
+  const db = new Dexie(name);
+  db.version(1).stores({ state: 'id', files: 'id' });
+  const { data, files } = createSeed();
+  delete data.campusRosterVersion;
+  data.campuses = data.campuses.map((c, i) => ({ id: c.id, name: i === 0 ? 'Universitas Contoh' : `Universitas Simulasi ${String(i + 1).padStart(2, '0')}`, region: 'Jawa', initials: 'UC' }));
+  data.indicators[0].current = 987;
+  data.indicators[0].note = 'Catatan pengguna jangan diganti';
+  const userPdf = samplePdf('QA Uploaded Original', 4);
+  data.proposals.push({ ...data.proposals[0], id: 'user-upload', version: 4, filename: 'user-upload.pdf', size: userPdf.size, simulated: false });
+  files.push({ id: 'user-upload', blob: userPdf });
+  files[0].blob = samplePdf('Universitas Contoh', 1);
+  const notice = data.notifications.find(n => n.id === 'demo-notice-admin-1')!;
+  notice.body = 'Universitas Contoh memiliki tiga versi proposal.';
+  notice.readAt = '2026-09-08T10:00:00.000Z';
+  const history = structuredClone(data.submissions);
+  await db.table('state').put({ id: 'main', data });
+  await db.table('files').bulkPut(files);
+  db.close();
+  const api = createMockService(name);
+  const actor = { role: 'admin' as const, name: 'QA Admin' };
+  const loaded = await api.load(actor);
+  assert.equal(loaded.campusRosterVersion, CAMPUS_ROSTER_VERSION);
+  assert.deepEqual(loaded.campuses, CAMPUSES);
+  assert.equal(loaded.indicators[0].current, 987);
+  assert.equal(loaded.indicators[0].note, 'Catatan pengguna jangan diganti');
+  assert.deepEqual(loaded.submissions, history);
+  assert.equal(await (await api.proposalFile(actor, 'user-upload')).text(), await userPdf.text());
+  assert.match(await (await api.proposalFile(actor, files[0].id)).text(), /Universitas Indonesia/);
+  const migrated = loaded.notifications.find(n => n.id === notice.id)!;
+  assert.equal(migrated.readAt, notice.readAt);
+  assert.match(migrated.body, /Universitas Indonesia/);
+  assert.deepEqual(await api.load(actor), loaded);
+});

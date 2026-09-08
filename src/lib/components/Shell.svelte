@@ -15,6 +15,7 @@
   const prefix = $derived(`/${app.session?.role}`);
   const section = $derived(page.url.pathname.split('/')[2] as keyof typeof labels);
   const revisionCount = $derived(app.data?.feedback.filter(f => f.requiresRevision && f.state !== 'closed').length || 0);
+  const campusProfile = $derived(app.data?.campuses.find(c => c.id === app.session?.campusId));
   const unreadCount = $derived(app.data?.notifications?.filter(n => !n.readAt).length || 0);
   function closeDrawer() { mobile = false; drawer?.close(); }
   function openDrawer() { mobile = true; drawer.showModal(); }
@@ -23,7 +24,7 @@
 
 {#snippet navigation()}
   <a class="brand" href={`${prefix}/dashboard`} onclick={closeDrawer}><span class="brand-mark"><Icon name="leaf" size={27}/></span><span>DEB<span class="brand-sub">RUANG TUMBUH BERSAMA</span></span></a>
-  <div class="workspace"><span class="workspace-icon"><Icon name={app.session?.role === 'admin' ? 'globe' : 'campus'}/></span><div><strong>{app.session?.role === 'admin' ? 'Pertamina Foundation' : 'Universitas Contoh'}</strong><small>{app.session?.role === 'admin' ? 'Ruang kerja Admin PF' : 'Ruang kerja kampus'}</small></div></div>
+  <div class="workspace"><span class="workspace-icon"><Icon name={app.session?.role === 'admin' ? 'globe' : 'campus'}/></span><div><strong>{app.session?.role === 'admin' ? 'Pertamina Foundation' : campusProfile?.name}</strong><small>{app.session?.role === 'admin' ? 'Ruang kerja Admin PF' : 'Ruang kerja kampus'}</small></div></div>
   <p class="nav-caption">RUANG KERJA</p>
   <nav aria-label="Navigasi utama">
     {#each menus as key}
@@ -37,7 +38,7 @@
 <aside class="sidebar">{@render navigation()}</aside>
 <dialog bind:this={drawer!} class="mobile-drawer" oncancel={() => { mobile = false; }}><button class="drawer-close icon-button" aria-label="Tutup navigasi" onclick={closeDrawer}><Icon name="close"/></button>{@render navigation()}</dialog>
 <div class="app-main">
-  <header class="topbar"><div class="topbar-left"><button class="icon-button mobile-menu" aria-label="Buka navigasi" aria-expanded={mobile} onclick={openDrawer}><Icon name="menu"/></button><span class="breadcrumb">Ruang kerja <span>/</span> <strong>{labels[section] || 'Detail'}</strong></span></div><div class="topbar-right"><a class="icon-button" href={`${prefix}/notifications`} aria-label={`Notifikasi, ${unreadCount} belum dibaca`}><Icon name="notifications"/>{#if unreadCount}<span class="notification-dot" aria-hidden="true"></span>{/if}</a><span class="demo-label"><span></span>Prototype · Data simulasi</span><div class="header-divider"></div><div class="user-avatar">{app.session?.role === 'admin' ? 'PF' : 'UC'}</div><div class="user-info"><strong>{app.session?.name}</strong><small>{app.session?.role === 'admin' ? 'Administrator' : 'Kampus mitra'}</small></div></div></header>
+  <header class="topbar"><div class="topbar-left"><button class="icon-button mobile-menu" aria-label="Buka navigasi" aria-expanded={mobile} onclick={openDrawer}><Icon name="menu"/></button><span class="breadcrumb">Ruang kerja <span>/</span> <strong>{labels[section] || 'Detail'}</strong></span></div><div class="topbar-right"><a class="icon-button" href={`${prefix}/notifications`} aria-label={`Notifikasi, ${unreadCount} belum dibaca`}><Icon name="notifications"/>{#if unreadCount}<span class="notification-dot" aria-hidden="true"></span>{/if}</a><span class="demo-label"><span></span>Prototype · Data simulasi</span><div class="header-divider"></div><div class="user-avatar">{app.session?.role === 'admin' ? 'PF' : campusProfile?.initials}</div><div class="user-info"><strong>{app.session?.name}</strong><small>{app.session?.role === 'admin' ? 'Administrator' : 'Kampus mitra'}</small></div></div></header>
   <main id="main-content" class="content">{@render children()}</main>
   <footer class="app-footer"><span>Digitalisasi DEB <span class="footer-dot">•</span> Pertamina Foundation</span><span>Bersama membangun dampak yang berarti.</span></footer>
 </div>

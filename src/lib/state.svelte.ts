@@ -1,6 +1,7 @@
 import type { DemoSession, Role, Snapshot } from './types';
 import { dataService } from './data/service';
 import { DEMO_CAMPUS } from './data/seed';
+import { DEMO_CAMPUS_PROFILE } from './data/campuses';
 
 const SESSION_KEY = 'deb-demo-session';
 class AppState {
@@ -21,7 +22,7 @@ class AppState {
       const raw = sessionStorage.getItem(SESSION_KEY);
       if (raw) {
         const session: DemoSession = JSON.parse(raw);
-        if (session.role === 'admin' || (session.role === 'campus' && session.campusId === DEMO_CAMPUS)) this.session = session;
+        if (session.role === 'admin' || (session.role === 'campus' && session.campusId === DEMO_CAMPUS)) this.session = session.role === 'campus' ? { ...session, name: DEMO_CAMPUS_PROFILE.name } : session;
         else sessionStorage.removeItem(SESSION_KEY);
       }
     } catch { this.error = 'Sesi demo tidak dapat dibaca. Izinkan penyimpanan browser, lalu coba masuk kembali.'; }
@@ -30,7 +31,7 @@ class AppState {
   }
   async login(role: Role) {
     this.error = '';
-    const actor: DemoSession = role === 'campus' ? { role, name: 'Universitas Contoh', campusId: DEMO_CAMPUS } : { role, name: 'Admin PF' };
+    const actor: DemoSession = role === 'campus' ? { role, name: DEMO_CAMPUS_PROFILE.name, campusId: DEMO_CAMPUS } : { role, name: 'Admin PF' };
     this.loading = true;
     try {
       const data = await dataService.load(actor);

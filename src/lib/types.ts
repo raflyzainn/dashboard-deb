@@ -1,7 +1,7 @@
 import type { ForumCategoryId } from './forum';
 export type Role = 'campus' | 'admin';
 export interface DemoSession { role: Role; name: string; campusId?: string }
-export interface Campus { id: string; name: string; region: string; initials: string }
+export interface Campus { id: string; name: string; region: string; initials: string; acronym?: string; city?: string; source?: 'user' | 'document' }
 export interface IndicatorDefinition { id: string; name: string; category: string; unit: string; description: string }
 export interface CampusIndicator { id: string; campusId: string; definitionId: string; baseline: number; target: number; current: number; note: string; updatedAt: string }
 export type VerificationStatus = 'pending' | 'approved' | 'revision';
@@ -16,6 +16,7 @@ export interface FaqEntry { id: string; questionId?: string; question: string; a
 export interface Activity { id: string; campusId: string; text: string; createdAt: string }
 export interface Notification { id: string; campusId: string; recipient: Role; title: string; body: string; href: string; createdAt: string; readAt: string | null; simulated?: boolean }
 export interface Snapshot {
+  campusRosterVersion?: number;
   submissions?: DebSubmission[];
   campuses: Campus[]; definitions: IndicatorDefinition[]; indicators: CampusIndicator[];
   feedback: Feedback[]; proposals: ProposalVersion[]; questions: Question[];

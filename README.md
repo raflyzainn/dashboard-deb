@@ -47,7 +47,7 @@ Referensi: [adapter Vercel SvelteKit](https://svelte.dev/docs/kit/adapter-vercel
 
 ### Kampus
 
-Klik **Masuk sebagai Kampus** untuk menggunakan Universitas Contoh. Tersedia dashboard, 30 indikator dalam tiga bidang, pembaruan nilai aktual dan catatan, feedback Admin, upload proposal PDF dan riwayat versi, forum bersama, serta FAQ.
+Klik **Masuk sebagai Kampus** untuk menggunakan Universitas Indonesia. Tersedia dashboard, 30 indikator dalam tiga bidang, pembaruan nilai aktual dan catatan, feedback Admin, upload proposal PDF dan riwayat versi, forum bersama, serta FAQ.
 
 ### Admin PF
 
@@ -55,12 +55,12 @@ Klik **Masuk sebagai Admin PF** untuk melihat ringkasan dan daftar 40 kampus. Gu
 
 ### Demo revisi lintas role
 
-1. Admin → Kampus mitra → Universitas Contoh → Indikator → Tinjau → isi feedback dengan **Minta revisi data** aktif.
+1. Admin → Kampus mitra → Universitas Indonesia → Indikator → Tinjau → isi feedback dengan **Minta revisi data** aktif.
 2. Keluar/ganti peran → Kampus → Indikator → Perbarui nilai aktual dan catatan.
 3. Masuk kembali sebagai Admin → feedback berubah menjadi **Sudah ditanggapi**.
 4. Pilih **Tandai selesai** untuk menutup revisi. Riwayat feedback tetap tersimpan.
 
-Login Kampus selalu mewakili Universitas Contoh; gunakan kampus ini untuk demo lintas role. Nama dan aktivitas kampus lain merupakan data fiktif untuk menunjukkan monitoring dan forum lintas kampus.
+Login Kampus selalu mewakili Universitas Indonesia; gunakan kampus ini untuk demo lintas role. Nama 40 kampus berasal dari daftar pengguna (34) dan lampiran Word proyek (6). Angka capaian, aktivitas, forum awal, dan PDF contoh tetap simulasi. Lihat [sumber daftar kampus](docs/DAFTAR-KAMPUS.md).
 
 ### Demo proposal
 
@@ -95,7 +95,7 @@ Notifikasi memakai IndexedDB lokal seperti fitur lainnya. Belum ada email, push 
 - Status feedback terpisah dari progres numerik: `open` → `responded` → `closed`.
 - KPI tindak lanjut kampus menghitung indikator unik dengan revisi aktif; KPI Admin menghitung kampus unik yang memiliki revisi aktif. Badge navigasi menghitung jumlah feedback revisi aktif.
 
-Seed awal: 40 kampus, 1.200 nilai indikator, 35 kampus dengan proposal, dan 10 kampus dengan feedback revisi aktif. Universitas Contoh memiliki progres 76%, 12 indikator tercapai, dan tiga versi proposal. Nilai ini dihitung dari seed, bukan angka dashboard yang ditulis terpisah.
+Seed awal: 40 kampus, 1.200 nilai indikator, 35 kampus dengan proposal, dan 10 kampus dengan feedback revisi aktif. Universitas Indonesia memiliki progres 76%, 12 indikator tercapai, dan tiga versi proposal. Nilai ini dihitung dari seed, bukan angka dashboard yang ditulis terpisah.
 
 ## Struktur dan stack
 

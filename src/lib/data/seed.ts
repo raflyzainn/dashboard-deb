@@ -1,6 +1,7 @@
 import type { Snapshot, Notification } from '../types';
 import { samplePdf } from './pdf';
 import { demoSubmissions } from '../verification';
+import { CAMPUSES, CAMPUS_ROSTER_VERSION } from './campuses';
 
 export const DEMO_CAMPUS = 'campus-001';
 const timestamp = '2026-09-08T02:00:00.000Z';
@@ -8,13 +9,13 @@ export const NOTIFICATION_SEED_VERSION = 1;
 export function demoNotifications(): Notification[] {
   const samples: Omit<Notification, 'createdAt' | 'readAt' | 'simulated'>[] = [
     { id: 'demo-notice-campus-1', campusId: DEMO_CAMPUS, recipient: 'campus', title: 'Lengkapi catatan indikator', body: 'Admin PF meminta ringkasan periode evaluasi dan jumlah kelompok aktif. Buka indikator Tim pengelola aktif untuk meninjau feedback.', href: '/campus/indicators' },
-    { id: 'demo-notice-campus-2', campusId: DEMO_CAMPUS, recipient: 'campus', title: 'Proposal versi 3 tersimpan', body: 'Proposal terbaru Universitas Contoh sudah tersedia. Bandingkan dengan versi sebelumnya untuk meninjau perubahan teks.', href: '/campus/proposal' },
+    { id: 'demo-notice-campus-2', campusId: DEMO_CAMPUS, recipient: 'campus', title: 'Proposal versi 3 tersimpan', body: 'Proposal terbaru Universitas Indonesia sudah tersedia. Bandingkan dengan versi sebelumnya untuk meninjau perubahan teks.', href: '/campus/proposal' },
     { id: 'demo-notice-campus-3', campusId: DEMO_CAMPUS, recipient: 'campus', title: 'Jawaban forum tentang proposal', body: 'Admin PF telah membagikan panduan pembaruan proposal. Versi lama tetap dapat ditinjau setelah unggahan baru.', href: '/campus/questions/question-2' },
     { id: 'demo-notice-campus-4', campusId: DEMO_CAMPUS, recipient: 'campus', title: 'Panduan perhitungan indikator', body: 'Pelajari cara membaca baseline, target, dan progres simulasi pada jawaban forum bersama.', href: '/campus/questions/question-1' },
     { id: 'demo-notice-campus-5', campusId: DEMO_CAMPUS, recipient: 'campus', title: 'FAQ proposal tersedia', body: 'Panduan unggah dan revisi proposal telah tersedia di Pusat bantuan.', href: '/campus/faq' },
-    { id: 'demo-notice-admin-1', campusId: DEMO_CAMPUS, recipient: 'admin', title: 'Proposal versi 3 siap ditinjau', body: 'Universitas Contoh memiliki tiga versi proposal. Buka detail kampus lalu tab Proposal untuk membandingkan dokumen.', href: `/admin/campuses/${DEMO_CAMPUS}` },
-    { id: 'demo-notice-admin-2', campusId: 'campus-002', recipient: 'admin', title: 'Pembaruan capaian kampus', body: 'Data simulasi Universitas Simulasi 02 tersedia untuk ditinjau. Periksa nilai aktual dan target di detail indikator.', href: '/admin/campuses/campus-002' },
-    { id: 'demo-notice-admin-3', campusId: 'campus-005', recipient: 'admin', title: 'Feedback masih perlu tindak lanjut', body: 'Universitas Simulasi 05 memiliki permintaan revisi indikator yang belum diselesaikan.', href: '/admin/campuses/campus-005' },
+    { id: 'demo-notice-admin-1', campusId: DEMO_CAMPUS, recipient: 'admin', title: 'Proposal versi 3 siap ditinjau', body: 'Universitas Indonesia memiliki tiga versi proposal. Buka detail kampus lalu tab Proposal untuk membandingkan dokumen.', href: `/admin/campuses/${DEMO_CAMPUS}` },
+    { id: 'demo-notice-admin-2', campusId: 'campus-002', recipient: 'admin', title: 'Pembaruan capaian kampus', body: 'Data simulasi Universitas Gadjah Mada tersedia untuk ditinjau. Periksa nilai aktual dan target di detail indikator.', href: '/admin/campuses/campus-002' },
+    { id: 'demo-notice-admin-3', campusId: 'campus-005', recipient: 'admin', title: 'Feedback masih perlu tindak lanjut', body: 'Universitas Diponegoro memiliki permintaan revisi indikator yang belum diselesaikan.', href: '/admin/campuses/campus-005' },
     { id: 'demo-notice-admin-4', campusId: 'campus-005', recipient: 'admin', title: 'Diskusi kolaborasi antar desa', body: 'Tinjau pertanyaan dokumentasi kegiatan kolaborasi. Jawaban Anda dapat membantu seluruh kampus.', href: '/admin/questions/question-4' },
     { id: 'demo-notice-admin-5', campusId: 'campus-003', recipient: 'admin', title: 'Panduan proposal telah dibagikan', body: 'Jawaban tentang pembaruan proposal sudah tersedia di forum bersama dan dapat dikurasi melalui FAQ.', href: '/admin/questions/question-2' }
   ];
@@ -34,9 +35,9 @@ export function createSeed(): { data: Snapshot; files: { id: string; blob: Blob 
   const data: Snapshot = { campuses: [], definitions: [], indicators: [], feedback: [], proposals: [], questions: [], answers: [], likes: [], faq: [], activities: [], notifications: [] };
   const files: { id: string; blob: Blob }[] = [];
   data.definitions = names.map((name, i) => ({ id: `def-${i + 1}`, name, category: categories[Math.floor(i / 10)], unit: i % 3 === 0 ? 'kegiatan' : i % 3 === 1 ? 'kelompok' : 'peserta', description: 'Indikator simulasi untuk mendemonstrasikan pemantauan DEB Putih. Nilai aktual diisi sesuai capaian kegiatan.' }));
-  for (let c = 0; c < 40; c++) {
-    const id = `campus-${String(c + 1).padStart(3, '0')}`;
-    const campus = { id, name: c === 0 ? 'Universitas Contoh' : `Universitas Simulasi ${String(c + 1).padStart(2, '0')}`, region: ['Jawa', 'Sumatera', 'Kalimantan', 'Sulawesi', 'Bali & Nusa Tenggara', 'Maluku & Papua'][c % 6], initials: c === 0 ? 'UC' : `U${c + 1}` };
+  for (let c = 0; c < CAMPUSES.length; c++) {
+    const campus = { ...CAMPUSES[c] };
+    const id = campus.id;
     data.campuses.push(campus);
     data.definitions.forEach((def, i) => {
       const target = [10, 20, 50, 100, 25][i % 5];
@@ -80,5 +81,6 @@ export function createSeed(): { data: Snapshot; files: { id: string; blob: Blob 
   data.notifications.push(...demoNotifications());
   data.notificationSeedVersion = NOTIFICATION_SEED_VERSION;
   data.submissions = demoSubmissions(data);
+  data.campusRosterVersion = CAMPUS_ROSTER_VERSION;
   return { data, files };
 }

@@ -25,8 +25,8 @@ test('campus submission, admin revision and confirmation with responsive review 
   await page.goto('/admin/indicators');
   await expect(page).toHaveURL(/\/admin\/verifikasi$/);
   await expect(page.getByRole('heading', { name: 'Tinjauan & Konfirmasi DEB' })).toBeVisible();
-  await page.getByLabel('Cari pengajuan kampus').fill('Universitas Contoh');
-  await page.locator('.queue-item').filter({ hasText: 'Universitas Contoh' }).click();
+  await page.getByLabel('Cari pengajuan kampus').fill('Universitas Indonesia');
+  await page.locator('.queue-item').filter({ hasText: 'Universitas Indonesia' }).click();
   await expect(page.getByRole('button', { name: /Perbarui / })).toHaveCount(0);
   await expect(page.getByLabel('Nilai aktual', { exact: true })).toHaveCount(0);
   await page.screenshot({ path: 'test-results/review-desktop.png' });
@@ -52,8 +52,8 @@ test('campus submission, admin revision and confirmation with responsive review 
   await logout(page);
   await login(page, 'admin');
   await page.goto('/admin/verifikasi');
-  await page.getByLabel('Cari pengajuan kampus').fill('Universitas Contoh');
-  await page.locator('.queue-item').filter({ hasText: 'Universitas Contoh' }).click();
+  await page.getByLabel('Cari pengajuan kampus').fill('Universitas Indonesia');
+  await page.locator('.queue-item').filter({ hasText: 'Universitas Indonesia' }).click();
   await page.getByLabel('Catatan keputusan').fill('QA: data sudah sesuai.');
   const close = page.locator('.comments-panel').getByRole('button', { name: 'Tandai selesai' });
   while (await close.count()) {
@@ -70,7 +70,7 @@ test('campus submission, admin revision and confirmation with responsive review 
   await expect(page.locator('.decision-panel')).toContainText('QA: data sudah sesuai.');
   await page.reload();
   await page.getByLabel('Status pengajuan').selectOption('approved');
-  await expect(page.locator('.review-summary')).toContainText('Universitas Contoh');
+  await expect(page.locator('.review-summary')).toContainText('Universitas Indonesia');
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: 'test-results/review-mobile.png', fullPage: true });

@@ -21,7 +21,7 @@
   const submissions = $derived(app.data!.submissions ?? []);
   const campus = (id: string) => app.data!.campuses.find(c => c.id === id)!;
   const definition = (id: string) => app.data!.definitions.find(d => d.id === id)!;
-  const rows = $derived(submissions.filter(s => s.status === status && `${campus(s.campusId).name} ${campus(s.campusId).region}`.toLowerCase().includes(search.toLowerCase())).sort((a, b) => status === 'pending' ? a.submittedAt.localeCompare(b.submittedAt) || a.id.localeCompare(b.id) : (b.reviewedAt ?? '').localeCompare(a.reviewedAt ?? '')));
+  const rows = $derived(submissions.filter(s => s.status === status && `${campus(s.campusId).name} ${campus(s.campusId).acronym ?? ""} ${campus(s.campusId).city ?? ""} ${campus(s.campusId).region}`.toLowerCase().includes(search.toLowerCase())).sort((a, b) => status === 'pending' ? a.submittedAt.localeCompare(b.submittedAt) || a.id.localeCompare(b.id) : (b.reviewedAt ?? '').localeCompare(a.reviewedAt ?? '')));
   const selected = $derived(rows.find(s => s.id === selectedId) ?? rows[0]);
   const activeSubmissionId = $derived(selected?.id);
   const gaps = $derived(selected?.indicators.filter(i => i.current < i.target).sort((a, b) => progress(a) - progress(b)) ?? []);
