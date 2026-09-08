@@ -1,0 +1,16 @@
+<script lang="ts">
+  import { goto } from '$app/navigation';
+  import { page } from '$app/state';
+  import { app } from '$lib/state.svelte';
+  import Shell from '$lib/components/Shell.svelte';
+  import Empty from '$lib/components/Empty.svelte';
+  let { children } = $props();
+  const routeRole = $derived(page.url.pathname.split('/')[1]);
+  const authorized = $derived(app.ready && app.session && routeRole === app.session.role);
+  $effect(() => {
+    if (!app.ready) return;
+    if (!app.session) goto('/login', { replaceState: true });
+    else if (routeRole !== app.session.role) goto(`/${app.session.role}/dashboard`, { replaceState: true });
+  });
+</script>
+{#if authorized}<Shell>{#if app.data}{@render children()}{:else if app.loading}<div class="loading-screen"><span class="spinner"></span>Memuat data kampus…</div>{:else}<section class="panel"><Empty title="Data belum dapat dimuat" description="Periksa izin penyimpanan browser lalu coba kembali."/><div class="center-actions"><button class="button" onclick={() => app.reload()}>Coba muat ulang</button></div></section>{/if}</Shell>{:else}<main id="main-content" class="loading-screen"><span class="spinner"></span>Menyiapkan ruang kerja…</main>{/if}

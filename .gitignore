@@ -1,0 +1,11 @@
+node_modules/
+.svelte-kit/
+.wrangler/
+.qa/
+build/
+.env
+.env.*
+!.env.example
+test-results/
+playwright-report/
+*.log
