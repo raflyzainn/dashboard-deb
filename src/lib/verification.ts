@@ -4,14 +4,6 @@ export const verificationLabel: Record<VerificationStatus, string> = {
   pending: 'Menunggu verifikasi', approved: 'Terverifikasi', revision: 'Perlu revisi'
 };
 
-export function demoSubmissions(data: Snapshot): DebSubmission[] {
-  return data.campuses.slice(1, 7).map(c => ({
-    id: `demo-submission-${c.id}`, campusId: c.id, version: 1,
-    status: 'pending', submittedAt: '2026-09-08T01:00:00.000Z', simulated: true,
-    indicators: data.indicators.filter(i => i.campusId === c.id).map(i => ({ ...i }))
-  }));
-}
-
 export function latestSubmission(data: Snapshot, campusId: string) {
   return data.submissions?.filter(s => s.campusId === campusId).sort((a, b) => b.version - a.version)[0];
 }

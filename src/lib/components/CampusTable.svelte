@@ -1,7 +1,7 @@
 <script lang="ts">
   import { app } from '$lib/state.svelte';
   import { campusStats, percent } from '$lib/domain';
-  import { CAMPUS_REGIONS } from '$lib/data/campuses';
+  const CAMPUS_REGIONS = $derived([...new Set(app.data?.campuses.map(c => c.region) || [])].sort());
   import Icon from './Icon.svelte';
   import Progress from './Progress.svelte';
   import Badge from './Badge.svelte';

@@ -113,10 +113,11 @@
 
 <svelte:head><title>Peta Persebaran · Digitalisasi DEB</title></svelte:head>
 
-<div class="page-heading"><div><span class="eyebrow">PANDANGAN WILAYAH ADMIN</span><h1>Peta Persebaran Kampus</h1><p>Lihat jangkauan 40 kampus mitra dan progres simulasi program DEB di berbagai wilayah Indonesia.</p></div><span class="readonly"><Icon name="eye" size={15}/>Hanya baca</span></div>
+<div class="page-heading"><div><span class="eyebrow">PANDANGAN WILAYAH ADMIN</span><h1>Peta Persebaran Kampus</h1><p>Lihat jangkauan {app.data!.campuses.length} kampus mitra dan progres simulasi program DEB di berbagai wilayah Indonesia.</p></div><span class="readonly"><Icon name="eye" size={15}/>Hanya baca</span></div>
 
+<p role="status" class="map-missing">{app.data!.campuses.length - allPoints.length} kampus belum dapat dipetakan karena koordinat kosong atau di luar area peta.</p>
 <section class="map-stats" aria-label="Ringkasan persebaran">
-  <article><span class="stat-icon green"><Icon name="campuses"/></span><div><small>Kampus ditampilkan</small><strong>{visible.length}<span>dari 40</span></strong><p>{region}</p></div></article>
+  <article><span class="stat-icon green"><Icon name="campuses"/></span><div><small>Kampus ditampilkan</small><strong>{visible.length}<span>dari {app.data!.campuses.length}</span></strong><p>{region}</p></div></article>
   <article><span class="stat-icon blue"><Icon name="sebaran"/></span><div><small>Provinsi terjangkau</small><strong>{provinceCount}<span>provinsi</span></strong><p>Lokasi kampus pada filter aktif</p></div></article>
   <article><span class="stat-icon amber"><Icon name="target"/></span><div><small>Rata-rata progres</small><strong>{number(average)}<span>%</span></strong><p>Perhitungan data simulasi</p></div></article>
   <article><span class="stat-icon mint"><Icon name="check"/></span><div><small>Progres tertinggi</small><strong>{reached}<span>kampus</span></strong><p>Progres simulasi minimal 70%</p></div></article>

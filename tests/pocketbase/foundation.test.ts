@@ -8,7 +8,7 @@ import { LOCAL, ROOT, adminClient, assertInstance, assertLocal, client, credenti
 import { authenticateUser, seedLocal } from '../../scripts/pocketbase/seed';
 import { createDebRepository } from '../../src/lib/server/deb/repository';
 import { mapSession } from '../../src/lib/server/deb/mappers';
-import { createSeed } from '../../src/lib/data/seed';
+import { createSeed } from '../../scripts/fixtures/seed';
 
 const expected = { campuses: 40, indicator_definitions: 30, users: 42, campus_indicators: 1200, deb_submissions: 6, indicator_feedback: 10, proposal_versions: 52, questions: 6, question_answers: 3, question_likes: 70, faq_entries: 2, activities: 40, notifications: 31 };
 const hash = async (file: string) => createHash('sha256').update(await readFile(file)).digest('hex');
@@ -225,7 +225,7 @@ test('PocketBase foundation against an isolated real backend', { timeout: 180000
     });
     await t.test('runtime artifacts do not generate schema files or mutate UI service', async () => {
       assert.deepEqual((await readdir(path.join(ROOT, 'db-schema', 'pb_migrations'))).filter(f => f.endsWith('.js')), ['1788912000_deb_foundation.js']);
-      assert.ok((await readFile(path.join(ROOT, 'src/lib/data/service.ts'), 'utf8')).includes('dataService = createMockService()'));
+      assert.ok((await readFile(path.join(ROOT, 'src/lib/data/service.ts'), 'utf8')).includes('dataService = createHttpService()'));
     });
   } finally {
     if (child && child.exitCode === null) {

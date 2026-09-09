@@ -1,10 +1,15 @@
-import type { Snapshot, Notification } from '../types';
+import type { Snapshot, Notification, DebSubmission } from '../../src/lib/types';
 import { samplePdf } from './pdf';
-import { demoSubmissions } from '../verification';
 import { CAMPUSES, CAMPUS_ROSTER_VERSION } from './campuses';
+import { CAMPUS_LOCATIONS } from './locations';
 
 export const DEMO_CAMPUS = 'campus-001';
 const timestamp = '2026-09-08T02:00:00.000Z';
+function demoSubmissions(data: Snapshot): DebSubmission[] {
+  return data.campuses.slice(1, 7).map(c => ({ id: `demo-submission-${c.id}`, campusId: c.id, version: 1,
+    status: 'pending', submittedAt: '2026-09-08T01:00:00.000Z', simulated: true,
+    indicators: data.indicators.filter(i => i.campusId === c.id).map(i => ({ ...i })) }));
+}
 export const NOTIFICATION_SEED_VERSION = 1;
 export function demoNotifications(): Notification[] {
   const samples: Omit<Notification, 'createdAt' | 'readAt' | 'simulated'>[] = [
@@ -66,7 +71,7 @@ export function createSeed(): { data: Snapshot; files: { id: string; blob: Blob 
   ];
   questions.forEach(([title, body], i) => {
     const id = `question-${i + 1}`;
-    data.questions.push({ id, campusId: data.campuses[i + 1].id, title, body, createdAt: `2026-09-0${8 - i}T01:00:00.000Z` });
+    data.questions.push({ id, campusId: data.campuses[i + 1].id, title, body, categoryIds: [i === 1 ? 'proposal' : i === 3 ? 'sosial' : 'indikator'], createdAt: `2026-09-0${8 - i}T01:00:00.000Z` });
     if (i < 3) data.answers.push({ id: `answer-${i + 1}`, questionId: id, body: [
       'Pada prototype ini, capaian dihitung dari nilai aktual dibagi target, maksimal 100%. Progres kampus merupakan rata-rata seluruh indikator. Baseline ditampilkan sebagai konteks awal.',
       'Boleh. Unggah PDF melalui halaman Proposal dan isi catatan perubahan. Setiap unggahan tersimpan sebagai versi baru, sementara versi sebelumnya tetap dapat dilihat.',
@@ -82,5 +87,7 @@ export function createSeed(): { data: Snapshot; files: { id: string; blob: Blob 
   data.notificationSeedVersion = NOTIFICATION_SEED_VERSION;
   data.submissions = demoSubmissions(data);
   data.campusRosterVersion = CAMPUS_ROSTER_VERSION;
+  data.locations = CAMPUS_LOCATIONS.map(point => ({ campusId: point.campusId, province: point.province, island: point.island,
+    longitude: 94.5 + (point.x - 3) / 94 * 47, latitude: 6.5 - (point.y - 7) / 90 * 18, approximate: true }));
   return { data, files };
 }

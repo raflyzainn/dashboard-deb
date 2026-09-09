@@ -1,6 +1,6 @@
-# PocketBase lokal DEB — P0
+# PocketBase lokal DEB — P0 dan P2
 
-Fondasi backend sudah tersedia; **website masih memakai Dexie dan login demo**. Menjalankan PocketBase/seeder belum menghubungkan halaman website ke database. P1 menangani sesi/login nyata, P2 mengaktifkan pembacaan, P3 menangani workflow tulis.
+P0 menyediakan backend; P2 menyambungkan **semua pembacaan website ke PocketBase**, tanpa Dexie atau fallback mock. Data seed database tetap dipertahankan. P1 sesi/login nyata ditunda; pemilih akun seed hanya bekerja di dev server lokal. P3 workflow tulis belum aktif.
 
 ## Setup dan menjalankan
 
@@ -20,8 +20,10 @@ npm run pb:seed
 npm run dev
 ```
 
+Untuk checkout baru, salin `.env.example` ke `.env` tanpa menimpa konfigurasi yang sudah ada. Pastikan `PB_URL=http://127.0.0.1:8096` dan `DEB_LOCAL_PREVIEW_ENABLED=true`. Restart Vite setelah mengubah env. Seeder tidak perlu dijalankan bila database sudah berisi data; P2 tidak menghapus data tersebut.
+
 - Dashboard PocketBase: `http://127.0.0.1:8096/_/`.
-- Website mockup: `http://127.0.0.1:5176`.
+- Website PocketBase-only: `http://127.0.0.1:5176`.
 - Kredensial superuser dan akun QA: `.local/pocketbase/credentials.json`. Buka secara lokal, jangan kirim file ini atau menyalinnya ke chat/PR. File dibuat dengan ACL pemilik pada Windows atau mode `0600` pada Unix. Folder diabaikan Git, **tetapi checkout berada di OneDrive: Git ignore tidak mencegah sinkronisasi cloud**. Jangan gunakan kredensial/data production di sini; untuk data sensitif gunakan checkout di luar folder sinkronisasi.
 - Database dan PDF: `.local/pocketbase/pb_data/`. Persistent antarrestart, tidak ikut Git. Fixture tes memakai `.local/pocketbase/tests/foundation-*` pada port **8097**, bukan database development.
 - Binary: `.local/pocketbase/bin/0.40.3/`. PocketBase tidak disematkan ke fungsi Vercel.
@@ -51,7 +53,7 @@ Relasi dan indeks menjaga satu akun per kampus, indikator per kampus/definisi, v
 
 `pb:seed` dijalankan manual; tidak dijalankan oleh startup, build, deployment, atau migrasi. Pemeriksaan URL hanya menerima origin loopback/port DEB, tanpa path, kredensial, query, atau redirect. Penanda instance dari proses PocketBase harus cocok dengan file instance lokal sebelum autentikasi superuser dan penulisan. `PB_URL` yang terisi ke host/port lain menyebabkan seed ditolak, bukan dialihkan diam-diam.
 
-Seed menggunakan baseline `createSeed()` repo, bukan isi IndexedDB pengguna. Isi awal:
+Seed menggunakan baseline `createSeed()` di `scripts/fixtures/seed.ts`, bukan isi IndexedDB pengguna. Generator tidak lagi berada di runtime frontend. Isi awal:
 
 | Data | Jumlah |
 |---|---:|
@@ -65,7 +67,7 @@ Jumlah notifikasi lebih banyak daripada mock role-based karena setiap notifikasi
 
 Seeder mencari `legacyId`, membuat yang belum ada, dan tidak memperbarui record lama. Password dihasilkan acak dan disimpan sebelum create akun, sehingga seed terputus dapat dilanjutkan. Rerun tidak mengaktifkan kembali akun nonaktif, mereset password, atau memperbarui nilai master yang telah diedit. Konflik unik di luar `legacyId` akan gagal dengan error, bukan mengambil alih record. Tidak ada perintah reset database otomatis.
 
-ID PocketBase dipetakan ke seluruh relasi, snapshot, lokasi dan segmen tautan notifikasi. Mapper lokasi menyediakan ID asli + latitude/longitude; **peta UI lama belum memakai mapper ini**, dan baru dipindahkan pada P2.
+ID PocketBase dipetakan ke seluruh relasi, snapshot, lokasi dan segmen tautan notifikasi. Mapper lokasi menyediakan ID asli + latitude/longitude; peta UI P2 memakai lokasi database dan tidak menebak ID dari urutan array.
 
 ```powershell
 npm run pb:account -- disable campus-040@deb.local.test
@@ -82,7 +84,7 @@ Tooling akun hanya berlaku pada instance DEB lokal yang ditandai. Reset password
 - PDF field protected, MIME PDF, maksimal 10 MiB. Repository memeriksa akses record memakai client user dan mengambil file dengan token singkat. Respons unauthorized dapat berupa 404; gagal list rule dapat menghasilkan daftar kosong 200, bukan selalu 403.
 - `src/lib/server/pocketbase.ts` memakai `PB_URL` dan kredensial privat, tanpa URL fallback proyek lain atau authStore global. Salin `.env.example` bila menyiapkan integrasi server berikutnya; runtime lokal saat ini menggunakan file kredensial hasil setup, tidak membaca password kosong dari contoh env.
 - Repository memverifikasi user lewat `authRefresh`, menolak client superuser, membaca semua halaman record, dan memetakan field yang diizinkan saja. Session DTO berisi `id/name/role/campusId`; tidak ada token/password/email dalam snapshot UI.
-- Tidak ada endpoint bisnis baru, sesi cookie, atau perubahan `dataService = createMockService()` pada P0. Jangan memanggil superuser repository untuk mengakali read rule.
+- P2 menyediakan `GET /api/dev/accounts`, `GET /api/bootstrap`, dan `GET /api/proposals/[id]/file`. Browser mengirim key preview melalui header khusus; server melakukan autentikasi akun seed dan pemeriksaan scope. Tidak ada endpoint tulis bisnis atau sesi production. Semua respons data/file `no-store`; jangan memakai superuser repository untuk mengakali read rule.
 
 ## Pengujian
 
@@ -96,7 +98,7 @@ npm run test:e2e
 
 `test:pb` menjalankan binary nyata dengan database baru pada 8097, menguji migrasi/preview, jumlah seed dan idempotensi, akun anonim/nonaktif, Campus A/B, dua admin, kunci mutasi, indeks/validasi, PDF privat/palsu/oversize, riwayat immutable, mapper dan pagination. Proses fixture dihentikan pada akhir tes; direktori fixture tetap diabaikan Git untuk diagnosis. Kredensial tidak dicetak.
 
-E2E browser tetap menguji mockup, **bukan** login/backend end-to-end. Tidak boleh menandai fitur UI PocketBase selesai hanya berdasarkan tes P0.
+E2E browser P2 menjalankan aplikasi pada port 5179 dan backend fixture pada 8097. Tes membaca data/file PocketBase nyata, memeriksa scope, readonly, perubahan database setelah refresh, serta error tanpa fallback. Ini belum menguji autentikasi production P1 atau workflow tulis P3.
 
 ## Alur Git dan pekerjaan lanjutan
 
