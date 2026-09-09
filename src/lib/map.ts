@@ -28,10 +28,10 @@ export const CAMPUS_LOCATIONS: CampusLocation[] = locations.map(([province, isla
 }));
 
 export const progressBands: Record<ProgressBand, { label: string; short: string; color: string }> = {
-  early: { label: 'Perlu perhatian', short: '< 62%', color: '#b7c1b3' },
+  early: { label: 'Perlu perhatian', short: '< 62%', color: '#94a8c8' },
   growing: { label: 'Berkembang', short: '62–65%', color: '#e2a84a' },
-  near: { label: 'Maju', short: '66–69%', color: '#4288a8' },
-  reached: { label: 'Progres tertinggi', short: '≥ 70%', color: '#378b56' }
+  near: { label: 'Maju', short: '66–69%', color: '#2584d8' },
+  reached: { label: 'Progres tertinggi', short: '≥ 70%', color: '#145ee8' }
 };
 
 export function progressBand(value: number): ProgressBand {
