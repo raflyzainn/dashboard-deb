@@ -9,8 +9,8 @@
   let mobile = $state(false);
   let reset = $state(false);
   let drawer: HTMLDialogElement;
-  const labels = { dashboard: 'Ringkasan', campuses: 'Kampus mitra', verifikasi: 'Review Kampus', indicators: 'Indikator DEB', proposal: 'Proposal', questions: 'Forum Q&A', faq: 'Pusat bantuan', notifications: 'Notifikasi' };
-  const menus = $derived(app.session?.role === 'admin' ? ['dashboard', 'verifikasi', 'campuses', 'proposal', 'questions', 'faq', 'notifications'] : ['dashboard', 'indicators', 'proposal', 'questions', 'faq', 'notifications']);
+  const labels = { dashboard: 'Ringkasan', campuses: 'Kampus mitra', sebaran: 'Peta Persebaran', verifikasi: 'Review Kampus', indicators: 'Indikator DEB', proposal: 'Proposal', questions: 'Forum Q&A', faq: 'Pusat bantuan', notifications: 'Notifikasi' };
+  const menus = $derived(app.session?.role === 'admin' ? ['dashboard', 'verifikasi', 'campuses', 'sebaran', 'proposal', 'questions', 'faq', 'notifications'] : ['dashboard', 'indicators', 'proposal', 'questions', 'faq', 'notifications']);
   const pendingCount = $derived(app.data?.submissions?.filter(s => s.status === 'pending').length || 0);
   const prefix = $derived(`/${app.session?.role}`);
   const section = $derived(page.url.pathname.split('/')[2] as keyof typeof labels);

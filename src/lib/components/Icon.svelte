@@ -2,6 +2,7 @@
   let { name = 'leaf', size = 20 }: { name?: string; size?: number } = $props();
   const paths: Record<string, string> = {
     verifikasi: 'M9 12l2 2 4-4M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0',
+    sebaran: 'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6Zm6-3v15m6-12v15',
     leaf: 'M5 18C2 6 12 3 21 3c0 10-4 18-14 16M6 18 16 8',
     dashboard: 'M3 3h7v7H3zM14 3h7v4h-7zM14 11h7v10h-7zM3 14h7v7H3z',
     campus: 'm3 9 9-6 9 6M4 21h16M6 10v7m6-7v7m6-7v7M3 9h18',

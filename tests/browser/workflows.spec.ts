@@ -138,7 +138,7 @@ test('guards, all pages, mobile drawer, search, empty and not-found states', asy
   await page.setViewportSize({ width: 1440, height: 1000 });
   await logout(page);
   await login(page, 'admin');
-  for (const path of ['dashboard', 'campuses', 'campuses/campus-001', 'indicators', 'proposal', 'questions', 'faq']) {
+  for (const path of ['dashboard', 'campuses', 'campuses/campus-001', 'indicators', 'sebaran', 'proposal', 'questions', 'faq']) {
     await page.goto(`/admin/${path}`);
     await expect(page.locator('main')).toBeVisible();
   }
