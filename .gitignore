@@ -12,3 +12,7 @@ playwright-report/
 *.log
 
 .playwright-mcp/
+
+# DEB local PocketBase: binary, database, uploads, generated QA credentials
+.local/
+pb_data/

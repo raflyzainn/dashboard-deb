@@ -4,6 +4,8 @@ Tanggal baseline: 9 September 2026. Status berdasarkan pemeriksaan source code l
 
 Dokumen ini menjadi daftar kerja dan pencatat progres migrasi dari data lokal/dummy ke PocketBase. **Belum ada fitur DEB yang terhubung ke PocketBase pada baseline ini.** Pembuatan dokumen tidak mengubah aplikasi, memasang SDK, membuat koleksi, atau memindahkan data.
 
+Update P0 lokal (9 September 2026): fondasi runtime, 13 koleksi, rules/hook, repository/mapper, seeder dan tes backend sudah diimplementasikan. UI tetap Dexie; matriks integrasi M01–M15 belum selesai. Lihat [panduan lokal](docs/POCKETBASE-LOCAL.md). Baseline di bawah dipertahankan sebagai pembanding, dengan keputusan terbaru pada bagian 9 dan log bagian 10.
+
 ## 1. Pola proyek pembanding
 
 Folder `demo-aplikasi-desa-energi-berdikari-main` tidak digunakan sebagai referensi. Proyek lain tidak semuanya memiliki backend yang identik:
@@ -58,7 +60,7 @@ Fitur baru boleh `SELESAI` bila semua kolom yang berlaku `OK`, tidak memakai fal
 
 ## 4. Matriks fitur dan data
 
-Semua nama koleksi berikut merupakan usulan; belum dibuat. Tulis master dapat melalui script/admin PocketBase, tidak harus menambah layar CRUD baru.
+Koleksi berikut sudah dibuat di instance lokal P0; belum terhubung ke UI. Tulis master melalui tooling lokal/superuser, bukan layar CRUD aplikasi. Matriks Baca/Tulis tetap mengukur alur UI, bukan keberadaan koleksi.
 
 | ID | Fitur / data | Koleksi target | Baca | Tulis | Uji | Status |
 |---|---|---|---|---|---|---|
@@ -107,12 +109,14 @@ Gunakan field waktu bawaan record bila sesuai dan mapper ke `createdAt/updatedAt
 - [ ] Tentukan instance DEB development dan production, versi PocketBase yang dipakai, pengelola schema, serta penyimpanan file; jangan memakai database proyek pembanding sebagai target tanpa keputusan eksplisit.
 - [ ] Tetapkan katalog indikator, baseline/target, arti nilai kosong, rumus capaian dan kebutuhan periode. Angka serta rumus demo belum menjadi aturan resmi.
 - [ ] Validasi roster 40 kampus dan lokasi; siapkan data master yang dapat diimpor ulang tanpa duplikasi.
-- [ ] Tetapkan provisioning akun Campus/Admin, penonaktifan, dan pemulihan password. SSO bukan prasyarat migrasi kecuali kemudian diminta.
-- [ ] Tambahkan dependency `pocketbase`, `.env.example` tanpa secret, validasi konfigurasi server, dan petunjuk setup.
-- [ ] Buat `src/lib/server/pocketbase.ts`, service/repository server, dan mapper DTO.
-- [ ] Buat schema versioned di `db-schema/` serta script dalam `scripts/` dengan preview/dry-run dan apply yang jelas. Pin dan uji kompatibilitas mekanisme migrasi terhadap versi target.
-- [ ] Definisikan rules, indeks unik, field wajib, validasi dan kebijakan hapus relasi; cegah hilangnya riwayat karena cascade yang tidak disengaja.
-- [ ] Buat fixture backend terisolasi: Admin, Kampus A, Kampus B; pisahkan seed pengujian dari data operasional.
+- [x] Tetapkan provisioning lokal satu akun/kampus, dua Admin QA, penonaktifan, dan reset password lokal. Email pemulihan production tetap P1.
+- [x] Tambahkan dependency `pocketbase`, `.env.example` tanpa secret, validasi konfigurasi server, dan petunjuk setup.
+- [x] Buat `src/lib/server/pocketbase.ts`, repository baca server, dan mapper DTO; belum dipanggil UI.
+- [x] Buat schema versioned di `db-schema/` dan script preview/apply. Preview adalah inventaris read-only, bukan diff pending. PocketBase 0.40.3 / SDK 0.28.0 diuji terhadap binary nyata.
+- [x] Definisikan rules, indeks unik, field wajib, validasi dan kebijakan hapus relasi. Mutasi akun aplikasi dikunci sampai workflow P3 tersedia.
+- [x] Buat fixture backend terisolasi pada port 8097: dua Admin, Kampus A/B dan seed mock; database development pada 8096 terpisah.
+
+P0 teknis lokal tersedia. Tiga checkbox keputusan data/production di atas sengaja belum ditandai selesai: instance lokal dipilih, tetapi production belum; 40 kampus/30 indikator/koordinat mengikuti mockup dengan penanda simulasi, bukan pengesahan data operasional. Seeder dijalankan manual dan hanya menerima instance lokal DEB yang ditandai.
 
 ### P1 — Autentikasi dan akses
 
@@ -221,9 +225,9 @@ Ekspor rekap, model desa binaan, level DEB lanjutan, email/push notifikasi dan d
 
 | Keputusan | Status baseline | Dampak |
 |---|---|---|
-| URL/versi instance DEB dan pengelolanya | Belum ditetapkan | Konfigurasi, schema, transaksi dan deployment |
-| Katalog indikator, rumus, periode dan baseline/target resmi | Belum disahkan dalam migrasi ini | Schema serta validitas hasil dashboard |
-| Akun per kampus, jumlah Admin dan provisioning | Rancangan awal satu akun/kampus; perlu validasi | Indeks akun, penerima notifikasi, pemulihan akses |
+| URL/versi instance DEB dan pengelolanya | Lokal 127.0.0.1:8096, PocketBase 0.40.3 / SDK 0.28.0; production belum ditetapkan | Konfigurasi, schema, transaksi dan deployment |
+| Katalog indikator, rumus, periode dan baseline/target resmi | Untuk lokal mengikuti 30 indikator numerik mock, tanpa periode; belum disahkan untuk produksi | Schema serta validitas hasil dashboard |
+| Akun per kampus, jumlah Admin dan provisioning | Pengguna memilih satu akun/kampus; seed lokal 40 akun kampus + dua admin QA; reset/disable lokal tersedia | Mailer/pemulihan dan jumlah admin operasional belum ditetapkan |
 | Lokasi kampus operasional | Kode masih koordinat perkiraan | Akurasi peta |
 | Data lokal yang perlu diselamatkan | Belum dipilih | Kebutuhan ekspor/impor; tidak menghapus data lokal |
 | Mekanisme transaksi, retry dan pengiriman event | Belum dipilih/diuji | Integritas versi, review dan notifikasi |
@@ -235,6 +239,9 @@ Keputusan ini tidak menghalangi penyiapan adapter dan fixture terisolasi, tetapi
 | Tanggal | ID/tahap | Perubahan | Baca/Tulis/Uji | Bukti | Sisa pekerjaan |
 |---|---|---|---|---|---|
 | 2026-09-09 | Baseline | Pemeriksaan source DEB dan pola proyek pembanding; dokumen dibuat | Semua integrasi BELUM | File sumber pada bagian 1–2; tidak ada pengujian runtime backend | P0 lalu P1–P4 |
+| 2026-09-09 | P0 lokal | Runtime/schema 13 koleksi, rules/hook, repository/mapper, seeder lokal dan tooling akun | Backend fixture diuji; UI Baca/Tulis BELUM | Branch `feat/p0-pocketbase-foundation`; `npm run test:pb`: 14 tes lulus (13 skenario + induk), termasuk seed ulang dan isolasi akses/file | P1–P4; keputusan data resmi dan production tetap terbuka |
+
+Bukti tambahan P0 pada Node 22.23.2: `npm run check` 0 error/0 warning, `npm test` 22 lulus, `npm run build` berhasil dengan adapter Vercel, `npm run test:e2e` 11 lulus (mockup, bukan browser backend). Instance development berisi seed pada 8096; rerun menghasilkan `created: {}`. Tool disable/enable/reset password lokal diuji pada akun QA `campus-040` dan status akun dikembalikan aktif. Tidak ada perubahan pada service mock, state atau halaman UI; tidak ada deployment production.
 
 Salin format ini untuk setiap pekerjaan berikutnya:
 

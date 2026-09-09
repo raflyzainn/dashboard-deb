@@ -2,6 +2,8 @@
 
 Prototype monitoring DEB Putih untuk Admin Pertamina Foundation dan 40 kampus mitra. Seluruh data merupakan simulasi. Aplikasi berjalan tanpa backend aktif, dengan penyimpanan lokal browser yang tetap tersedia setelah refresh dan pergantian role.
 
+Fondasi PocketBase lokal P0 tersedia secara terpisah: schema lengkap, akun uji, seeder dan pengujian akses. **UI masih memakai mockup**, belum membaca database. Setup: [PocketBase lokal DEB](docs/POCKETBASE-LOCAL.md).
+
 ## Menjalankan
 
 Prasyarat: Node.js 22 LTS (minimal 22.13) dan npm. Tidak memerlukan `.env`, akun, atau server PocketBase.
@@ -37,7 +39,7 @@ Proyek memakai `@sveltejs/adapter-vercel`, preset `sveltekit` pada `vercel.json`
 
 Pada Vercel, gunakan root repository, Framework Preset **SvelteKit**, Build Command **npm run build**, dan Output Directory **default / override dimatikan**. Jangan isi Output Directory dengan `public`, `static`, atau `.svelte-kit/output/client`. `vercel.json` mengembalikan output directory ke default framework.
 
-Deploy commit terbaru dari branch `main`. Redeploy deployment lama dapat tetap memakai commit lama yang masih menggunakan adapter Cloudflare. Log sukses harus menunjukkan `Using @sveltejs/adapter-vercel`. Verifikasi build lokal tidak menjamin deployment Vercel sudah aktif.
+Branch `main` dibekukan untuk mockup yang sedang direview pengguna. Pekerjaan baru dibuat dari `development`, dengan push feature branch dan PR ke `development` saja; jangan push/PR ke `main`. Pengaturan deployment tidak diubah oleh P0. Log build sukses harus menunjukkan `Using @sveltejs/adapter-vercel`. Verifikasi build lokal tidak menjamin deployment Vercel sudah aktif.
 
 Prototype tidak memerlukan environment variable atau backend untuk demo. Data tetap disimpan per browser dan origin; deployment baru dengan domain berbeda memiliki penyimpanan yang berbeda.
 

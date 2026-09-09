@@ -1,6 +1,6 @@
 # Kontrak transisi ke PocketBase
 
-Tahap saat ini sepenuhnya mock. Dokumen ini adalah rancangan transisi; tidak ada PocketBase SDK runtime, endpoint bisnis, autentikasi produksi, migrasi, atau koneksi database yang diaktifkan.
+UI saat ini tetap sepenuhnya mock. Fondasi P0 sudah menyediakan SDK, migrasi 13 koleksi, hook validasi, repository/mapper server, seeder dan fixture backend lokal. Belum ada endpoint bisnis, autentikasi website nyata, atau perpindahan UI ke database. Setup dan batas implementasi: [PocketBase lokal DEB](POCKETBASE-LOCAL.md). Bagian kontrak produksi di bawah tetap rancangan tahap berikutnya.
 
 ## Batas lapisan
 
