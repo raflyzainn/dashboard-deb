@@ -13,13 +13,21 @@
     "prepare": "svelte-kit sync",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "test": "tsx --test tests/*.test.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "pb:setup": "tsx scripts/pocketbase/cli.ts setup",
+    "pb:serve": "tsx scripts/pocketbase/cli.ts serve",
+    "pb:preview": "tsx scripts/pocketbase/cli.ts preview",
+    "pb:migrate": "tsx scripts/pocketbase/cli.ts migrate",
+    "pb:seed": "tsx scripts/pocketbase/cli.ts seed",
+    "pb:account": "tsx scripts/pocketbase/cli.ts account",
+    "test:pb": "tsx --test --test-concurrency=1 tests/pocketbase/*.test.ts"
   },
   "dependencies": {
     "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
     "dexie": "^4.3.0",
     "diff": "^9.0.0",
-    "pdfjs-dist": "^6.3.289"
+    "pdfjs-dist": "^6.3.289",
+    "pocketbase": "0.28.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.0",
