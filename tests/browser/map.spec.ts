@@ -37,6 +37,12 @@ test('admin explores the campus map while campus cannot open an admin-only view'
   expect(transformAfterDrag).toContain('--pan-x:');
   await page.getByRole('button', { name: 'Atur ulang pembesaran' }).click();
   await expect(page.locator('.map-world')).toHaveAttribute('style', /--zoom:\s*1;\s*--pan-x:\s*0px;\s*--pan-y:\s*0px/);
+  const boundaryWheelWasPrevented = await mapStage.evaluate(element => {
+    const event = new WheelEvent('wheel', { deltaY: 120, ctrlKey: true, bubbles: true, cancelable: true });
+    element.dispatchEvent(event);
+    return event.defaultPrevented;
+  });
+  expect(boundaryWheelWasPrevented).toBe(true);
   await page.getByLabel('Cari kampus di peta').fill('UNHAS');
   await expect(page.locator('.map-dot')).toHaveCount(1);
   await expect(page.locator('.map-dot[title="Universitas Hasanuddin"]')).toBeVisible();
