@@ -10,7 +10,7 @@ class AppState {
   loading = $state(false);
   accountsLoading = $state(false);
   busy = $state(false);
-  readOnly = true;
+  readOnly = $state(true);
   error = $state('');
   toast = $state('');
   loadedAt = $state('');
@@ -39,12 +39,12 @@ class AppState {
   async login(key: string) {
     const revision = ++this.revision;
     dataService.selectAccount(key);
-    this.session = null; this.data = null; this.loadedAt = ''; this.stale = false; this.dialogs = 0;
+    this.readOnly = true; this.session = null; this.data = null; this.loadedAt = ''; this.stale = false; this.dialogs = 0;
     this.loading = true; this.error = '';
     try {
       const result = await dataService.bootstrap();
       if (revision !== this.revision) return false;
-      this.session = result.session; this.data = result.data; this.loadedAt = result.loadedAt;
+      this.readOnly = result.capabilities.readOnly; this.session = result.session; this.data = result.data; this.loadedAt = result.loadedAt;
       try { sessionStorage.setItem(SESSION_KEY, key); } catch { /* Select an account again after refresh. */ }
       return true;
     } catch (error) {
@@ -54,7 +54,7 @@ class AppState {
   }
   logout() {
     this.revision++; dataService.selectAccount('');
-    this.session = null; this.data = null; this.error = ''; this.toast = ''; this.loadedAt = ''; this.stale = false; this.loading = false; this.dialogs = 0;
+    this.readOnly = true; this.session = null; this.data = null; this.error = ''; this.toast = ''; this.loadedAt = ''; this.stale = false; this.loading = false; this.busy = false; this.dialogs = 0;
     try { sessionStorage.removeItem(SESSION_KEY); } catch { /* selection only */ }
     void this.loadAccounts();
     return true;
@@ -65,7 +65,7 @@ class AppState {
     this.loading = true; this.error = '';
     try {
       const result = await dataService.bootstrap();
-      if (revision === this.revision) { this.session = result.session; this.data = result.data; this.loadedAt = result.loadedAt; this.stale = false; }
+      if (revision === this.revision) { this.readOnly = result.capabilities.readOnly; this.session = result.session; this.data = result.data; this.loadedAt = result.loadedAt; this.stale = false; }
     } catch (error) {
       if (revision !== this.revision) return;
       if (error instanceof DataReadError && [401, 403].includes(error.status)) this.logout();
@@ -73,9 +73,25 @@ class AppState {
       this.error = this.message(error);
     } finally { if (revision === this.revision) this.loading = false; }
   }
-  async mutate(_action: () => Promise<unknown>, _success: string): Promise<boolean> {
-    this.error = READ_ONLY_MESSAGE;
-    return false;
+  async mutate(action: () => Promise<unknown>, success: string): Promise<boolean> {
+    if (this.readOnly || !this.session) { this.error = READ_ONLY_MESSAGE; return false; }
+    if (this.busy || this.loading) return false;
+    const revision = this.revision;
+    this.busy = true; this.error = ''; this.toast = '';
+    try {
+      await action();
+      if (revision !== this.revision) return false;
+      await this.reload();
+      if (revision !== this.revision) return false;
+      this.toast = this.stale ? 'Tersimpan, tetapi data terbaru belum dapat dimuat. Muat ulang data.' : success;
+      return true;
+    } catch (error) {
+      if (revision === this.revision) {
+        if (error instanceof DataReadError && error.status === 401) this.logout();
+        this.error = this.message(error);
+      }
+      return false;
+    } finally { if (revision === this.revision) this.busy = false; }
   }
   private message(error: unknown) { return error instanceof Error ? error.message : 'Pembacaan PocketBase gagal. Coba muat ulang.'; }
 }

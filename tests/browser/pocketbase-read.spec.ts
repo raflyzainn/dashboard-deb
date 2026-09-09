@@ -63,7 +63,7 @@ test('all admin read pages work with PocketBase and without IndexedDB', async ({
   expect(snapshot.data.proposals).toHaveLength(52);
   expect(snapshot.locations).toHaveLength(40);
   expect(JSON.stringify(snapshot)).not.toMatch(/password|tokenKey|@deb\.local\.test|superuser/i);
-  expect(snapshot.capabilities.readOnly).toBe(true);
+  expect(snapshot.capabilities.readOnly).toBe(false);
   const campus = snapshot.data.campuses[0].id;
   const question = snapshot.data.questions[0].id;
   for (const route of ['campuses', `campuses/${campus}`, 'verifikasi', 'proposal', 'questions', `questions/${question}`, 'faq', 'notifications', 'sebaran']) {
@@ -121,37 +121,14 @@ test('campus scope, two admins, forged identity and direct files remain isolated
   } finally { await contextB.close(); }
 });
 
-test('read-only controls and notification navigation never mutate business records', async ({ page }) => {
-  const pb = await qa();
-  const names = ['campus_indicators', 'deb_submissions', 'indicator_feedback', 'proposal_versions', 'questions', 'question_answers', 'question_likes', 'faq_entries', 'activities', 'notifications'];
-  const before = await Promise.all(names.map(n => pb.collection(n).getFullList({ sort: 'id' })));
+test('P3 controls are enabled with no backend reset action', async ({ page }) => {
   await login(page, 'campus-001');
   await page.goto('/campus/indicators');
-  await expect(page.getByRole('button', { name: 'Kirim untuk verifikasi', exact: true })).toBeDisabled();
-  await page.getByRole('button', { name: /^Lihat Pemetaan kebutuhan desa$/ }).click();
-  await expect(page.getByRole('button', { name: 'Simpan perubahan' })).toBeDisabled();
-  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Kirim untuk verifikasi', exact: true })).toBeEnabled();
   await page.goto('/campus/proposal');
-  await expect(page.getByRole('button', { name: 'Unggah versi baru' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Unggah versi baru' })).toBeEnabled();
   await page.goto('/campus/questions');
-  await expect(page.getByRole('button', { name: 'Ajukan pertanyaan' })).toBeDisabled();
-  await expect(page.getByRole('button', { name: /^Sukai / }).first()).toBeDisabled();
-  await page.goto('/campus/notifications');
-  await expect(page.getByRole('button', { name: 'Tandai semua dibaca' })).toBeDisabled();
-  const notice = (await boot(page, 'campus-001')).data.notifications.find((n: { readAt: string | null }) => !n.readAt);
-  const card = page.locator('.notification-list article').filter({ hasText: notice.title }).first();
-  await card.getByRole('link').click();
-  await expect(page).toHaveURL(new RegExp(notice.href + '$'));
-  await page.getByRole('button', { name: 'Keluar / ganti akun' }).first().click();
-  await page.getByRole('button', { name: /Administrator/ }).click();
-  await page.locator('input[value="admin-1"]').check();
-  await page.getByRole('button', { name: 'Buka ruang kerja' }).click();
-  await expect(page).toHaveURL(/\/admin\/dashboard$/);
-  await page.goto('/admin/faq');
-  await expect(page.getByRole('button', { name: 'Tambah FAQ' })).toBeDisabled();
-  await page.goto('/admin/verifikasi');
-  await expect(page.getByRole('button', { name: 'Konfirmasi data', exact: true })).toBeDisabled();
-  expect(await Promise.all(names.map(n => pb.collection(n).getFullList({ sort: 'id' })))).toEqual(before);
+  await expect(page.getByRole('button', { name: 'Ajukan pertanyaan' })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Reset data demo' })).toHaveCount(0);
 });
 

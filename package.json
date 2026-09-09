@@ -20,7 +20,7 @@
     "pb:migrate": "tsx scripts/pocketbase/cli.ts migrate",
     "pb:seed": "tsx scripts/pocketbase/cli.ts seed",
     "pb:account": "tsx scripts/pocketbase/cli.ts account",
-    "test:pb": "tsx --test --test-concurrency=1 tests/pocketbase/*.test.ts"
+    "test:pb": "tsx --test tests/pocketbase/local.test.ts"
   },
   "dependencies": {
     "@fontsource-variable/plus-jakarta-sans": "^5.3.0",

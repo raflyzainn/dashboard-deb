@@ -8,6 +8,8 @@ Update P0 lokal (9 September 2026): fondasi runtime, 13 koleksi, rules/hook, rep
 
 Update P2 lokal (9 September 2026): seluruh pembacaan UI kini melalui API SvelteKit ke PocketBase. Dexie dan fallback mock dihapus dari frontend; fixture dipindahkan ke `scripts/fixtures` khusus seeder/tes. P1 autentikasi operasional ditunda: pemilih akun seed hanya tersedia di development loopback. Semua mutasi UI dikunci sampai P3. Lihat [rincian P2](docs/POCKETBASE-P2.md). Bagian 1–2 memuat kondisi historis baseline, bukan arsitektur aktif.
 
+Update P3 lokal (9 September 2026): seluruh workflow tulis melalui API SvelteKit dan transaksi PocketBase sudah aktif pada **frontend 5176 / PocketBase 8096**. P1 tetap BELUM. Migrasi dilakukan setelah backup database/file terverifikasi, tanpa mengubah 13 koleksi bisnis existing. Pengujian mutasi terbaru menggunakan **MCP Playwright Google Chrome pada 5176**, lalu record diperiksa langsung di 8096. Perintah tes standar kini menggunakan kedua port existing tersebut, tanpa membuat fixture/seed/reset. Lihat [kontrak P3](docs/POCKETBASE-P3.md).
+
 ## 1. Pola proyek pembanding
 
 Folder `demo-aplikasi-desa-energi-berdikari-main` tidak digunakan sebagai referensi. Proyek lain tidak semuanya memiliki backend yang identik:
@@ -69,20 +71,20 @@ Koleksi berikut sudah terhubung untuk pembacaan UI P2 lokal. Tulis master melalu
 | M01 | Login, sesi, logout, role dan kampus akun | `users` (auth) | BELUM | BELUM | BELUM | BELUM |
 | M02 | Daftar/detail kampus, profil penulis forum | `campuses` | OK | BELUM | BELUM | SEBAGIAN |
 | M03 | Katalog indikator, kategori, satuan, deskripsi | `indicator_definitions` | OK | BELUM | BELUM | SEBAGIAN |
-| M04 | Baseline, target, aktual dan catatan kampus | `campus_indicators` | OK | BELUM | BELUM | SEBAGIAN |
-| M05 | Kirim DEB, antrean review, keputusan dan riwayat | `deb_submissions` | OK | BELUM | BELUM | SEBAGIAN |
-| M06 | Feedback indikator, respons dan penutupan revisi | `indicator_feedback` | OK | BELUM | BELUM | SEBAGIAN |
-| M07 | Upload proposal, metadata dan versi | `proposal_versions` | OK | BELUM | BELUM | SEBAGIAN |
-| M08 | Lihat/unduh PDF dan perbandingan dua versi | File pada `proposal_versions` | OK | — | BELUM | SEBAGIAN |
-| M09 | Forum bersama, kategori, pencarian pertanyaan/jawaban | `questions`, `question_answers` | OK | BELUM | BELUM | SEBAGIAN |
-| M10 | Like per kampus dan peringkat pertanyaan | `question_likes` | OK | BELUM | BELUM | SEBAGIAN |
-| M11 | Promosi/tambah/edit/urut/hapus FAQ | `faq_entries` | OK | BELUM | BELUM | SEBAGIAN |
-| M12 | Aktivitas kampus dan ringkasan aktivitas Admin | `activities` | OK | BELUM | BELUM | SEBAGIAN |
-| M13 | Notifikasi, badge belum dibaca, tandai dibaca | `notifications` | OK | BELUM | BELUM | SEBAGIAN |
+| M04 | Baseline, target, aktual dan catatan kampus | `campus_indicators` | OK | OK | OK | SELESAI |
+| M05 | Kirim DEB, antrean review, keputusan dan riwayat | `deb_submissions` | OK | OK | OK | SELESAI |
+| M06 | Feedback indikator, respons dan penutupan revisi | `indicator_feedback` | OK | OK | OK | SELESAI |
+| M07 | Upload proposal, metadata dan versi | `proposal_versions` | OK | OK | OK | SELESAI |
+| M08 | Lihat/unduh PDF dan perbandingan dua versi | File pada `proposal_versions` | OK | — | OK | SELESAI |
+| M09 | Forum bersama, kategori, pencarian pertanyaan/jawaban | `questions`, `question_answers` | OK | OK | OK | SELESAI |
+| M10 | Like per kampus dan peringkat pertanyaan | `question_likes` | OK | OK | OK | SELESAI |
+| M11 | Promosi/tambah/edit/urut/hapus FAQ | `faq_entries` | OK | OK | OK | SELESAI |
+| M12 | Aktivitas kampus dan ringkasan aktivitas Admin | `activities` | OK | OK | OK | SELESAI |
+| M13 | Notifikasi, badge belum dibaca, tandai dibaca | `notifications` | OK | OK | OK | SELESAI |
 | M14 | Dashboard, progres, jumlah proposal dan tindak lanjut | Agregasi M02–M07, M12–M13 | OK | — | BELUM | SEBAGIAN |
 | M15 | Sebaran kampus, lokasi dan ringkasan wilayah | Lokasi di `campuses` + agregasi M04 | OK | BELUM | BELUM | SEBAGIAN |
 
-Status P2: pembacaan M02–M15 terhubung. Kolom Uji keseluruhan tetap BELUM hingga kriteria workflow/akses operasional selesai; tes read-only dicatat terpisah. M01/P1 serta seluruh mutasi/P3 belum diimplementasikan. Belum ada klaim kesiapan production.
+Status P3 lokal: M04–M13 telah diuji sesuai workflow yang berlaku; M08 hanya baca/file. SELESAI berarti integrasi lokal dengan akun QA, bukan kesiapan production. M01/P1 tetap BELUM; CRUD master/lokasi, pengesahan data dan deployment tetap terpisah.
 
 ### Detail schema dan batas akses
 
@@ -142,7 +144,7 @@ P0 teknis lokal tersedia. Tiga checkbox keputusan data/production di atas sengaj
 
 ### P3 — Mutasi dan workflow
 
-Daftar ini mencakup seluruh metode mutasi pada `DataService` saat baseline. Nama endpoint merupakan rancangan baru, bukan route yang sudah tersedia.
+Daftar ini mencakup metode baseline yang telah diimplementasikan pada P3 lokal. Parameter `actor` dihapus dari adapter, `toggleLike` diganti `setLike(questionId, liked)`, dan metode reset dihapus.
 
 | Metode sekarang | Endpoint usulan | Perilaku yang wajib dipertahankan di server |
 |---|---|---|
@@ -163,14 +165,16 @@ Daftar ini mencakup seluruh metode mutasi pada `DataService` saat baseline. Nama
 | `readNotifications` | `POST /api/notifications/read` | Hanya ID milik akun, termasuk aksi semua; tidak menandai notifikasi admin lain. |
 | `reset` | Tidak ada endpoint production | Khusus demo; jangan menyediakan reset seluruh data backend dari UI. |
 
-- [ ] Implementasikan setiap metode di tabel dan perbarui kolom Tulis pada matriks secara terpisah.
-- [ ] Buat aktivitas/notifikasi dari event server sesuai workflow; jangan menerima teks audit/penerima sebagai keputusan browser.
-- [ ] Tetapkan konsistensi untuk operasi multi-record. Beberapa request REST berurutan dari SvelteKit bukan transaksi database.
-- [ ] Uji mekanisme atomik yang tersedia pada versi PocketBase target (misalnya batch transaksional yang sesuai atau operasi server PocketBase). Tetap gunakan indeks unik dan kontrol konflik untuk kondisi baca-lalu-tulis; batch saja tidak menyelesaikan perlombaan nomor versi.
-- [ ] Bila transaksi lintas record/event tidak memungkinkan, desain status operasi dan retry/outbox yang tahan kegagalan. Jangan menampilkan sukses saat data utama belum tersimpan; jangan menggandakan versi/notifikasi saat request diulang.
-- [ ] Uji dua reviewer, dua upload bersamaan, submit bersamaan, reorder FAQ dan like bersamaan.
-- [ ] Lindungi file di PocketBase juga; proxy API saja tidak cukup jika URL file langsung masih publik. Uji akses langsung tanpa sesi dan dari kampus lain.
+- [x] Implementasikan setiap metode di tabel dan perbarui kolom Tulis pada matriks secara terpisah.
+- [x] Buat aktivitas/notifikasi dari event server sesuai workflow; jangan menerima teks audit/penerima sebagai keputusan browser.
+- [x] Tetapkan konsistensi multi-record dengan transaksi native PocketBase.
+- [x] Uji operasi atomik, indeks unik dan kontrol konflik baca-lalu-tulis untuk penomoran versi.
+- [x] Gunakan receipt operasi dan kunci retry untuk mencegah versi/notifikasi ganda; data utama dan event berada dalam transaksi yang sama.
+- [x] Uji dua reviewer, dua upload bersamaan, submit bersamaan, reorder FAQ dan like bersamaan. Bukti fixture historis dicatat terpisah dari MCP lingkungan utama.
+- [x] Lindungi file di PocketBase juga; uji akses langsung tanpa sesi dan dari kampus lain.
 - [ ] Sesuaikan batas request upload pada deployment frontend dengan PDF 10 MB; pilih jalur upload terotorisasi lain bila batas platform tidak mencukupi, lalu uji end-to-end.
+
+P3 lokal selesai. Batas upload deployment tetap terbuka karena hosting production/P1 di luar pekerjaan ini. Batas file lokal adalah 10 MiB sesuai schema.
 
 ### P4 — Peralihan UI, data dan deployment
 
@@ -232,11 +236,25 @@ Ekspor rekap, model desa binaan, level DEB lanjutan, email/push notifikasi dan d
 | Akun per kampus, jumlah Admin dan provisioning | Pengguna memilih satu akun/kampus; seed lokal 40 akun kampus + dua admin QA; reset/disable lokal tersedia | Mailer/pemulihan dan jumlah admin operasional belum ditetapkan |
 | Lokasi kampus operasional | Kode masih koordinat perkiraan | Akurasi peta |
 | Data lokal yang perlu diselamatkan | Belum dipilih | Kebutuhan ekspor/impor; tidak menghapus data lokal |
-| Mekanisme transaksi, retry dan pengiriman event | Belum dipilih/diuji | Integritas versi, review dan notifikasi |
+| Mekanisme transaksi, retry dan pengiriman event | P3 lokal: custom route + runInTransaction, receipt per actor/key, hash kanonis, notifikasi dalam transaksi | Retry/konkurensi diuji; email/push tetap di luar scope |
 
 Keputusan ini tidak menghalangi penyiapan adapter dan fixture terisolasi, tetapi harus diselesaikan sebelum memasukkan data operasional dan menyatakan production siap.
 
 ## 10. Log checkpoint
+
+### 2026-09-09 - P3 lokal - workflow API dan verifikasi lingkungan utama
+
+- Status: **SELESAI untuk P3 lokal**; P1 dan kesiapan production tetap BELUM. Branch `feat/p3-pocketbase-workflows`, basis kode P2 `976ff46`; pengiriman melalui PR ke `development`, tanpa deployment.
+- Lingkungan aktif sesuai instruksi terbaru pengguna: **http://127.0.0.1:5176 - http://127.0.0.1:8096**. Tidak ada server alternatif dijalankan setelah instruksi tersebut. Tes standar tidak membuat backend/fixture baru.
+- Migrasi `1789000000_deb_workflows.js` diterapkan pada 8096; koleksi internal `workflow_operations` melengkapi 13 koleksi bisnis. Backup terverifikasi SHA-256 di `.local/pocketbase/p3-backups/2026-09-09T13-57-42.985Z`. Hash/count record sebelum dan sesudah migrasi identik; manifest verifikasi lokal di `.qa/p3-local-migration.json`.
+- **MCP Playwright Chrome, 5176/8096:** pertanyaan `4oa6ziyy72dq713` dengan judul **QA P3 8096 - Verifikasi pertanyaan melalui API** dibuat melalui UI (POST 200); database questions naik dari 6 menjadi 7. Dua PDF melalui UI menghasilkan `dokeb47l4zze2fq` / versi 4 dan `ykqq6ytgctmx9px` / versi 5. Refresh mempertahankan data; diff menampilkan satu baris ditambah/dihapus. Admin pada tab terpisah berhasil membuka dan mengunduh PDF kedua.
+- **MCP workflow utama:** jawaban Admin, promosi FAQ, like, buka notifikasi/tandai dibaca, tambah/edit/reorder/hapus FAQ QA; seluruh request terkait mendapat 200. Siklus Kampus Kupang: pengajuan `mh0mnjyqzj10k6b` - revision - feedback responded - pengajuan `fn9dlpmil5d31n7` - penutupan feedback - approved. Pending mengunci indikator dan revisi aktif menghalangi approval. Riwayat versi pertama tetap tersimpan.
+- Temuan UI diperbaiki: guard navigasi awal menangani URL null; draft keputusan tidak dibersihkan saat snapshot akun yang sama dimuat ulang; kontrol mutasi menunggu loading/busy selesai; FAQ menggunakan keyed rows agar reorder menjaga identitas aksi. Alur terkait diulang melalui MCP pada 5176 dan berhasil.
+- Pemeriksaan akhir: `npm test` **12 lulus**; `npm run test:pb` **4 lulus** pada 8096 tanpa seed/tulis bisnis; `npm run test:e2e` **2 smoke Chrome lulus** pada 5176 tanpa menulis data; `npm run check` 0 error/0 warning; `npm run build` berhasil. **19 handler hasil build** dipanggil langsung dan seluruhnya menolak preview dengan 404, tanpa membuka server tambahan; output Vercel tidak memuat pembaca kredensial lokal.
+- Bukti interaktif: `.playwright-mcp/p3-main-admin-pdf-ready.png` (PDF selesai dirender dan diperiksa visual), `.playwright-mcp/p3-main-approved.png`, `.playwright-mcp/p3-main-final-faq.png`, serta snapshot/network log MCP. Artefak QA, backup, dan kredensial tidak dilacak Git.
+- Bukti historis sebelum koreksi port: suite integrasi fixture **23/23 lulus** (konkurensi submit/reviewer/upload/like/reorder, retry, rollback event, akses/file). Suite browser fixture sempat **12/13**, satu skenario approval belum menutup feedback seed. Tes diperbaiki dan siklus lengkap diverifikasi ulang melalui MCP **pada 5176/8096**, bukan menjalankan ulang fixture. Tes tambahan orphan-file rollback belum dijalankan setelah perubahan kebijakan port; tidak dianggap bukti lulus. File suite fixture tetap disimpan sebagai referensi dan tidak dipilih perintah tes standar.
+- Data QA yang sengaja tersimpan pada lingkungan utama berlabel QA/simulated; seed existing tidak direset. FAQ sementara yang dibuat untuk tes sudah dihapus. Rumus/katalog masih simulasi; belum ada login production, email/push, polling/realtime, atau validasi batas upload hosting.
+
 
 ### 2026-09-09 — P2 lokal — PocketBase-only dan pemilih akun
 

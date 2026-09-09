@@ -16,9 +16,9 @@
   <section class="login-story"><a class="brand" href="/login"><span class="brand-mark"><Icon name="leaf" size={29}/></span><span>DEB<span class="brand-sub">RUANG TUMBUH BERSAMA</span></span></a><div class="login-copy"><span class="eyebrow light">DIGITALISASI DEB PUTIH</span><h1>Dari kolaborasi,<br/>tumbuh <em>perubahan.</em></h1><p>Satu ruang untuk merawat gagasan, memantau langkah, dan mewujudkan dampak bersama kampus mitra.</p><div class="login-metrics"><div><strong>{app.accounts.filter(a => a.role === 'campus').length || '—'}</strong><span>Kampus mitra</span></div><div><strong>PB</strong><span>Sumber data tunggal</span></div><div><strong>1</strong><span>Tujuan bersama</span></div></div></div><div class="landscape" aria-hidden="true"><span class="sun"></span><div class="hill back"></div><div class="hill front"></div><svg viewBox="0 0 460 220"><path d="M220 220V70m0 94c-75 0-95-60-95-90 60 0 95 25 95 90Zm0-43c75 0 100-65 100-110-72 0-100 42-100 110Z" fill="#c6e4a7"/><path d="m220 163-65-62m65 23 73-81" fill="none" stroke="#326747" stroke-width="3"/></svg></div><div class="login-footer">PERTAMINA FOUNDATION <span>Untuk masa depan yang berkelanjutan.</span></div></section>
 
 <section class="login-panel"><div class="login-form">
-<span class="demo-label"><span></span>PocketBase lokal · Hanya baca</span>
+<span class="demo-label"><span></span>PocketBase lokal - Akun QA</span>
 <h2>Selamat datang.</h2>
-<p class="login-intro">Pilih akun seed untuk membaca data DEB dari PocketBase. Ini preview lokal, bukan autentikasi production.</p>
+<p class="login-intro">Pilih akun QA untuk menggunakan ruang kerja DEB lokal. Ini preview lokal, bukan autentikasi production.</p>
 <form onsubmit={(event) => { event.preventDefault(); enter(); }}>
 <div class="account-tabs" role="group" aria-label="Jenis akun">
 {#each ['campus', 'admin'] as kind}<button type="button" class:active={role === kind} aria-pressed={role === kind} disabled={app.loading} onclick={() => { role = kind as 'campus' | 'admin'; search = ''; account = app.accounts.find(a => a.role === role)?.key || ''; }}>{kind === 'campus' ? 'Kampus mitra' : 'Administrator'}<span>{app.accounts.filter(a => a.role === kind).length}</span></button>{/each}
@@ -40,7 +40,7 @@
 {#if app.accountsLoading}<p role="status">Memuat akun dari PocketBase…</p>{:else if !app.accounts.length}<p>Daftar akun belum tersedia. Pastikan PocketBase aktif dan akun seed sudah diprovisioning.</p>{/if}
 {#if app.error}<p role="alert" class="danger-text">{app.error}</p>{/if}
 <button class="text-link" disabled={app.accountsLoading || app.loading} onclick={() => app.loadAccounts()}>Muat ulang daftar akun</button>
-<div class="login-hint"><Icon name="faq" size={18}/><p>Data bisnis hanya berasal dari PocketBase. Password akun tetap di server lokal. Fitur penyimpanan menyusul P3.</p></div>
+<div class="login-hint"><Icon name="faq" size={18}/><p>Data bisnis hanya berasal dari PocketBase. Password akun tetap di server lokal. Perubahan disimpan di PocketBase lokal.</p></div>
 </div></section></main>
 <style>
 form{display:grid;gap:12px;margin:24px 0}label{font-weight:650;color:#12386b}form .button{justify-content:center}.login-form>p{line-height:1.7}

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
+  import { goto, afterNavigate } from '$app/navigation';
   import { page } from '$app/state';
   import { app } from '$lib/state.svelte';
   import Shell from '$lib/components/Shell.svelte';
@@ -7,6 +7,9 @@
   let { children } = $props();
   const routeRole = $derived(page.url.pathname.split('/')[1]);
   const authorized = $derived(app.ready && app.session && routeRole === app.session.role);
+  afterNavigate(({ from, to }) => {
+    if (from?.url && to?.url && from.url.pathname !== to.url.pathname && authorized && !app.busy) void app.reload();
+  });
   $effect(() => {
     if (!app.ready) return;
     if (!app.session) goto('/login', { replaceState: true });

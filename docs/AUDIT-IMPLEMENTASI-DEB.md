@@ -1,5 +1,7 @@
 # Audit implementasi terhadap dua dokumen Word
 
+> Update P3 (9 September 2026): seluruh workflow tulis sudah aktif pada frontend 5176 dan PocketBase 8096. P1 autentikasi production tetap ditunda. Bagian yang menyebut Dexie, mock, P2 read-only atau port fixture adalah catatan historis; kontrak aktif ada di [POCKETBASE-P3.md](POCKETBASE-P3.md). Perintah tes standar sekarang memakai instance 5176/8096 tanpa seed/reset.
+
 Tanggal pemeriksaan: 8 September 2026.
 
 Catatan lanjutan: matriks di bawah merekam kondisi sebelum permintaan fitur lanjutan pada hari yang sama. Setelah audit, perbandingan teks proposal, kategori dan pencarian isi jawaban forum, serta halaman notifikasi lokal telah ditambahkan. Lihat `PERBANDINGAN-PROPOSAL.md`, `KATEGORI-FORUM.md`, dan `NOTIFIKASI.md` untuk implementasi terbaru. Ekspor rekap dan backend operasional masih belum tersedia.

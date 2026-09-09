@@ -1,5 +1,7 @@
 # Kontrak transisi ke PocketBase
 
+> Update P3 (9 September 2026): seluruh workflow tulis sudah aktif pada frontend 5176 dan PocketBase 8096. P1 autentikasi production tetap ditunda. Bagian yang menyebut Dexie, mock, P2 read-only atau port fixture adalah catatan historis; kontrak aktif ada di [POCKETBASE-P3.md](POCKETBASE-P3.md). Perintah tes standar sekarang memakai instance 5176/8096 tanpa seed/reset.
+
 P2 membaca seluruh data UI dari PocketBase melalui endpoint SvelteKit. Mock/Dexie dan fallback dummy frontend sudah dihapus; seed database dipertahankan, generator hanya berada di tooling/test. P1 autentikasi production ditunda; P3 mutasi belum aktif. Setup: [PocketBase lokal DEB](POCKETBASE-LOCAL.md); kontrak aktif: [P2 pembacaan lokal](POCKETBASE-P2.md). Bagian workflow tulis di bawah masih rancangan tahap berikutnya.
 
 ## Batas lapisan

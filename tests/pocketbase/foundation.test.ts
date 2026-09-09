@@ -224,7 +224,7 @@ test('PocketBase foundation against an isolated real backend', { timeout: 180000
       await assert.rejects(createDebRepository(admin).load(), /user-scoped/);
     });
     await t.test('runtime artifacts do not generate schema files or mutate UI service', async () => {
-      assert.deepEqual((await readdir(path.join(ROOT, 'db-schema', 'pb_migrations'))).filter(f => f.endsWith('.js')), ['1788912000_deb_foundation.js']);
+      assert.deepEqual((await readdir(path.join(ROOT, 'db-schema', 'pb_migrations'))).filter(f => f.endsWith('.js')), ['1788912000_deb_foundation.js', '1789000000_deb_workflows.js']);
       assert.ok((await readFile(path.join(ROOT, 'src/lib/data/service.ts'), 'utf8')).includes('dataService = createHttpService()'));
     });
   } finally {

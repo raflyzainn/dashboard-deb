@@ -1,5 +1,7 @@
 # Halaman notifikasi Kampus dan Admin
 
+> Update P3 (9 September 2026): seluruh workflow tulis sudah aktif pada frontend 5176 dan PocketBase 8096. P1 autentikasi production tetap ditunda. Bagian yang menyebut Dexie, mock, P2 read-only atau port fixture adalah catatan historis; kontrak aktif ada di [POCKETBASE-P3.md](POCKETBASE-P3.md). Perintah tes standar sekarang memakai instance 5176/8096 tanpa seed/reset.
+
 Implementasi 8 September 2026. Route: `/campus/notifications` dan `/admin/notifications`. Akses lewat sidebar, drawer mobile, atau ikon lonceng header. Badge dan penanda lonceng menunjukkan notifikasi belum dibaca untuk penerima aktif.
 
 ## Pemicu
