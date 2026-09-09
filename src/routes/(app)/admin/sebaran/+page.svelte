@@ -135,7 +135,7 @@
       <div class="map-controls" aria-label="Kontrol pembesaran peta"><button aria-label="Perkecil peta" disabled={zoom <= 1} onclick={() => setZoom(zoom - .25)}>−</button><output aria-label="Tingkat pembesaran">{Math.round(zoom * 100)}%</output><button aria-label="Perbesar peta" disabled={zoom >= 3} onclick={() => setZoom(zoom + .25)}>+</button><button class="reset-zoom" aria-label="Atur ulang pembesaran" disabled={zoom === 1 && panX === 0 && panY === 0} onclick={resetMap}><Icon name="reset" size={14}/></button></div>
       <div class="map-world" style={`--zoom:${zoom};--pan-x:${panX}px;--pan-y:${panY}px`}>
       <svg class="archipelago" viewBox="0 0 1000 520" aria-hidden="true">
-        <defs><linearGradient id="land" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e1ecd9"/><stop offset="1" stop-color="#cbdcc1"/></linearGradient></defs>
+        <defs><linearGradient id="land" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#dcecff"/><stop offset="1" stop-color="#b9d8ff"/></linearGradient></defs>
         {#each INDONESIA_PATHS as path}<path d={path}/>{/each}
       </svg>
       {#each visible as point}
