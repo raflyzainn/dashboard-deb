@@ -12,6 +12,7 @@ export function changedSinceSubmission(data: Snapshot, submission: DebSubmission
   const current = data.indicators.filter(i => i.campusId === submission.campusId);
   return current.length !== submission.indicators.length || current.some(i => {
     const submitted = submission.indicators.find(s => s.id === i.id);
-    return !submitted || i.current !== submitted.current || i.note !== submitted.note || i.target !== submitted.target || i.baseline !== submitted.baseline;
+    const definition = data.definitions.find(d => d.id === i.definitionId);
+    return !submitted || i.current !== submitted.current || i.note !== submitted.note || i.target !== submitted.target || i.baseline !== submitted.baseline || definition?.name !== submitted.name || definition?.category !== submitted.category || definition?.unit !== submitted.unit;
   });
 }

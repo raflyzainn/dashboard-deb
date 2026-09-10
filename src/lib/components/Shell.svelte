@@ -7,8 +7,8 @@
   let { children }: { children: Snippet } = $props();
   let mobile = $state(false);
   let drawer: HTMLDialogElement;
-  const labels = { dashboard: 'Ringkasan', campuses: 'Kampus mitra', sebaran: 'Peta Persebaran', verifikasi: 'Review Kampus', indicators: 'Indikator DEB', proposal: 'Proposal', questions: 'Forum Q&A', faq: 'Pusat bantuan', notifications: 'Notifikasi' };
-  const menus = $derived(app.session?.role === 'admin' ? ['dashboard', 'verifikasi', 'campuses', 'sebaran', 'proposal', 'questions', 'faq', 'notifications'] : ['dashboard', 'indicators', 'proposal', 'questions', 'faq', 'notifications']);
+  const labels = { 'master-indicators': 'Master indikator', dashboard: 'Ringkasan', campuses: 'Kampus mitra', sebaran: 'Peta Persebaran', verifikasi: 'Review Kampus', indicators: 'Indikator DEB', proposal: 'Proposal', questions: 'Forum Q&A', faq: 'Pusat bantuan', notifications: 'Notifikasi' };
+  const menus = $derived(app.session?.role === 'admin' ? ['dashboard', 'verifikasi', 'campuses', 'master-indicators', 'sebaran', 'proposal', 'questions', 'faq', 'notifications'] : ['dashboard', 'indicators', 'proposal', 'questions', 'faq', 'notifications']);
   const pendingCount = $derived(app.data?.submissions?.filter(s => s.status === 'pending').length || 0);
   const prefix = $derived(`/${app.session?.role}`);
   const section = $derived(page.url.pathname.split('/')[2] as keyof typeof labels);
@@ -27,7 +27,7 @@
   <nav aria-label="Navigasi utama">
     {#each menus as key}
       {#if key === 'questions'}<div class="nav-divider"></div><p class="nav-caption">BELAJAR BERSAMA</p>{/if}
-      <a href={`${prefix}/${key}`} class:active={section === key} aria-current={section === key ? 'page' : undefined} onclick={closeDrawer}><Icon name={key}/><span>{labels[key as keyof typeof labels]}</span>{#if key === 'verifikasi' && pendingCount}<span class="nav-count">{pendingCount}</span>{/if}{#if key === 'indicators' && revisionCount}<span class="nav-count">{revisionCount}</span>{/if}{#if key === 'notifications' && unreadCount}<span class="nav-count">{unreadCount}</span>{/if}</a>
+      <a href={`${prefix}/${key}`} class:active={section === key} aria-current={section === key ? 'page' : undefined} onclick={closeDrawer}><Icon name={key === 'master-indicators' ? 'indicators' : key}/><span>{labels[key as keyof typeof labels]}</span>{#if key === 'verifikasi' && pendingCount}<span class="nav-count">{pendingCount}</span>{/if}{#if key === 'indicators' && revisionCount}<span class="nav-count">{revisionCount}</span>{/if}{#if key === 'notifications' && unreadCount}<span class="nav-count">{unreadCount}</span>{/if}</a>
     {/each}
   </nav>
   <div class="sidebar-bottom"><div class="sidebar-note"><Icon name="leaf"/><strong>Langkah kecil.<br/>Dampak berkelanjutan.</strong><p>Tumbuh bersama kampus dan masyarakat.</p></div><button class="sidebar-action" onclick={logout} disabled={app.busy}><Icon name="logout" size={17}/>Keluar / ganti akun</button></div>

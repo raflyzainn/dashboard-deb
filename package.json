@@ -20,6 +20,8 @@
     "pb:migrate": "tsx scripts/pocketbase/cli.ts migrate",
     "pb:seed": "tsx scripts/pocketbase/cli.ts seed",
     "pb:account": "tsx scripts/pocketbase/cli.ts account",
+    "pb:backup": "tsx scripts/pocketbase/maintenance.ts backup",
+    "test:pb:master-rollback": "tsx scripts/pocketbase/maintenance.ts verify-master-rollback",
     "test:pb": "tsx --test tests/pocketbase/local.test.ts"
   },
   "dependencies": {

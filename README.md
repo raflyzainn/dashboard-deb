@@ -1,5 +1,7 @@
 # Digitalisasi DEB
 
+**Update P4 lokal (10 September 2026):** Admin dapat mengelola kampus/lokasi serta master indikator dengan **baseline dan target yang sama untuk semua kampus**. Aktual/catatan dan riwayat pengajuan tetap per kampus. Definisi baru disimpan sebagai draft; aktivasi dan edit indikator aktif dikunci selama ada pengajuan pending. Lihat [kontrak P4](docs/POCKETBASE-P4.md) dan [checkpoint](CHECKPOINT-MIGRASI-POCKETBASE.md). P1 tetap BELUM; P4 keseluruhan SEBAGIAN sampai autentikasi, data resmi dan deployment selesai.
+
 P3 lokal sudah aktif: semua pembacaan dan mutasi bisnis melalui API SvelteKit ke PocketBase. Gunakan frontend **http://127.0.0.1:5176** dan backend **http://127.0.0.1:8096**, sesuai `.env`. Akun QA lokal tetap digunakan; P1 login production ditunda. Lihat [kontrak P3](docs/POCKETBASE-P3.md). Bagian P2 di bawah merupakan konteks historis.
 
 Dashboard DEB untuk Admin Pertamina Foundation dan kampus mitra. Pada P2, **seluruh data bisnis dibaca dari PocketBase**. Tidak ada mock service, Dexie, IndexedDB runtime, mode demo alternatif, atau fallback data lokal.
@@ -30,7 +32,7 @@ Website: **http://127.0.0.1:5176**. Dashboard PocketBase: **http://127.0.0.1:809
 
 Pilih akun kampus/admin pada halaman masuk, lalu **Buka ruang kerja**. Password/token PocketBase tidak dikirim ke browser; sessionStorage hanya menyimpan key pilihan akun. Ini preview QA lokal, **bukan autentikasi production**. Semua orang yang dapat mengakses preview lokal dapat memilih akun admin seed. P1 tetap diperlukan sebelum deployment.
 
-## Kemampuan P2
+## Kemampuan aktif P4 lokal
 
 - Membaca dashboard, kampus/detail, indikator, pengajuan/review, feedback, proposal/PDF, forum/jawaban/like, FAQ, aktivitas, notifikasi dan lokasi peta.
 - Membuka/mengunduh PDF serta membandingkan teks dua versi dari file protected PocketBase.
@@ -50,15 +52,19 @@ Rumus capaian tetap `min(current / target * 100, 100)`; progres kampus adalah ra
 | `npm run check` | TypeScript dan Svelte |
 | `npm test` | Adapter HTTP, guard preview, domain, fixture, peta dan perbandingan teks |
 | `npm run test:pb` | Pemeriksaan akses baca/file dan penolakan mutasi tanpa izin pada 8096; tanpa seed/reset |
-| `npm run test:e2e` | Chrome headless, smoke UI tanpa penyimpanan pada frontend 5176 existing |
+| `npm run test:e2e` | Chrome headless, smoke P3 dan regresi baca P4 pada frontend 5176 existing |
 | `npm run build` | Build adapter Vercel |
 | `npm run preview` | Build lokal 4176; akses preview akun sengaja ditolak karena bukan dev server |
 
 Perintah tes standar memakai server lokal existing 5176/8096 dan tidak menjalankan fixture, migrasi, seed, atau reset. Tes mutasi interaktif dilakukan melalui MCP Playwright Chrome pada 5176. Suite fixture lama tetap menjadi referensi pengujian tetapi tidak dipilih perintah standar. Artefak diabaikan Git.
 
+## Pemeliharaan manual
+
+Setelah PocketBase dihentikan, `npm run pb:backup` membuat backup database/file terverifikasi. `npm run test:pb:master-rollback` menguji master melalui transaksi native yang seluruhnya dibatalkan; hash record sebelum/sesudah harus identik. Keduanya tidak dijalankan oleh tes standar dan tidak membuka server tambahan. Lihat [prosedur backup/pemulihan](docs/POCKETBASE-P4.md).
+
 ## Batas deployment dan Git
 
-`main` tetap mockup review dan tidak disentuh. Feature branch dibuat dari `development`; push dan PR hanya ke `development`.
+`main` tetap mockup review. Branch P4 berbasis pekerjaan P3; target integrasi tetap `development`. Tidak ada merge atau deployment dalam pekerjaan P4 lokal.
 
 Adapter Vercel dan Node 22.x dipertahankan, tetapi P3 lokal **belum untuk deployment pengguna**. Endpoint preview menolak production, flag nonaktif, request nonlokal/lintas origin, dan instance backend yang tidak cocok. Tidak ada fallback ke mock. P1 dan persiapan deployment masih terpisah.
 

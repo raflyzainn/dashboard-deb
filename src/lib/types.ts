@@ -5,8 +5,13 @@ export interface AppSession extends DemoSession { id: string }
 export interface PreviewAccount { key: string; name: string; role: Role }
 export interface LocationDto { campusId: string; province: string; island: string; longitude: number | null; latitude: number | null; approximate: boolean }
 export interface Bootstrap { session: AppSession; data: Snapshot; locations: LocationDto[]; capabilities: { readOnly: boolean }; loadedAt: string }
-export interface Campus { id: string; name: string; region: string; initials: string; acronym?: string; city?: string; source?: 'user' | 'document' }
+export interface Campus { id: string; name: string; region: string; initials: string; acronym?: string; city?: string; source?: 'user' | 'document' | 'admin'; revision?: number }
 export interface IndicatorDefinition { id: string; name: string; category: string; unit: string; description: string }
+export interface MasterDefinition extends IndicatorDefinition { code: string; baseline: number; target: number; status: 'draft' | 'active'; revision: number }
+export interface DefinitionInput { id?: string; revision?: number; code: string; name: string; category: string; unit: string; description: string; baseline: number; target: number }
+export interface CampusInput { id?: string; revision?: number; name: string; initials: string; acronym: string; region: string; city: string; province: string; island: string; latitude: number | null; longitude: number | null; approximate: boolean }
+export interface MasterAudit { id: string; actor: string; entity: string; entityId: string; operation: string; before: Record<string, unknown> | null; after: Record<string, unknown> | null; created: string }
+export interface MasterData { definitions: MasterDefinition[]; audit: MasterAudit[] }
 export interface CampusIndicator { id: string; campusId: string; definitionId: string; baseline: number; target: number; current: number; note: string; updatedAt: string }
 export interface SubmissionIndicator extends CampusIndicator { name: string; category: string; unit: string; description?: string }
 export type VerificationStatus = 'pending' | 'approved' | 'revision';
@@ -29,6 +34,12 @@ export interface Snapshot {
   answers: Answer[]; likes: QuestionLike[]; faq: FaqEntry[]; activities: Activity[]; notifications: Notification[]; notificationSeedVersion?: number;
 }
 export interface DataService {
+  masters(): Promise<MasterData>;
+  saveCampus(input: CampusInput): Promise<void>;
+  deleteCampus(id: string, revision: number): Promise<void>;
+  saveDefinition(input: DefinitionInput): Promise<void>;
+  activateDefinition(id: string, revision: number): Promise<void>;
+  deleteDefinition(id: string, revision: number): Promise<void>;
   submitDeb(): Promise<void>;
   reviewDeb(submissionId: string, decision: 'approved' | 'revision', note: string): Promise<void>;
   load(): Promise<Snapshot>;

@@ -17,6 +17,21 @@ test('local 8096 access regression without seeding or business writes', async t 
     assert.ok(sadmin.indicators.length>=sa.indicators.length);
     assert.ok(!sadmin.notifications.some(n=>sadmin2.notifications.some(other=>other.id===n.id)));
   });
+  await t.test('P4 shared masters and audit permissions',async()=>{
+    const definitions=await admin.collection('indicator_definitions').getFullList();
+    const active=definitions.filter(d=>d.status==='active');
+    assert.equal(sa.definitions.length,active.length);
+    assert.ok(sa.definitions.every(d=>active.some(m=>m.id===d.id)));
+    for(const snapshot of [sa,sb,sadmin])for(const row of snapshot.indicators){
+      const master=active.find(d=>d.id===row.definitionId)!;
+      assert.equal(row.baseline,master.baseline);assert.equal(row.target,master.target);
+    }
+    const collection=await admin.collection('master_audit').getList(1,50);
+    assert.ok(collection.items.every(r=>r.actor&&r.entity&&r.created));
+    assert.equal((await a.collection('master_audit').getList(1,50)).totalItems,0);
+    const rejected=(operation:Promise<unknown>,status:number)=>assert.rejects(operation,(error:{status:number})=>error.status===status);
+    await rejected(a.send('/api/deb/workflows/masterSaveDefinition',{method:'POST',headers:{'Idempotency-Key':randomUUID()},body:{code:'forged'}}),403);
+  });
   await t.test('workflow rejects forged ownership, wrong role and missing operation key',async()=>{
     const denied=(operation:Promise<unknown>,status:number)=>assert.rejects(operation,(error:{status:number})=>error.status===status);
     const headers={'Idempotency-Key':randomUUID()};

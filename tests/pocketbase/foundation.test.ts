@@ -217,7 +217,7 @@ test('PocketBase foundation against an isolated real backend', { timeout: 180000
       assert.ok(snapshot.notifications.every(n => !/campus-\d|question-\d/.test(n.href)));
       const locations = await repository.locations();
       assert.equal(locations.length, 40);
-      assert.ok(locations.every(l => l.approximate && l.latitude >= -90 && l.longitude <= 180));
+      assert.ok(locations.every(l => l.approximate && l.latitude !== null && l.longitude !== null && l.latitude >= -90 && l.longitude <= 180));
       const local = await createDebRepository(campusA).load();
       assert.equal(local.indicators.length, 30);
       assert.equal(local.questions.length, 6);

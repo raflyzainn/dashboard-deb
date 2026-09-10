@@ -17,6 +17,10 @@ onRecordValidate((e) => {
     if ((r.getString('role') === 'campus') !== Boolean(r.getString('campus'))) fail('Campus accounts require a campus; admins must not have one');
   }
   if (name === 'campuses' && r.getFloat('latitude') > 90) fail('Latitude outside valid range');
+  if (name === 'indicator_definitions' && r.getString('status')) {
+    if (!['draft', 'active'].includes(r.getString('status')) || r.getFloat('target') <= 0 || r.getFloat('baseline') < 0) fail('Invalid shared indicator values');
+    if (!r.isNew() && r.original().getString('status') === 'active' && r.getString('status') !== 'active') fail('Active indicator cannot become draft');
+  }
   if (name === 'campus_indicators' && r.getFloat('target') <= 0) fail('Target must be positive');
   if (name === 'indicator_feedback') {
     const indicator = e.app.findRecordById('campus_indicators', r.getString('indicator'));
@@ -63,4 +67,4 @@ onRecordValidate((e) => {
     }
   }
   e.next();
-}, 'users', 'campuses', 'campus_indicators', 'indicator_feedback', 'questions', 'question_answers', 'proposal_versions', 'deb_submissions', 'notifications', 'activities');
+}, 'users', 'campuses', 'indicator_definitions', 'campus_indicators', 'indicator_feedback', 'questions', 'question_answers', 'proposal_versions', 'deb_submissions', 'notifications', 'activities');

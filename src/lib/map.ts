@@ -41,7 +41,7 @@ export function regionSummary(data: Snapshot) {
   return [...new Set(points.map(point => point.island))].map(island => {
     const rows = points.filter(point => point.island === island);
     return {
-      island, campuses: rows.length, provinces: new Set(rows.map(row => row.province)).size,
+      island, campuses: rows.length, provinces: new Set(rows.map(row => row.province).filter(Boolean)).size,
       average: rows.reduce((sum, row) => sum + row.score, 0) / rows.length
     };
   }).sort((a, b) => b.campuses - a.campuses || a.island.localeCompare(b.island));

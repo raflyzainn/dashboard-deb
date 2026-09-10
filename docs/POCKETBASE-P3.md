@@ -1,5 +1,7 @@
 # P3 — workflow tulis PocketBase lokal
 
+> **Status aktif P4 lokal (10 September 2026):** master kampus/lokasi dan indikator bersama tersedia. Baseline/target sama untuk seluruh kampus; aktual/catatan tetap per kampus. P1 masih BELUM. Acuan aktif: [POCKETBASE-P4.md](POCKETBASE-P4.md). Uraian P0/P2/P3 atau prototype di bawah dipertahankan sebagai riwayat; pernyataan mock/Dexie/read-only lama bukan kondisi runtime sekarang.
+
 P3 mengaktifkan seluruh mutasi aplikasi melalui API SvelteKit dan custom route PocketBase. P1 login/sesi production tetap ditunda. Akun QA lokal, marker instance, pemeriksaan loopback/same-origin dan gate development P2 tetap berlaku. Tidak ada fallback Dexie, reset backend dari UI, email/push, polling, atau deployment production.
 
 ## Alur dan otorisasi
