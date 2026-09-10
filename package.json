@@ -22,7 +22,13 @@
     "pb:account": "tsx scripts/pocketbase/cli.ts account",
     "pb:backup": "tsx scripts/pocketbase/maintenance.ts backup",
     "test:pb:master-rollback": "tsx scripts/pocketbase/maintenance.ts verify-master-rollback",
-    "test:pb": "tsx --test tests/pocketbase/local.test.ts"
+    "test:pb": "tsx --test tests/pocketbase/local.test.ts",
+    "mail:serve": "tsx scripts/pocketbase/mailpit.ts serve",
+    "mail:local": "tsx scripts/pocketbase/mailpit.ts configure",
+    "pb:admin": "tsx scripts/pocketbase/admin.ts",
+    "p1:sandbox": "tsx scripts/pocketbase/p1-sandbox.ts",
+    "test:p1": "tsx --test --test-concurrency=1 tests/pocketbase/p1.test.ts tests/pocketbase/p1-lifecycle.test.ts",
+    "test:e2e:p1": "playwright test --config playwright.p1.config.ts"
   },
   "dependencies": {
     "@fontsource-variable/plus-jakarta-sans": "^5.3.0",

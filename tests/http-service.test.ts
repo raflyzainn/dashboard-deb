@@ -17,7 +17,7 @@ test('HTTP-only service sends preview key, not browser actor, and reads data/PDF
     return String(url).endsWith('/file') ? new Response('%PDF-1.4', { headers: { 'Content-Type': 'application/pdf' } }) : Response.json({ data: { campuses: [] }, session: { role: 'campus' } });
   });
   service.selectAccount('campus-002');
-  assert.deepEqual(await service.load(), { campuses: [] });
+  assert.deepEqual((await service.page({view:'accounts'})).data, { campuses: [] });
   assert.equal(new Headers(requests[0].options?.headers).get('x-deb-preview-account'), 'campus-002');
   assert.equal(requests[0].options?.cache, 'no-store');
   assert.ok(!JSON.stringify(requests).includes('Forged'));
@@ -59,16 +59,16 @@ test('account switch during file hashing cannot upload under the new account', a
 
 test('network errors and rejected requests never return seed data', async () => {
   const down = createHttpService(async () => { throw new Error('offline'); });
-  await assert.rejects(down.bootstrap(), /PocketBase tidak dapat dimuat/);
+  await assert.rejects(down.session(), /PocketBase tidak dapat dimuat/);
   const forbidden = createHttpService(async () => Response.json({ message: 'Account disabled' }, { status: 403 }));
-  await assert.rejects(forbidden.bootstrap(), error => error instanceof DataReadError && error.status === 403);
+  await assert.rejects(forbidden.session(), error => error instanceof DataReadError && error.status === 403);
 });
 
 test('account switch discards a late response even when the transport ignores abort', async () => {
   let finish!: (response: Response) => void;
   const service = createHttpService(() => new Promise(resolve => { finish = resolve; }));
   service.selectAccount('campus-001');
-  const previous = service.bootstrap();
+  const previous = service.session();
   service.selectAccount('campus-002');
   finish(Response.json({ data: { private: 'campus A' } }));
   await assert.rejects(previous, error => error instanceof DataReadError && error.status === 409);

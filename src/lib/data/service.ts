@@ -1,4 +1,5 @@
-import type { Bootstrap, DataService, PreviewAccount } from '../types';
+import type { DataService, PreviewAccount } from '../types';
+import type { PageRequest, PageResponse, SessionResponse, NavigationData } from '../page-data';
 
 export const READ_ONLY_MESSAGE = 'Penyimpanan tidak tersedia pada sesi ini.';
 export class DataReadError extends Error {
@@ -21,7 +22,7 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
     pending.add(controller);
     const timer = setTimeout(() => controller.abort(), 30000);
     try {
-      const response = await fetcher(url, { ...options, headers: { ...options.headers, 'X-DEB-Preview': '1', ...(key ? { 'X-DEB-Preview-Account': key } : {}) }, cache: 'no-store', signal: controller.signal });
+      const response = await fetcher(url, { ...options, headers: { ...options.headers, ...(key || url === '/api/dev/accounts' ? { 'X-DEB-Preview': '1' } : {}), ...(key ? { 'X-DEB-Preview-Account': key } : {}) }, cache: 'no-store', signal: controller.signal });
       if (started !== generation) throw new DataReadError(409, 'Pilihan akun sudah berubah.');
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
@@ -35,8 +36,15 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
       throw new DataReadError(503, 'PocketBase tidak dapat dimuat. Periksa koneksi dan coba muat ulang.');
     } finally { clearTimeout(timer); pending.delete(controller); }
   }
-  async function bootstrap(): Promise<Bootstrap> {
-    return request('/api/bootstrap', response => response.json());
+  const session = (): Promise<SessionResponse> => request('/api/session', response => response.json());
+  const navigation = (): Promise<NavigationData> => request('/api/navigation', response => response.json());
+  async function page(input: PageRequest): Promise<PageResponse> {
+    if (input.view === 'masters') return { data: {}, loadedAt: new Date().toISOString() };
+    const params = new URLSearchParams();
+    if (input.campus) params.set('campus', input.campus);
+    if (input.question) params.set('question', input.question);
+    if (input.tab) params.set('tab', input.tab);
+    return request('/api/views/' + input.view + (params.size ? '?' + params : ''), response => response.json());
   }
   async function write(url: string, method: string, body: object | FormData = {}): Promise<{ ok: true; id?: string }> {
     const started = generation;
@@ -70,7 +78,6 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
     saveDefinition: input => done(write('/api/admin/definitions' + (input.id ? '/' + idPath(input.id) : ''), input.id ? 'PATCH' : 'POST', input)),
     activateDefinition: (id, revision) => done(write('/api/admin/definitions/' + idPath(id) + '/activate', 'POST', { revision })),
     deleteDefinition: (id, revision) => done(write('/api/admin/definitions/' + idPath(id), 'DELETE', { revision })),
-    load: async () => (await bootstrap()).data,
     proposalFile: async (id) => request(`/api/proposals/${encodeURIComponent(id)}/file`, response => response.blob()),
     submitDeb: () => done(write('/api/submissions', 'POST')),
     reviewDeb: (id, decision, note) => done(write('/api/submissions/' + idPath(id) + '/review', 'POST', { decision, note })),
@@ -87,7 +94,7 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
     deleteFaq: id => done(write('/api/faq/' + idPath(id), 'DELETE')),
     readNotifications: ids => done(write('/api/notifications/read', 'POST', { ids }))
   };
-  return { ...service, selectAccount, bootstrap, async accounts(): Promise<PreviewAccount[]> {
+  return { ...service, selectAccount, session, navigation, page, async accounts(): Promise<PreviewAccount[]> {
     return request('/api/dev/accounts', async response => (await response.json()).accounts);
   } };
 }

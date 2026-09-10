@@ -1,11 +1,11 @@
 <script lang="ts">
   import '../app.css';
   import '@fontsource-variable/plus-jakarta-sans';
-  import { onMount } from 'svelte';
+  import { untrack } from 'svelte';
   import { app } from '$lib/state.svelte';
   import Icon from '$lib/components/Icon.svelte';
   let { children } = $props();
-  onMount(() => { app.init(); });
+  $effect(() => { untrack(() => { void app.init(); }); });
 </script>
 <svelte:head><title>DEB · Ruang tumbuh bersama</title></svelte:head>
 <a href="#main-content" class="skip-link">Langsung ke konten</a>

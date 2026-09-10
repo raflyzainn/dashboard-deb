@@ -1,5 +1,6 @@
 import type { AppSession, PreviewAccount, Snapshot } from './types';
 import { dataService, DataReadError, READ_ONLY_MESSAGE } from './data/service';
+import { emptyPageData, pageKey, type PageRequest, type NavigationData } from './page-data';
 
 const SESSION_KEY = 'deb-pocketbase-preview-account';
 class AppState {
@@ -16,6 +17,11 @@ class AppState {
   loadedAt = $state('');
   stale = $state(false);
   dialogs = $state(0);
+  navigation = $state<NavigationData>({ pendingCount: 0, revisionCount: 0, unreadCount: 0 });
+  pageId = $state('');
+  private currentPage: PageRequest | null = null;
+  private pageRevision = 0;
+  private navigationRevision = 0;
   private revision = 0;
   private initializing = false;
 
@@ -24,8 +30,10 @@ class AppState {
     this.initializing = true;
     let key = '';
     try { key = sessionStorage.getItem(SESSION_KEY) || ''; } catch { /* Selection persistence is optional. */ }
-    if (key) await this.login(key);
-    if (!this.session) await this.loadAccounts();
+    const current = await fetch('/api/auth/me').then(r => r.json()).catch(() => ({ session: null }));
+    if (current.session) await this.login('');
+    else if (key) await this.login(key);
+    // QA accounts are loaded only when the user opens the explicit development option.
     this.ready = true;
     this.initializing = false;
   }
@@ -38,13 +46,14 @@ class AppState {
   }
   async login(key: string) {
     const revision = ++this.revision;
+    this.pageRevision++; this.currentPage = null; this.pageId = '';
     dataService.selectAccount(key);
     this.readOnly = true; this.session = null; this.data = null; this.loadedAt = ''; this.stale = false; this.dialogs = 0;
     this.loading = true; this.error = '';
     try {
-      const result = await dataService.bootstrap();
+      const result = await dataService.session();
       if (revision !== this.revision) return false;
-      this.readOnly = result.capabilities.readOnly; this.session = result.session; this.data = result.data; this.loadedAt = result.loadedAt;
+      this.readOnly = result.capabilities.readOnly; this.session = result.session; this.navigation = result.navigation;
       try { sessionStorage.setItem(SESSION_KEY, key); } catch { /* Select an account again after refresh. */ }
       return true;
     } catch (error) {
@@ -52,26 +61,43 @@ class AppState {
       return false;
     } finally { if (revision === this.revision) this.loading = false; }
   }
-  logout() {
+  async logout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
     this.revision++; dataService.selectAccount('');
+    this.pageRevision++; this.currentPage = null; this.pageId = ''; this.navigation = { pendingCount: 0, revisionCount: 0, unreadCount: 0 };
     this.readOnly = true; this.session = null; this.data = null; this.error = ''; this.toast = ''; this.loadedAt = ''; this.stale = false; this.loading = false; this.busy = false; this.dialogs = 0;
     try { sessionStorage.removeItem(SESSION_KEY); } catch { /* selection only */ }
-    void this.loadAccounts();
+
     return true;
   }
+  async openPage(request: PageRequest) {
+    if (!this.session || (this.currentPage && pageKey(this.currentPage) === pageKey(request))) return;
+    const previous = this.currentPage;
+    this.currentPage = request; this.pageId = pageKey(request); this.data = null;
+    this.stale = false; this.toast = '';
+    await Promise.all([this.reload(), previous ? this.refreshNavigation() : Promise.resolve()]);
+  }
   async reload() {
-    if (!this.session || this.loading) return;
+    if (!this.session || !this.currentPage) return;
     const revision = this.revision;
+    const pageRevision = ++this.pageRevision;
+    const request = this.currentPage;
     this.loading = true; this.error = '';
     try {
-      const result = await dataService.bootstrap();
-      if (revision === this.revision) { this.readOnly = result.capabilities.readOnly; this.session = result.session; this.data = result.data; this.loadedAt = result.loadedAt; this.stale = false; }
+      const result = await dataService.page(request);
+      if (revision === this.revision && pageRevision === this.pageRevision) { this.data = { ...emptyPageData(), ...result.data }; this.loadedAt = result.loadedAt; this.stale = false; }
     } catch (error) {
-      if (revision !== this.revision) return;
+      if (revision !== this.revision || pageRevision !== this.pageRevision) return;
       if (error instanceof DataReadError && [401, 403].includes(error.status)) this.logout();
       else this.stale = true;
       this.error = this.message(error);
-    } finally { if (revision === this.revision) this.loading = false; }
+    } finally { if (revision === this.revision && pageRevision === this.pageRevision) this.loading = false; }
+  }
+  async refreshNavigation() {
+    const revision = this.revision;
+    const navigationRevision = ++this.navigationRevision;
+    try { const result = await dataService.navigation(); if (revision === this.revision && navigationRevision === this.navigationRevision) this.navigation = result; }
+    catch (error) { if (revision === this.revision && navigationRevision === this.navigationRevision) this.error = this.message(error); }
   }
   async mutate(action: () => Promise<unknown>, success: string): Promise<boolean> {
     if (this.readOnly || !this.session) { this.error = READ_ONLY_MESSAGE; return false; }
@@ -82,6 +108,7 @@ class AppState {
       await action();
       if (revision !== this.revision) return false;
       await this.reload();
+      await this.refreshNavigation();
       if (revision !== this.revision) return false;
       this.toast = this.stale ? 'Tersimpan, tetapi data terbaru belum dapat dimuat. Muat ulang data.' : success;
       return true;

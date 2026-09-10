@@ -54,8 +54,10 @@ export async function previewContext(request: PreviewRequest, config: PreviewCon
       async accounts(): Promise<PreviewAccount[]> {
         const pb = await account('admin-1');
         const campuses = await pb.collection('campuses').getFullList({ sort: 'name' });
-        const rows: PreviewAccount[] = campuses.filter(c => keys.includes(c.legacyId)).map(c => ({ key: c.legacyId, name: c.name, role: 'campus' }));
-        return [...rows, ...keys.filter(k => k.startsWith('admin-')).sort().map(key => ({ key, name: `Admin PF lokal ${key.slice(-1)}`, role: 'admin' as const }))];
+        const eligible = new Set<string>((await pb.send('/api/deb/accounts/qa', { method: 'GET' })).keys);
+        // Each account is also checked on entry; migrated campus credentials are never reset by preview.
+        const rows: PreviewAccount[] = campuses.filter(c => keys.includes(c.legacyId) && eligible.has(c.legacyId)).map(c => ({ key: c.legacyId, name: c.name, role: 'campus' }));
+        return [...rows, ...keys.filter(k => k.startsWith('admin-') && eligible.has(k)).sort().map(key => ({ key, name: `Admin PF lokal ${key.slice(-1)}`, role: 'admin' as const }))];
       }
     };
   } catch (error) {
