@@ -64,6 +64,7 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
   const idPath = (id: string) => encodeURIComponent(id);
   const service: DataService = {
     masters: () => request('/api/admin/masters', response => response.json()),
+    masterAudit: (query = '', page = 1) => request('/api/admin/master-audit?' + new URLSearchParams({ q: query, page: String(page) }), response => response.json()),
     saveCampus: input => done(write('/api/admin/campuses' + (input.id ? '/' + idPath(input.id) : ''), input.id ? 'PATCH' : 'POST', input)),
     deleteCampus: (id, revision) => done(write('/api/admin/campuses/' + idPath(id), 'DELETE', { revision })),
     saveDefinition: input => done(write('/api/admin/definitions' + (input.id ? '/' + idPath(input.id) : ''), input.id ? 'PATCH' : 'POST', input)),

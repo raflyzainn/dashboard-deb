@@ -11,7 +11,7 @@ Status implementasi: 10 September 2026. Lingkungan hanya frontend **5176** dan P
 
 ## Alur Admin
 
-`/admin/master-indicators` menyediakan pencarian katalog, tambah/edit draft, aktivasi, penghapusan master belum terpakai, serta 50 perubahan audit terbaru. Seluruh audit tetap tersimpan tanpa pemotongan 50 record.
+`/admin/master-indicators` menyediakan pencarian katalog, tambah/edit draft, aktivasi, penghapusan master belum terpakai, serta pencarian seluruh riwayat perubahan master. Pencarian riwayat mencakup nama, kode, nilai sebelum/sesudah, dan jenis aksi berbahasa Indonesia (misalnya `hapus indikator`). Hasil diurutkan terbaru dan dipaginasi 20 perubahan per halaman; mengganti pencarian kembali ke halaman pertama. Pencarian dilakukan di PocketBase, sehingga riwayat lama tetap dapat ditemukan.
 
 Indikator baru selalu draft. Baseline harus finite/nonnegatif dan target finite/positif. Draft hanya tersedia untuk Admin pada endpoint master; tidak masuk bootstrap bisnis, perhitungan, isian kampus, atau snapshot pengajuan. Aktivasi membuat satu isian per kampus dengan aktual nol dan catatan kosong. Indikator aktif tidak dapat kembali menjadi draft.
 
@@ -25,7 +25,8 @@ Hapus kampus/indikator ditolak jika ada relasi bisnis. Tidak ada cascade delete.
 
 | Method/path | Operasi |
 |---|---|
-| GET `/api/admin/masters` | Semua definisi termasuk draft dan 50 audit terbaru, Admin saja |
+| GET `/api/admin/masters` | Semua definisi termasuk draft, Admin saja |
+| GET `/api/admin/master-audit?q=...&page=1` | Pencarian riwayat dengan pagination 20 record; query maksimal 200 karakter dan halaman integer positif, Admin saja |
 | POST `/api/admin/campuses` | Tambah kampus serta isian seluruh indikator aktif |
 | PATCH/DELETE `/api/admin/campuses/[id]` | Edit profil/lokasi atau hapus jika belum dipakai |
 | POST `/api/admin/definitions` | Buat draft definisi bersama |
@@ -46,6 +47,7 @@ Migrasi memeriksa kesamaan baseline/target existing per definisi; konflik atau t
 
 ## UI, refresh, dan batas autentikasi
 
+Halaman utama Admin dan Campus menggunakan label **Beranda** pada navigasi dan judul halaman.
 
 Jumlah kampus, jumlah indikator, dan kategori berasal dari backend. Kampus tanpa marker tetap masuk total wilayah; nama provinsi kosong tidak dihitung sebagai satu provinsi. Data kosong dan error tidak membuat fallback contoh.
 

@@ -7,7 +7,7 @@
   let { children }: { children: Snippet } = $props();
   let mobile = $state(false);
   let drawer: HTMLDialogElement;
-  const labels = { 'master-indicators': 'Master indikator', dashboard: 'Ringkasan', campuses: 'Kampus mitra', sebaran: 'Peta Persebaran', verifikasi: 'Review Kampus', indicators: 'Indikator DEB', proposal: 'Proposal', questions: 'Forum Q&A', faq: 'Pusat bantuan', notifications: 'Notifikasi' };
+  const labels = { 'master-indicators': 'Master indikator', dashboard: 'Beranda', campuses: 'Kampus mitra', sebaran: 'Peta Persebaran', verifikasi: 'Review Kampus', indicators: 'Indikator DEB', proposal: 'Proposal', questions: 'Forum Q&A', faq: 'Pusat bantuan', notifications: 'Notifikasi' };
   const menus = $derived(app.session?.role === 'admin' ? ['dashboard', 'verifikasi', 'campuses', 'master-indicators', 'sebaran', 'proposal', 'questions', 'faq', 'notifications'] : ['dashboard', 'indicators', 'proposal', 'questions', 'faq', 'notifications']);
   const pendingCount = $derived(app.data?.submissions?.filter(s => s.status === 'pending').length || 0);
   const prefix = $derived(`/${app.session?.role}`);
@@ -37,8 +37,8 @@
 <dialog bind:this={drawer!} class="mobile-drawer" oncancel={() => { mobile = false; }}><button class="drawer-close icon-button" aria-label="Tutup navigasi" onclick={closeDrawer}><Icon name="close"/></button>{@render navigation()}</dialog>
 <div class="app-main">
   <header class="topbar"><div class="topbar-left"><button class="icon-button mobile-menu" aria-label="Buka navigasi" aria-expanded={mobile} onclick={openDrawer}><Icon name="menu"/></button><span class="breadcrumb">Ruang kerja <span>/</span> <strong>{labels[section] || 'Detail'}</strong></span></div><div class="topbar-right"><a class="icon-button" href={`${prefix}/notifications`} aria-label={`Notifikasi, ${unreadCount} belum dibaca`}><Icon name="notifications"/>{#if unreadCount}<span class="notification-dot" aria-hidden="true"></span>{/if}</a><span class="demo-label"><span></span>Prototype · Data simulasi</span><div class="header-divider"></div><div class="user-avatar">{app.session?.role === 'admin' ? 'PF' : campusProfile?.initials}</div><div class="user-info"><strong>{app.session?.name}</strong><small>{app.session?.role === 'admin' ? 'Administrator' : 'Kampus mitra'}</small></div></div></header>
-  <main id="main-content" class="content"><section class="backend-notice" aria-label="Status sumber data"><div><strong>PocketBase lokal - Akun QA</strong><small>{app.session?.name} · {app.loadedAt ? 'Diperbarui ' + new Date(app.loadedAt).toLocaleTimeString('id-ID') : 'Belum dimuat'}{app.stale ? ' · Pembaruan gagal; data terakhir ditampilkan' : ''}</small><small>Perubahan tersimpan di PocketBase lokal.</small></div><button class="button secondary small" disabled={app.loading} onclick={() => app.reload()}>{app.loading ? 'Memuat…' : 'Muat ulang data'}</button></section>{@render children()}</main>
+  <main id="main-content" class="content">{@render children()}</main>
   <footer class="app-footer"><span>Digitalisasi DEB <span class="footer-dot">•</span> Pertamina Foundation</span><span>Bersama membangun dampak yang berarti.</span></footer>
 </div>
 
-<style>.topbar-right .icon-button{position:relative}.notification-dot{position:absolute;top:5px;right:5px;width:8px;height:8px;background:#d5483e;border:2px solid white;border-radius:50%}.backend-notice{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#edf5ff;border:1px solid #c5daf5;border-radius:12px;padding:14px 18px;margin-bottom:24px;color:#163f76}.backend-notice small{display:block;margin-top:5px}.backend-notice button{flex-shrink:0}@media(max-width:600px){.backend-notice{align-items:start;flex-direction:column}}</style>
+<style>.topbar-right .icon-button{position:relative}.notification-dot{position:absolute;top:5px;right:5px;width:8px;height:8px;background:#d5483e;border:2px solid white;border-radius:50%}</style>
