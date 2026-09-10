@@ -2,7 +2,7 @@ import type PocketBase from 'pocketbase';
 import type { Snapshot } from '../../types';
 import * as map from './mappers';
 
-/** P0 read foundation, not wired into DataService. Rules apply to every page fetched. */
+/** User-scoped reads. Draft definitions never enter the business snapshot. */
 export function createDebRepository(pb: PocketBase) {
   async function session() {
     if (pb.authStore.record?.collectionName === '_superusers') throw new Error('Use a user-scoped PocketBase client');
@@ -14,8 +14,9 @@ export function createDebRepository(pb: PocketBase) {
       const actor = await session();
       const names = ['campuses', 'indicator_definitions', 'campus_indicators', 'deb_submissions', 'indicator_feedback', 'proposal_versions', 'questions', 'question_answers', 'question_likes', 'faq_entries', 'activities', 'notifications'];
       // getFullList follows pagination; never aggregate only the first 30/500 records.
-      const [campuses, definitions, indicators, submissions, feedback, proposals, questions, answers, likes, faq, activities, notifications] = await Promise.all(names.map(name => pb.collection(name).getFullList({ sort: name === 'faq_entries' ? 'order,id' : 'id' })));
-      return { campuses: campuses.map(map.mapCampus), definitions: definitions.map(map.mapDefinition), indicators: indicators.map(map.mapIndicator), submissions: submissions.map(map.mapSubmission),
+      const [campuses, definitions, indicators, submissions, feedback, proposals, questions, answers, likes, faq, activities, notifications] = await Promise.all(names.map(name => pb.collection(name).getFullList({ sort: name === 'faq_entries' ? 'order,id' : 'id', ...(name === 'indicator_definitions' ? { filter: 'status = "active"' } : name === 'campus_indicators' ? { filter: 'definition.status = "active"' } : {}) })));
+      const masterById = new Map(definitions.map(d => [d.id, d]));
+      return { campuses: campuses.map(map.mapCampus), definitions: definitions.map(map.mapDefinition), indicators: indicators.map(r => map.mapIndicator({ ...r, baseline: masterById.get(r.definition)!.baseline, target: masterById.get(r.definition)!.target })), submissions: submissions.map(map.mapSubmission),
         feedback: feedback.map(map.mapFeedback), proposals: proposals.map(map.mapProposal), questions: questions.map(map.mapQuestion), answers: answers.map(map.mapAnswer), likes: likes.map(map.mapLike),
         faq: faq.map(map.mapFaq), activities: activities.map(map.mapActivity), notifications: notifications.map(record => map.mapNotification(record, actor.role)) };
     },

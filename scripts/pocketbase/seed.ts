@@ -42,11 +42,12 @@ export async function seedLocal(instance: LocalInstance) {
     const { id: legacy, ...fields } = campus;
     await put('campuses', legacy, { ...fields, province: point.province, island: point.island,
       longitude: Number((94.5 + (point.x - 3) / 94 * 47).toFixed(6)),
-      latitude: Number((6.5 - (point.y - 7) / 90 * 18).toFixed(6)), locationApproximate: true });
+      latitude: Number((6.5 - (point.y - 7) / 90 * 18).toFixed(6)), locationApproximate: true, hasLocation: true, revision: 1 });
   }
   for (const definition of data.definitions) {
     const { id: legacy, ...fields } = definition;
-    await put('indicator_definitions', legacy, { ...fields, code: legacy });
+    const shared = data.indicators.find(i => i.definitionId === legacy)!;
+    await put('indicator_definitions', legacy, { ...fields, code: legacy, baseline: shared.baseline, target: shared.target, status: 'active', revision: 1 });
   }
   for (const account of [
     ...data.campuses.map(c => ({ key: c.id, name: c.name, role: 'campus', campus: id('campuses', c.id) })),

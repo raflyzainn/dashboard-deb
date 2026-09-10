@@ -16,9 +16,9 @@ function create(app, name, fields) {
   app.save(record); return record;
 }
 function snapshot(app, campus) {
-  return list(app, 'campus_indicators', 'campus = {:c}', { c: campus }).map(r => {
+  return list(app, 'campus_indicators', 'campus = {:c} && definition.status = "active"', { c: campus }).map(r => {
     const d = get(app, 'indicator_definitions', r.getString('definition'));
-    return { id: r.id, campusId: campus, definitionId: d.id, name: d.getString('name'), category: d.getString('category'), unit: d.getString('unit'), description: d.getString('description'), baseline: r.getFloat('baseline'), target: r.getFloat('target'), current: r.getFloat('current'), note: r.getString('note'), updatedAt: r.getString('updated') };
+    return { id: r.id, campusId: campus, definitionId: d.id, name: d.getString('name'), category: d.getString('category'), unit: d.getString('unit'), description: d.getString('description'), baseline: d.getFloat('baseline'), target: d.getFloat('target'), current: r.getFloat('current'), note: r.getString('note'), updatedAt: r.getString('updated') };
   });
 }
 function sameSnapshot(a, b) {
@@ -83,8 +83,11 @@ exports.run = (e) => {
     const revisions = c => list(app, 'indicator_feedback', 'campus = {:c} && requiresRevision = true && state != "closed"', { c });
     const now = new Date().toISOString();
     result = { ok: true };
-    if (op === 'updateIndicator') {
+    if (op.startsWith('master')) {
+      result = require(__hooks + '/masters.js').run({ app, actor, op, payload, event });
+    } else if (op === 'updateIndicator') {
       roleIs('campus'); const r = own(get(app, 'campus_indicators', payload.id));
+      if (get(app, 'indicator_definitions', r.getString('definition')).getString('status') !== 'active') fail('Indikator belum aktif.', 404);
       if (pending(campus).length) fail('Indikator dikunci selama menunggu review.', 409);
       if (typeof payload.current !== 'number' || !Number.isFinite(payload.current) || payload.current < 0) fail('Nilai aktual harus angka nonnegatif.');
       const note = text(payload.note, 5000, false);
@@ -97,7 +100,7 @@ exports.run = (e) => {
       roleIs('campus');
       if (pending(campus).length) fail('Pengajuan masih menunggu review.', 409);
       const rows = snapshot(app, campus);
-      if (!rows.length || rows.length !== list(app, 'indicator_definitions').length || rows.some(r => !Number.isFinite(r.current) || r.current < 0 || r.target <= 0 || r.note.length > 5000)) fail('Lengkapi seluruh indikator sebelum mengirim.');
+      if (!rows.length || rows.length !== list(app, 'indicator_definitions', 'status = "active"').length || rows.some(r => !Number.isFinite(r.current) || r.current < 0 || r.target <= 0 || r.note.length > 5000)) fail('Lengkapi seluruh indikator sebelum mengirim.');
       const previous = list(app, 'deb_submissions', 'campus = {:c}', { c: campus }, '-version')[0];
       if (previous && previous.getString('status') === 'approved' && sameSnapshot(rows, JSON.parse(previous.get('snapshot')))) fail('Data terverifikasi belum berubah.', 409);
       const r = create(app, 'deb_submissions', { campus, version: previous ? previous.getInt('version') + 1 : 1, status: 'pending', snapshot: rows, submittedBy: actor.id, submittedAt: now, simulated: true });

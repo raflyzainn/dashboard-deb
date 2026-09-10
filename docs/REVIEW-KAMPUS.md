@@ -1,5 +1,7 @@
 # Review Kampus: tinjauan dan konfirmasi DEB
 
+> **Status aktif P4 lokal (10 September 2026):** master kampus/lokasi dan indikator bersama tersedia. Baseline/target sama untuk seluruh kampus; aktual/catatan tetap per kampus. P1 masih BELUM. Acuan aktif: [POCKETBASE-P4.md](POCKETBASE-P4.md). Uraian P0/P2/P3 atau prototype di bawah dipertahankan sebagai riwayat; pernyataan mock/Dexie/read-only lama bukan kondisi runtime sekarang.
+
 > Update P3 (9 September 2026): seluruh workflow tulis sudah aktif pada frontend 5176 dan PocketBase 8096. P1 autentikasi production tetap ditunda. Bagian yang menyebut Dexie, mock, P2 read-only atau port fixture adalah catatan historis; kontrak aktif ada di [POCKETBASE-P3.md](POCKETBASE-P3.md). Perintah tes standar sekarang memakai instance 5176/8096 tanpa seed/reset.
 
 Halaman `/admin/verifikasi` memisahkan pekerjaan Admin dari pengisian indikator kampus. Menu Admin bernama **Review Kampus**; tautan lama `/admin/indicators` dialihkan ke halaman ini. Detail kampus tetap menyediakan indikator baca saja dan feedback untuk pendampingan.

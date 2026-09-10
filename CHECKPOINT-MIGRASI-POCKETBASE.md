@@ -10,6 +10,8 @@ Update P2 lokal (9 September 2026): seluruh pembacaan UI kini melalui API Svelte
 
 Update P3 lokal (9 September 2026): seluruh workflow tulis melalui API SvelteKit dan transaksi PocketBase sudah aktif pada **frontend 5176 / PocketBase 8096**. P1 tetap BELUM. Migrasi dilakukan setelah backup database/file terverifikasi, tanpa mengubah 13 koleksi bisnis existing. Pengujian mutasi terbaru menggunakan **MCP Playwright Google Chrome pada 5176**, lalu record diperiksa langsung di 8096. Perintah tes standar kini menggunakan kedua port existing tersebut, tanpa membuat fixture/seed/reset. Lihat [kontrak P3](docs/POCKETBASE-P3.md).
 
+Update P4 lokal (10 September 2026): CRUD master kampus/lokasi dan indikator bersama tersedia. **Seluruh kampus memakai definisi, baseline, dan target yang sama**; aktual/catatan tetap per kampus. Draft hanya untuk Admin; aktivasi dan edit indikator aktif dikunci selama ada pengajuan pending. P1 tetap BELUM dan P4 keseluruhan SEBAGIAN. Lihat [kontrak P4](docs/POCKETBASE-P4.md) dan log terbaru bagian 10.
+
 ## 1. Pola proyek pembanding
 
 Folder `demo-aplikasi-desa-energi-berdikari-main` tidak digunakan sebagai referensi. Proyek lain tidak semuanya memiliki backend yang identik:
@@ -64,13 +66,13 @@ Fitur baru boleh `SELESAI` bila semua kolom yang berlaku `OK`, tidak memakai fal
 
 ## 4. Matriks fitur dan data
 
-Koleksi berikut sudah terhubung untuk pembacaan UI P2 lokal. Tulis master melalui tooling lokal/superuser, bukan layar CRUD aplikasi. Matriks Baca/Tulis tetap mengukur alur UI, bukan keberadaan koleksi.
+Matriks ini mengukur alur UI terhadap PocketBase lokal. P4 menambahkan CRUD master Admin, baseline/target bersama dan edit lokasi. SELESAI tetap berarti integrasi lokal dengan akun QA, bukan production.
 
 | ID | Fitur / data | Koleksi target | Baca | Tulis | Uji | Status |
 |---|---|---|---|---|---|---|
 | M01 | Login, sesi, logout, role dan kampus akun | `users` (auth) | BELUM | BELUM | BELUM | BELUM |
-| M02 | Daftar/detail kampus, profil penulis forum | `campuses` | OK | BELUM | BELUM | SEBAGIAN |
-| M03 | Katalog indikator, kategori, satuan, deskripsi | `indicator_definitions` | OK | BELUM | BELUM | SEBAGIAN |
+| M02 | Daftar/detail/master kampus, profil penulis forum | `campuses` | OK | OK | OK | SELESAI |
+| M03 | Katalog bersama, baseline/target, draft/aktivasi | `indicator_definitions`, `master_audit` | OK | OK | OK | SELESAI |
 | M04 | Baseline, target, aktual dan catatan kampus | `campus_indicators` | OK | OK | OK | SELESAI |
 | M05 | Kirim DEB, antrean review, keputusan dan riwayat | `deb_submissions` | OK | OK | OK | SELESAI |
 | M06 | Feedback indikator, respons dan penutupan revisi | `indicator_feedback` | OK | OK | OK | SELESAI |
@@ -81,10 +83,10 @@ Koleksi berikut sudah terhubung untuk pembacaan UI P2 lokal. Tulis master melalu
 | M11 | Promosi/tambah/edit/urut/hapus FAQ | `faq_entries` | OK | OK | OK | SELESAI |
 | M12 | Aktivitas kampus dan ringkasan aktivitas Admin | `activities` | OK | OK | OK | SELESAI |
 | M13 | Notifikasi, badge belum dibaca, tandai dibaca | `notifications` | OK | OK | OK | SELESAI |
-| M14 | Dashboard, progres, jumlah proposal dan tindak lanjut | Agregasi M02–M07, M12–M13 | OK | — | BELUM | SEBAGIAN |
-| M15 | Sebaran kampus, lokasi dan ringkasan wilayah | Lokasi di `campuses` + agregasi M04 | OK | BELUM | BELUM | SEBAGIAN |
+| M14 | Dashboard, progres, jumlah proposal dan tindak lanjut | Agregasi M02–M07, M12–M13 | OK | — | OK | SELESAI |
+| M15 | Sebaran kampus, lokasi dan ringkasan wilayah | Lokasi di `campuses` + agregasi M04 | OK | OK | OK | SELESAI |
 
-Status P3 lokal: M04–M13 telah diuji sesuai workflow yang berlaku; M08 hanya baca/file. SELESAI berarti integrasi lokal dengan akun QA, bukan kesiapan production. M01/P1 tetap BELUM; CRUD master/lokasi, pengesahan data dan deployment tetap terpisah.
+Status P4 lokal: M02–M15 terverifikasi sesuai kolom yang berlaku. Aktivasi/edit global diuji dengan rollback native, bukan perubahan permanen terhadap kewajiban kampus existing. M01/P1 tetap BELUM; pengesahan data dan deployment tetap terbuka.
 
 ### Detail schema dan batas akses
 
@@ -178,16 +180,20 @@ P3 lokal selesai. Batas upload deployment tetap terbuka karena hosting productio
 
 ### P4 — Peralihan UI, data dan deployment
 
-- [ ] Pastikan dashboard, detail kampus, indikator, verifikasi, proposal, forum, FAQ, notifikasi dan peta semuanya menggunakan adapter backend.
-- [ ] Hapus pembacaan seed dan fallback contoh dari mode backend; jangan menampilkan angka tetap 40/30 sebagai fakta bila master backend berbeda.
-- [ ] Pisahkan penyimpanan demo dan cache backend. Jika Dexie dipertahankan sebagai cache, beri namespace akun/lingkungan, invalidasi saat logout, dan jangan menjadikannya sumber kebenaran.
-- [ ] Putuskan penanganan data kerja lokal yang sudah ada. Default: tidak mengimpor transaksi dummy. Bila unggahan/isian lokal nyata perlu diselamatkan, buat ekspor terpilih beserta Blob, preview, mapping ID, deduplikasi, dan laporan impor.
+P4 lokal mencakup CRUD master serta verifikasi UI/data. P4 keseluruhan tetap SEBAGIAN karena P1, data resmi, dan deployment masih terbuka.
+
+- [x] Pastikan dashboard, detail kampus, indikator, verifikasi, proposal, forum, FAQ, notifikasi dan peta semuanya menggunakan adapter backend.
+- [x] Hapus pembacaan seed dan fallback contoh dari mode backend; jangan menampilkan angka tetap 40/30 sebagai fakta bila master backend berbeda.
+- [x] Pisahkan penyimpanan demo dan cache backend. Jika Dexie dipertahankan sebagai cache, beri namespace akun/lingkungan, invalidasi saat logout, dan jangan menjadikannya sumber kebenaran.
+- [x] Putuskan penanganan data kerja lokal yang sudah ada. Default: tidak mengimpor transaksi dummy. Bila unggahan/isian lokal nyata perlu diselamatkan, buat ekspor terpilih beserta Blob, preview, mapping ID, deduplikasi, dan laporan impor.
 - [ ] Nonaktifkan login pilih role, ganti peran bebas, reset demo dan label simulasi pada mode operasional setelah data resmi siap.
-- [ ] Pertahankan route eksplisit `src/routes/(app)/campus/*` dan `admin/*`; tinjau `ssr = false` tanpa memindahkan file ke routing dinamis.
-- [ ] Tambahkan mekanisme refresh lintas pengguna yang jelas: refetch setelah mutasi/navigasi dan polling bila dibutuhkan. Realtime opsional; bila dipilih, periksa otorisasi subscription.
-- [ ] Sinkronkan README dan `docs/POCKETBASE.md` dengan arsitektur akhir, konfigurasi, schema dan perintah aktual.
+- [x] Pertahankan route eksplisit `src/routes/(app)/campus/*` dan `admin/*`; tinjau `ssr = false` tanpa memindahkan file ke routing dinamis.
+- [x] Tambahkan mekanisme refresh lintas pengguna yang jelas: refetch setelah mutasi/navigasi dan polling bila dibutuhkan. Realtime opsional; bila dipilih, periksa otorisasi subscription.
+- [x] Sinkronkan README dan `docs/POCKETBASE.md` dengan arsitektur akhir, konfigurasi, schema dan perintah aktual.
 - [ ] Terapkan schema dan konfigurasi development, uji, lalu siapkan backup database/file dan prosedur pemulihan sebelum penerapan production.
 - [ ] Verifikasi deployment frontend dan schema/backend secara terpisah. Rollback aplikasi harus kompatibel dengan schema; jangan kembali diam-diam ke dummy atau menghapus data PocketBase.
+
+Keputusan P4: tidak mengimpor/menghapus IndexedDB lama; tanpa cache Dexie; `ssr = false` dipertahankan sampai P1; refresh setelah mutasi/navigasi tanpa polling. Schema development dan backup sudah diverifikasi, tetapi drill pemulihan production tetap terbuka.
 
 ## 6. Cakupan halaman yang harus diperiksa
 
@@ -232,15 +238,32 @@ Ekspor rekap, model desa binaan, level DEB lanjutan, email/push notifikasi dan d
 | Keputusan | Status baseline | Dampak |
 |---|---|---|
 | URL/versi instance DEB dan pengelolanya | Lokal 127.0.0.1:8096, PocketBase 0.40.3 / SDK 0.28.0; production belum ditetapkan | Konfigurasi, schema, transaksi dan deployment |
-| Katalog indikator, rumus, periode dan baseline/target resmi | Untuk lokal mengikuti 30 indikator numerik mock, tanpa periode; belum disahkan untuk produksi | Schema serta validitas hasil dashboard |
+| Katalog indikator, rumus, periode dan baseline/target resmi | P4: definisi, baseline dan target bersama; draft/aktivasi Admin. Angka awal tetap simulasi tanpa periode | Pengesahan data program belum selesai |
 | Akun per kampus, jumlah Admin dan provisioning | Pengguna memilih satu akun/kampus; seed lokal 40 akun kampus + dua admin QA; reset/disable lokal tersedia | Mailer/pemulihan dan jumlah admin operasional belum ditetapkan |
 | Lokasi kampus operasional | Kode masih koordinat perkiraan | Akurasi peta |
-| Data lokal yang perlu diselamatkan | Belum dipilih | Kebutuhan ekspor/impor; tidak menghapus data lokal |
+| Data lokal yang perlu diselamatkan | P4: tidak mengimpor IndexedDB/dummy, tidak menghapus data lama | Ekspor/impor terpilih terpisah bila diperlukan |
 | Mekanisme transaksi, retry dan pengiriman event | P3 lokal: custom route + runInTransaction, receipt per actor/key, hash kanonis, notifikasi dalam transaksi | Retry/konkurensi diuji; email/push tetap di luar scope |
 
 Keputusan ini tidak menghalangi penyiapan adapter dan fixture terisolasi, tetapi harus diselesaikan sebelum memasukkan data operasional dan menyatakan production siap.
 
 ## 10. Log checkpoint
+
+### 2026-09-10 — P4 lokal — master bersama, CRUD Admin, dan peralihan UI
+
+- Status: **SELESAI untuk cakupan P4 lokal yang disepakati**. P1 tetap BELUM; P4 keseluruhan SEBAGIAN karena autentikasi operasional, pengesahan data dan deployment belum selesai. Branch `feat/p4-shared-masters`, berbasis pekerjaan P3; belum commit/push/merge/deploy.
+- Keputusan pengguna: indikator, baseline, dan target sama untuk seluruh kampus. Aktual/catatan tetap per kampus. Admin mengelola master di `/admin/master-indicators`; profil/lokasi melalui daftar/detail kampus. Kampus baru otomatis memperoleh seluruh indikator aktif tanpa akun otomatis.
+- Definisi baru draft; draft hanya terbaca Admin dan tidak masuk bootstrap bisnis. Aktivasi/edit definisi aktif dikunci ketika ada pending. Hapus master terpakai ditolak. Audit actor/waktu/before/after dan pemeriksaan revision mencegah edit lama menimpa perubahan Admin lain; retry tidak menggandakan audit.
+- Preflight 8096: 30 definisi, 1.200 isian, enam pending; baseline/target konsisten tanpa konflik. Migrasi forward `1789086400`, `1789086500`, dan `1789086600` diterapkan. Dua migrasi lanjutan memperbaiki FieldsList/rules audit dan pemuatan ulang record schema baru sebelum backfill; masalahnya ditemukan saat pengujian, lalu diperbaiki tanpa reset.
+- Backup dan manifest lokal: `.local/pocketbase/p4-backups/2026-09-10T02-14-11.909Z`, `.qa/p4-local-migration.json`. Hash record bisnis existing (mengabaikan field master baru dan timestamp master yang memang diperbarui) sama sebelum/sesudah. Snapshot pengajuan, aktual/catatan, PDF, serta enam pending tetap utuh.
+- **MCP Playwright Chrome pada 5176/8096:** draft QA `linu3k64y6w94ei` dibuat dan diedit dari target 15 menjadi 18 melalui UI, bertahan setelah refresh, terlihat di Admin kedua, lalu dihapus melalui UI (200); audit penghapusan tetap tersimpan. Draft tidak pernah diaktifkan global.
+- Kampus QA `qcfc2xkbphv6s90` / **QA P4 - Kampus pengujian lokal** dibuat melalui UI; otomatis memiliki 30 isian aktif dengan aktual nol. Lokasi awal kosong lalu diedit menjadi latitude -6.2 / longitude 106.8. Peta dan dashboard mengikuti total 41 kampus; Admin kedua melihat profil baru. Kampus QA beserta indikator dan audit sengaja dipertahankan; tidak ada akun baru.
+- API QA: dua Admin mengedit revision yang sama menghasilkan 200/409; retry kunci sama membuat satu audit. Campus ditolak menulis/membaca master Admin (403), hapus kampus terpakai dan perubahan global saat pending ditolak (409), koordinat separuh kosong/target invalid ditolak (400), kode duplikat ditolak (409). Bukti `.qa/p4-api-evidence.json`.
+- Pengujian native master: **20 assertion** pada transaksi migrasi sementara yang selalu dibatalkan, termasuk aktivasi seluruh kampus, penyelarasan target tanpa kehilangan aktual/note, konflik, pending, audit dan kegagalan event. Tidak ada perubahan global QA tersimpan; hash record sebelum/sesudah identik. Tool manual `test:pb:master-rollback` juga diverifikasi dengan Node 22; bukti `.local/pocketbase/maintenance/2026-09-10T02-33-26.993Z-b05e5ee9`.
+- Tool `pb:backup` diuji: integritas SQLite, hash file dan hash record salinan cocok. Backup `.local/pocketbase/maintenance/2026-09-10T02-33-26.065Z-425af58e`; bukti `.qa/p4-maintenance-evidence.json`. PocketBase kembali pada 8096; tidak ada server alternatif atau seed/reset. Drill restore production belum dilakukan.
+- Pengujian: `npm test` **15 lulus**, `npm run test:pb` **5 lulus**, `npm run test:e2e` **6 lulus**. E2E mencakup seluruh halaman baca kedua role, nilai shared dua kampus, agregasi dashboard/peta, master mobile, backend error/retry/stale dan respons kosong tanpa fallback. Respons kosong/error hanya dicegat di browser pengujian, tidak mengosongkan database.
+- Pemeriksaan final Node 22.23.2: `npm run check` **0 error/0 warning**, `npm run build` **berhasil** dengan adapter Vercel. **27 handler hasil build** diuji langsung dan seluruhnya menolak preview dengan 404; pembaca `credentials.json` tidak ditemukan pada output server/Vercel. `git diff --check` bersih. Log `.qa/p4-check.log`, `.qa/p4-build.log`, `.qa/p4-build-evidence.json`. Setelah build/check, halaman Master indikator 5176 diperiksa ulang: 30 aktif, 0 draft, tanpa error UI.
+- Bukti visual diperiksa: `.playwright-mcp/p4-master-draft-desktop.png`, `.playwright-mcp/p4-master-mobile.png`, `.playwright-mcp/p4-master-final-desktop.png`. Setelah laptop mati, cache browser menghasilkan respons rusak; browser QA diuji ulang dengan cache dinonaktifkan. Tidak ada perubahan produk untuk menyembunyikan error tersebut.
+- README dan kontrak P4 disinkronkan; dokumen P0–P3/audit lama ditandai historis. IndexedDB lama tidak dibaca, diimpor, atau dihapus. Route eksplisit, tema biru-putih, refresh manual/navigasi dan `ssr = false` dipertahankan. Sisa: P1, data/rumus resmi, mailer, upload hosting, drill pemulihan dan deployment.
 
 ### 2026-09-09 - P3 lokal - workflow API dan verifikasi lingkungan utama
 

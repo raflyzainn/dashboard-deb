@@ -8,9 +8,9 @@ export function mapSession(r: RecordModel): BackendSession {
   if (!r.active || !['campus', 'admin'].includes(r.role) || (r.role === 'campus' && !r.campus)) throw new Error('Inactive or invalid DEB account');
   return { id: r.id, name: r.name, role: r.role, ...(r.campus ? { campusId: r.campus } : {}) };
 }
-export const mapCampus = (r: RecordModel): Campus => ({ id: r.id, name: r.name, region: r.region, initials: r.initials, acronym: r.acronym, city: r.city, source: r.source });
+export const mapCampus = (r: RecordModel): Campus => ({ id: r.id, name: r.name, region: r.region, initials: r.initials, acronym: r.acronym, city: r.city, source: r.source, revision: r.revision });
 export const mapLocation = (r: RecordModel) => ({ campusId: r.id, province: r.province as string, island: r.island as string,
-  longitude: r.longitude as number, latitude: r.latitude as number, approximate: r.locationApproximate as boolean });
+  longitude: r.hasLocation ? r.longitude as number : null, latitude: r.hasLocation ? r.latitude as number : null, approximate: r.locationApproximate as boolean });
 export const mapDefinition = (r: RecordModel): IndicatorDefinition => ({ id: r.id, name: r.name, category: r.category, unit: r.unit, description: r.description });
 export const mapIndicator = (r: RecordModel): CampusIndicator => ({ id: r.id, campusId: r.campus, definitionId: r.definition, baseline: r.baseline, target: r.target, current: r.current, note: r.note, updatedAt: date(r.updated) });
 export const mapSubmission = (r: RecordModel): DebSubmission => ({ id: r.id, campusId: r.campus, version: r.version, status: r.status,

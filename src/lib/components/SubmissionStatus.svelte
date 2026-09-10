@@ -8,7 +8,8 @@
   const latest = $derived(latestSubmission(app.data!, app.session!.campusId!));
   const changed = $derived(latest ? changedSinceSubmission(app.data!, latest) : false);
   const pending = $derived(latest?.status === 'pending');
-  const canSubmit = $derived(!pending && (!latest || latest.status === 'revision' || changed));
+  const complete = $derived(app.data!.definitions.length > 0 && app.data!.indicators.filter(i => i.campusId === app.session!.campusId).length === app.data!.definitions.length);
+  const canSubmit = $derived(complete && !pending && (!latest || latest.status === 'revision' || changed));
   let confirm = $state(false);
 </script>
 <section class="panel submission-status" aria-label="Status pengajuan DEB">
@@ -16,6 +17,7 @@
   <p>{pending ? 'Data yang dikirim sedang diperiksa Admin PF. Nilai indikator dikunci sampai ada keputusan.' : latest?.status === 'approved' && !changed ? 'Admin PF telah mengonfirmasi data pengajuan ini. Pembaruan berikutnya perlu dikirim kembali untuk diverifikasi.' : 'Lengkapi indikator, lalu kirim data untuk ditinjau. Admin dapat menyetujui atau mengembalikan data dengan catatan revisi.'}</p>
   {#if latest}<small>Pengajuan #{latest.version} · Dikirim {date(latest.submittedAt)}{#if latest.reviewedAt} · Ditinjau {date(latest.reviewedAt)}{/if}</small>{/if}
   {#if latest?.decisionNote}<div class="decision-note"><strong>Catatan Admin PF</strong><p class="pre-wrap">{latest.decisionNote}</p></div>{/if}
+  {#if !complete}<p role="status">Konfigurasi indikator belum lengkap. Hubungi Admin sebelum mengirim pengajuan.</p>{/if}
   {#if canSubmit}<button class="button" disabled={app.readOnly || app.loading || (app.busy)} onclick={() => confirm = true}>{latest ? 'Kirim ulang untuk verifikasi' : 'Kirim untuk verifikasi'}</button>{/if}
 </section>
 {#if confirm}<Modal title="Kirim data DEB untuk verifikasi?" onclose={() => { if (!app.busy) confirm = false; }}><p>Seluruh nilai indikator saat ini akan disimpan sebagai satu pengajuan. Anda dapat mengubahnya kembali setelah Admin PF memberikan keputusan.</p><div class="dialog-actions"><button class="button secondary" disabled={app.busy} onclick={() => confirm = false}>Batal</button><button class="button" disabled={app.readOnly || app.loading || (app.busy)} onclick={async () => { if (await app.mutate(() => dataService.submitDeb(), 'Data DEB dikirim untuk verifikasi.')) confirm = false; }}>Kirim data DEB</button></div></Modal>{/if}
