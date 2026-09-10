@@ -7,5 +7,5 @@ export const GET: RequestHandler = event => previewEndpoint(event, async context
   const pb = await context.account(event.request.headers.get('x-deb-preview-account'));
   const repository = createDebRepository(pb);
   const [data, locations] = await Promise.all([repository.load(), repository.locations()]);
-  return json({ session: mapSession(pb.authStore.record!), data: { ...data, locations }, locations, capabilities: { readOnly: true }, loadedAt: new Date().toISOString() });
+  return json({ session: mapSession(pb.authStore.record!), data: { ...data, locations }, locations, capabilities: { readOnly: false }, loadedAt: new Date().toISOString() });
 });

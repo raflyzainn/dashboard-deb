@@ -1,5 +1,7 @@
 # Perbandingan versi proposal
 
+> Update P3 (9 September 2026): seluruh workflow tulis sudah aktif pada frontend 5176 dan PocketBase 8096. P1 autentikasi production tetap ditunda. Bagian yang menyebut Dexie, mock, P2 read-only atau port fixture adalah catatan historis; kontrak aktif ada di [POCKETBASE-P3.md](POCKETBASE-P3.md). Perintah tes standar sekarang memakai instance 5176/8096 tanpa seed/reset.
+
 Implementasi 8 September 2026 atas permintaan pengguna untuk meninjau perubahan dokumen seperti review PR GitHub. Fitur ini menambah cakupan di luar brief awal yang hanya menetapkan penyimpanan versi.
 
 ## Alur

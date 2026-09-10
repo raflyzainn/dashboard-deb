@@ -1,5 +1,5 @@
 import type { RecordModel } from 'pocketbase';
-import type { Activity, Answer, Campus, CampusIndicator, DebSubmission, FaqEntry, Feedback, IndicatorDefinition, Notification, ProposalVersion, Question, QuestionLike, Role } from '../../types';
+import type { Activity, Answer, Campus, CampusIndicator, SubmissionIndicator, DebSubmission, FaqEntry, Feedback, IndicatorDefinition, Notification, ProposalVersion, Question, QuestionLike, Role } from '../../types';
 import { validateCategories } from '../../forum';
 
 const date = (value: string) => new Date(value).toISOString();
@@ -14,7 +14,7 @@ export const mapLocation = (r: RecordModel) => ({ campusId: r.id, province: r.pr
 export const mapDefinition = (r: RecordModel): IndicatorDefinition => ({ id: r.id, name: r.name, category: r.category, unit: r.unit, description: r.description });
 export const mapIndicator = (r: RecordModel): CampusIndicator => ({ id: r.id, campusId: r.campus, definitionId: r.definition, baseline: r.baseline, target: r.target, current: r.current, note: r.note, updatedAt: date(r.updated) });
 export const mapSubmission = (r: RecordModel): DebSubmission => ({ id: r.id, campusId: r.campus, version: r.version, status: r.status,
-  indicators: r.snapshot.map((i: CampusIndicator) => ({ id: i.id, campusId: i.campusId, definitionId: i.definitionId, baseline: i.baseline, target: i.target, current: i.current, note: i.note, updatedAt: date(i.updatedAt) })),
+  indicators: r.snapshot.map((i: SubmissionIndicator) => ({ name: i.name, category: i.category, unit: i.unit, description: i.description, id: i.id, campusId: i.campusId, definitionId: i.definitionId, baseline: i.baseline, target: i.target, current: i.current, note: i.note, updatedAt: date(i.updatedAt) })),
   submittedAt: date(r.submittedAt), reviewedAt: r.reviewedAt ? date(r.reviewedAt) : undefined, reviewedBy: r.reviewedBy || undefined, decisionNote: r.decisionNote || undefined, simulated: r.simulated });
 export const mapFeedback = (r: RecordModel): Feedback => ({ id: r.id, campusId: r.campus, indicatorId: r.indicator, text: r.text, requiresRevision: r.requiresRevision, state: r.state, createdAt: date(r.created), updatedAt: date(r.updated) });
 export const mapProposal = (r: RecordModel): ProposalVersion => ({ id: r.id, campusId: r.campus, version: r.version, filename: r.filename, size: r.size, changes: r.changes, createdAt: date(r.created), simulated: r.simulated });

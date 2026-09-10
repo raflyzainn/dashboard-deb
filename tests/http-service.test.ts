@@ -17,20 +17,44 @@ test('HTTP-only service sends preview key, not browser actor, and reads data/PDF
     return String(url).endsWith('/file') ? new Response('%PDF-1.4', { headers: { 'Content-Type': 'application/pdf' } }) : Response.json({ data: { campuses: [] }, session: { role: 'campus' } });
   });
   service.selectAccount('campus-002');
-  assert.deepEqual(await service.load({ role: 'admin', name: 'Forged browser role' }), { campuses: [] });
+  assert.deepEqual(await service.load(), { campuses: [] });
   assert.equal(new Headers(requests[0].options?.headers).get('x-deb-preview-account'), 'campus-002');
   assert.equal(requests[0].options?.cache, 'no-store');
   assert.ok(!JSON.stringify(requests).includes('Forged'));
-  assert.ok((await (await service.proposalFile({ role: 'admin', name: '' }, 'abc')).text()).startsWith('%PDF'));
+  assert.ok((await (await service.proposalFile('abc')).text()).startsWith('%PDF'));
 });
 
-test('all legacy mutation entrypoints reject without calling the network', async () => {
+test('writes use explicit state and reuse operation key after uncertain transport failure', async () => {
+  const requests: RequestInit[] = [];
+  const service = createHttpService(async (_url, options) => {
+    requests.push(options!);
+    if (requests.length === 1) throw new Error('lost response');
+    return Response.json({ ok: true });
+  });
+  service.selectAccount('campus-001');
+  await assert.rejects(service.setLike('question', true));
+  await service.setLike('question', true);
+  assert.equal(requests[0].method, 'PUT');
+  assert.equal(new Headers(requests[0].headers).get('idempotency-key'), new Headers(requests[1].headers).get('idempotency-key'));
+  await service.setLike('question', false);
+  assert.equal(requests[2].method, 'DELETE');
+  assert.ok(!('reset' in service));
+});
+
+test('account switch during file hashing cannot upload under the new account', async () => {
   let called = false;
-  const service = createHttpService(async () => { called = true; return Response.json({}); });
-  for (const method of ['submitDeb', 'reviewDeb', 'updateIndicator', 'addFeedback', 'closeFeedback', 'uploadProposal', 'ask', 'answer', 'toggleLike', 'promoteFaq', 'saveFaq', 'moveFaq', 'deleteFaq', 'readNotifications', 'reset'] as const) {
-    await assert.rejects((service[method] as () => Promise<unknown>)(), /Hanya baca/);
-  }
-  assert.equal(called, false);
+  let release!: (value: ArrayBuffer) => void;
+  const original = File.prototype.arrayBuffer;
+  File.prototype.arrayBuffer = () => new Promise(resolve => { release = resolve; });
+  try {
+    const service = createHttpService(async () => { called = true; return Response.json({ok:true}); });
+    service.selectAccount('campus-001');
+    const uploading = service.uploadProposal(new File(['%PDF-1.4'], 'qa.pdf'), 'QA');
+    service.selectAccount('campus-002');
+    release(new ArrayBuffer(0));
+    await assert.rejects(uploading, /Pilihan akun sudah berubah/);
+    assert.equal(called, false);
+  } finally { File.prototype.arrayBuffer = original; }
 });
 
 test('network errors and rejected requests never return seed data', async () => {

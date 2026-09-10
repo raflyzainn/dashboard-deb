@@ -8,7 +8,7 @@ const timestamp = '2026-09-08T02:00:00.000Z';
 function demoSubmissions(data: Snapshot): DebSubmission[] {
   return data.campuses.slice(1, 7).map(c => ({ id: `demo-submission-${c.id}`, campusId: c.id, version: 1,
     status: 'pending', submittedAt: '2026-09-08T01:00:00.000Z', simulated: true,
-    indicators: data.indicators.filter(i => i.campusId === c.id).map(i => ({ ...i })) }));
+    indicators: data.indicators.filter(i => i.campusId === c.id).map(i => ({ ...data.definitions.find(d => d.id === i.definitionId)!, ...i })) }));
 }
 export const NOTIFICATION_SEED_VERSION = 1;
 export function demoNotifications(): Notification[] {

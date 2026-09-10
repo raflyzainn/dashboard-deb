@@ -35,8 +35,8 @@
         try {
           const { extractPdfText } = await import('$lib/data/pdf-text');
           controller.signal.throwIfAborted();
-          const original = await extractPdfText(await dataService.proposalFile(session, base.id), controller.signal);
-          const revised = await extractPdfText(await dataService.proposalFile(session, target.id), controller.signal);
+          const original = await extractPdfText(await dataService.proposalFile(base.id), controller.signal);
+          const revised = await extractPdfText(await dataService.proposalFile(target.id), controller.signal);
           if (!original.lines.length || !revised.lines.length) throw new Error('Teks tidak ditemukan pada salah satu PDF. Dokumen mungkin hasil scan. Bandingkan melalui PDF asli; pembacaan teks dari gambar (OCR) belum tersedia.');
           const diff = await compareText(original.lines, revised.lines);
           if (!controller.signal.aborted) result = { diff, before: original, after: revised };

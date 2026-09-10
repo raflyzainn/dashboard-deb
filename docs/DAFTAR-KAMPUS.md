@@ -1,5 +1,7 @@
 # Daftar 40 kampus untuk prototype
 
+> Update P3 (9 September 2026): seluruh workflow tulis sudah aktif pada frontend 5176 dan PocketBase 8096. P1 autentikasi production tetap ditunda. Bagian yang menyebut Dexie, mock, P2 read-only atau port fixture adalah catatan historis; kontrak aktif ada di [POCKETBASE-P3.md](POCKETBASE-P3.md). Perintah tes standar sekarang memakai instance 5176/8096 tanpa seed/reset.
+
 Daftar ini memakai 34 nama yang diberikan pengguna dan enam tambahan dari Appendix A dokumen `DEB_Transformation_Lab_2026_Meeting_Recap_and_Web_App_System_Brief.docx`, dengan persetujuan pengguna. Ini daftar untuk presentasi aplikasi, bukan klaim bahwa seluruh nama merupakan roster resmi program pada periode yang sama. Metadata kemitraan, pascabencana, dan afirmasi pada pesan sumber tidak dijadikan status operasional.
 
 Enam tambahan dari dokumen:
