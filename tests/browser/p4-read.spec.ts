@@ -9,7 +9,7 @@ async function login(page:Page,key:string):Promise<Bootstrap>{
   await page.getByRole('button',{name:'Buka ruang kerja',exact:true}).click();
   const data=await (await response).json();
   await expect(page).toHaveURL(/\/(admin|campus)\/dashboard$/);
-  await expect(page.getByRole('button',{name:'Muat ulang data',exact:true})).toBeEnabled();
+  await expect(page.locator('main.content')).toBeVisible();
   return data;
 }
 
@@ -28,7 +28,7 @@ test('P4 admin masters, dynamic dashboard and all admin read routes',async({page
   await expect(page.getByRole('button',{name:'Tambah indikator',exact:true})).toBeEnabled();
   for(const route of ['campuses','verifikasi','proposal','questions','faq','notifications','sebaran']){
     await page.goto('/admin/'+route);
-    await expect(page.getByRole('button',{name:'Muat ulang data',exact:true})).toBeEnabled();
+    await expect(page.locator('main.content')).toBeVisible();
     await expect(page.locator('.global-error')).toHaveCount(0);
   }
   const valid=data.locations!.filter(l=>l.latitude!==null&&l.longitude!==null&&l.latitude>=-11.5&&l.latitude<=6.5&&l.longitude>=94.5&&l.longitude<=141.5);
@@ -48,7 +48,7 @@ test('P4 two campuses share targets, hide drafts and master management',async({b
       await expect(page.getByRole('link',{name:'Master indikator',exact:true})).toHaveCount(0);
       for(const route of ['indicators','proposal','questions','faq','notifications']){
         await page.goto('/campus/'+route);
-        await expect(page.getByRole('button',{name:'Muat ulang data',exact:true})).toBeEnabled();
+        await expect(page.locator('main.content')).toBeVisible();
         await expect(page.locator('.global-error')).toHaveCount(0);
       }
     }
@@ -57,14 +57,47 @@ test('P4 two campuses share targets, hide drafts and master management',async({b
 
 test('P4 stale response keeps existing data and retry recovers without mutations',async({page})=>{
   const initial=await login(page,'admin-1');
+  await page.goto('/admin/faq');
+  await expect(page.getByRole('button',{name:'Tambah FAQ',exact:true})).toBeEnabled();
   await page.route('**/api/bootstrap',route=>route.abort('failed'));
-  await page.getByRole('button',{name:'Muat ulang data',exact:true}).click();
-  await expect(page.locator('.backend-notice')).toContainText('Pembaruan gagal');
+  await page.getByRole('link',{name:'Beranda',exact:true}).first().click();
   await expect(page.locator('.hero-banner')).toContainText(`${initial.data.campuses.length} kampus`);
+  await expect(page.locator('.global-error')).toBeVisible();
   await page.unroute('**/api/bootstrap');
-  await page.getByRole('button',{name:'Muat ulang data',exact:true}).click();
-  await expect(page.locator('.backend-notice')).not.toContainText('Pembaruan gagal');
+  const recovered=page.waitForResponse(r=>r.url().endsWith('/api/bootstrap')&&r.status()===200);
+  await page.getByRole('link',{name:'Pusat bantuan',exact:true}).first().click();
+  await recovered;
+  await expect(page.getByRole('button',{name:'Tambah FAQ',exact:true})).toBeEnabled();
+
   await expect(page.locator('.global-error')).toHaveCount(0);
+});
+
+test('Beranda label and audit search include deleted master values, no-result state and pagination',async({page})=>{
+  await login(page,'admin-1');
+  await expect(page.getByRole('link',{name:'Beranda',exact:true}).first()).toBeVisible();
+  await page.goto('/admin/master-indicators');
+  const audit=page.getByRole('region',{name:'Riwayat perubahan master',exact:true});
+  const input=page.getByLabel('Cari perubahan master',{exact:true});
+  await input.fill('hapus indikator');
+  await expect(audit.locator('summary').first()).toBeVisible();
+  for(const summary of await audit.locator('summary').all())await expect(summary).toContainText('Hapus indikator');
+  await input.fill('qa-no-audit-result-1234567890');
+  await expect(audit.getByText('Tidak ada perubahan yang cocok',{exact:true})).toBeVisible();
+  await input.fill('');
+  await expect(audit.getByText('Tidak ada perubahan yang cocok',{exact:true})).toHaveCount(0);
+  // Controlled API pages prove navigation beyond the old 50-record UI cap, without writing audit fixtures.
+  await page.route('**/api/admin/master-audit?*',async route=>{
+    const n=Number(new URL(route.request().url()).searchParams.get('page'));
+    await route.fulfill({json:{page:n,totalItems:65,totalPages:4,items:[{id:'audit-page-'+n,actor:'qa',entity:'indicator_definitions',entityId:'qa',operation:'masterSaveDefinition',before:null,after:{name:'QA page '+n},created:'2026-09-10T00:00:00Z'}]}});
+  });
+  await input.fill('QA page');
+  await expect(audit.locator('summary')).toContainText('QA page 1');
+  for(let n=2;n<=4;n++){await audit.getByRole('button',{name:'Berikutnya',exact:true}).click();await expect(audit.locator('summary')).toContainText('QA page '+n);}
+  await expect(audit.getByRole('button',{name:'Berikutnya',exact:true})).toBeDisabled();
+  await input.fill('QA page reset');
+  await expect(audit.locator('summary')).toContainText('QA page 1');
+  await page.setViewportSize({width:390,height:844});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
 
 test('P4 empty backend response renders no fabricated data and master mobile stays within viewport',async({page})=>{
@@ -83,12 +116,12 @@ test('P4 empty backend response renders no fabricated data and master mobile sta
     body.locations=[];await route.fulfill({response,json:body});
   });
   await page.goto('/admin/dashboard');
-  await expect(page.getByRole('button',{name:'Muat ulang data',exact:true})).toBeEnabled();
+  await expect(page.locator('main.content')).toBeVisible();
   await expect(page.locator('.hero-banner')).toContainText('0 kampus');
   await expect(page.locator('main')).not.toContainText('NaN');
   await expect(page.getByText('Belum ada aktivitas',{exact:true})).toBeVisible();
   await page.goto('/admin/sebaran');
-  await expect(page.getByRole('button',{name:'Muat ulang data',exact:true})).toBeEnabled();
+  await expect(page.locator('main.content')).toBeVisible();
   await expect(page.locator('.map-dot')).toHaveCount(0);
   await expect(page.locator('main')).not.toContainText('NaN');
 });

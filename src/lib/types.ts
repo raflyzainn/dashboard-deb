@@ -11,7 +11,8 @@ export interface MasterDefinition extends IndicatorDefinition { code: string; ba
 export interface DefinitionInput { id?: string; revision?: number; code: string; name: string; category: string; unit: string; description: string; baseline: number; target: number }
 export interface CampusInput { id?: string; revision?: number; name: string; initials: string; acronym: string; region: string; city: string; province: string; island: string; latitude: number | null; longitude: number | null; approximate: boolean }
 export interface MasterAudit { id: string; actor: string; entity: string; entityId: string; operation: string; before: Record<string, unknown> | null; after: Record<string, unknown> | null; created: string }
-export interface MasterData { definitions: MasterDefinition[]; audit: MasterAudit[] }
+export interface MasterData { definitions: MasterDefinition[] }
+export interface MasterAuditPage { items: MasterAudit[]; page: number; totalItems: number; totalPages: number }
 export interface CampusIndicator { id: string; campusId: string; definitionId: string; baseline: number; target: number; current: number; note: string; updatedAt: string }
 export interface SubmissionIndicator extends CampusIndicator { name: string; category: string; unit: string; description?: string }
 export type VerificationStatus = 'pending' | 'approved' | 'revision';
@@ -35,6 +36,7 @@ export interface Snapshot {
 }
 export interface DataService {
   masters(): Promise<MasterData>;
+  masterAudit(query?: string, page?: number): Promise<MasterAuditPage>;
   saveCampus(input: CampusInput): Promise<void>;
   deleteCampus(id: string, revision: number): Promise<void>;
   saveDefinition(input: DefinitionInput): Promise<void>;

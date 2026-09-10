@@ -248,6 +248,23 @@ Keputusan ini tidak menghalangi penyiapan adapter dan fixture terisolasi, tetapi
 
 ## 10. Log checkpoint
 
+### 2026-09-10 — Persiapan delivery dua PR ke development
+
+- P4 dipisahkan menjadi commit `10e7cea` pada `feat/p4-shared-masters`, berbasis `origin/development`, dan dipush sebagai [PR #6](https://github.com/raflyzainn/dashboard-deb/pull/6). `feat/home-audit-search` dibangun di atas P4; merge P4 terlebih dahulu. Kedua PR menargetkan `development` sesuai permintaan pengguna.
+- Perubahan lokal penghapusan banner teknis PocketBase dipertahankan pada branch improvement. Tes browser disesuaikan: readiness memakai konten halaman, sedangkan pengujian refresh/error/recovery melalui navigasi UI yang memicu bootstrap ulang. Pemeriksaan input catatan tetap ada; refresh manual pada halaman review tidak lagi diuji karena tombolnya dihapus. Tidak ada endpoint test tambahan.
+- Sebelum pemisahan banner selesai, beberapa percobaan Playwright gagal karena masih mencari tombol yang dihapus; restart Vite tidak menyelesaikannya. Setelah pemisahan selesai, P4 diverifikasi ulang: 15 unit, 5 PocketBase, 6 Playwright lulus; check 0 error/0 warning dan build berhasil.
+- Verifikasi home audit: 17 unit dan 7 Playwright lulus; check 0 error/0 warning. Tes recovery menunggu kontrol halaman siap sebelum mensimulasikan jaringan gagal, agar tidak berbenturan dengan bootstrap awal. Log lokal: `.qa/delivery-home-*.log`.
+- File database, kredensial, backup, log dan screenshot QA tetap tidak dilacak Git. Diskusi aktivasi email belum menjadi implementasi P1.
+
+### 2026-09-10 — Beranda dan pencarian riwayat perubahan master
+
+- Status: **SELESAI lokal**. Branch baru `feat/home-audit-search`; pekerjaan P4 yang belum di-commit ikut dipertahankan. Belum commit/push/deploy.
+- Label navigasi dan judul halaman utama kedua role menjadi **Beranda**.
+- Riwayat pada `/admin/master-indicators` dapat dicari berdasarkan nama, kode, nilai sebelum/sesudah, dan jenis aksi berbahasa Indonesia. Endpoint Admin `/api/admin/master-audit` mencari seluruh riwayat di PocketBase dengan pagination 20 record, menggantikan batas tampilan 50 terbaru. Tidak ada perubahan schema atau mutasi data untuk improvement ini.
+- Verifikasi Node 22: `npm test` **17 lulus**, `npm run test:e2e` **7 lulus**, `npm run check` **0 error/0 warning**, dan `npm run build` berhasil. Seluruh **28 handler build** menolak preview production dengan 404; pembaca kredensial lokal tidak masuk output.
+- Playwright Chrome pada frontend 5176/PocketBase 8096: pencarian aksi `hapus indikator` menghasilkan satu perubahan dan pencarian nilai lama `retry verified` menghasilkan dua perubahan. Suite memeriksa hasil kosong, pagination sampai halaman 4 melalui respons jaringan terkontrol, reset halaman saat query berubah, dan mobile tanpa overflow. Pagination terkontrol tidak menambahkan audit ke database.
+- Bukti visual desktop/mobile diperiksa: `.playwright-mcp/audit-search-desktop.png` dan `.playwright-mcp/audit-search-mobile.png`. Log pemeriksaan/build serta hasil gate ada di `.qa/audit-search-*.log` dan `.qa/audit-search-build-evidence.json`.
+
 ### 2026-09-10 — P4 lokal — master bersama, CRUD Admin, dan peralihan UI
 
 - Status: **SELESAI untuk cakupan P4 lokal yang disepakati**. P1 tetap BELUM; P4 keseluruhan SEBAGIAN karena autentikasi operasional, pengesahan data dan deployment belum selesai. Branch `feat/p4-shared-masters`, berbasis pekerjaan P3; belum commit/push/merge/deploy.
