@@ -4,7 +4,9 @@ Tanggal baseline: 9 September 2026. Status berdasarkan pemeriksaan source code l
 
 Dokumen ini menjadi daftar kerja dan pencatat progres migrasi dari data lokal/dummy ke PocketBase. **Belum ada fitur DEB yang terhubung ke PocketBase pada baseline ini.** Pembuatan dokumen tidak mengubah aplikasi, memasang SDK, membuat koleksi, atau memindahkan data.
 
-Update P0 lokal (9 September 2026): fondasi runtime, 13 koleksi, rules/hook, repository/mapper, seeder dan tes backend sudah diimplementasikan. UI tetap Dexie; matriks integrasi M01–M15 belum selesai. Lihat [panduan lokal](docs/POCKETBASE-LOCAL.md). Baseline di bawah dipertahankan sebagai pembanding, dengan keputusan terbaru pada bagian 9 dan log bagian 10.
+Update P0 lokal (9 September 2026): fondasi runtime, 13 koleksi, rules/hook, repository/mapper, seeder dan tes backend sudah diimplementasikan. Pada checkpoint P0 UI masih Dexie; kondisi itu telah digantikan update P2 berikut. Lihat [panduan lokal](docs/POCKETBASE-LOCAL.md). Baseline di bawah dipertahankan sebagai pembanding, dengan keputusan terbaru pada bagian 9 dan log bagian 10.
+
+Update P2 lokal (9 September 2026): seluruh pembacaan UI kini melalui API SvelteKit ke PocketBase. Dexie dan fallback mock dihapus dari frontend; fixture dipindahkan ke `scripts/fixtures` khusus seeder/tes. P1 autentikasi operasional ditunda: pemilih akun seed hanya tersedia di development loopback. Semua mutasi UI dikunci sampai P3. Lihat [rincian P2](docs/POCKETBASE-P2.md). Bagian 1–2 memuat kondisi historis baseline, bukan arsitektur aktif.
 
 ## 1. Pola proyek pembanding
 
@@ -41,8 +43,8 @@ Semua endpoint harus menentukan identitas dari sesi server. `actor`, `role`, `ca
 | [service.ts](src/lib/data/service.ts) | `dataService = createMockService()`, Dexie `deb-prototype-v1`, satu snapshot `state/main` dan tabel Blob `files` | Adapter HTTP dan koleksi terpisah; PocketBase menjadi sumber data utama |
 | [state.svelte.ts](src/lib/state.svelte.ts) | `deb-demo-session` di sessionStorage; login memilih role, kampus terkunci ke `DEMO_CAMPUS` | Login akun nyata, sesi server, state UI hanya menampung hasil API |
 | [types.ts](src/lib/types.ts) | `DemoSession`, `Snapshot`, kontrak `DataService` | DTO sesi nyata dan mapper record/relasi PocketBase ke data UI |
-| [seed.ts](src/lib/data/seed.ts) | 30 definisi contoh, angka baseline/target/aktual, aktivitas, forum, FAQ, notifikasi dan proposal contoh | Referensi yang disahkan dan transaksi pengguna nyata |
-| [campuses.ts](src/lib/data/campuses.ts) | Roster 40 kampus dari daftar pengguna/dokumen, masih ditulis di kode | Master `campuses`; roster ini kandidat impor, bukan seluruhnya nama dummy |
+| [seed.ts](scripts/fixtures/seed.ts) | 30 definisi contoh, angka baseline/target/aktual, aktivitas, forum, FAQ, notifikasi dan proposal contoh | Referensi yang disahkan dan transaksi pengguna nyata |
+| [campuses.ts](scripts/fixtures/campuses.ts) | Roster 40 kampus dari daftar pengguna/dokumen, masih ditulis di kode | Master `campuses`; roster ini kandidat impor, bukan seluruhnya nama dummy |
 | [map.ts](src/lib/map.ts) | Koordinat perkiraan kota, hubungan kampus dibentuk dari urutan `campus-001` dst. | Lokasi terverifikasi berelasi ke ID kampus PocketBase |
 | [verification.ts](src/lib/verification.ts) dan service | Snapshot pengajuan/keputusan tersimpan lokal; ada `demoSubmissions()` | Riwayat pengajuan dan keputusan server yang tidak kehilangan snapshot |
 | [layout aplikasi](src/routes/(app)/+layout.svelte) dan [layout root](src/routes/+layout.ts) | Guard browser; SSR dimatikan untuk demo | Guard server untuk halaman/API; tinjau ulang SSR dan inisialisasi browser |
@@ -60,27 +62,27 @@ Fitur baru boleh `SELESAI` bila semua kolom yang berlaku `OK`, tidak memakai fal
 
 ## 4. Matriks fitur dan data
 
-Koleksi berikut sudah dibuat di instance lokal P0; belum terhubung ke UI. Tulis master melalui tooling lokal/superuser, bukan layar CRUD aplikasi. Matriks Baca/Tulis tetap mengukur alur UI, bukan keberadaan koleksi.
+Koleksi berikut sudah terhubung untuk pembacaan UI P2 lokal. Tulis master melalui tooling lokal/superuser, bukan layar CRUD aplikasi. Matriks Baca/Tulis tetap mengukur alur UI, bukan keberadaan koleksi.
 
 | ID | Fitur / data | Koleksi target | Baca | Tulis | Uji | Status |
 |---|---|---|---|---|---|---|
 | M01 | Login, sesi, logout, role dan kampus akun | `users` (auth) | BELUM | BELUM | BELUM | BELUM |
-| M02 | Daftar/detail kampus, profil penulis forum | `campuses` | BELUM | BELUM | BELUM | BELUM |
-| M03 | Katalog indikator, kategori, satuan, deskripsi | `indicator_definitions` | BELUM | BELUM | BELUM | BELUM |
-| M04 | Baseline, target, aktual dan catatan kampus | `campus_indicators` | BELUM | BELUM | BELUM | BELUM |
-| M05 | Kirim DEB, antrean review, keputusan dan riwayat | `deb_submissions` | BELUM | BELUM | BELUM | BELUM |
-| M06 | Feedback indikator, respons dan penutupan revisi | `indicator_feedback` | BELUM | BELUM | BELUM | BELUM |
-| M07 | Upload proposal, metadata dan versi | `proposal_versions` | BELUM | BELUM | BELUM | BELUM |
-| M08 | Lihat/unduh PDF dan perbandingan dua versi | File pada `proposal_versions` | BELUM | — | BELUM | BELUM |
-| M09 | Forum bersama, kategori, pencarian pertanyaan/jawaban | `questions`, `question_answers` | BELUM | BELUM | BELUM | BELUM |
-| M10 | Like per kampus dan peringkat pertanyaan | `question_likes` | BELUM | BELUM | BELUM | BELUM |
-| M11 | Promosi/tambah/edit/urut/hapus FAQ | `faq_entries` | BELUM | BELUM | BELUM | BELUM |
-| M12 | Aktivitas kampus dan ringkasan aktivitas Admin | `activities` | BELUM | BELUM | BELUM | BELUM |
-| M13 | Notifikasi, badge belum dibaca, tandai dibaca | `notifications` | BELUM | BELUM | BELUM | BELUM |
-| M14 | Dashboard, progres, jumlah proposal dan tindak lanjut | Agregasi M02–M07, M12–M13 | BELUM | — | BELUM | BELUM |
-| M15 | Sebaran kampus, lokasi dan ringkasan wilayah | Lokasi di `campuses` + agregasi M04 | BELUM | BELUM | BELUM | BELUM |
+| M02 | Daftar/detail kampus, profil penulis forum | `campuses` | OK | BELUM | BELUM | SEBAGIAN |
+| M03 | Katalog indikator, kategori, satuan, deskripsi | `indicator_definitions` | OK | BELUM | BELUM | SEBAGIAN |
+| M04 | Baseline, target, aktual dan catatan kampus | `campus_indicators` | OK | BELUM | BELUM | SEBAGIAN |
+| M05 | Kirim DEB, antrean review, keputusan dan riwayat | `deb_submissions` | OK | BELUM | BELUM | SEBAGIAN |
+| M06 | Feedback indikator, respons dan penutupan revisi | `indicator_feedback` | OK | BELUM | BELUM | SEBAGIAN |
+| M07 | Upload proposal, metadata dan versi | `proposal_versions` | OK | BELUM | BELUM | SEBAGIAN |
+| M08 | Lihat/unduh PDF dan perbandingan dua versi | File pada `proposal_versions` | OK | — | BELUM | SEBAGIAN |
+| M09 | Forum bersama, kategori, pencarian pertanyaan/jawaban | `questions`, `question_answers` | OK | BELUM | BELUM | SEBAGIAN |
+| M10 | Like per kampus dan peringkat pertanyaan | `question_likes` | OK | BELUM | BELUM | SEBAGIAN |
+| M11 | Promosi/tambah/edit/urut/hapus FAQ | `faq_entries` | OK | BELUM | BELUM | SEBAGIAN |
+| M12 | Aktivitas kampus dan ringkasan aktivitas Admin | `activities` | OK | BELUM | BELUM | SEBAGIAN |
+| M13 | Notifikasi, badge belum dibaca, tandai dibaca | `notifications` | OK | BELUM | BELUM | SEBAGIAN |
+| M14 | Dashboard, progres, jumlah proposal dan tindak lanjut | Agregasi M02–M07, M12–M13 | OK | — | BELUM | SEBAGIAN |
+| M15 | Sebaran kampus, lokasi dan ringkasan wilayah | Lokasi di `campuses` + agregasi M04 | OK | BELUM | BELUM | SEBAGIAN |
 
-Ringkasan baseline: **0 dari 15 area selesai**. Perbarui angka ini bersamaan dengan matriks, bukan berdasarkan jumlah koleksi.
+Status P2: pembacaan M02–M15 terhubung. Kolom Uji keseluruhan tetap BELUM hingga kriteria workflow/akses operasional selesai; tes read-only dicatat terpisah. M01/P1 serta seluruh mutasi/P3 belum diimplementasikan. Belum ada klaim kesiapan production.
 
 ### Detail schema dan batas akses
 
@@ -130,13 +132,13 @@ P0 teknis lokal tersedia. Tiga checkbox keputusan data/production di atas sengaj
 
 ### P2 — Pembacaan data
 
-- [ ] Tambahkan adapter HTTP, misalnya `src/lib/data/api-service.ts`, dan pemilihan mode eksplisit. Konfigurasi backend gagal harus menampilkan error, bukan otomatis membuat seed.
-- [ ] Implementasikan `load()` melalui `/api/bootstrap` atau endpoint per fitur; server membatasi field dan cakupan sebelum mengirim respons.
-- [ ] Migrasikan master kampus, definisi, indikator, pengajuan, feedback, proposal, forum, FAQ, aktivitas dan notifikasi sesuai matriks M01–M15.
-- [ ] Atur pagination/filter/sort server. Jangan menghitung KPI global dari satu halaman data; gunakan agregasi lengkap atau endpoint ringkasan.
-- [ ] Pertahankan forum lintas kampus; indikator/proposal/feedback/aktivitas/pengajuan tetap privat per kampus, notifikasi privat per akun.
-- [ ] Migrasikan lokasi peta; koordinat kosong/invalid harus ditangani tanpa membuat posisi palsu.
-- [ ] Ganti pesan error penyimpanan browser menjadi pesan jaringan/server yang tepat; sediakan loading, empty state, retry dan input yang tetap tersimpan saat gagal.
+- [x] Adapter HTTP di `src/lib/data/service.ts`, PocketBase-only tanpa pilihan mock. Konfigurasi gagal menampilkan error, bukan otomatis membuat seed.
+- [x] Implementasikan `load()` melalui `/api/bootstrap` atau endpoint per fitur; server membatasi field dan cakupan sebelum mengirim respons.
+- [x] Migrasikan master kampus, definisi, indikator, pengajuan, feedback, proposal, forum, FAQ, aktivitas dan notifikasi sesuai matriks M01–M15.
+- [x] Atur pagination/filter/sort server. Jangan menghitung KPI global dari satu halaman data; gunakan agregasi lengkap atau endpoint ringkasan.
+- [x] Pertahankan forum lintas kampus; indikator/proposal/feedback/aktivitas/pengajuan tetap privat per kampus, notifikasi privat per akun.
+- [x] Migrasikan lokasi peta; koordinat kosong/invalid harus ditangani tanpa membuat posisi palsu.
+- [x] Ganti pesan error penyimpanan browser menjadi pesan jaringan/server yang tepat; sediakan loading, empty state, retry serta data akun yang sama tetap terlihat dengan penanda stale saat refresh gagal. Input mutasi ditunda sampai P3.
 
 ### P3 — Mutasi dan workflow
 
@@ -235,6 +237,18 @@ Ekspor rekap, model desa binaan, level DEB lanjutan, email/push notifikasi dan d
 Keputusan ini tidak menghalangi penyiapan adapter dan fixture terisolasi, tetapi harus diselesaikan sebelum memasukkan data operasional dan menyatakan production siap.
 
 ## 10. Log checkpoint
+
+### 2026-09-09 — P2 lokal — PocketBase-only dan pemilih akun
+
+- Branch: `feat/p2-pocketbase-read-preview`, basis/target PR `development`; `main` tidak diubah.
+- Pembacaan M02–M15: OK pada preview lokal. P1 dan mutasi P3 tetap BELUM.
+- Node 22: `npm run check` 0 error/0 warning; `npm test` 11 lulus; `npm run build` berhasil; `npm run test:pb` 14 lulus; `npm run test:e2e` 10 lulus (Edge, frontend 5179, PocketBase fixture 8097).
+- Browser menguji pemilih kartu/pencarian kampus desktop-mobile, peta zoom/pan, halaman baca, PDF/diff, dua kampus/dua admin, API identitas palsu, akun nonaktif, workspace kosong, refresh gagal/retry, dan ketiadaan mutasi pada 10 koleksi bisnis.
+- Screenshot diperiksa lokal di `test-results/picker-desktop.png` dan `test-results/picker-mobile.png` (diabaikan Git).
+- Form kanan tanpa scroll halaman diuji pada 1366×768, 1280×720, dan 1536×864; screenshot laptop diperiksa. Satu percobaan antara sempat gagal saat bootstrap terputus/navigasi; suite lengkap ulang lulus 10/10 dan tes halaman admin diulang terpisah 5/5 lulus. Tidak ada retry otomatis yang menyembunyikan kegagalan tersebut.
+- Server hasil build diuji langsung: ketiga endpoint preview mengembalikan 404 meskipun flag aktif; output Vercel tidak menyertakan pembaca kredensial lokal atau file fixture.
+- Smoke read-only pada instance pengguna 5176/8096: 40 kampus, 1.200 indikator, 52 proposal; tidak menjalankan seed/reset terhadap instance tersebut.
+- Mock/Dexie dihapus dari frontend dan tes mock diganti tes HTTP/backend; fixture tetap khusus seeder/tes. Data PocketBase serta IndexedDB lama tidak dihapus. Sisa: P1, P3 dan persiapan data/deployment production.
 
 | Tanggal | ID/tahap | Perubahan | Baca/Tulis/Uji | Bukti | Sisa pekerjaan |
 |---|---|---|---|---|---|

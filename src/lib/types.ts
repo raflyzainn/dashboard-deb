@@ -1,6 +1,10 @@
 import type { ForumCategoryId } from './forum';
 export type Role = 'campus' | 'admin';
 export interface DemoSession { role: Role; name: string; campusId?: string }
+export interface AppSession extends DemoSession { id: string }
+export interface PreviewAccount { key: string; name: string; role: Role }
+export interface LocationDto { campusId: string; province: string; island: string; longitude: number | null; latitude: number | null; approximate: boolean }
+export interface Bootstrap { session: AppSession; data: Snapshot; locations: LocationDto[]; capabilities: { readOnly: true }; loadedAt: string }
 export interface Campus { id: string; name: string; region: string; initials: string; acronym?: string; city?: string; source?: 'user' | 'document' }
 export interface IndicatorDefinition { id: string; name: string; category: string; unit: string; description: string }
 export interface CampusIndicator { id: string; campusId: string; definitionId: string; baseline: number; target: number; current: number; note: string; updatedAt: string }
@@ -16,6 +20,7 @@ export interface FaqEntry { id: string; questionId?: string; question: string; a
 export interface Activity { id: string; campusId: string; text: string; createdAt: string }
 export interface Notification { id: string; campusId: string; recipient: Role; title: string; body: string; href: string; createdAt: string; readAt: string | null; simulated?: boolean }
 export interface Snapshot {
+  locations?: LocationDto[];
   campusRosterVersion?: number;
   submissions?: DebSubmission[];
   campuses: Campus[]; definitions: IndicatorDefinition[]; indicators: CampusIndicator[];

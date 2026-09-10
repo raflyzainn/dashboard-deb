@@ -1,4 +1,4 @@
-import type { Campus } from '../types';
+import type { Campus } from '../../src/lib/types';
 
 export const CAMPUS_ROSTER_VERSION = 1;
 export const CAMPUS_REGIONS = ['Jawa', 'Sumatra', 'Kalimantan & Sulawesi', 'Bali, Nusa Tenggara & Indonesia Timur'] as const;

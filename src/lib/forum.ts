@@ -15,16 +15,8 @@ export const FORUM_CATEGORIES = [
 ] as const;
 export type ForumCategoryId = typeof FORUM_CATEGORIES[number]['id'];
 
-const seedCategories: Record<string, ForumCategoryId[]> = {
-  'Bagaimana cara menghitung capaian indikator DEB Putih?': ['indikator'],
-  'Bolehkah memperbarui proposal yang sudah diajukan?': ['proposal'],
-  'Apa yang perlu ditulis dalam catatan indikator?': ['indikator'],
-  'Bagaimana mendokumentasikan kegiatan kolaborasi antar desa?': ['sosial'],
-  'Apakah nilai aktual boleh melebihi target?': ['indikator'],
-  'Kapan feedback indikator dinyatakan selesai?': ['indikator']
-};
 export function questionCategories(question: Pick<Question, 'title' | 'categoryIds'>): ForumCategoryId[] {
-  return question.categoryIds?.length ? question.categoryIds : seedCategories[question.title] || ['umum'];
+  return question.categoryIds?.length ? question.categoryIds : ['umum'];
 }
 export function validateCategories(categories: ForumCategoryId[]): ForumCategoryId[] {
   if (!Array.isArray(categories) || !categories.length || categories.some(id => !FORUM_CATEGORIES.some(c => c.id === id))) throw new Error('Pilih setidaknya satu kategori pertanyaan yang tersedia.');

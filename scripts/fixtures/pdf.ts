@@ -1,4 +1,4 @@
-// A small, valid PDF fixture. ASCII keeps byte offsets stable without a PDF dependency.
+// Seeder/test-only PDF. Never imported by the application runtime.
 export function samplePdf(campus: string, version: number): Blob {
   const safe = campus.replace(/[^a-zA-Z0-9 -]/g, '').slice(0, 70);
   const stream = `BT /F1 22 Tf 60 760 Td (PROPOSAL DEB PUTIH) Tj 0 -38 Td /F1 13 Tf (${safe}) Tj 0 -25 Td (Versi ${version} - Dokumen simulasi) Tj 0 -50 Td (Tujuan: pengembangan program lingkungan bersama kampus.) Tj 0 -25 Td (Rencana: pemetaan kebutuhan, pelaksanaan, dan evaluasi.) Tj 0 -25 Td (Dokumen contoh. Tidak memuat data atau proposal nyata.) Tj ET`;

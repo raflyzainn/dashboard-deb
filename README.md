@@ -1,159 +1,71 @@
 # Digitalisasi DEB
 
-Prototype monitoring DEB Putih untuk Admin Pertamina Foundation dan 40 kampus mitra. Seluruh data merupakan simulasi. Aplikasi berjalan tanpa backend aktif, dengan penyimpanan lokal browser yang tetap tersedia setelah refresh dan pergantian role.
+Dashboard DEB untuk Admin Pertamina Foundation dan kampus mitra. Pada P2, **seluruh data bisnis dibaca dari PocketBase**. Tidak ada mock service, Dexie, IndexedDB runtime, mode demo alternatif, atau fallback data lokal.
 
-Fondasi PocketBase lokal P0 tersedia secara terpisah: schema lengkap, akun uji, seeder dan pengujian akses. **UI masih memakai mockup**, belum membaca database. Setup: [PocketBase lokal DEB](docs/POCKETBASE-LOCAL.md).
+Data yang sudah di-seed di PocketBase tetap dipertahankan dan masih merupakan contoh, bukan data operasional resmi. Seeder/test fixture terpisah di `scripts/fixtures/`, tidak digunakan frontend.
 
-## Menjalankan
+## Menjalankan lokal
 
-Prasyarat: Node.js 22 LTS (minimal 22.13) dan npm. Tidak memerlukan `.env`, akun, atau server PocketBase.
-
-```powershell
-cd dashboard-deb
-npm install
-npm run dev
-```
-
-Buka **http://127.0.0.1:5176**. Port menggunakan `strictPort`; jika terpakai, pilih secara eksplisit:
+Prasyarat: Node.js 22.x (minimal 22.13), npm, dan PocketBase lokal DEB dari setup P0.
 
 ```powershell
-npm run dev -- --port 5178
+npm ci
+# Untuk checkout baru saja, salin .env.example menjadi .env tanpa menimpa konfigurasi yang sudah ada.
+npm run pb:setup
+npm run pb:serve
 ```
 
-Gunakan origin yang sama selama demo. `localhost:5176` dan `127.0.0.1:5176` memiliki penyimpanan browser berbeda, begitu juga port lain.
+Pada terminal kedua, jalankan `npm run pb:seed` **hanya jika memerlukan data awal**, lalu `npm run dev`. Seeder manual aman diulang dan tidak menimpa perubahan. Server yang sudah berjalan tidak perlu di-setup ulang.
 
-| Perintah | Kegunaan |
-|---|---|
-| `npm run dev` | Server pengembangan pada port 5176 |
-| `npm run check` | TypeScript strict dan pemeriksaan Svelte |
-| `npm test` | Pengujian domain dan transaksi IndexedDB menggunakan fake-indexeddb |
-| `npm run test:e2e` | Pengujian browser Playwright, Microsoft Edge headless |
-| `npm run build` | Build melalui adapter Vercel |
-| `npm run preview` | Preview pada port 4176 |
+Konfigurasi privat aplikasi:
 
-Suite E2E memakai Microsoft Edge yang terpasang di komputer. Jika tidak tersedia, pasang browser Chromium dengan `npx playwright install chromium`, lalu hapus `channel: 'msedge'` dari konfigurasi Playwright. Suite otomatis menyalakan server dev bila belum berjalan; test port default adalah 5176.
-
-## Deployment Vercel
-
-Proyek memakai `@sveltejs/adapter-vercel`, preset `sveltekit` pada `vercel.json`, dan Node.js 22.x. Adapter menghasilkan `.vercel/output` berisi konfigurasi routing, aset statis, dan fungsi server. Folder ini diabaikan oleh Git.
-
-Pada Vercel, gunakan root repository, Framework Preset **SvelteKit**, Build Command **npm run build**, dan Output Directory **default / override dimatikan**. Jangan isi Output Directory dengan `public`, `static`, atau `.svelte-kit/output/client`. `vercel.json` mengembalikan output directory ke default framework.
-
-Branch `main` dibekukan untuk mockup yang sedang direview pengguna. Pekerjaan baru dibuat dari `development`, dengan push feature branch dan PR ke `development` saja; jangan push/PR ke `main`. Pengaturan deployment tidak diubah oleh P0. Log build sukses harus menunjukkan `Using @sveltejs/adapter-vercel`. Verifikasi build lokal tidak menjamin deployment Vercel sudah aktif.
-
-Prototype tidak memerlukan environment variable atau backend untuk demo. Data tetap disimpan per browser dan origin; deployment baru dengan domain berbeda memiliki penyimpanan yang berbeda.
-
-Referensi: [adapter Vercel SvelteKit](https://svelte.dev/docs/kit/adapter-vercel) dan [konfigurasi Vercel](https://vercel.com/docs/project-configuration/vercel-json).
-
-## Fitur dan alur demo
-
-### Kampus
-
-Klik **Masuk sebagai Kampus** untuk menggunakan Universitas Indonesia. Tersedia dashboard, 30 indikator dalam tiga bidang, pembaruan nilai aktual dan catatan, feedback Admin, upload proposal PDF dan riwayat versi, forum bersama, serta FAQ.
-
-### Admin PF
-
-Klik **Masuk sebagai Admin PF** untuk melihat ringkasan dan daftar 40 kampus. Gunakan **Review Kampus** untuk memeriksa pengajuan, meminta revisi, dan mengonfirmasi data DEB. Admin membaca nilai isian kampus dan memberi feedback per indikator; angka hanya dapat diubah oleh kampus. Alur lengkap dan riwayat versi dijelaskan dalam [Review Kampus](docs/REVIEW-KAMPUS.md). Admin dapat membaca proposal seluruh kampus, menjawab pertanyaan, serta mengelola FAQ.
-
-### Demo revisi lintas role
-
-1. Admin → Kampus mitra → Universitas Indonesia → Indikator → Tinjau → isi feedback dengan **Minta revisi data** aktif.
-2. Keluar/ganti peran → Kampus → Indikator → Perbarui nilai aktual dan catatan.
-3. Masuk kembali sebagai Admin → feedback berubah menjadi **Sudah ditanggapi**.
-4. Pilih **Tandai selesai** untuk menutup revisi. Riwayat feedback tetap tersimpan.
-
-Login Kampus selalu mewakili Universitas Indonesia; gunakan kampus ini untuk demo lintas role. Nama 40 kampus berasal dari daftar pengguna (34) dan lampiran Word proyek (6). Angka capaian, aktivitas, forum awal, dan PDF contoh tetap simulasi. Lihat [sumber daftar kampus](docs/DAFTAR-KAMPUS.md).
-
-### Demo proposal
-
-Kampus → Proposal → Unggah versi baru → pilih PDF maksimal 10 MB → isi catatan perubahan → Ajukan. Versi lama tetap dapat dibuka dan diunduh, termasuk setelah refresh. Validasi memeriksa ekstensi, MIME bila tersedia, ukuran, dan signature `%PDF-`; ini bukan pemeriksaan lengkap terhadap struktur atau keamanan dokumen.
-
-PDF contoh dibuat sebagai dokumen PDF valid dengan konten simulasi. Ringkasan perubahan pada versi seed diberi label simulasi. Upload pengguna memiliki catatan perubahan manual.
-
-Bagian **Bandingkan versi proposal** membaca teks dari dua PDF yang dipilih. Pilih versi dasar dan pembanding secara bebas, tukar arah, lalu tinjau baris merah yang dihapus dan baris hijau yang ditambahkan. Tersedia tampilan berdampingan/gabungan, filter hanya perubahan, nomor baris/halaman, dan akses PDF asli. Gambar, format, serta PDF scan tanpa teks tidak dibandingkan. Detail: [Perbandingan proposal](docs/PERBANDINGAN-PROPOSAL.md).
-
-### Forum bersama dan FAQ
-
-Forum dapat dibaca seluruh kampus dan Admin **setelah masuk**, termasuk pertanyaan kampus lain. Dataset forum sama untuk kedua role; bukan percakapan privat. Kampus membuat pertanyaan dan toggle like. Admin memberikan satu jawaban resmi yang dapat diperbarui, lalu bisa menjadikannya FAQ.
-
-Pertanyaan mendukung beberapa kategori topik: Indikator & baseline, Proposal, Social Mapping, Theory of Change (ToC), IKM, Energi, Ekonomi, Sosial, dan Umum. Filter kategori dapat digabungkan dengan kata kunci, status jawaban, dan urutan popularitas. Pencarian mencakup judul, isi pertanyaan, dan isi jawaban Admin. Kategori berasal dari topik brief dan roadmap, terpisah dari kelompok kampus serta level DEB. Detail: [Kategori forum](docs/KATEGORI-FORUM.md).
-
-FAQ menyimpan salinan pertanyaan/jawaban. Mengubah jawaban di forum tidak otomatis mengubah FAQ. FAQ dapat diedit, diurutkan saat filter pencarian kosong, dan dihapus tanpa menghapus pertanyaan sumber.
-
-### Notifikasi
-
-Buka menu **Notifikasi** atau ikon lonceng pada header. Kampus menerima pemberitahuan feedback, penyelesaian feedback, dan jawaban atas pertanyaannya. Admin menerima pembaruan indikator, upload proposal, dan pertanyaan baru. Tersedia filter belum dibaca, tandai dibaca, tandai semua dibaca, serta tautan detail.
-
-Halaman juga memuat contoh berlabel **Simulasi**, dengan campuran status dibaca dan belum dibaca. Sepuluh contoh tambahan, lima per peran, ditambahkan satu kali ke database browser lama tanpa reset. Notifikasi yang sudah ada dan status bacanya tetap dipertahankan. Detail: [Notifikasi](docs/NOTIFIKASI.md).
-
-Notifikasi memakai IndexedDB lokal seperti fitur lainnya. Belum ada email, push notification, atau sinkronisasi lintas perangkat. Gunakan tombol Muat ulang atau buka ulang halaman setelah perubahan dari tab lain.
-
-## Progres dan status
-
-- Capaian indikator = `min(current / target × 100, 100)`.
-- Progres kampus = rata-rata seluruh 30 capaian indikator; rata-rata keseluruhan = rata-rata progres 40 kampus.
-- Indikator tercapai jika `current >= target`. Jumlah tercapai ditampilkan terpisah dari rata-rata progres.
-- Baseline dan target merupakan referensi tetap. Nilai aktual harus hingga dan tidak negatif; boleh melebihi target.
-- Status feedback terpisah dari progres numerik: `open` → `responded` → `closed`.
-- KPI tindak lanjut kampus menghitung indikator unik dengan revisi aktif; KPI Admin menghitung kampus unik yang memiliki revisi aktif. Badge navigasi menghitung jumlah feedback revisi aktif.
-
-Seed awal: 40 kampus, 1.200 nilai indikator, 35 kampus dengan proposal, dan 10 kampus dengan feedback revisi aktif. Universitas Indonesia memiliki progres 76%, 12 indikator tercapai, dan tiga versi proposal. Nilai ini dihitung dari seed, bukan angka dashboard yang ditulis terpisah.
-
-## Struktur dan stack
-
-SvelteKit 2 / Svelte 5, TypeScript strict, Tailwind CSS 4, adapter Vercel, Dexie, dan font Plus Jakarta Sans lokal. Ilustrasi dan chart sederhana dibuat dengan SVG/CSS sehingga tidak membutuhkan layanan gambar atau chart eksternal.
-
-```text
-src/lib/
-  types.ts                  entitas dan kontrak DataService
-  domain.ts                 perhitungan progres dan format
-  data/                     seed, fixture PDF, implementasi mock
-  state.svelte.ts           sesi demo, loading, error, notifikasi UI
-  components/               shell dan komponen UI bersama
-src/routes/
-  +page.svelte              pengalihan awal ke login/dashboard
-  login/+page.svelte        pemilihan role
-  (app)/
-    +layout.svelte          shell aplikasi dan penjagaan role
-    _components/            tampilan fitur bersama Kampus/Admin
-    campus/
-      dashboard/+page.svelte
-      indicators/+page.svelte
-      proposal/+page.svelte
-      questions/+page.svelte
-      questions/[id]/+page.svelte
-      faq/+page.svelte
-    admin/
-      dashboard/+page.svelte
-      campuses/+page.svelte
-      campuses/[id]/+page.svelte
-      indicators/+page.svelte
-      proposal/+page.svelte
-      questions/+page.svelte
-      questions/[id]/+page.svelte
-      faq/+page.svelte
-tests/                      pengujian domain dan browser
-docs/POCKETBASE.md          kontrak dan pemetaan backend tahap berikutnya
+```dotenv
+PB_URL=http://127.0.0.1:8096
+DEB_LOCAL_PREVIEW_ENABLED=true
 ```
 
-Setiap halaman memiliki folder route dan `+page.svelte` tersendiri. Kelompok `(app)` tidak muncul pada URL. Tampilan fitur yang digunakan beberapa halaman ditempatkan di `src/routes/(app)/_components`; komponen UI umum tetap di `src/lib/components`. Tidak ada lagi router `[role]/[section]` atau halaman di `src/lib/pages`.
+Website: **http://127.0.0.1:5176**. Dashboard PocketBase: **http://127.0.0.1:8096/_/**. Gunakan kredensial superuser dari file privat lokal untuk dashboard PocketBase, bukan akun kampus. Jangan bagikan atau commit file tersebut.
 
-`/` mengarah ke login atau dashboard. URL role lain diarahkan ke dashboard role aktif. ID detail yang tidak valid menampilkan keadaan tidak ditemukan; URL yang tidak terdaftar ditangani oleh halaman error 404 SvelteKit.
+Pilih akun kampus/admin pada halaman masuk, lalu **Buka ruang kerja**. Password/token PocketBase tidak dikirim ke browser; sessionStorage hanya menyimpan key pilihan akun. Ini preview QA lokal, **bukan autentikasi production**. Semua orang yang dapat mengakses preview lokal dapat memilih akun admin seed. P1 tetap diperlukan sebelum deployment.
 
-Setelah perubahan struktur folder route atau penghapusan matcher, mulai ulang `npm run dev` jika server yang sudah berjalan masih menampilkan `No matcher found for parameter 'role'`. Pesan itu berasal dari daftar route lama pada proses dev; tidak perlu mereset data demo atau IndexedDB.
+## Kemampuan P2
 
-## Penyimpanan dan batasan
+- Membaca dashboard, kampus/detail, indikator, pengajuan/review, feedback, proposal/PDF, forum/jawaban/like, FAQ, aktivitas, notifikasi dan lokasi peta.
+- Membuka/mengunduh PDF serta membandingkan teks dua versi dari file protected PocketBase.
+- Pencarian, filter, tab, navigasi notifikasi, dan zoom/pan peta tetap aktif.
+- Tombol **Muat ulang data** mengambil kondisi terbaru PocketBase; tidak ada polling.
+- Semua aksi tulis dinonaktifkan sampai P3, termasuk like dan status baca notifikasi. Membuka notifikasi tidak menandainya dibaca.
+- Peta memakai ID dan koordinat PocketBase. Kampus tanpa lokasi valid tetap dihitung sebagai kampus, tetapi tidak mendapatkan marker palsu.
+- Backend mati menampilkan error/retry, bukan data contoh pengganti. Refresh gagal mempertahankan data akun yang sama dengan penanda pembaruan gagal; pindah akun menghapus state/PDF lama.
+- Data browser lama tidak dibaca dan tidak dihapus otomatis.
 
-Data serta Blob PDF disimpan di database IndexedDB **`deb-prototype-v1`**. Pilihan role disimpan pada key session storage **`deb-demo-session`**. Seed hanya dimuat saat database belum ada. Logout menghapus sesi demo, bukan data kerja.
-
-**Reset data demo** membutuhkan konfirmasi dan hanya mengganti data database DEB serta menghapus sesi DEB. Tindakan tersebut menghapus perubahan dan unggahan lokal; gunakan hanya saat siap kembali ke seed. Data aplikasi lain tidak disentuh.
-
-Data tidak dibagikan antarbrowser, perangkat, atau origin. Pergantian role pada browser yang sama mendemonstrasikan kolaborasi. Tidak ada realtime atau sinkronisasi background antartab. IndexedDB dapat hilang jika pengguna membersihkan penyimpanan browser; mode privat dan keterbatasan ruang penyimpanan bisa menyebabkan kegagalan. UI menampilkan error, mempertahankan input, dan tidak mengklaim keberhasilan sebelum penyimpanan selesai.
-
-Pembatasan role dan kepemilikan pada prototype adalah simulasi UI/service, **bukan keamanan produksi**. Seluruh data lokal dapat diperiksa oleh pemilik browser. Autentikasi nyata, otorisasi backend, aturan koleksi, dan pengelolaan berkas produksi harus ditambahkan saat migrasi PocketBase. Tidak ada request ke PocketBase atau layanan produksi, tidak ada OAuth/email/password, dan tidak ada data asli yang disertakan.
+Rumus capaian tetap `min(current / target * 100, 100)`; progres kampus adalah rata-rata indikator yang diterima dari database. Baseline adalah konteks awal. Pengesahan indikator, periode, rumus, dan koordinat operasional masih terpisah.
 
 ## Pengujian
 
-Pengujian otomatis mencakup konsistensi seed, agregasi progres, validasi angka, pembatasan data, siklus revisi, upload konkuren dan validasi PDF, like unik, FAQ, persistensi, dan reset terisolasi.
+| Perintah | Kegunaan |
+|---|---|
+| `npm run check` | TypeScript dan Svelte |
+| `npm test` | Adapter HTTP, guard preview, domain, fixture, peta dan perbandingan teks |
+| `npm run test:pb` | Schema, rules, seed dan repository terhadap binary PocketBase nyata |
+| `npm run test:e2e` | Microsoft Edge headless, frontend 5179 + fixture PocketBase 8097 |
+| `npm run build` | Build adapter Vercel |
+| `npm run preview` | Build lokal 4176; akses preview akun sengaja ditolak karena bukan dev server |
 
-Playwright memeriksa UI lintas role, upload dua PDF lalu refresh/buka/unduh, penolakan PDF palsu, Q&A sampai FAQ, persistensi, reset, route guards, daftar halaman, pencarian kosong, detail tidak ditemukan, drawer mobile, serta kegagalan penyimpanan. Browser E2E menggunakan konteks baru berisi data dummy dan tidak mengubah data demo pada browser pengguna. Bukti/trace lokal disimpan di `test-results/` dan tidak disertakan dalam source control.
+Jalankan tes backend dan E2E bergantian karena keduanya memakai port fixture 8097. E2E membuat database/file/akun QA terisolasi, bukan memakai backend development pengguna di 8096. Artefak disimpan dalam folder yang diabaikan Git. Chromium dapat dipakai jika konfigurasi channel Edge disesuaikan.
+
+## Batas deployment dan Git
+
+`main` tetap mockup review dan tidak disentuh. Feature branch dibuat dari `development`; push dan PR hanya ke `development`.
+
+Adapter Vercel dan Node 22.x dipertahankan, tetapi P2 **belum untuk deployment pengguna**. Endpoint preview menolak production, flag nonaktif, request nonlokal/lintas origin, dan instance backend yang tidak cocok. Tidak ada fallback ke mock bila preview ditolak. P1 dan P3 menyusul; pengaturan hosting tidak diubah.
+
+## Dokumentasi
+
+- [Setup PocketBase lokal dan keamanan](docs/POCKETBASE-LOCAL.md)
+- [Kontrak PocketBase](docs/POCKETBASE.md)
+- [Checkpoint migrasi dan status tahapan](CHECKPOINT-MIGRASI-POCKETBASE.md)
+- [Asal roster kampus](docs/DAFTAR-KAMPUS.md)
+- [Perbandingan proposal](docs/PERBANDINGAN-PROPOSAL.md)
+
+Dokumen fitur lama tentang workflow edit/review/upload merupakan referensi rancangan P3; pada P2 tombol-tombol tersebut nonaktif.

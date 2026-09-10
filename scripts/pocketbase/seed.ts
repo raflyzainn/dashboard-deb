@@ -1,7 +1,7 @@
 import type PocketBase from 'pocketbase';
 import type { RecordModel } from 'pocketbase';
-import { createSeed } from '../../src/lib/data/seed';
-import { CAMPUS_LOCATIONS } from '../../src/lib/map';
+import { createSeed } from '../fixtures/seed';
+import { CAMPUS_LOCATIONS } from '../fixtures/locations';
 import { questionCategories } from '../../src/lib/forum';
 import { adminClient, credentialsPath, password, privateJson, readJson, type Credentials, type LocalInstance } from './runtime';
 

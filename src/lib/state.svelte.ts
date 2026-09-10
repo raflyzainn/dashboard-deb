@@ -1,77 +1,82 @@
-import type { DemoSession, Role, Snapshot } from './types';
-import { dataService } from './data/service';
-import { DEMO_CAMPUS } from './data/seed';
-import { DEMO_CAMPUS_PROFILE } from './data/campuses';
+import type { AppSession, PreviewAccount, Snapshot } from './types';
+import { dataService, DataReadError, READ_ONLY_MESSAGE } from './data/service';
 
-const SESSION_KEY = 'deb-demo-session';
+const SESSION_KEY = 'deb-pocketbase-preview-account';
 class AppState {
-  session = $state<DemoSession | null>(null);
+  session = $state<AppSession | null>(null);
   data = $state<Snapshot | null>(null);
+  accounts = $state<PreviewAccount[]>([]);
   ready = $state(false);
   loading = $state(false);
+  accountsLoading = $state(false);
   busy = $state(false);
+  readOnly = true;
   error = $state('');
   toast = $state('');
+  loadedAt = $state('');
+  stale = $state(false);
   dialogs = $state(0);
   private revision = 0;
-  private timer: ReturnType<typeof setTimeout> | undefined;
+  private initializing = false;
 
   async init() {
-    if (this.ready) return;
-    try {
-      const raw = sessionStorage.getItem(SESSION_KEY);
-      if (raw) {
-        const session: DemoSession = JSON.parse(raw);
-        if (session.role === 'admin' || (session.role === 'campus' && session.campusId === DEMO_CAMPUS)) this.session = session.role === 'campus' ? { ...session, name: DEMO_CAMPUS_PROFILE.name } : session;
-        else sessionStorage.removeItem(SESSION_KEY);
-      }
-    } catch { this.error = 'Sesi demo tidak dapat dibaca. Izinkan penyimpanan browser, lalu coba masuk kembali.'; }
+    if (this.ready || this.initializing) return;
+    this.initializing = true;
+    let key = '';
+    try { key = sessionStorage.getItem(SESSION_KEY) || ''; } catch { /* Selection persistence is optional. */ }
+    if (key) await this.login(key);
+    if (!this.session) await this.loadAccounts();
     this.ready = true;
-    if (this.session) await this.reload();
+    this.initializing = false;
   }
-  async login(role: Role) {
-    this.error = '';
-    const actor: DemoSession = role === 'campus' ? { role, name: DEMO_CAMPUS_PROFILE.name, campusId: DEMO_CAMPUS } : { role, name: 'Admin PF' };
-    this.loading = true;
+  async loadAccounts() {
+    const revision = this.revision;
+    this.accountsLoading = true; this.error = '';
+    try { const accounts = await dataService.accounts(); if (revision === this.revision) this.accounts = accounts; }
+    catch (error) { if (revision === this.revision) { this.accounts = []; this.error = this.message(error); } }
+    finally { this.accountsLoading = false; }
+  }
+  async login(key: string) {
+    const revision = ++this.revision;
+    dataService.selectAccount(key);
+    this.session = null; this.data = null; this.loadedAt = ''; this.stale = false; this.dialogs = 0;
+    this.loading = true; this.error = '';
     try {
-      const data = await dataService.load(actor);
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(actor));
-      this.session = actor; this.data = data; this.revision++;
+      const result = await dataService.bootstrap();
+      if (revision !== this.revision) return false;
+      this.session = result.session; this.data = result.data; this.loadedAt = result.loadedAt;
+      try { sessionStorage.setItem(SESSION_KEY, key); } catch { /* Select an account again after refresh. */ }
       return true;
-    } catch (e) { this.error = this.message(e); return false; }
-    finally { this.loading = false; }
+    } catch (error) {
+      if (revision === this.revision) { this.error = this.message(error); try { sessionStorage.removeItem(SESSION_KEY); } catch { /* optional */ } }
+      return false;
+    } finally { if (revision === this.revision) this.loading = false; }
   }
   logout() {
-    try { sessionStorage.removeItem(SESSION_KEY); }
-    catch (e) { this.error = this.message(e); return false; }
-    this.revision++; this.session = null; this.data = null; this.error = ''; this.toast = '';
+    this.revision++; dataService.selectAccount('');
+    this.session = null; this.data = null; this.error = ''; this.toast = ''; this.loadedAt = ''; this.stale = false; this.loading = false; this.dialogs = 0;
+    try { sessionStorage.removeItem(SESSION_KEY); } catch { /* selection only */ }
+    void this.loadAccounts();
     return true;
   }
   async reload() {
-    if (!this.session) return;
+    if (!this.session || this.loading) return;
     const revision = this.revision;
     this.loading = true; this.error = '';
-    try { const data = await dataService.load(this.session); if (revision === this.revision) this.data = data; }
-    catch (e) { this.error = this.message(e); }
-    finally { this.loading = false; }
-  }
-  async mutate(action: () => Promise<unknown>, success: string): Promise<boolean> {
-    if (this.busy) return false;
-    this.busy = true; this.error = ''; this.toast = '';
     try {
-      await action();
-      if (this.session) this.data = await dataService.load(this.session);
-      this.toast = success;
-      clearTimeout(this.timer); this.timer = setTimeout(() => { this.toast = ''; }, 4500);
-      return true;
-    } catch (e) { this.error = this.message(e); return false; }
-    finally { this.busy = false; }
+      const result = await dataService.bootstrap();
+      if (revision === this.revision) { this.session = result.session; this.data = result.data; this.loadedAt = result.loadedAt; this.stale = false; }
+    } catch (error) {
+      if (revision !== this.revision) return;
+      if (error instanceof DataReadError && [401, 403].includes(error.status)) this.logout();
+      else this.stale = true;
+      this.error = this.message(error);
+    } finally { if (revision === this.revision) this.loading = false; }
   }
-  async reset() {
-    const done = await this.mutate(() => dataService.reset(), 'Data demo dikembalikan ke kondisi awal.');
-    if (done) return this.logout();
+  async mutate(_action: () => Promise<unknown>, _success: string): Promise<boolean> {
+    this.error = READ_ONLY_MESSAGE;
     return false;
   }
-  private message(e: unknown) { return e instanceof Error ? e.message : 'Penyimpanan gagal. Periksa ruang penyimpanan dan izin browser, lalu coba lagi.'; }
+  private message(error: unknown) { return error instanceof Error ? error.message : 'Pembacaan PocketBase gagal. Coba muat ulang.'; }
 }
 export const app = new AppState();

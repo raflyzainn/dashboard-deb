@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createSeed } from '../src/lib/data/seed';
-import { CAMPUS_LOCATIONS, mapCampuses, progressBands, regionSummary } from '../src/lib/map';
+import { createSeed } from '../scripts/fixtures/seed';
+import { mapCampuses, progressBands, regionSummary } from '../src/lib/map';
+import { CAMPUS_LOCATIONS } from '../scripts/fixtures/locations';
 
 test('map covers every campus once with valid approximate coordinates and region summaries', () => {
   const { data } = createSeed();
