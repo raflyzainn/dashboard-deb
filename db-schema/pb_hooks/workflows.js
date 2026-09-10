@@ -37,7 +37,7 @@ function canonical(value) {
   return value;
 }
 exports.run = (e) => {
-  if (!$os.getenv('DEB_LOCAL_INSTANCE_ID')) fail('Workflow lokal tidak tersedia.', 404);
+
   const actorId = e.auth && e.auth.id;
   const op = e.request.pathValue('operation');
   const key = e.request.header.get('Idempotency-Key');
@@ -62,7 +62,7 @@ exports.run = (e) => {
   let result;
   e.app.runInTransaction(app => {
     const actor = get(app, 'users', actorId);
-    if (!actor.getBool('active') || !actor.getBool('simulated')) fail('Akun tidak aktif atau bukan akun QA lokal.', 403);
+    if (!actor.getBool('active') || !actor.getBool('verified') || (actor.getBool('simulated') && !$os.getenv('DEB_LOCAL_INSTANCE_ID'))) fail('Akun tidak aktif atau belum terverifikasi.', 403);
     const role = actor.getString('role'), campus = actor.getString('campus');
     if (!['admin', 'campus'].includes(role) || (role === 'campus' && !campus)) fail('Identitas akun tidak valid.', 403);
     const roleIs = expected => { if (role !== expected) fail('Peran tidak diizinkan.', 403); };

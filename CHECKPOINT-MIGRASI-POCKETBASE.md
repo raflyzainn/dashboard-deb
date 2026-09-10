@@ -1,5 +1,8 @@
 # Checkpoint migrasi dashboard-deb ke PocketBase
 
+Update alur P1: admin hanya menyimpan nama/email PIC. Kampus meminta tautan melalui Aktivasi akun; email harus cocok dengan kontak tersimpan. Simpan PIC tidak mengirim email. Tombol/checkbox pengiriman admin dan endpoint send/recipients dihapus.
+
+
 Tanggal baseline: 9 September 2026. Status berdasarkan pemeriksaan source code lokal, bukan pemeriksaan instance PocketBase atau deployment.
 
 Dokumen ini menjadi daftar kerja dan pencatat progres migrasi dari data lokal/dummy ke PocketBase. **Belum ada fitur DEB yang terhubung ke PocketBase pada baseline ini.** Pembuatan dokumen tidak mengubah aplikasi, memasang SDK, membuat koleksi, atau memindahkan data.
@@ -11,6 +14,10 @@ Update P2 lokal (9 September 2026): seluruh pembacaan UI kini melalui API Svelte
 Update P3 lokal (9 September 2026): seluruh workflow tulis melalui API SvelteKit dan transaksi PocketBase sudah aktif pada **frontend 5176 / PocketBase 8096**. P1 tetap BELUM. Migrasi dilakukan setelah backup database/file terverifikasi, tanpa mengubah 13 koleksi bisnis existing. Pengujian mutasi terbaru menggunakan **MCP Playwright Google Chrome pada 5176**, lalu record diperiksa langsung di 8096. Perintah tes standar kini menggunakan kedua port existing tersebut, tanpa membuat fixture/seed/reset. Lihat [kontrak P3](docs/POCKETBASE-P3.md).
 
 Update P4 lokal (10 September 2026): CRUD master kampus/lokasi dan indikator bersama tersedia. **Seluruh kampus memakai definisi, baseline, dan target yang sama**; aktual/catatan tetap per kampus. Draft hanya untuk Admin; aktivasi dan edit indikator aktif dikunci selama ada pengajuan pending. P1 tetap BELUM dan P4 keseluruhan SEBAGIAN. Lihat [kontrak P4](docs/POCKETBASE-P4.md) dan log terbaru bagian 10.
+
+Update P1 lokal (10 September 2026): login email/password, cookie sesi server, PIC persisten, undangan/antrean email, aktivasi dan pemulihan sudah diimplementasikan. Mailpit dipakai untuk pengujian terisolasi; pengiriman Postmark ke Gmail sudah diuji atas permintaan pengguna. Domain publik HTTPS dan deployment tetap TODO. Mockup dihapus, pemilih akun QA hanya melalui opsi development. Verifikasi: 7 tes backend P1 dan 2 Playwright P1 pada salinan, 8 Playwright regresi existing, 21 unit dan 6 regresi PocketBase lulus. Indikator aktivasi 4 langkah tersedia; login mempertahankan ilustrasi bunga/daun dan viewport tanpa scroll. Semua 15 tabel bisnis existing identik dengan backup pra-migrasi. Backend P1 diuji pada salinan 5177/8097; instance kerja tetap 5176/8096. Lihat [P1 lokal](docs/POCKETBASE-P1.md). Bagian riwayat P0-P4 di bawah mempertahankan status pada waktu pengerjaannya.
+
+Update API per halaman (10 September 2026): frontend tidak lagi memakai endpoint bootstrap. Sesi dan ringkasan navigasi dipisah dari data halaman; setiap halaman memakai endpoint baca tersendiri, termasuk tab detail kampus. Mutasi memuat ulang data halaman aktif dan ringkasan navigasi. Lihat [kontrak API per halaman](docs/API-PER-HALAMAN.md). P1 operasional tetap BELUM, tanpa perubahan schema atau data bisnis.
 
 ## 1. Pola proyek pembanding
 
@@ -70,7 +77,7 @@ Matriks ini mengukur alur UI terhadap PocketBase lokal. P4 menambahkan CRUD mast
 
 | ID | Fitur / data | Koleksi target | Baca | Tulis | Uji | Status |
 |---|---|---|---|---|---|---|
-| M01 | Login, sesi, logout, role dan kampus akun | `users` (auth) | BELUM | BELUM | BELUM | BELUM |
+| M01 | Login, sesi, logout, role dan kampus akun | `users` (auth), kontak/undangan | OK | OK | OK lokal | SELESAI LOKAL |
 | M02 | Daftar/detail/master kampus, profil penulis forum | `campuses` | OK | OK | OK | SELESAI |
 | M03 | Katalog bersama, baseline/target, draft/aktivasi | `indicator_definitions`, `master_audit` | OK | OK | OK | SELESAI |
 | M04 | Baseline, target, aktual dan catatan kampus | `campus_indicators` | OK | OK | OK | SELESAI |
@@ -126,13 +133,15 @@ P0 teknis lokal tersedia. Tiga checkbox keputusan data/production di atas sengaj
 
 ### P1 — Autentikasi dan akses
 
-- [ ] Tambahkan `/api/auth/login`, `/api/auth/logout`, `/api/auth/me` dan `src/hooks.server.ts`; isi `event.locals` dari sesi terverifikasi.
-- [ ] Gunakan cookie sesi HttpOnly, SameSite, Secure pada HTTPS, serta konfigurasi localhost yang sesuai; validasi origin/CSRF untuk mutasi berbasis cookie.
-- [ ] Verifikasi masa berlaku sesi dan status akun; pencabutan akses harus berlaku pada request berikutnya sesuai kebijakan sesi.
-- [ ] Ganti pemilihan role di login dan `sessionStorage` sebagai sumber identitas; hapus ketergantungan `DEMO_CAMPUS` pada mode backend.
-- [ ] Guard halaman dan setiap endpoint: unauthenticated ditolak, role salah ditolak, Campus A tidak dapat membaca/mengubah data kerja Campus B.
-- [ ] Jangan percaya `DemoSession` dari parameter `DataService`. Ubah kontrak agar browser tidak menentukan actor otoritatif; UI menerima profil dari server.
-- [ ] Tambahkan provisioning/reset password sesuai keputusan P0; bila memakai email PocketBase, konfigurasi dan uji mailer serta tautan reset di instance DEB.
+- [x] Tambahkan `/api/auth/login`, `/api/auth/logout`, `/api/auth/me` dan `src/hooks.server.ts`; isi `event.locals` dari sesi terverifikasi.
+- [x] Gunakan cookie sesi HttpOnly, SameSite, Secure pada HTTPS, serta konfigurasi localhost yang sesuai; validasi origin/CSRF untuk mutasi berbasis cookie.
+- [x] Verifikasi masa berlaku sesi dan status akun; pencabutan akses harus berlaku pada request berikutnya sesuai kebijakan sesi.
+- [x] Ganti pemilihan role di login dan `sessionStorage` sebagai sumber identitas; hapus ketergantungan `DEMO_CAMPUS` pada mode backend.
+- [x] Guard halaman dan setiap endpoint: unauthenticated ditolak, role salah ditolak, Campus A tidak dapat membaca/mengubah data kerja Campus B.
+- [x] Jangan percaya `DemoSession` dari parameter `DataService`. Ubah kontrak agar browser tidak menentukan actor otoritatif; UI menerima profil dari server.
+- [x] Tambahkan provisioning/reset password sesuai keputusan P0; bila memakai email PocketBase, konfigurasi dan uji mailer serta tautan reset di instance DEB.
+
+SMTP resmi, pengiriman eksternal dan deployment production belum diuji; konfigurasi TODO ada pada panduan P1.
 
 ### P2 — Pembacaan data
 

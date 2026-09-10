@@ -44,7 +44,6 @@ export interface DataService {
   deleteDefinition(id: string, revision: number): Promise<void>;
   submitDeb(): Promise<void>;
   reviewDeb(submissionId: string, decision: 'approved' | 'revision', note: string): Promise<void>;
-  load(): Promise<Snapshot>;
   updateIndicator(id: string, current: number, note: string): Promise<void>;
   addFeedback(indicatorId: string, text: string, requiresRevision: boolean): Promise<void>;
   closeFeedback(id: string): Promise<void>;

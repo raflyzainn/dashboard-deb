@@ -152,8 +152,11 @@ export async function migrate(instance: LocalInstance) {
 
 export async function start(instance: LocalInstance): Promise<ChildProcess> {
   await portAvailable(instance);
+  const secretFile = path.join(instance.directory, 'p1-secret.json');
+  let secret: { key: string };
+  try { secret = await readJson(secretFile); } catch { secret = { key: randomBytes(48).toString('base64url') }; await privateJson(secretFile, secret); }
   const child = spawn(BINARY, ['serve', `--http=127.0.0.1:${new URL(instance.url).port}`, ...args(instance)], {
-    windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, DEB_LOCAL_INSTANCE_ID: instance.instanceId }
+    windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, DEB_LOCAL_INSTANCE_ID: instance.instanceId, DEB_INVITATION_KEY: process.env.DEB_INVITATION_KEY || secret.key, DEB_PUBLIC_URL: process.env.DEB_PUBLIC_URL || 'http://127.0.0.1:5176', DEB_MAIL_MODE: process.env.DEB_MAIL_MODE || 'local' }
   });
   let logs = '';
   child.stdout?.on('data', chunk => { logs = (logs + chunk).slice(-16000); });

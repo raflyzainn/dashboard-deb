@@ -1,6 +1,10 @@
 # Digitalisasi DEB
 
-**Update P4 lokal (10 September 2026):** Admin dapat mengelola kampus/lokasi serta master indikator dengan **baseline dan target yang sama untuk semua kampus**. Aktual/catatan dan riwayat pengajuan tetap per kampus. Definisi baru disimpan sebagai draft; aktivasi dan edit indikator aktif dikunci selama ada pengajuan pending. Lihat [kontrak P4](docs/POCKETBASE-P4.md) dan [checkpoint](CHECKPOINT-MIGRASI-POCKETBASE.md). P1 tetap BELUM; P4 keseluruhan SEBAGIAN sampai autentikasi, data resmi dan deployment selesai.
+> Update 10 September 2026: pembacaan frontend sudah [dipisah per halaman](docs/API-PER-HALAMAN.md). Endpoint bootstrap dihapus; bagian lama yang menyebut bootstrap adalah arsitektur sebelumnya.
+
+**Update P1 lokal (10 September 2026):** login email/password, PIC persisten dan aktivasi melalui email tersedia. Buka `/login`; opsi QA tetap khusus development. `npm run mail:serve` membuka inbox pengujian di http://127.0.0.1:8025. SMTP eksternal tetap TODO. Lihat [panduan P1](docs/POCKETBASE-P1.md). Mockup login dihapus.
+
+**Riwayat P4 lokal (10 September 2026):** Admin dapat mengelola kampus/lokasi serta master indikator dengan **baseline dan target yang sama untuk semua kampus**. Aktual/catatan dan riwayat pengajuan tetap per kampus. Definisi baru disimpan sebagai draft; aktivasi dan edit indikator aktif dikunci selama ada pengajuan pending. Lihat [kontrak P4](docs/POCKETBASE-P4.md) dan [checkpoint](CHECKPOINT-MIGRASI-POCKETBASE.md). P1 tetap BELUM; P4 keseluruhan SEBAGIAN sampai autentikasi, data resmi dan deployment selesai.
 
 P3 lokal sudah aktif: semua pembacaan dan mutasi bisnis melalui API SvelteKit ke PocketBase. Gunakan frontend **http://127.0.0.1:5176** dan backend **http://127.0.0.1:8096**, sesuai `.env`. Akun QA lokal tetap digunakan; P1 login production ditunda. Lihat [kontrak P3](docs/POCKETBASE-P3.md). Bagian P2 di bawah merupakan konteks historis.
 
@@ -30,7 +34,7 @@ DEB_LOCAL_PREVIEW_ENABLED=true
 
 Website: **http://127.0.0.1:5176**. Dashboard PocketBase: **http://127.0.0.1:8096/_/**. Gunakan kredensial superuser dari file privat lokal untuk dashboard PocketBase, bukan akun kampus. Jangan bagikan atau commit file tersebut.
 
-Pilih akun kampus/admin pada halaman masuk, lalu **Buka ruang kerja**. Password/token PocketBase tidak dikirim ke browser; sessionStorage hanya menyimpan key pilihan akun. Ini preview QA lokal, **bukan autentikasi production**. Semua orang yang dapat mengakses preview lokal dapat memilih akun admin seed. P1 tetap diperlukan sebelum deployment.
+Untuk QA, buka **Akun QA lokal** pada login, pilih kampus/admin, lalu **Buka ruang kerja**. Password/token PocketBase tidak dikirim ke browser; sessionStorage hanya menyimpan key pilihan akun. Ini preview QA lokal, **bukan autentikasi production**. Semua orang yang dapat mengakses preview lokal dapat memilih akun admin seed. P1 tetap diperlukan sebelum deployment.
 
 ## Kemampuan aktif P4 lokal
 

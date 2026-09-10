@@ -4,12 +4,30 @@ import { randomUUID } from 'node:crypto';
 import { loadInstance, assertInstance, credentialsPath, readJson, client, type Credentials } from '../../scripts/pocketbase/runtime';
 import { authenticateUser } from '../../scripts/pocketbase/seed';
 import { createDebRepository } from '../../src/lib/server/deb/repository';
+import { readPage, readNavigation } from '../../src/lib/server/deb/page-reads';
+import { mapSession } from '../../src/lib/server/deb/mappers';
 
 test('local 8096 access regression without seeding or business writes', async t => {
   const instance=await loadInstance(); assert.equal(instance.url,'http://127.0.0.1:8096'); await assertInstance(instance);
   const credentials=await readJson<Credentials>(credentialsPath(instance));
   const [a,b,admin,admin2]=await Promise.all(['campus-001','campus-002','admin-1','admin-2'].map(key=>authenticateUser(client(instance.url),credentials,key)));
   const [sa,sb,sadmin,sadmin2]=await Promise.all([a,b,admin,admin2].map(pb=>createDebRepository(pb).load()));
+  await t.test('page reads preserve user scope and navigation counts without full business payloads', async () => {
+    const aSession=mapSession(a.authStore.record!), adminSession=mapSession(admin.authStore.record!);
+    const faq=await readPage(admin,adminSession,{view:'faq'});
+    assert.deepEqual(Object.keys(faq),['faq']);
+    const proposals=await readPage(a,aSession,{view:'proposals'});
+    assert.ok(proposals.proposals!.every(p=>p.campusId===aSession.campusId));
+    assert.equal(proposals.indicators,undefined);
+    const detail=await readPage(admin,adminSession,{view:'campus-detail',campus:aSession.campusId,tab:'Proposal'});
+    assert.ok(detail.proposals!.every(p=>p.campusId===aSession.campusId));
+    assert.equal(detail.campuses!.length,1);
+    assert.equal(detail.indicators,undefined);
+    const nav=await readNavigation(admin,adminSession);
+    assert.equal(nav.pendingCount,sadmin.submissions!.filter(s=>s.status==='pending').length);
+    assert.equal(nav.unreadCount,sadmin.notifications.filter(n=>!n.readAt).length);
+    await assert.rejects(readPage(a,aSession,{view:'review'}),/Admin/);
+  });
   await t.test('scoped data and shared forum',async()=>{
     assert.ok(sa.indicators.every(i=>i.campusId===a.authStore.record!.campus));
     assert.ok(sb.indicators.every(i=>i.campusId===b.authStore.record!.campus));

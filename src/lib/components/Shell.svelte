@@ -9,15 +9,15 @@
   let drawer: HTMLDialogElement;
   const labels = { 'master-indicators': 'Master indikator', dashboard: 'Beranda', campuses: 'Kampus mitra', sebaran: 'Peta Persebaran', verifikasi: 'Review Kampus', indicators: 'Indikator DEB', proposal: 'Proposal', questions: 'Forum Q&A', faq: 'Pusat bantuan', notifications: 'Notifikasi' };
   const menus = $derived(app.session?.role === 'admin' ? ['dashboard', 'verifikasi', 'campuses', 'master-indicators', 'sebaran', 'proposal', 'questions', 'faq', 'notifications'] : ['dashboard', 'indicators', 'proposal', 'questions', 'faq', 'notifications']);
-  const pendingCount = $derived(app.data?.submissions?.filter(s => s.status === 'pending').length || 0);
+  const pendingCount = $derived(app.navigation.pendingCount);
   const prefix = $derived(`/${app.session?.role}`);
   const section = $derived(page.url.pathname.split('/')[2] as keyof typeof labels);
-  const revisionCount = $derived(app.data?.feedback.filter(f => f.requiresRevision && f.state !== 'closed').length || 0);
-  const campusProfile = $derived(app.data?.campuses.find(c => c.id === app.session?.campusId));
-  const unreadCount = $derived(app.data?.notifications?.filter(n => !n.readAt).length || 0);
+  const revisionCount = $derived(app.navigation.revisionCount);
+  const campusProfile = $derived(app.navigation.campus);
+  const unreadCount = $derived(app.navigation.unreadCount);
   function closeDrawer() { mobile = false; drawer?.close(); }
   function openDrawer() { mobile = true; drawer.showModal(); }
-  function logout() { closeDrawer(); if (app.logout()) goto('/login'); }
+  async function logout() { closeDrawer(); if (await app.logout()) goto('/login'); }
 </script>
 
 {#snippet navigation()}
@@ -30,7 +30,7 @@
       <a href={`${prefix}/${key}`} class:active={section === key} aria-current={section === key ? 'page' : undefined} onclick={closeDrawer}><Icon name={key === 'master-indicators' ? 'indicators' : key}/><span>{labels[key as keyof typeof labels]}</span>{#if key === 'verifikasi' && pendingCount}<span class="nav-count">{pendingCount}</span>{/if}{#if key === 'indicators' && revisionCount}<span class="nav-count">{revisionCount}</span>{/if}{#if key === 'notifications' && unreadCount}<span class="nav-count">{unreadCount}</span>{/if}</a>
     {/each}
   </nav>
-  <div class="sidebar-bottom"><div class="sidebar-note"><Icon name="leaf"/><strong>Langkah kecil.<br/>Dampak berkelanjutan.</strong><p>Tumbuh bersama kampus dan masyarakat.</p></div><button class="sidebar-action" onclick={logout} disabled={app.busy}><Icon name="logout" size={17}/>Keluar / ganti akun</button></div>
+  <div class="sidebar-bottom"><img class="sidebar-pf-logo" src="/logo-pf.png" alt="Pertamina Foundation" width="160" height="43"/><div class="sidebar-note"><Icon name="leaf"/><strong>Langkah kecil.<br/>Dampak berkelanjutan.</strong><p>Tumbuh bersama kampus dan masyarakat.</p></div><button class="sidebar-action" onclick={logout} disabled={app.busy}><Icon name="logout" size={17}/>Keluar / ganti akun</button></div>
 {/snippet}
 
 <aside class="sidebar">{@render navigation()}</aside>
@@ -41,4 +41,4 @@
   <footer class="app-footer"><span>Digitalisasi DEB <span class="footer-dot">•</span> Pertamina Foundation</span><span>Bersama membangun dampak yang berarti.</span></footer>
 </div>
 
-<style>.topbar-right .icon-button{position:relative}.notification-dot{position:absolute;top:5px;right:5px;width:8px;height:8px;background:#d5483e;border:2px solid white;border-radius:50%}</style>
+<style>.sidebar-pf-logo{display:block;width:160px;max-width:100%;height:auto;margin:0 0 18px;object-fit:contain}.topbar-right .icon-button{position:relative}.notification-dot{position:absolute;top:5px;right:5px;width:8px;height:8px;background:#d5483e;border:2px solid white;border-radius:50%}</style>

@@ -1,13 +1,13 @@
 import {test,expect,type Page} from '@playwright/test';
 async function login(page:Page,key:string){
-  await page.goto('/login');
+  await page.goto('/login?qa=1');
   if(key.startsWith('admin'))await page.getByRole('button',{name:/Administrator/}).click();
   await page.locator(`input[name="preview-account"][value="${key}"]`).check();
   await page.getByRole('button',{name:'Buka ruang kerja'}).click();
   await expect(page).toHaveURL(/\/(campus|admin)\/dashboard$/);
   await expect(page.locator('main.content')).toBeVisible();
 }
-test('5176 campus uses live bootstrap, navigates and exposes writable controls',async({page})=>{
+test('5176 campus uses page-specific APIs, navigates and exposes writable controls',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await login(page,'campus-001');
   await page.getByRole('link',{name:'Forum Q&A',exact:true}).first().click();

@@ -11,7 +11,7 @@
   let editing = $state<DefinitionInput | null>(null);
   let confirmation = $state<{ record: MasterDefinition; action: 'activate' | 'delete' } | null>(null);
   let generation = 0;
-  const pending = $derived(app.data?.submissions?.filter(s => s.status === 'pending').length || 0);
+  const pending = $derived(app.navigation.pendingCount);
   const disabled = $derived(app.busy || app.loading || loading);
   const filtered = $derived(data.definitions.filter(d => `${d.code} ${d.name} ${d.category}`.toLowerCase().includes(search.toLowerCase())));
   async function refresh() {
