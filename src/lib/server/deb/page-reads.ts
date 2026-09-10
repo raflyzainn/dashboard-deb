@@ -13,6 +13,7 @@ const collections = {
 type Resource = keyof typeof collections;
 const stats: Resource[] = ['campuses', 'definitions', 'indicators', 'feedback', 'proposals'];
 const dependencies: Record<PageRequest['view'], Resource[]> = {
+  guide: [],
   dashboard: [...stats, 'activities', 'questions', 'likes'], campuses: stats,
   'campus-detail': [...stats, 'submissions'], accounts: ['campuses'], map: stats,
   indicators: ['campuses', 'definitions', 'indicators', 'feedback', 'submissions'], proposals: ['campuses', 'proposals'],

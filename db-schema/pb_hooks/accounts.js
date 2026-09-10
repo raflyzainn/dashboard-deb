@@ -31,13 +31,13 @@ function check(app, value) {
 function revoke(app, contact) { list(app, 'account_invitations', 'contact = {:id} && revoked = false', { id: contact }).forEach(r => { r.set('revoked', true); app.save(r); }); }
 function audit(app, actor, campus, event, details = {}) { put(app, 'account_audit', { actor, campus, event, details }); }
 function limit(app, label, maximum, duration) {
-  const hash = $security.sha256(label); let denied = false;
+  const hash = $security.sha256(label); let retryAfter = 0;
   app.runInTransaction(tx => { let r = list(tx, 'auth_limits', 'key = {:key}', { key: hash })[0];
     if (!r) r = put(tx, 'auth_limits', { key: hash, count: 0, until: now() + duration });
     if (r.getFloat('until') < now()) { r.set('count', 0); r.set('until', now() + duration); }
-    if (r.getInt('count') >= maximum) { denied = true; return; }
+    if (r.getInt('count') >= maximum) { retryAfter = Math.max(1, Math.ceil((r.getFloat('until') - now()) / 1000)); return; }
     r.set('count', r.getInt('count') + 1); tx.save(r);
-  }); if (denied) fail('Terlalu banyak percobaan. Coba lagi nanti.', 429);
+  }); if (retryAfter) fail('Terlalu banyak percobaan. Coba lagi dalam ' + Math.ceil(retryAfter / 60) + ' menit.', 429);
 }
 function actor(e) {
   if (!e.auth) fail('Silakan login.', 401);
@@ -108,7 +108,7 @@ function invite(app, c, purpose) {
 exports.public = e => {
   const op = e.request.pathValue('operation'), b = e.requestInfo().body;
   if (op === 'request') {
-    const email = norm(b.email); limit(e.app, 'email-ip:' + e.realIP(), 20, 3600000); limit(e.app, 'email:' + email, 5, 3600000); mailReady(e.app);
+    const email = norm(b.email); limit(e.app, 'email-ip:' + e.realIP(), 60, 3600000); limit(e.app, 'email:' + email, 20, 3600000); mailReady(e.app);
     e.app.runInTransaction(app => {
       const c = list(app, 'campus_contacts', 'email = {:email}', { email })[0]; if (!valid(email) || !c || !c.getString('name')) return;
       const active = status(app, c) === 'Aktif'; const purpose = b.purpose === 'forgot' ? 'forgot' : 'activate';
@@ -146,8 +146,9 @@ exports.drain = app => {
       const url = baseURL() + '/login?token=' + encodeURIComponent(token(r));
       const action = r.getString('purpose') === 'forgot' ? 'Atur ulang password' : 'Aktifkan akun';
       const campus = get(app, 'campuses', c.getString('campus')).getString('name');
-      app.newMailClient().send(new MailerMessage({ from: { address: app.settings().meta.senderAddress, name: app.settings().meta.senderName }, to: [{ address: r.getString('email') }], subject: action + ' DEB - ' + campus,
-        ...require(__hooks + '/account-email.js').render({ name: c.getString('name'), campus, url, purpose: r.getString('purpose') }) }));
+      require(__hooks + '/account-email.js').send(app,
+        { from: { address: app.settings().meta.senderAddress, name: app.settings().meta.senderName }, to: [{ address: r.getString('email') }], subject: action + ' DEB - ' + campus },
+        { name: c.getString('name'), campus, url, purpose: r.getString('purpose') });
       app.runInTransaction(tx => { const latest = get(tx, 'account_invitations', r.id); latest.set('delivery', 'sent'); latest.set('sentAt', new Date().toISOString()); latest.set('error', ''); tx.save(latest); });
     } catch (_) { app.runInTransaction(tx => { const latest = get(tx, 'account_invitations', r.id); latest.set('delivery', latest.getInt('attempts') >= 3 ? 'failed' : 'queued'); latest.set('nextAttempt', now() + latest.getInt('attempts') * 60000); latest.set('error', 'Layanan email belum menerima pesan.'); tx.save(latest); }); }
   });
