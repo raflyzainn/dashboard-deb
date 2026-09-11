@@ -39,7 +39,7 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
   const session = (): Promise<SessionResponse> => request('/api/session', response => response.json());
   const navigation = (): Promise<NavigationData> => request('/api/navigation', response => response.json());
   async function page(input: PageRequest): Promise<PageResponse> {
-    if (input.view === 'masters') return { data: {}, loadedAt: new Date().toISOString() };
+    if (input.view === 'masters' || input.view === 'guide') return { data: {}, loadedAt: new Date().toISOString() };
     const params = new URLSearchParams();
     if (input.campus) params.set('campus', input.campus);
     if (input.question) params.set('question', input.question);
