@@ -3,6 +3,8 @@
   import { goto } from '$app/navigation';
   import { app } from '$lib/state.svelte';
   import Icon from './Icon.svelte';
+  import ChangePassword from './ChangePassword.svelte';
+  let changingPassword = $state(false);
   import type { Snippet } from 'svelte';
   let { children }: { children: Snippet } = $props();
   let mobile = $state(false);
@@ -30,9 +32,10 @@
       <a href={`${prefix}/${key}`} class:active={section === key} aria-current={section === key ? 'page' : undefined} onclick={closeDrawer}><Icon name={key === 'master-indicators' ? 'indicators' : key}/><span>{labels[key as keyof typeof labels]}</span>{#if key === 'verifikasi' && pendingCount}<span class="nav-count">{pendingCount}</span>{/if}{#if key === 'indicators' && revisionCount}<span class="nav-count">{revisionCount}</span>{/if}{#if key === 'notifications' && unreadCount}<span class="nav-count">{unreadCount}</span>{/if}</a>
     {/each}
   </nav>
-  <div class="sidebar-bottom"><img class="sidebar-pf-logo" src="/logo-pf.png" alt="Pertamina Foundation" width="160" height="43"/><div class="sidebar-note"><Icon name="leaf"/><strong>Langkah kecil.<br/>Dampak berkelanjutan.</strong><p>Tumbuh bersama kampus dan masyarakat.</p></div><button class="sidebar-action" onclick={logout} disabled={app.busy}><Icon name="logout" size={17}/>Keluar / ganti akun</button></div>
+  <div class="sidebar-bottom"><img class="sidebar-pf-logo" src="/logo-pf.png" alt="Pertamina Foundation" width="160" height="43"/><div class="sidebar-note"><Icon name="leaf"/><strong>Langkah kecil.<br/>Dampak berkelanjutan.</strong><p>Tumbuh bersama kampus dan masyarakat.</p></div><button class="sidebar-action" onclick={() => { closeDrawer(); changingPassword = true; }}><Icon name="reset" size={17}/>Ganti password</button><button class="sidebar-action" onclick={logout} disabled={app.busy}><Icon name="logout" size={17}/>Keluar / ganti akun</button></div>
 {/snippet}
 
+{#if changingPassword}<ChangePassword onclose={() => changingPassword = false}/>{/if}
 <aside class="sidebar">{@render navigation()}</aside>
 <dialog bind:this={drawer!} class="mobile-drawer" oncancel={() => { mobile = false; }}><button class="drawer-close icon-button" aria-label="Tutup navigasi" onclick={closeDrawer}><Icon name="close"/></button>{@render navigation()}</dialog>
 <div class="app-main">

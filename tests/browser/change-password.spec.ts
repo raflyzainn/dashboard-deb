@@ -1,0 +1,68 @@
+import { test, expect } from '@playwright/test';
+import { randomUUID } from 'node:crypto';
+import path from 'node:path';
+import PocketBase from 'pocketbase';
+import { LOCAL, readJson, adminClient, type LocalInstance } from '../../scripts/pocketbase/runtime';
+
+for (const role of ['campus', 'admin']) {
+  test(`signed-in ${role} changes own password and old sessions are revoked`, async ({ page, request }) => {
+    const instance = await readJson<LocalInstance>(path.join(LOCAL, 'p1-test-instance.json'));
+    expect(instance.kind).toBe('test'); expect(instance.url).toBe('http://127.0.0.1:8097');
+    const root = await adminClient(instance);
+    const campus = (await root.collection('campuses').getList(1, 1)).items[0];
+    const suffix = randomUUID().slice(0, 8), email = `change-${suffix}@example.test`;
+    const oldPassword = `Old${randomUUID()}9`, newPassword = `New${randomUUID()}8`;
+    const fields = { email, password: oldPassword, passwordConfirm: oldPassword, name: 'Password QA', role, campus: role === 'campus' ? campus.id : '', active: true, verified: true, simulated: false };
+    const existing = role === 'campus' ? await root.collection('users').getFirstListItem(root.filter('campus = {:id} && role = "campus"', { id: campus.id })) : null;
+    const user = existing ? await root.collection('users').update(existing.id, fields) : await root.collection('users').create({ ...fields, legacyId: `change-${suffix}` });
+    const auditFilter = root.filter('actor = {:id} && event = "password.changed"', { id: user.id });
+    const previousAudits = (await root.collection('account_audit').getFullList({ filter: auditFilter })).length;
+    const native = new PocketBase(instance.url);
+    await native.collection('users').authWithPassword(email, oldPassword);
+    const staleToken = native.authStore.token;
+    const endpoint = instance.url + '/api/deb/account/password';
+    const post = (body: object, token = staleToken) => fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: token } : {}) }, body: JSON.stringify(body) });
+    expect((await post({ currentPassword: oldPassword, password: newPassword, passwordConfirm: newPassword }, '')).status).toBe(401);
+    expect((await post({ currentPassword: oldPassword, password: 'weak', passwordConfirm: 'weak' })).status).toBe(400);
+    expect((await post({ currentPassword: oldPassword, password: oldPassword, passwordConfirm: oldPassword })).status).toBe(400);
+    expect((await request.post('/api/auth/change-password', { headers: { Origin: 'http://127.0.0.1:5177' }, data: {} })).status()).toBe(401);
+    expect((await request.post('/api/auth/change-password', { headers: { Origin: 'https://example.test' }, data: {} })).status()).toBe(403);
+    await page.goto('/login');
+    await page.getByLabel('Email PIC', { exact: true }).fill(email);
+    await page.getByLabel('Password', { exact: true }).fill(oldPassword);
+    await page.getByRole('button', { name: 'Masuk', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/${role}/dashboard$`));
+    await page.locator('.sidebar').getByRole('button', { name: 'Ganti password', exact: true }).click();
+    // Shared Modal has a visible heading; scope via the open dialog itself.
+    const form = page.locator('dialog[open]');
+    await expect(form.getByRole('button', { name: 'Simpan password baru' })).toBeDisabled();
+    await form.getByLabel('Password saat ini', { exact: true }).fill('WrongPassword8');
+    await form.getByLabel('Password baru', { exact: true }).fill(newPassword);
+    await form.getByLabel('Konfirmasi password baru', { exact: true }).fill('Different9');
+    await expect(form.getByRole('button', { name: 'Simpan password baru' })).toBeDisabled();
+    await form.getByLabel('Konfirmasi password baru', { exact: true }).fill(newPassword);
+    await form.getByRole('button', { name: 'Lihat password baru', exact: true }).click();
+    await expect(form.getByLabel('Password baru', { exact: true })).toHaveAttribute('type', 'text');
+    await form.getByRole('button', { name: 'Simpan password baru' }).click();
+    await expect(form.getByRole('alert')).toContainText('Password saat ini tidak sesuai');
+    await form.getByLabel('Password saat ini', { exact: true }).fill(oldPassword);
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: `.qa/change-password-${role}.png` });
+    await form.getByRole('button', { name: 'Simpan password baru' }).click();
+    await expect(form.getByRole('heading', { name: 'Password berhasil diubah' })).toBeVisible();
+    expect((await page.context().cookies()).some(c => c.name === 'deb_session')).toBe(false);
+    expect((await fetch(instance.url + '/api/collections/users/auth-refresh', { method: 'POST', headers: { Authorization: staleToken } })).status).toBe(401);
+    await expect(native.collection('users').authWithPassword(email, oldPassword)).rejects.toBeTruthy();
+    await native.collection('users').authWithPassword(email, newPassword);
+    expect(native.authStore.record?.id).toBe(user.id);
+    const audits = await root.collection('account_audit').getFullList({ filter: auditFilter });
+    expect(audits).toHaveLength(previousAudits + 1);
+    await form.getByRole('button', { name: 'Masuk kembali' }).click();
+    await expect(page).toHaveURL(/\/login$/);
+    await page.getByLabel('Email PIC', { exact: true }).fill(email);
+    await page.getByLabel('Password', { exact: true }).fill(newPassword);
+    await page.getByRole('button', { name: 'Masuk', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/${role}/dashboard$`));
+  });
+}

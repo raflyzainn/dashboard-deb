@@ -1,6 +1,7 @@
 routerAdd('GET', '/api/deb/accounts', e => require(__hooks + '/accounts.js').read(e), $apis.requireAuth('users'));
 routerAdd('POST', '/api/deb/accounts/save', e => require(__hooks + '/accounts.js').save(e), $apis.requireAuth('users'), $apis.bodyLimit(65536));
 routerAdd('POST', '/api/deb/activation/{operation}', e => require(__hooks + '/accounts.js').public(e), $apis.bodyLimit(16384));
+routerAdd('POST', '/api/deb/account/password', e => require(__hooks + '/accounts.js').changePassword(e), $apis.requireAuth('users'), $apis.bodyLimit(4096));
 cronAdd('deb-email-queue', '* * * * *', () => require(__hooks + '/accounts.js').drain($app));
 onRecordAuthWithPasswordRequest(e => {
   if (e.collection.name === 'users' && !($os.getenv('DEB_LOCAL_INSTANCE_ID') && String(e.identity).endsWith('@deb.local.test'))) require(__hooks + '/accounts.js').limit(e.app, 'login:' + e.realIP() + ':' + String(e.identity).toLowerCase(), 10, 900000);
