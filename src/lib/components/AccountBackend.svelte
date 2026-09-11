@@ -82,15 +82,20 @@
   .pic-field input,.email-cell input{height:44px;min-height:44px;font-size:12px}
   .pic-field label,.email-cell label{margin:0 0 7px}
   @media(min-width:751px){
-    .account-row.editing{grid-template-rows:auto auto;row-gap:8px}
-    .editing .campus-cell{grid-column:1;grid-row:1 / span 2;display:grid;grid-template-columns:38px minmax(0,1fr);grid-template-rows:subgrid;row-gap:inherit;align-items:start}
-    .editing .campus-cell>.avatar{grid-column:1;grid-row:1 / span 2}
-    .editing .campus-details{grid-column:2;grid-row:1 / span 2;display:grid;grid-template-rows:subgrid}
-    .editing .email-cell{grid-column:2;grid-row:2;align-self:start}
-    .editing .row-actions{grid-column:3;grid-row:1 / span 2}
+    .account-row:not(.editing) .saved-pic{margin:0;line-height:1.7}
+    .account-row:not(.editing) .saved-email{display:block;line-height:1.7}
+    .account-row{grid-template-rows:auto auto;row-gap:8px}
+    .account-row:not(.editing){row-gap:4px}
+    .account-row:not(.editing) .campus-details>strong{align-self:end}
+    .account-row:not(.editing) .campus-cell>.avatar{align-self:center;margin-top:0}
+    .account-row .campus-cell{grid-column:1;grid-row:1 / span 2;display:grid;grid-template-columns:38px minmax(0,1fr);grid-template-rows:subgrid;row-gap:inherit;align-items:start}
+    .account-row .campus-cell>.avatar{grid-column:1;grid-row:1 / span 2}
+    .account-row .campus-details{grid-column:2;grid-row:1 / span 2;display:grid;grid-template-rows:subgrid}
+    .account-row .email-cell{grid-column:2;grid-row:2;align-self:start}
+    .account-row .row-actions{grid-column:3;grid-row:1 / span 2}
   }
   @media(min-width:751px) and (max-width:1100px){
-    .editing .campus-cell{grid-template-columns:minmax(0,1fr)}
-    .editing .campus-details{grid-column:1}
+    .account-row .campus-cell{grid-template-columns:minmax(0,1fr)}
+    .account-row .campus-details{grid-column:1}
   }
 </style>

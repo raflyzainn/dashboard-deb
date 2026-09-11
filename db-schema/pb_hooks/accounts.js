@@ -154,5 +154,24 @@ exports.drain = app => {
   });
 };
 exports.limit = limit;
+exports.changePassword = e => {
+  const b = e.requestInfo().body;
+  const allowed = u => u.getBool('active') && u.getBool('verified') && !u.getBool('simulated') && ['admin', 'campus'].includes(u.getString('role'));
+  if (!e.auth || !allowed(e.auth)) fail('Silakan masuk menggunakan akun aktif, bukan akun QA.', 403);
+  limit(e.app, 'password-change:' + e.auth.id, 10, 900000);
+  if (typeof b.currentPassword !== 'string' || !b.currentPassword || b.currentPassword.length > 128) fail('Masukkan password saat ini.');
+  const password = b.password;
+  if (typeof password !== 'string' || password.length < 8 || password.length > 128 || !/[A-Z]/.test(password) || !/[0-9]/.test(password) || password !== b.passwordConfirm) fail('Password baru minimal 8 karakter, mengandung angka dan huruf kapital; konfirmasi harus sama.');
+  e.app.runInTransaction(app => {
+    const u = get(app, 'users', e.auth.id);
+    if (!allowed(u) || u.getString('tokenKey') !== e.auth.getString('tokenKey')) fail('Sesi sudah berakhir. Silakan masuk kembali.', 401);
+    if (!u.validatePassword(b.currentPassword)) fail('Password saat ini tidak sesuai.');
+    if (u.validatePassword(password)) fail('Password baru harus berbeda dari password saat ini.');
+    u.setPassword(password); u.set('tokenKey', $security.randomString(50)); app.save(u);
+    list(app, 'campus_contacts', 'account = {:id}', { id: u.id }).forEach(c => revoke(app, c.id));
+    audit(app, u.id, u.getString('campus'), 'password.changed');
+  });
+  return e.json(200, { ok: true });
+};
 
 exports.qa = e => { actor(e); return e.json(200, { keys: list(e.app, 'users', 'simulated = true && active = true').map(r => r.getString('legacyId')) }); };

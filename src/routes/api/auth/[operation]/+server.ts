@@ -10,6 +10,12 @@ export const POST: RequestHandler = async event => {
   const body = await event.request.json().catch(() => null);
   if (!body || typeof body !== 'object') return json({ message: 'Data tidak valid.' }, { status: 400 });
   try {
+    if (op === 'change-password') {
+      if (!event.locals.pb) return json({ message: 'Silakan masuk menggunakan akun aktif, bukan akun QA.' }, { status: 401 });
+      await event.locals.pb.send('/api/deb/account/password', { method: 'POST', body });
+      event.cookies.delete(SESSION_COOKIE, { path: '/' });
+      return json({ ok: true });
+    }
     if (op === 'login') {
       if (typeof body.email !== 'string' || typeof body.password !== 'string' || body.password.length > 128) return json({ message: 'Email atau password tidak sesuai.' }, { status: 400 });
       const pb = client();
