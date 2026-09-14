@@ -10,6 +10,9 @@
   let email=$state(''),password=$state(''),confirmation=$state(''),error=$state(''),busy=$state(false);
   let showPassword=$state(false),showConfirmation=$state(false),token=$state('');
   let flow=$state<'activate'|'forgot'>('activate');
+  // TODO(MICROSOFT-SSO): Implement server-side Microsoft OAuth/OIDC (state, nonce,
+  // PKCE and tenant validation), map authorized employees to server-managed roles,
+  // and establish a verified DEB session. The button currently only shows a notice.
   let microsoftNotice=$state(false);
   const activationSteps=['Email PIC','Periksa email','Buat password','Selesai'];
   const step=$derived(flow==='activate'?({activate:1,sent:2,password:3,success:4} as Partial<Record<typeof screen,number>>)[screen]||0:0);
@@ -17,7 +20,7 @@
   const longEnough=$derived(password.length>=8),hasNumber=$derived(/[0-9]/.test(password)),hasCapital=$derived(/[A-Z]/.test(password));
   const passwordsMatch=$derived(confirmation.length>0 && password===confirmation);
   const passwordRules=$derived([{label:'Minimal 8 karakter',met:longEnough},{label:'Mengandung angka',met:hasNumber},{label:'Mengandung huruf kapital',met:hasCapital}]);
-  const title=$derived(({login:'Selamat datang kembali.',employee:'Masuk sebagai Karyawan',activate:'Aktivasi akun kampus.',forgot:'Lupa password?',password:target.purpose==='forgot'?'Buat password baru.':'Buat password Anda.',sent:'Periksa email Anda.',success:'Password berhasil disimpan.',invalid:'Tautan tidak dapat digunakan.'})[screen]);
+  const title=$derived(({login:'Selamat datang kembali.',employee:'Masuk sebagai Karyawan',activate:'Aktivasi akun kampus.',forgot:'Lupa password?',password:target.purpose==='forgot'?'Buat password baru.':'Buat password Anda',sent:'Periksa email Anda.',success:'Password berhasil disimpan.',invalid:'Tautan tidak dapat digunakan.'})[screen]);
   $effect(()=>{const value=page.url.searchParams.get('token');if(value)untrack(()=>{token=value;void inspect();});});
   async function api(operation:string,body:object){const r=await fetch('/api/auth/'+operation,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const data=await r.json();if(!r.ok)throw new Error(data.message||'Permintaan belum dapat diproses.');return data;}
   function go(next:typeof screen){if(next==='activate'||next==='forgot')flow=next;screen=next;error='';microsoftNotice=false;password='';confirmation='';showPassword=false;showConfirmation=false;}

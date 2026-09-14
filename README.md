@@ -2,7 +2,7 @@
 
 > Update 10 September 2026: pembacaan frontend sudah [dipisah per halaman](docs/API-PER-HALAMAN.md). Endpoint bootstrap dihapus; bagian lama yang menyebut bootstrap adalah arsitektur sebelumnya.
 
-**Update P1 lokal (10 September 2026):** login email/password, PIC persisten dan aktivasi melalui email tersedia. Buka `/login`; opsi QA tetap khusus development. `npm run mail:serve` membuka inbox pengujian di http://127.0.0.1:8025. SMTP eksternal tetap TODO. Lihat [panduan P1](docs/POCKETBASE-P1.md). Mockup login dihapus.
+**Update P1 lokal (10 September 2026):** login email/password, PIC persisten dan aktivasi melalui email tersedia. Buka `/login`; opsi QA tetap khusus development. `npm run mail:serve` membuka inbox pengujian di http://127.0.0.1:8025. Pengiriman aktivasi melalui Postmark sudah diuji dari instance lokal; domain HTTPS dan deployment production masih perlu diverifikasi. Lihat [panduan P1](docs/POCKETBASE-P1.md). Mockup login dihapus.
 
 **Riwayat P4 lokal (10 September 2026):** Admin dapat mengelola kampus/lokasi serta master indikator dengan **baseline dan target yang sama untuk semua kampus**. Aktual/catatan dan riwayat pengajuan tetap per kampus. Definisi baru disimpan sebagai draft; aktivasi dan edit indikator aktif dikunci selama ada pengajuan pending. Lihat [kontrak P4](docs/POCKETBASE-P4.md) dan [checkpoint](CHECKPOINT-MIGRASI-POCKETBASE.md). P1 tetap BELUM; P4 keseluruhan SEBAGIAN sampai autentikasi, data resmi dan deployment selesai.
 

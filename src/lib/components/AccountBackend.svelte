@@ -13,6 +13,8 @@
   let busy = $state(false), notice = $state(''), error = $state('');
   let resetAccounts = $state<Account[] | null>(null);
   let generation = 0;
+  let loading = $state(true), loadedQuery = $state(''), loadedFilter = $state('all');
+  const resultsPending = $derived(loading || search !== loadedQuery || filter !== loadedFilter);
   const pageCount = $derived(Math.max(1,Math.ceil(total/10))), pageNumber = $derived(Math.min(currentPage,pageCount));
   const visible = $derived(ids.map(id => cache[id]).filter(Boolean)), paged = $derived(visible);
   const changed = $derived(cached.filter(a => normalizeEmail(drafts[a.campusId] ?? a.email) !== a.email || (names[a.campusId] ?? a.name).trim() !== a.name));
@@ -34,8 +36,10 @@
   }
   async function load(q=search,f=filter,p=currentPage) {
     const revision=++generation;
-    try { const data=await api('?' + new URLSearchParams({q,status:f==='all'?'':f,page:String(p)})); if(revision!==generation)return; remember(data.items); ids=data.items.map((a:Account)=>a.campusId);total=data.total;stats=data.stats; currentPage=data.page; }
+    loading=true; error='';
+    try { const data=await api('?' + new URLSearchParams({q,status:f==='all'?'':f,page:String(p)})); if(revision!==generation)return; remember(data.items); ids=data.items.map((a:Account)=>a.campusId);total=data.total;stats=data.stats; currentPage=data.page; loadedQuery=q; loadedFilter=f; }
     catch(e){if(revision===generation)error=e instanceof Error?e.message:'Data tidak tersedia.';}
+    finally { if(revision===generation)loading=false; }
   }
   function emailError(a:Account){const email=normalizeEmail(drafts[a.campusId]??a.email);return email&&!validEmail(email)?'Format email belum valid.':email&&cached.some(b=>b.campusId!==a.campusId&&normalizeEmail(drafts[b.campusId]??b.email)===email)?'Email sudah digunakan kampus lain.':'';}
   function isEditing(a:Account){return (!a.name&&!a.email)||editing.includes(a.campusId);}
@@ -50,6 +54,7 @@
 <section class="panel account-panel" aria-label="Daftar email kampus">
   <div class="roster-heading"><div><h2>Daftar akun kampus</h2><p>Satu alamat email untuk setiap kampus mitra.</p></div><button class="button secondary" disabled={busy || !changed.length || hasErrors} onclick={save}>Simpan perubahan{changed.length ? ` (${changed.length})` : ''}</button></div>
   <div class="filters"><div class="search-field"><Icon name="search" size={18}/><input aria-label="Cari kampus, PIC, atau email" placeholder="Cari kampus, PIC, atau email…" bind:value={search}/></div><select aria-label="Filter status akun" bind:value={filter}><option value="all">Semua status</option>{#each ['Email belum diisi', 'Belum aktivasi', 'Dalam antrean', 'Menunggu aktivasi', 'Gagal dikirim', 'Aktif'] as value}<option>{value}</option>{/each}</select></div>
+  <p class="filter-summary" role="status" aria-live="polite" aria-atomic="true">{#if error}Jumlah hasil belum dapat diperbarui.{:else if resultsPending}Memuat hasil filter…{:else}Menampilkan <strong>{total}</strong> dari <strong>{stats.total}</strong> kampus{#if filter !== 'all'} · {filter}{/if}{/if}</p>
   {#if changed.length}<p class="hint">Simpan perubahan nama dan email agar PIC dapat meminta tautan aktivasi menggunakan data terbaru.</p>{/if}
   {#if hasErrors}<p class="error" role="alert">Periksa format atau email duplikat pada baris yang ditandai.</p>{/if}
   {#if error}<p class="error" role="alert">{error}</p>{/if}
@@ -71,6 +76,7 @@
 
 
 <style>
+  .filter-summary{margin:0;padding:0 24px 18px;font-size:12px;line-height:1.6;color:#6b819c}.filter-summary strong{color:#335580;font-weight:650}@media(max-width:750px){.filter-summary{padding-inline:18px}}
   .saved-pic{font-size:12px;line-height:1.7;color:#6b819c;margin-top:7px;overflow-wrap:anywhere}.saved-email{font-size:12px;line-height:1.8;color:#2368b5;overflow-wrap:anywhere}.saved-email:hover{text-decoration:underline}.edit-button{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;flex-shrink:0;border:1px solid #c4d8f0;border-radius:8px;color:#2368b5;background:#f3f8ff;cursor:pointer}.edit-button:hover{background:#e3efff}.edit-button:focus-visible{outline:3px solid #91bfff;outline-offset:3px}
 
   .row-actions{text-align:right}.row-actions>div{justify-content:flex-end}.roster-head>span:last-child{text-align:right}.badge.missing{color:#b42318;background:#fff0ee}.row-actions .badge.amber{color:#956000;background:#fff4d6}.row-actions .badge.green{color:#187347;background:#e7f6ec}

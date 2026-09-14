@@ -44,7 +44,7 @@ test('real admin PIC editing, Mailpit activation in a fresh browser, campus logi
   await expect.poll(async()=>{const data=await fetch('http://127.0.0.1:8025/api/v1/search?query='+encodeURIComponent('to:'+fixture.email)).then(r=>r.json());messageId=data.messages?.[0]?.ID||'';return !!messageId;}).toBe(true);
   const message=await fetch('http://127.0.0.1:8025/api/v1/message/'+messageId).then(r=>r.json());
   const link=String(message.Text).match(/http:\/\/127\.0\.0\.1:5177\/login\?token=[^\s]+/)![0];
-  await campus.goto(link);await expect(campus.getByRole('heading',{name:'Buat password Anda.'})).toBeVisible();
+  await campus.goto(link);await expect(campus.getByRole('heading',{name:'Buat password Anda'})).toBeVisible();
   await expect(campus.getByRole('navigation',{name:'Tahapan aktivasi akun'})).toContainText('Langkah 3 dari 4');
   await expect(campus.locator('[aria-current=step]')).toContainText('Buat password');
   await expect(campus.locator('.account-summary')).toContainText(fixture.campus);
