@@ -143,6 +143,24 @@ exports.run = (e) => {
         else create(app, 'question_answers', { question: q.id, author: actor.id, body, simulated: true });
         event(q.getString('campus'), 'question_answered', q.id, 'Admin menjawab pertanyaan Anda.', 'campus', '/campus/questions/' + q.id);
       }
+    } else if (op === 'reply') {
+      const q = own(get(app, 'questions', payload.id));
+      if (!list(app, 'question_answers', 'question = {:q}', { q: q.id }).length) fail('Tunggu jawaban resmi sebelum membalas.', 409);
+      const body = text(payload.body);
+      const replyTo = payload.replyTo === undefined || payload.replyTo === null ? '' : payload.replyTo;
+      if (replyTo && get(app, 'question_replies', replyTo).getString('question') !== q.id) fail('Balasan berasal dari diskusi lain.');
+      if (typeof replyTo !== 'string') fail('Referensi balasan tidak valid.');
+      const sequence = q.getInt('replyCount') + 1;
+      const r = create(app, 'question_replies', { question: q.id, author: actor.id, authorRole: role,
+        authorName: role === 'admin' ? 'Admin PF' : get(app, 'campuses', campus).getString('name'),
+        body, replyTo, sequence, simulated: actor.getBool('simulated') });
+      q.set('replyCount', sequence); q.set('lastReplyRole', role); app.save(q);
+      const c = q.getString('campus'), recipientRole = role === 'admin' ? 'campus' : 'admin';
+      const message = role === 'admin' ? 'Admin membalas diskusi Anda.' : 'Kampus menunggu tanggapan dalam diskusi.';
+      const recipients = list(app, 'users', 'active = true && id != {:actor} && role = {:role}' + (recipientRole === 'campus' ? ' && campus = {:c}' : ''), { actor: actor.id, role: recipientRole, c });
+      recipients.forEach(user => create(app, 'notifications', { recipientUser: user.id, campus: c, eventType: 'question_reply', eventKey,
+        sourceId: r.id, title: message, body: message, target: '/' + recipientRole + '/questions/' + q.id + '#reply-' + r.id, simulated: actor.getBool('simulated') }));
+      result.id = r.id;
     } else if (op === 'setLike') {
       roleIs('campus'); const q = get(app, 'questions', payload.id);
       if (typeof payload.liked !== 'boolean') fail('Status like tidak valid.');

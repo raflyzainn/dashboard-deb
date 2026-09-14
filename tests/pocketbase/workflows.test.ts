@@ -7,6 +7,7 @@ import type PocketBase from 'pocketbase';
 import { LOCAL, installBinary, provisionInstance, migrate, start, adminClient, client, readJson, credentialsPath, type Credentials } from '../../scripts/pocketbase/runtime';
 import { seedLocal, authenticateUser } from '../../scripts/pocketbase/seed';
 import { samplePdf } from '../../scripts/fixtures/pdf';
+import { readReplies } from '../../src/lib/server/deb/replies';
 
 test('P3 workflows on isolated PocketBase', { timeout: 180000 }, async t => {
   await installBinary(); await mkdir(path.join(LOCAL, 'tests'), { recursive: true });
@@ -57,6 +58,66 @@ test('P3 workflows on isolated PocketBase', { timeout: 180000 }, async t => {
       assert.equal(new Set(entries.map(e=>e.order)).size,entries.length);
       await call(admin,'deleteFaq',{id:faq});
       assert.ok(await b.collection('questions').getOne(question));
+    });
+    await t.test('discussion permissions, immutable replies, atomic retries and notification scope', async () => {
+      const waiting = (await call(a, 'ask', { title: 'Awaiting official answer', body: 'Question' })).id!;
+      await rejected(call(a, 'reply', { id: waiting, body: 'Too early' }), 409);
+      await rejected(call(b, 'reply', { id: question, body: 'Foreign campus' }), 404);
+      await rejected(call(client(instance.url), 'reply', { id: question, body: 'Guest' }), 401);
+      await rejected(call(a, 'reply', { id: question, body: '   ' }), 400);
+      await rejected(call(a, 'reply', { id: question, body: 'x'.repeat(5001) }), 400);
+      await superuser.collection('users').update(a.authStore.record!.id, { active: false });
+      await rejected(call(a, 'reply', { id: question, body: 'Inactive' }), 403);
+      await superuser.collection('users').update(a.authStore.record!.id, { active: true });
+      const key = randomUUID(), payload = { id: question, body: 'Please explain more', author: admin.authStore.record!.id, authorRole: 'admin', sequence: 999 };
+      const pair = await Promise.all([call(a, 'reply', payload, key), call(a, 'reply', payload, key)]);
+      assert.equal(pair[0].id, pair[1].id);
+      const r = await b.collection('question_replies').getOne(pair[0].id!);
+      assert.equal(r.author, a.authStore.record!.id); assert.equal(r.authorRole, 'campus'); assert.equal(r.sequence, 1);
+      let q = await a.collection('questions').getOne(question);
+      assert.equal(q.replyCount, 1); assert.equal(q.lastReplyRole, 'campus');
+      const notices = await superuser.collection('notifications').getFullList({ filter: `sourceId="${r.id}"` });
+      assert.deepEqual(notices.map(n => n.recipientUser).sort(), [admin.authStore.record!.id, admin2.authStore.record!.id].sort());
+      await rejected(call(a, 'reply', { ...payload, body: 'Changed' }, key), 409);
+      await rejected(a.collection('question_replies').create({ ...r, id: undefined }), 403);
+      await rejected(a.collection('question_replies').update(r.id, { body: 'Edited' }), 403);
+      await rejected(admin.collection('question_replies').delete(r.id), 403);
+      await call(admin, 'answer', { id: question, body: 'Edited official answer' });
+      assert.equal((await a.collection('questions').getOne(question)).lastReplyRole, 'campus');
+      const reply = (await call(admin, 'reply', { id: question, body: 'Further explanation', replyTo: r.id })).id!;
+      q = await a.collection('questions').getOne(question);
+      assert.equal(q.replyCount, 2); assert.equal(q.lastReplyRole, 'admin');
+      const recipients = await superuser.collection('notifications').getFullList({ filter: `sourceId="${reply}"` });
+      assert.deepEqual(recipients.map(n => n.recipientUser), [a.authStore.record!.id]);
+      await call(admin, 'answer', { id: waiting, body: 'Official' });
+      await rejected(call(a, 'reply', { id: waiting, body: 'Cross thread', replyTo: r.id }), 400);
+      const page = await readReplies(b, question, new URLSearchParams());
+      assert.equal(page.items[1].quote?.body, 'Please explain more');
+      assert.ok(!JSON.stringify(page).includes(a.authStore.record!.email));
+      // A failed notification must roll back both the new message and summary.
+      const collection = await superuser.collections.getOne('notifications');
+      const original = structuredClone(collection.fields);
+      collection.fields.find((f: { name: string }) => f.name === 'title')!.max = 1;
+      await superuser.collections.update(collection.id, { fields: collection.fields });
+      const retry = randomUUID();
+      try { await assert.rejects(call(a, 'reply', { id: question, body: 'Retry after rollback' }, retry)); }
+      finally { await superuser.collections.update(collection.id, { fields: original }); }
+      assert.equal((await a.collection('questions').getOne(question)).replyCount, 2);
+      await call(a, 'reply', { id: question, body: 'Retry after rollback' }, retry);
+      assert.equal((await a.collection('questions').getOne(question)).replyCount, 3);
+    });
+    await t.test('discussion pagination remains ordered during concurrent appends', async () => {
+      for (let i = 0; i < 50; i++) await call(admin, 'reply', { id: question, body: 'Message ' + i });
+      const first = await readReplies(b, question, new URLSearchParams());
+      assert.equal(first.items.length, 50); assert.equal(first.hasMore, true);
+      const previous = await readReplies(b, question, new URLSearchParams({ before: String(first.items[0].sequence) }));
+      assert.equal(previous.items.length, 3); assert.equal(previous.hasMore, false);
+      await Promise.all([call(a, 'reply', { id: question, body: 'Concurrent campus' }), call(admin, 'reply', { id: question, body: 'Concurrent admin' })]);
+      const next = await readReplies(b, question, new URLSearchParams({ after: String(first.items.at(-1)!.sequence) }));
+      assert.deepEqual(next.items.map(r => r.sequence), [54, 55]);
+      assert.equal((await a.collection('questions').getOne(question)).lastReplyRole, next.items.at(-1)!.authorRole);
+      await rejected(readReplies(b, question, new URLSearchParams('after=-1')), 400);
+      await rejected(readReplies(b, question, new URLSearchParams('after=1&before=2')), 400);
     });
     await t.test('feedback, submit/revision/resubmit/approve and pending lock', async () => {
       feedback=(await call(admin,'addFeedback',{id:indicator.id,text:'Revise QA value',requiresRevision:true})).id!;

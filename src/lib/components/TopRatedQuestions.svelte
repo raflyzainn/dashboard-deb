@@ -1,6 +1,6 @@
 <script lang="ts">
   import { app } from '$lib/state.svelte';
-  import { questionCategories } from '$lib/forum';
+  import { questionCategories, questionStatus, QUESTION_STATUS_LABELS } from '$lib/forum';
   import CategoryTags from './CategoryTags.svelte';
   import Icon from './Icon.svelte';
 
@@ -20,7 +20,7 @@
         <strong class="question-title">{question.title}</strong>
         <span class="question-author">{app.data?.campuses.find(campus => campus.id === question.campusId)?.name}</span>
         <CategoryTags ids={questionCategories(question)}/>
-        <div class="card-bottom"><span class:answered={app.data?.answers.some(answer => answer.questionId === question.id)}>{app.data?.answers.some(answer => answer.questionId === question.id) ? 'Sudah dijawab' : 'Menunggu jawaban'}</span><span class="open-question">Lihat diskusi<Icon name="arrow" size={15}/></span></div>
+        <div class="card-bottom"><span class:answered={questionStatus(question, app.data?.answers || []) === 'answered'}>{QUESTION_STATUS_LABELS[questionStatus(question, app.data?.answers || [])]}</span><span class="open-question">Lihat diskusi<Icon name="arrow" size={15}/></span></div>
       </a></li>
     {/each}</ol>
   {:else}<p class="top-rated-empty">Belum ada pertanyaan yang mendapat like. Sukai pertanyaan yang bermanfaat agar muncul di sini.</p>{/if}

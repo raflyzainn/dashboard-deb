@@ -86,6 +86,8 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
     closeFeedback: id => done(write('/api/feedback/' + idPath(id) + '/close', 'POST')),
     uploadProposal: (file, changes) => { const body = new FormData(); body.set('file', file); body.set('changes', changes); return done(write('/api/proposals', 'POST', body)); },
     ask: async (title, body, categoryIds) => (await write('/api/questions', 'POST', { title, body, categoryIds })).id!,
+    replies: (id, cursor = {}) => request('/api/questions/' + idPath(id) + '/replies?' + new URLSearchParams(Object.entries(cursor).map(([key, value]) => [key, String(value)])), response => response.json()),
+    reply: (id, body, replyTo) => done(write('/api/questions/' + idPath(id) + '/replies', 'POST', { body, replyTo })),
     answer: (id, body) => done(write('/api/questions/' + idPath(id) + '/answer', 'PUT', { body })),
     setLike: (id, liked) => done(write('/api/questions/' + idPath(id) + '/like', liked ? 'PUT' : 'DELETE')),
     promoteFaq: id => done(write('/api/questions/' + idPath(id) + '/faq', 'POST')),
