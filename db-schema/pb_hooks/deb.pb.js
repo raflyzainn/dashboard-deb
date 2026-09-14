@@ -30,6 +30,15 @@ onRecordValidate((e) => {
   }
   if (name === 'questions') user('author', 'campus', r.getString('campus'));
   if (name === 'question_answers') user('author', 'admin');
+  if (name === 'question_replies') {
+    if (!r.isNew()) fail('Discussion replies are immutable');
+    const question = e.app.findRecordById('questions', r.getString('question'));
+    user('author', r.getString('authorRole'), r.getString('authorRole') === 'campus' ? question.getString('campus') : '');
+    if (r.getString('replyTo')) {
+      const target = e.app.findRecordById('question_replies', r.getString('replyTo'));
+      if (target.getString('question') !== question.id || target.getInt('sequence') >= r.getInt('sequence')) fail('Invalid reply reference');
+    }
+  }
   if (name === 'proposal_versions') user('uploadedBy', 'campus', r.getString('campus'));
   if (name === 'deb_submissions') {
     user('submittedBy', 'campus', r.getString('campus'));
@@ -67,4 +76,4 @@ onRecordValidate((e) => {
     }
   }
   e.next();
-}, 'users', 'campuses', 'indicator_definitions', 'campus_indicators', 'indicator_feedback', 'questions', 'question_answers', 'proposal_versions', 'deb_submissions', 'notifications', 'activities');
+}, 'users', 'campuses', 'indicator_definitions', 'campus_indicators', 'indicator_feedback', 'questions', 'question_answers', 'question_replies', 'proposal_versions', 'deb_submissions', 'notifications', 'activities');

@@ -18,7 +18,7 @@ export const mapSubmission = (r: RecordModel): DebSubmission => ({ id: r.id, cam
   submittedAt: date(r.submittedAt), reviewedAt: r.reviewedAt ? date(r.reviewedAt) : undefined, reviewedBy: r.reviewedBy || undefined, decisionNote: r.decisionNote || undefined, simulated: r.simulated });
 export const mapFeedback = (r: RecordModel): Feedback => ({ id: r.id, campusId: r.campus, indicatorId: r.indicator, text: r.text, requiresRevision: r.requiresRevision, state: r.state, createdAt: date(r.created), updatedAt: date(r.updated) });
 export const mapProposal = (r: RecordModel): ProposalVersion => ({ id: r.id, campusId: r.campus, version: r.version, filename: r.filename, size: r.size, changes: r.changes, createdAt: date(r.created), simulated: r.simulated });
-export const mapQuestion = (r: RecordModel): Question => ({ id: r.id, campusId: r.campus, title: r.title, body: r.body, categoryIds: validateCategories(r.categoryIds), createdAt: date(r.created) });
+export const mapQuestion = (r: RecordModel): Question => ({ id: r.id, campusId: r.campus, title: r.title, body: r.body, categoryIds: validateCategories(r.categoryIds), replyCount: r.replyCount || 0, lastReplyRole: r.lastReplyRole || undefined, createdAt: date(r.created) });
 export const mapAnswer = (r: RecordModel): Answer => ({ id: r.id, questionId: r.question, body: r.body, updatedAt: date(r.updated) });
 export const mapLike = (r: RecordModel): QuestionLike => ({ id: r.id, questionId: r.question, campusId: r.campus });
 export const mapFaq = (r: RecordModel): FaqEntry => ({ id: r.id, questionId: r.sourceQuestion || undefined, question: r.question, answer: r.answer, order: r.order });

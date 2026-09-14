@@ -46,8 +46,9 @@ export async function readPage(pb: PocketBase, actor: AppSession, request: PageR
     }
     if (request.question) {
       if (key === 'questions') filters.push(pb.filter('id = {:id}', { id: request.question }));
-      if (['answers', 'likes', 'faq'].includes(key)) filters.push(pb.filter('question = {:id}', { id: request.question }));
+      if (['answers', 'likes'].includes(key)) filters.push(pb.filter('question = {:id}', { id: request.question }));
     }
+    if (request.question && key === 'faq') filters.push(pb.filter('sourceQuestion = {:id}', { id: request.question }));
     const options = { sort: key === 'faq' ? 'order,id' : 'id', ...(filters.length ? { filter: filters.join(' && ') } : {}) };
     // The dashboard only displays four activities. Other page collections are never queried here.
     raw[key] = key === 'activities' ? (await pb.collection(collections[key]).getList(1, 4, { ...options, sort: '-created,-id' })).items : await pb.collection(collections[key]).getFullList(options);

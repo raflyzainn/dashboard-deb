@@ -26,3 +26,9 @@ export function matchesQuestion(question: Question, answers: Snapshot['answers']
   const text = [question.title, question.body, ...answers.filter(a => a.questionId === question.id).map(a => a.body)].join(' ').toLocaleLowerCase('id-ID');
   return text.includes(search.trim().toLocaleLowerCase('id-ID')) && (!categories.length || questionCategories(question).some(id => categories.includes(id)));
 }
+
+export function questionStatus(question: Question, answers: Snapshot['answers']) {
+  if (!answers.some(a => a.questionId === question.id)) return 'unanswered';
+  return question.lastReplyRole === 'campus' ? 'waiting' : 'answered';
+}
+export const QUESTION_STATUS_LABELS = { unanswered: 'Belum dijawab', waiting: 'Menunggu tanggapan admin', answered: 'Sudah dijawab' };

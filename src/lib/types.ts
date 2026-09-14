@@ -20,7 +20,9 @@ export interface DebSubmission { id: string; campusId: string; version: number; 
 export type FeedbackState = 'open' | 'responded' | 'closed';
 export interface Feedback { id: string; campusId: string; indicatorId: string; text: string; requiresRevision: boolean; state: FeedbackState; createdAt: string; updatedAt: string }
 export interface ProposalVersion { id: string; campusId: string; version: number; filename: string; size: number; createdAt: string; changes: string; simulated: boolean }
-export interface Question { id: string; campusId: string; title: string; body: string; createdAt: string; categoryIds?: ForumCategoryId[] }
+export interface Question { id: string; campusId: string; title: string; body: string; createdAt: string; categoryIds?: ForumCategoryId[]; replyCount?: number; lastReplyRole?: Role }
+export interface QuestionReply { id: string; questionId: string; sequence: number; authorRole: Role; authorName: string; body: string; createdAt: string; replyTo?: string; quote?: { authorName: string; body: string } }
+export interface ReplyPage { items: QuestionReply[]; hasMore: boolean }
 export interface Answer { id: string; questionId: string; body: string; updatedAt: string }
 export interface QuestionLike { id: string; questionId: string; campusId: string }
 export interface FaqEntry { id: string; questionId?: string; question: string; answer: string; order: number }
@@ -50,6 +52,8 @@ export interface DataService {
   uploadProposal(file: File, changes: string): Promise<void>;
   proposalFile(id: string): Promise<Blob>;
   ask(title: string, body: string, categoryIds?: ForumCategoryId[]): Promise<string>;
+  replies(questionId: string, cursor?: { before?: number; after?: number }): Promise<ReplyPage>;
+  reply(questionId: string, body: string, replyTo?: string): Promise<void>;
   answer(questionId: string, body: string): Promise<void>;
   setLike(questionId: string, liked: boolean): Promise<void>;
   promoteFaq(questionId: string): Promise<void>;

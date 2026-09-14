@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { untrack } from 'svelte';
+  import { pollVisible } from '$lib/polling';
   import { pageRequest, pageKey } from '$lib/page-data';
   import { page } from '$app/state';
   import { app } from '$lib/state.svelte';
@@ -11,6 +12,15 @@
   const authorized = $derived(app.ready && app.session && routeRole === app.session.role);
   const request = $derived(pageRequest(page.url));
   const requestKey = $derived(pageKey(request));
+  $effect(() => {
+    if (!authorized) return;
+    const stopNavigation = pollVisible(() => app.refreshNavigation(true), 15000);
+    return stopNavigation;
+  });
+  $effect(() => {
+    if (!authorized || !['questions', 'question-detail'].includes(request.view)) return;
+    return pollVisible(() => app.refreshForum(), 5000);
+  });
   $effect(() => { if (authorized) { const next = request; untrack(() => { void app.openPage(next); }); } });
   $effect(() => {
     if (!app.ready) return;

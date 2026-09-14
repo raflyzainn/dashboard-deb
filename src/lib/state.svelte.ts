@@ -22,6 +22,7 @@ class AppState {
   private currentPage: PageRequest | null = null;
   private pageRevision = 0;
   private navigationRevision = 0;
+  private forumRevision = 0;
   private revision = 0;
   private initializing = false;
 
@@ -93,11 +94,30 @@ class AppState {
       this.error = this.message(error);
     } finally { if (revision === this.revision && pageRevision === this.pageRevision) this.loading = false; }
   }
-  async refreshNavigation() {
+  async refreshNavigation(quiet = false) {
     const revision = this.revision;
     const navigationRevision = ++this.navigationRevision;
     try { const result = await dataService.navigation(); if (revision === this.revision && navigationRevision === this.navigationRevision) this.navigation = result; }
-    catch (error) { if (revision === this.revision && navigationRevision === this.navigationRevision) this.error = this.message(error); }
+    catch (error) {
+      if (revision === this.revision && navigationRevision === this.navigationRevision) {
+        if (error instanceof DataReadError && error.status === 401) void this.logout();
+        if (!quiet) this.error = this.message(error);
+      }
+      if (quiet) throw error;
+    }
+  }
+  async refreshForum() {
+    if (!this.session || !this.currentPage || !['questions', 'question-detail'].includes(this.currentPage.view) || this.loading || this.busy) return;
+    const revision = this.revision, pageRevision = this.pageRevision, forumRevision = ++this.forumRevision;
+    try {
+      const result = await dataService.page(this.currentPage);
+      if (revision === this.revision && pageRevision === this.pageRevision && forumRevision === this.forumRevision && !this.busy && this.data) {
+        this.data = { ...this.data, ...result.data }; this.loadedAt = result.loadedAt;
+      }
+    } catch (error) {
+      if (revision === this.revision && error instanceof DataReadError && error.status === 401) void this.logout();
+      throw error;
+    }
   }
   async mutate(action: () => Promise<unknown>, success: string): Promise<boolean> {
     if (this.readOnly || !this.session) { this.error = READ_ONLY_MESSAGE; return false; }
