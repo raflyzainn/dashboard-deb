@@ -15,7 +15,7 @@ function baseURL() {
 }
 function mailReady(app) {
   key(); baseURL(); const s = app.settings();
-  // TODO(P1-SMTP): configure official host/port/TLS/credentials and sender before external delivery.
+  // External delivery requires SMTP host/port/TLS/credentials and sender configuration.
   // No sendmail fallback; local development explicitly uses the loopback Mailpit inbox.
   if (!s.smtp.enabled || !s.smtp.host || !s.meta.senderAddress) fail('SMTP belum dikonfigurasi.', 503);
   if ($os.getenv('DEB_MAIL_MODE') !== 'external' && !['127.0.0.1', 'localhost'].includes(s.smtp.host)) fail('Pengiriman eksternal belum diaktifkan.', 503);

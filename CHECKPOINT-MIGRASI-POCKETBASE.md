@@ -141,7 +141,7 @@ P0 teknis lokal tersedia. Tiga checkbox keputusan data/production di atas sengaj
 - [x] Jangan percaya `DemoSession` dari parameter `DataService`. Ubah kontrak agar browser tidak menentukan actor otoritatif; UI menerima profil dari server.
 - [x] Tambahkan provisioning/reset password sesuai keputusan P0; bila memakai email PocketBase, konfigurasi dan uji mailer serta tautan reset di instance DEB.
 
-SMTP resmi, pengiriman eksternal dan deployment production belum diuji; konfigurasi TODO ada pada panduan P1.
+Pengiriman eksternal melalui Postmark sudah diuji dari instance lokal, termasuk status aktivasi sent tanpa error SMTP pada 14 September 2026. Domain HTTPS dan deployment production masih perlu diverifikasi; konfigurasi ada pada panduan P1.
 
 ### P2 — Pembacaan data
 
