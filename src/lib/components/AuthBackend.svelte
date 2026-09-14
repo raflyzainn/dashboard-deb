@@ -6,20 +6,21 @@
   import { app } from '$lib/state.svelte';
   import Icon from './Icon.svelte';
   import WelcomeGuide from './WelcomeGuide.svelte';
-  let screen=$state<'login'|'activate'|'forgot'|'password'|'sent'|'success'|'invalid'>('login');
+  let screen=$state<'login'|'employee'|'activate'|'forgot'|'password'|'sent'|'success'|'invalid'>('login');
   let email=$state(''),password=$state(''),confirmation=$state(''),error=$state(''),busy=$state(false);
   let showPassword=$state(false),showConfirmation=$state(false),token=$state('');
   let flow=$state<'activate'|'forgot'>('activate');
+  let microsoftNotice=$state(false);
   const activationSteps=['Email PIC','Periksa email','Buat password','Selesai'];
   const step=$derived(flow==='activate'?({activate:1,sent:2,password:3,success:4} as Partial<Record<typeof screen,number>>)[screen]||0:0);
   let target=$state({campus:'',name:'',email:'',purpose:'activate'});
   const longEnough=$derived(password.length>=8),hasNumber=$derived(/[0-9]/.test(password)),hasCapital=$derived(/[A-Z]/.test(password));
   const passwordsMatch=$derived(confirmation.length>0 && password===confirmation);
   const passwordRules=$derived([{label:'Minimal 8 karakter',met:longEnough},{label:'Mengandung angka',met:hasNumber},{label:'Mengandung huruf kapital',met:hasCapital}]);
-  const title=$derived(({login:'Selamat datang kembali.',activate:'Aktivasi akun kampus.',forgot:'Lupa password?',password:target.purpose==='forgot'?'Buat password baru.':'Buat password Anda.',sent:'Periksa email Anda.',success:'Password berhasil disimpan.',invalid:'Tautan tidak dapat digunakan.'})[screen]);
+  const title=$derived(({login:'Selamat datang kembali.',employee:'Masuk sebagai Karyawan',activate:'Aktivasi akun kampus.',forgot:'Lupa password?',password:target.purpose==='forgot'?'Buat password baru.':'Buat password Anda.',sent:'Periksa email Anda.',success:'Password berhasil disimpan.',invalid:'Tautan tidak dapat digunakan.'})[screen]);
   $effect(()=>{const value=page.url.searchParams.get('token');if(value)untrack(()=>{token=value;void inspect();});});
   async function api(operation:string,body:object){const r=await fetch('/api/auth/'+operation,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const data=await r.json();if(!r.ok)throw new Error(data.message||'Permintaan belum dapat diproses.');return data;}
-  function go(next:typeof screen){if(next==='activate'||next==='forgot')flow=next;screen=next;error='';password='';confirmation='';showPassword=false;showConfirmation=false;}
+  function go(next:typeof screen){if(next==='activate'||next==='forgot')flow=next;screen=next;error='';microsoftNotice=false;password='';confirmation='';showPassword=false;showConfirmation=false;}
   async function inspect(){busy=true;try{target=await api('inspect',{token});flow=target.purpose==='forgot'?'forgot':'activate';email=target.email;go('password');}catch{go('invalid');}finally{busy=false;}}
   async function submit(){busy=true;error='';try{
     if(screen==='login'){await api('login',{email,password});await app.login('');if(app.session)await goto('/'+app.session.role+'/dashboard');else throw new Error('Sesi belum dapat dimuat.');}
@@ -33,7 +34,7 @@
 <section class="stage" aria-label="Akses akun">
 <div class="stage-top"><span>PORTAL KAMPUS MITRA</span>{#if dev}<a href="/login?qa=1">Akun QA lokal</a>{/if}</div>
 <div class="form-wrap">
-{#if screen!=='login' && screen!=='success'}<button class="back" onclick={()=>go('login')}>Kembali ke masuk</button>{/if}
+{#if screen!=='login' && screen!=='success'}<button class="back" onclick={()=>go('login')}>{screen==='employee'?'Kembali ke masuk kampus':'Kembali ke masuk'}</button>{/if}
 {#if step}<nav class="activation-progress" aria-label="Tahapan aktivasi akun"><p>Aktivasi akun <strong>Langkah {step} dari 4</strong></p><ol>{#each activationSteps as label,index}<li class:current={step===index+1} class:complete={step>index+1} aria-current={step===index+1?'step':undefined}><span class="step-number">{#if step>index+1}<Icon name="check" size={14}/>{:else}{index+1}{/if}</span><span>{label}</span></li>{/each}</ol></nav>{/if}
 <div class="form-icon"><Icon name={screen==='success'?'check':screen==='invalid'?'alert':'leaf'} size={25}/></div>
 <span class="section-label">AKSES AKUN DEB</span><h2>{title}</h2>
@@ -50,13 +51,26 @@
 {#if error}<p class="error" role="alert">{error}</p>{/if}
 <button class="primary" disabled={busy || (screen==='password' && (!longEnough || !hasNumber || !hasCapital || !passwordsMatch))}>{busy?'Memproses...':screen==='login'?'Masuk':screen==='password'?'Simpan password':screen==='forgot'?'Kirim tautan pemulihan':'Kirim tautan aktivasi'}<Icon name="arrow" size={18}/></button>
 </form>
-{#if screen==='login'}<div class="first-time"><span>Pertama kali menggunakan DEB?</span><button onclick={()=>go('activate')}>Aktivasi akun</button></div>{/if}
-{:else if screen==='sent'}<p class="intro">Jika email terdaftar dan memenuhi syarat, tautan akan dikirim. Periksa inbox dan folder spam.</p><button class="primary" onclick={()=>go('login')}>Kembali ke masuk</button>
+{#if screen==='login'}
+<div class="first-time"><span>Baru pertama kali masuk?</span><button type="button" disabled={busy} onclick={()=>go('activate')}>Aktivasi akun</button></div>
+<div class="login-divider"><span>Karyawan</span></div>
+<button type="button" class="employee-entry" disabled={busy} onclick={()=>go('employee')}>Masuk sebagai Karyawan<Icon name="arrow" size={16}/></button>
+{/if}
+{:else if screen==='employee'}
+<p class="intro">Gunakan akun Microsoft kerja Pertamina Foundation untuk mengakses ruang kerja karyawan.</p>
+<button type="button" class="microsoft-login" disabled={busy} onclick={()=>microsoftNotice=true}>
+  <svg width="21" height="21" viewBox="0 0 21 21" fill="none" aria-hidden="true"><path fill="#f25022" d="M0 0h10v10H0z"/><path fill="#7fba00" d="M11 0h10v10H11z"/><path fill="#00a4ef" d="M0 11h10v10H0z"/><path fill="#ffb900" d="M11 11h10v10H11z"/></svg>
+  <span>Masuk dengan Microsoft</span>
+</button>
+{#if microsoftNotice}<p class="microsoft-notice" role="status">Login Microsoft belum diaktifkan. Hubungi admin DEB untuk informasi akses karyawan.</p>{/if}
+{:else if screen==='sent'}<p class="intro">Jika email terdaftar dan memenuhi syarat, tautan akan dikirim ke <strong class="email-destination">{email.trim().toLowerCase()}</strong>. Periksa inbox dan folder spam pada alamat tersebut.</p><button class="primary" onclick={()=>go('login')}>Kembali ke masuk</button>
 {:else if screen==='success'}<p class="intro">Kenali DEB, lalu masuk dengan email dan password Anda.</p><WelcomeGuide/><button class="primary" onclick={()=>go('login')}>Lanjut ke masuk</button>
 {:else}<p class="intro">Tautan mungkin kedaluwarsa, sudah digunakan, atau telah diganti. Minta tautan baru sesuai kebutuhan akun Anda.</p><button class="primary" onclick={()=>go('activate')}>Minta tautan aktivasi</button><button class="inline-link" onclick={()=>go('forgot')}>Pemulihan password</button>{/if}
 </div><footer class="stage-footer"><img class="pf-color-logo" src="/logo-pf.png" alt="Pertamina Foundation" width="140" height="37"/><span>Digitalisasi DEB</span></footer>
 </section></main>
 <style>
+.email-destination{font-weight:650;color:#24466f;overflow-wrap:anywhere}
+.login-divider{display:flex;align-items:center;gap:14px;margin:18px 0;color:#7185a0;font-size:11px}.login-divider::before,.login-divider::after{content:'';height:1px;flex:1;background:#dce5ef}.microsoft-login{display:flex;align-items:center;justify-content:center;gap:15px;width:100%;min-height:52px;padding:14px 18px;border:1px solid #303030;border-radius:14px;background:#303030;color:#fff;font-family:'Segoe UI',Arial,sans-serif;font-size:16px;font-weight:600;line-height:22px;box-shadow:0 2px 3px #0000001a;transition:background .15s}.microsoft-login svg{flex-shrink:0}.microsoft-login:hover{background:#242424}.microsoft-login:focus-visible{outline:3px solid #1673de;outline-offset:3px}.microsoft-login:disabled{opacity:.6;cursor:wait}.microsoft-notice{margin:12px 0 0;font-size:12px;line-height:1.7;color:#607795}
 .auth-page{min-height:100svh}.login-story{min-height:100svh;padding-top:32px;padding-bottom:28px}.login-copy{margin-top:clamp(32px,7vh,75px)}.login-footer{padding-top:24px}.login-metrics{margin-top:28px}.stage{padding:32px 48px;display:flex;flex-direction:column}.stage-top{display:flex;justify-content:space-between;gap:15px;font-size:10px;color:#6d839f}.stage-top a{color:#1768c0;text-decoration:underline}.form-wrap{width:100%;max-width:420px;margin:auto;padding:50px 0}.form-icon{display:inline-grid;place-items:center;width:48px;height:48px;background:#edf5ff;border:1px solid #d5e6fb;border-radius:13px;color:#2373cd;margin-bottom:26px}.section-label{display:block;font-size:9px;letter-spacing:2px;color:#6d89ab;margin-bottom:12px}h2{font-size:30px;line-height:1.3;letter-spacing:-1px}.intro{font-size:12px;line-height:1.9;color:#7185a0;margin:17px 0 25px}form{display:flex;flex-direction:column;gap:10px}label{font-size:12px;color:#335580;margin-top:7px}input{min-width:0;width:100%;min-height:48px;border:1px solid #cdddf1;border-radius:8px;padding:12px 14px;color:#24466f;background:white;font-size:13px}.label-row{display:flex;justify-content:space-between;align-items:center}.password-input{position:relative}.password-input input{padding-right:48px}.password-input button{position:absolute;right:5px;top:5px;display:grid;place-items:center;width:38px;height:38px;border:0;background:transparent;color:#4b719c}.primary{display:flex;align-items:center;justify-content:center;gap:13px;width:100%;min-height:48px;padding:13px 18px;border-radius:8px;border:0;background:#1668d4;color:white;font-size:12px;font-weight:650;margin-top:17px}.primary:disabled{opacity:.5;cursor:wait}.inline-link,.back{color:#276bb7;font-size:11px;background:transparent;border:0}.back{display:block;margin-bottom:25px}.first-time{display:grid;gap:9px;text-align:center;margin-top:25px;font-size:11px;color:#7085a0}.first-time button{color:#1668d4;background:none;border:0;font-weight:650}.account-summary{display:flex;gap:12px;align-items:center;padding:17px;background:#edf5ff;border:1px solid #d8e7f8;border-radius:9px;color:#2d79ca;margin:22px 0}.account-summary div{min-width:0;display:grid;gap:6px}.account-summary strong{font-size:12px}.account-summary span{font-size:11px;color:#6b82a0;overflow-wrap:anywhere}.error{font-size:11px;color:#a33b31;background:#fff0ee;padding:12px;border-radius:7px;line-height:1.7}.stage-footer{font-size:10px;color:#8092aa;text-align:center}button{cursor:pointer}
 @media(max-width:700px){.login-story{min-height:330px}.auth-page{display:block}.stage{padding:24px}.form-wrap{padding:30px 0}h2{font-size:26px}}
 
@@ -78,4 +92,5 @@
 @media(min-width:701px) and (max-height:800px){.password-page .stage{padding-block:10px}.password-page .activation-progress{margin-bottom:10px}.password-page .account-summary{margin:8px 0 12px}.password-page .form-wrap{padding-block:6px}}
 .success-page .stage{padding-block:14px}.success-page .form-wrap{padding-block:10px}.success-page h2{font-size:26px}.success-page .section-label{margin-bottom:7px}.success-page .back{margin-bottom:12px}.success-page .activation-progress{margin-bottom:14px}.success-page .intro{margin:10px 0 14px}.success-page .primary{margin-top:12px}
 @media(max-width:700px){.success-page .stage-top{display:none}.success-page .stage{padding-block:8px}}
+.first-time{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:0 6px;font-size:12px;line-height:1.6}.first-time button{min-height:44px;padding:10px 2px;font-size:12px;color:#125bb7;text-decoration:underline;text-underline-offset:3px;text-decoration-color:#125bb766}.first-time button:hover{text-decoration-color:currentColor}.employee-entry{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:44px;padding:10px 12px;border:0;border-radius:8px;background:transparent;color:#285d99;font-size:12px;font-weight:600}.employee-entry:hover{background:#e6effa}.employee-entry:focus-visible,.first-time button:focus-visible{outline:3px solid #1673de;outline-offset:3px}.employee-entry:disabled,.first-time button:disabled{opacity:.6;cursor:wait}
 </style>
