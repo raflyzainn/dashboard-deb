@@ -48,14 +48,14 @@ test('local 8096 access regression without seeding or business writes', async t 
     assert.ok(collection.items.every(r=>r.actor&&r.entity&&r.created));
     assert.equal((await a.collection('master_audit').getList(1,50)).totalItems,0);
     const rejected=(operation:Promise<unknown>,status:number)=>assert.rejects(operation,(error:{status:number})=>error.status===status);
-    await rejected(a.send('/api/deb/workflows/masterSaveDefinition',{method:'POST',headers:{'Idempotency-Key':randomUUID()},body:{code:'forged'}}),403);
+    await rejected(a.send('/api/deb/workflows/masterSaveDefinition',{method:'POST',headers:{'Idempotency-Key':randomUUID()},body:{code:'forged'}}),404);
   });
-  await t.test('workflow rejects forged ownership, wrong role and missing operation key',async()=>{
+  await t.test('native custom routes are absent and receipts stay private',async()=>{
     const denied=(operation:Promise<unknown>,status:number)=>assert.rejects(operation,(error:{status:number})=>error.status===status);
     const headers={'Idempotency-Key':randomUUID()};
     await denied(b.send('/api/deb/workflows/updateIndicator',{method:'POST',headers,body:{id:sa.indicators[0].id,current:1,note:'forged'}}),404);
-    await denied(a.send('/api/deb/workflows/saveFaq',{method:'POST',headers,body:{question:'forged',answer:'forged'}}),403);
-    await denied(a.send('/api/deb/workflows/ask',{method:'POST',body:{title:'missing key',body:'missing key'}}),400);
+    await denied(a.send('/api/deb/workflows/saveFaq',{method:'POST',headers,body:{question:'forged',answer:'forged'}}),404);
+    await denied(a.send('/api/deb/workflows/ask',{method:'POST',body:{title:'missing key',body:'missing key'}}),404);
     await denied(a.collection('workflow_operations').getList(1,1).then(r=>{if(!r.items.length) throw {status:403};}),403);
   });
   await t.test('PDFs remain private at PocketBase and downloadable by owner/admin',async()=>{

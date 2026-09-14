@@ -1,5 +1,7 @@
 # Digitalisasi DEB
 
+**Arsitektur aktif:** aturan bisnis berjalan di SvelteKit menggunakan REST PocketBase standar; email dikirim PocketBase melalui Mail settings. Setup hanya memerlukan akses superuser. Ikuti [panduan deploy dan perubahan env](docs/DEPLOY-SVELTEKIT-REST.md); bagian P0�P4 berikut merupakan riwayat implementasi dan tidak menjadi petunjuk pemasangan hook.
+
 > Update 10 September 2026: pembacaan frontend sudah [dipisah per halaman](docs/API-PER-HALAMAN.md). Endpoint bootstrap dihapus; bagian lama yang menyebut bootstrap adalah arsitektur sebelumnya.
 
 **Update P1 lokal (10 September 2026):** login email/password, PIC persisten dan aktivasi melalui email tersedia. Buka `/login`; opsi QA tetap khusus development. `npm run mail:serve` membuka inbox pengujian di http://127.0.0.1:8025. Pengiriman aktivasi melalui Postmark sudah diuji dari instance lokal; domain HTTPS dan deployment production masih perlu diverifikasi. Lihat [panduan P1](docs/POCKETBASE-P1.md). Mockup login dihapus.

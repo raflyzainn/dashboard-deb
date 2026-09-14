@@ -8,6 +8,7 @@ import { LOCAL, installBinary, provisionInstance, migrate, start, adminClient, c
 import { seedLocal, authenticateUser } from '../../scripts/pocketbase/seed';
 import { samplePdf } from '../../scripts/fixtures/pdf';
 import { readReplies } from '../../src/lib/server/deb/replies';
+import { executeWorkflow } from '../../src/lib/server/deb/backend';
 
 test('P3 workflows on isolated PocketBase', { timeout: 180000 }, async t => {
   await installBinary(); await mkdir(path.join(LOCAL, 'tests'), { recursive: true });
@@ -18,7 +19,8 @@ test('P3 workflows on isolated PocketBase', { timeout: 180000 }, async t => {
     await seedLocal(instance);
     const credentials = await readJson<Credentials>(credentialsPath(instance));
     const [a, b, admin, admin2] = await Promise.all(['campus-001', 'campus-002', 'admin-1', 'admin-2'].map(key => authenticateUser(client(instance.url), credentials, key)));
-    const call = (pb: PocketBase, op: string, body: Record<string, unknown> | FormData = {}, key = randomUUID()) => pb.send<{ok: boolean; id?: string}>(`/api/deb/workflows/${op}`, { method: 'POST', body, headers: { 'Idempotency-Key': key } });
+    assert.equal((await fetch(instance.url + '/api/deb/local-instance')).status, 404);
+    const call = (pb: PocketBase, op: string, body: Record<string, unknown> | FormData = {}, key = randomUUID()) => executeWorkflow(superuser, pb.authStore.record, op, body instanceof FormData ? { changes: body.get('changes') } : body, key, true, body instanceof FormData ? body.get('file') as File : undefined) as Promise<{ok: boolean; id?: string}>;
     const rejected = async (p: Promise<unknown>, status: number) => assert.rejects(p, (error: { status: number }) => error.status === status);
     const counts = async () => Promise.all(['questions','activities','notifications','proposal_versions','deb_submissions'].map(n => superuser.collection(n).getList(1,1).then(r => r.totalItems)));
     const indicator = (await a.collection('campus_indicators').getFullList())[0];

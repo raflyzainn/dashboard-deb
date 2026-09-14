@@ -1,4 +1,9 @@
-// CommonJS module: each PocketBase callback loads its own VM-local helpers.
+// @ts-nocheck
+// Business rules execute on a REST snapshot; commit is owned by atomic().
+import { PreviewError as ApiError } from "../preview-error";
+import { StoreRecord as Record } from "../rest-store";
+import { security as $security } from "../security";
+import { runMaster } from "./masters";
 const categories = ['indikator', 'proposal', 'social-mapping', 'toc', 'ikm', 'energi', 'ekonomi', 'sosial', 'umum'];
 function fail(message, status = 400) { throw new ApiError(status, message); }
 function text(value, max = 5000, required = true) {
@@ -36,7 +41,7 @@ function canonical(value) {
   }
   return value;
 }
-exports.run = (e) => {
+export const runWorkflow = (e) => {
 
   const actorId = e.auth && e.auth.id;
   const op = e.request.pathValue('operation');
@@ -46,23 +51,17 @@ exports.run = (e) => {
   let payload = input, file;
   let fileHash = '';
   if (op === 'uploadProposal') {
-    const files = e.findUploadedFiles('file');
-    if (files.length !== 1) fail('Pilih satu file PDF.');
-    file = files[0];
-    if (!file.size || file.size > 10485760) fail('PDF maksimal 10 MiB.', 413);
-    if (!/\.pdf$/i.test(file.originalName)) fail('File harus berekstensi PDF.');
-    const reader = file.reader.open();
-    let bytes;
-    try { bytes = toBytes(reader, 10485761); } finally { reader.close(); }
-    if (bytes.length !== file.size || [37,80,68,70,45].some((v, i) => bytes[i] !== v)) fail('Isi file bukan PDF.');
-    fileHash = $security.sha256(JSON.stringify(bytes));
-    payload = { changes: input.changes || '', filename: file.originalName };
+    file = e.file;
+    if (!(file instanceof File)) fail('Pilih satu file PDF.');
+    fileHash = e.fileHash;
+    payload = { changes: input.changes || '', filename: file.name };
   }
   const hash = $security.sha256(JSON.stringify(canonical(JSON.parse(JSON.stringify({ op, payload, fileHash })))));
   let result;
   e.app.runInTransaction(app => {
     const actor = get(app, 'users', actorId);
-    if (!actor.getBool('active') || !actor.getBool('verified') || (actor.getBool('simulated') && !$os.getenv('DEB_LOCAL_INSTANCE_ID'))) fail('Akun tidak aktif atau belum terverifikasi.', 403);
+    if (actor.getString('tokenKey') !== (e.auth.sessionVersion || '')) fail('Sesi sudah berakhir. Silakan masuk kembali.', 401);
+    if (!actor.getBool('active') || !actor.getBool('verified') || (actor.getBool('simulated') && !e.local)) fail('Akun tidak aktif atau belum terverifikasi.', 403);
     const role = actor.getString('role'), campus = actor.getString('campus');
     if (!['admin', 'campus'].includes(role) || (role === 'campus' && !campus)) fail('Identitas akun tidak valid.', 403);
     const roleIs = expected => { if (role !== expected) fail('Peran tidak diizinkan.', 403); };
@@ -84,7 +83,7 @@ exports.run = (e) => {
     const now = new Date().toISOString();
     result = { ok: true };
     if (op.startsWith('master')) {
-      result = require(__hooks + '/masters.js').run({ app, actor, op, payload, event });
+      result = runMaster({ app, actor, op, payload, event });
     } else if (op === 'updateIndicator') {
       roleIs('campus'); const r = own(get(app, 'campus_indicators', payload.id));
       if (get(app, 'indicator_definitions', r.getString('definition')).getString('status') !== 'active') fail('Indikator belum aktif.', 404);
@@ -127,7 +126,7 @@ exports.run = (e) => {
     } else if (op === 'uploadProposal') {
       roleIs('campus');
       const previous = list(app, 'proposal_versions', 'campus = {:c}', { c: campus }, '-version')[0];
-      const r = create(app, 'proposal_versions', { campus, version: previous ? previous.getInt('version') + 1 : 1, file, filename: file.originalName, size: file.size, changes: text(payload.changes, 5000, false), uploadedBy: actor.id, simulated: true });
+      const r = create(app, 'proposal_versions', { campus, version: previous ? previous.getInt('version') + 1 : 1, file, filename: file.name, size: file.size, changes: text(payload.changes, 5000, false), uploadedBy: actor.id, simulated: true });
       result.id = r.id;
       event(campus, 'proposal_uploaded', r.id, 'Kampus mengunggah versi proposal baru.', 'admin', '/admin/campuses/' + campus);
     } else if (op === 'ask') {

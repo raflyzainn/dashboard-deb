@@ -21,14 +21,15 @@
     "pb:seed": "tsx scripts/pocketbase/cli.ts seed",
     "pb:account": "tsx scripts/pocketbase/cli.ts account",
     "pb:backup": "tsx scripts/pocketbase/maintenance.ts backup",
-    "test:pb:master-rollback": "tsx scripts/pocketbase/maintenance.ts verify-master-rollback",
+    "test:pb:master-rollback": "tsx --test tests/pocketbase/masters.test.ts",
+    "pb:provision": "tsx scripts/pocketbase/provision-rest.ts",
     "test:pb": "tsx --test tests/pocketbase/local.test.ts",
     "test:discussion": "tsx --test --test-concurrency=1 tests/pocketbase/workflows.test.ts tests/pocketbase/discussion-browser.test.ts",
     "mail:serve": "tsx scripts/pocketbase/mailpit.ts serve",
     "mail:local": "tsx scripts/pocketbase/mailpit.ts configure",
     "pb:admin": "tsx scripts/pocketbase/admin.ts",
     "p1:sandbox": "tsx scripts/pocketbase/p1-sandbox.ts",
-    "test:p1": "tsx --test --test-concurrency=1 tests/pocketbase/p1.test.ts tests/pocketbase/p1-lifecycle.test.ts",
+    "test:p1": "tsx --test --test-concurrency=1 tests/pocketbase/p1.test.ts tests/pocketbase/p1-lifecycle.test.ts tests/pocketbase/native-email.test.ts tests/pocketbase/provision.test.ts",
     "test:e2e:p1": "playwright test --config playwright.p1.config.ts"
   },
   "dependencies": {

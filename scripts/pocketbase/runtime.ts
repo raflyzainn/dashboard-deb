@@ -6,12 +6,12 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import net from 'node:net';
 import PocketBase from 'pocketbase';
+import { configureRestSchema } from './rest-schema';
 
 export const VERSION = '0.40.3';
 export const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 export const LOCAL = path.join(ROOT, '.local', 'pocketbase');
 export const MIGRATIONS = path.join(ROOT, 'db-schema', 'pb_migrations');
-export const HOOKS = path.join(ROOT, 'db-schema', 'pb_hooks');
 export const BINARY = path.join(LOCAL, 'bin', VERSION, process.platform === 'win32' ? 'pocketbase.exe' : 'pocketbase');
 export type LocalInstance = { project: 'dashboard-deb'; instanceId: string; kind: 'development' | 'test'; url: string; directory: string };
 export type Credential = { email: string; password: string };
@@ -50,9 +50,9 @@ export function assertLocal(instance: LocalInstance, input = instance.url) {
 
 export async function assertInstance(instance: LocalInstance, input = instance.url) {
   const url = assertLocal(instance, input);
-  const response = await fetch(url + '/api/deb/local-instance', { redirect: 'error', signal: AbortSignal.timeout(5000) });
+  const response = await fetch(url + '/api/health', { redirect: 'error', signal: AbortSignal.timeout(5000) });
   const info = await response.json();
-  if (!response.ok || info.project !== instance.project || info.instanceId !== instance.instanceId || info.version !== VERSION) {
+  if (!response.ok || info.code !== 200) {
     throw new Error('Refusing wrong or unmarked PocketBase instance');
   }
   return url;
@@ -132,22 +132,22 @@ export async function portAvailable(instance: LocalInstance) {
 }
 
 export function args(instance: LocalInstance) {
-  return [`--dir=${path.join(instance.directory, 'pb_data')}`, `--migrationsDir=${MIGRATIONS}`, `--hooksDir=${HOOKS}`, '--automigrate=false'];
+  return [`--dir=${path.join(instance.directory, 'pb_data')}`, '--automigrate=false'];
 }
 
 export async function migrate(instance: LocalInstance) {
   await portAvailable(instance);
-  const result = spawnSync(BINARY, ['migrate', 'up', ...args(instance)], { encoding: 'utf8', windowsHide: true });
-  if (result.status !== 0) throw new Error(result.error?.message || String(result.stdout) + String(result.stderr));
-  console.log(result.stdout.trim());
   const credentials = await readJson<Credentials>(credentialsPath(instance));
   // Create only on first setup. Never reset an existing superuser password on rerun.
   const initialized = path.join(instance.directory, 'initialized.json');
   if (!existsSync(initialized)) {
     const result = spawnSync(BINARY, ['superuser', 'create', credentials.superuser.email, credentials.superuser.password, ...args(instance)], { encoding: 'utf8', windowsHide: true });
-    if (result.status !== 0) throw new Error('Local superuser provisioning failed (credentials redacted).');
+    if (result.status !== 0) throw new Error('Local superuser provisioning failed: ' + (result.error?.message || (result.stdout + result.stderr).replaceAll(credentials.superuser.email, '[email]').replaceAll(credentials.superuser.password, '[password]')));
     await privateJson(initialized, { initialized: true });
   }
+  const child = await start(instance);
+  try { await configureRestSchema(await adminClient(instance), {local:true, publicURL: instance.kind === 'test' ? 'http://127.0.0.1:5177' : 'http://127.0.0.1:5176'}); }
+  finally { child.kill(); await new Promise<void>(resolve => child.once('exit', () => resolve())); }
 }
 
 export async function start(instance: LocalInstance): Promise<ChildProcess> {
@@ -156,7 +156,7 @@ export async function start(instance: LocalInstance): Promise<ChildProcess> {
   let secret: { key: string };
   try { secret = await readJson(secretFile); } catch { secret = { key: randomBytes(48).toString('base64url') }; await privateJson(secretFile, secret); }
   const child = spawn(BINARY, ['serve', `--http=127.0.0.1:${new URL(instance.url).port}`, ...args(instance)], {
-    windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, DEB_LOCAL_INSTANCE_ID: instance.instanceId, DEB_INVITATION_KEY: process.env.DEB_INVITATION_KEY || secret.key, DEB_PUBLIC_URL: process.env.DEB_PUBLIC_URL || 'http://127.0.0.1:5176', DEB_MAIL_MODE: process.env.DEB_MAIL_MODE || 'local' }
+    windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], env: process.env
   });
   let logs = '';
   child.stdout?.on('data', chunk => { logs = (logs + chunk).slice(-16000); });
@@ -172,7 +172,5 @@ export async function start(instance: LocalInstance): Promise<ChildProcess> {
 }
 
 export async function preview() {
-  const files = (await readdir(MIGRATIONS)).filter(name => name.endsWith('.js')).sort();
-  console.log('Read-only migration inventory (not a pending-diff):\n' + files.join('\n'));
-  console.log('Apply with npm run pb:migrate while the local DEB server is stopped. Test fresh apply with npm run test:pb.');
+  console.log('Schema: db-schema/collections.json. Provision through the standard superuser REST API: npm run pb:provision -- --apply. Local offline setup: npm run pb:migrate.');
 }

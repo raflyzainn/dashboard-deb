@@ -1,14 +1,9 @@
-// PocketBase VM: callbacks must not close over top-level variables.
-routerAdd('GET', '/api/deb/local-instance', (e) => {
-  const id = $os.getenv('DEB_LOCAL_INSTANCE_ID');
-  if (!id) throw new NotFoundError();
-  return e.json(200, { project: 'dashboard-deb', instanceId: id, version: '0.40.3' });
-});
-
-onRecordValidate((e) => {
+// @ts-nocheck
+import { PreviewError as BadRequestError } from "../preview-error";
+export function validateRecord(e) {
   const r = e.record;
   const name = r.collection().name;
-  const fail = (message) => { throw new BadRequestError(message); };
+  const fail = (message) => { throw new BadRequestError(400, message); };
   const user = (field, role, campus) => {
     const account = e.app.findRecordById('users', r.getString(field));
     if (account.getString('role') !== role || (campus && account.getString('campus') !== campus)) fail('Invalid author role/campus');
@@ -75,5 +70,5 @@ onRecordValidate((e) => {
       if (String(r.original().get(field)) !== String(r.get(field))) fail('Historical field is immutable: ' + field);
     }
   }
-  e.next();
-}, 'users', 'campuses', 'indicator_definitions', 'campus_indicators', 'indicator_feedback', 'questions', 'question_answers', 'question_replies', 'proposal_versions', 'deb_submissions', 'notifications', 'activities');
+
+}

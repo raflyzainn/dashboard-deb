@@ -1,9 +1,9 @@
 import {cp,mkdir,readdir,readFile,writeFile} from 'node:fs/promises';
 import {createHash,randomUUID} from 'node:crypto';
-import {spawnSync} from 'node:child_process';
+
 import {DatabaseSync} from 'node:sqlite';
 import path from 'node:path';
-import {LOCAL,BINARY,HOOKS,MIGRATIONS,ROOT,args,loadInstance,portAvailable} from './runtime';
+import {LOCAL,ROOT,loadInstance,portAvailable} from './runtime';
 
 const business=['users','campuses','indicator_definitions','campus_indicators','deb_submissions','indicator_feedback','proposal_versions','questions','question_answers','question_likes','faq_entries','activities','notifications','workflow_operations','master_audit'];
 function records(directory:string){
@@ -27,7 +27,7 @@ async function hashes(directory:string){
 }
 async function main(){
   const operation=process.argv[2];
-  if(!['backup','verify-master-rollback'].includes(operation))throw new Error('Use backup or verify-master-rollback');
+  if(operation!=='backup')throw new Error('Use backup. Transaction rollback is tested by npm run test:pb:master-rollback on a disposable instance.');
   const instance=await loadInstance();await portAvailable(instance);
   const dataDir=path.join(LOCAL,'pb_data');
   const before=records(dataDir);
@@ -37,21 +37,10 @@ async function main(){
     await cp(dataDir,path.join(folder,'pb_data'),{recursive:true,force:false,errorOnExist:true});
     const original=await hashes(dataDir),copy=await hashes(path.join(folder,'pb_data'));
     if(JSON.stringify(original)!==JSON.stringify(copy)||JSON.stringify(before)!==JSON.stringify(records(path.join(folder,'pb_data'))))throw new Error('Backup verification failed');
-    await cp(HOOKS,path.join(folder,'pb_hooks'),{recursive:true,force:false,errorOnExist:true});
-    await cp(MIGRATIONS,path.join(folder,'pb_migrations'),{recursive:true,force:false,errorOnExist:true});
+    await cp(path.join(ROOT,'db-schema','collections.json'),path.join(folder,'collections.json'),{force:false,errorOnExist:true});
     await writeFile(path.join(folder,'manifest.json'),JSON.stringify({createdAt:new Date().toISOString(),business:before,files:copy},null,2));
     console.log('Database/file backup verified:',folder);return;
   }
-  const modulePath=path.join(ROOT,'tests/pocketbase/masters-rollback.js').replaceAll('\\','/');
-  const masterPath=path.join(HOOKS,'masters.js').replaceAll('\\','/');
-  await writeFile(path.join(folder,'1999999900_p4_rollback.js'),`migrate(app=>{const result=require(${JSON.stringify(modulePath)}).verify(app,require(${JSON.stringify(masterPath)}));throw new Error('QA_P4_ROLLBACK_OK '+JSON.stringify(result));},()=>{});`);
-  const result=spawnSync(BINARY,['migrate','up',...args(instance).filter(a=>!a.startsWith('--migrationsDir=')),`--migrationsDir=${folder}`],{encoding:'utf8',windowsHide:true});
-  const output=result.stdout+result.stderr;
-  const after=records(dataDir);
-  const verified=JSON.stringify(before)===JSON.stringify(after);
-  await writeFile(path.join(folder,'result.json'),JSON.stringify({before,after,verified,output},null,2));
-  if(!verified)throw new Error('Rollback changed business records');
-  if(result.status===0||!output.includes('QA_P4_ROLLBACK_OK'))throw new Error('Native rollback assertions failed: '+output);
-  console.log('P4 native rollback verified; business records unchanged. Evidence:',folder);
+
 }
 main().catch(error=>{console.error(error instanceof Error?error.message:'Maintenance failed');process.exitCode=1;});
