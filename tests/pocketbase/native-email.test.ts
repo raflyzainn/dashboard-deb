@@ -1,0 +1,49 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import path from 'node:path';
+import {randomUUID,createHmac} from 'node:crypto';
+import PocketBase from 'pocketbase';
+import {LOCAL,readJson,adminClient,credentialsPath,type LocalInstance,type Credentials} from '../../scripts/pocketbase/runtime';
+import {restTestClient} from './rest-test-client';
+
+test('PocketBase SMTP proof verifies email without giving access to user accounts', {timeout:90000}, async()=>{
+  const instance=await readJson<LocalInstance>(path.join(LOCAL,'p1-test-instance.json'));
+  assert.equal(instance.kind,'test');const root=await adminClient(instance);
+  const credentials=await readJson<Credentials>(credentialsPath(instance)),qa=new PocketBase(instance.url);
+  await qa.collection('users').authWithPassword(credentials.users['admin-1'].email,credentials.users['admin-1'].password);
+  const api=await restTestClient(root,qa,instance);
+  const campus=await root.collection('campuses').getFirstListItem('legacyId="campus-035"');
+  const contacts=await root.collection('campus_contacts').getFullList({filter:root.filter('campus={:id}',{id:campus.id})});
+  const email='native-proof-'+randomUUID().slice(0,8)+'@example.test';
+  await api.accounts('save',{changes:[{campusId:campus.id,revision:contacts[0]?.revision||0,name:'QA native mail',email}],confirmReset:true});
+  const origin='http://127.0.0.1:5177';
+  const post=(op:string,body:object,cookie='')=>fetch(origin+'/api/auth/'+op,{method:'POST',headers:{Origin:origin,'Content-Type':'application/json',...(cookie?{Cookie:cookie}:{})},body:JSON.stringify(body)});
+  const request=await post('request',{email,purpose:'activate'});assert.equal(request.status,200,await request.text());
+  let message:any;
+  for(let n=0;n<50;n++){const inbox=await fetch('http://127.0.0.1:8025/api/v1/search?query='+encodeURIComponent('to:'+email)).then(r=>r.json());if(inbox.messages?.length){message=await fetch('http://127.0.0.1:8025/api/v1/message/'+inbox.messages[0].ID).then(r=>r.json());break;}await new Promise(r=>setTimeout(r,100));}
+  assert.ok(message,'Native PocketBase SMTP must deliver to Mailpit');
+  const nativeToken=decodeURIComponent(String(message.Text).match(/token=([\w.-]+)/)![1]);
+  const fields=nativeToken.split('.');fields[2]=(fields[2][0]==='a'?'b':'a')+fields[2].slice(1);
+  assert.equal((await post('inspect',{token:fields.join('.')})).status,400);
+  const inspected=await post('inspect',{token:nativeToken});assert.equal(inspected.status,200,await inspected.clone().text());
+  const details=await inspected.json();assert.equal(details.email,email);assert.ok(details.token);
+  const proof=new PocketBase(instance.url);
+  const identity=JSON.parse(Buffer.from(nativeToken.split('.')[1],'base64url').toString()).id;
+  const proofPassword=createHmac('sha256',api.settings.DEB_INVITATION_KEY).update('email-proof:'+nativeToken).digest('base64url');
+  await proof.collection('email_challenges').authWithPassword(identity,proofPassword);
+  for(const name of ['users','campuses','proposal_versions','questions']) assert.equal((await proof.collection(name).getList()).totalItems,0,'Proof must not expose '+name);
+  await assert.rejects(proof.collection('questions').create({title:'forged'}));
+  // Reload/retry after a consumed native token recovers using server-only proof credentials.
+  assert.equal((await post('inspect',{token:nativeToken})).status,200);
+  const before=await root.collection('users').getFirstListItem(root.filter('campus={:id}',{id:campus.id}));
+  assert.ok(before.simulated || !before.active || !before.verified,'Opening an email must not activate a campus account');
+  const password='NativeProof123!';
+  const pair=await Promise.all([post('confirm',{token:details.token,password,passwordConfirm:password}),post('confirm',{token:details.token,password,passwordConfirm:password})]);
+  assert.deepEqual(pair.map(r=>r.status).sort(),[200,400]);
+  assert.equal((await post('inspect',{token:nativeToken})).status,400);
+  const login=await post('login',{email,password});assert.equal(login.status,200,await login.clone().text());
+  const cookie=login.headers.get('set-cookie')!.split(';')[0];
+  const me=await fetch(origin+'/api/auth/me',{headers:{Cookie:cookie}}).then(r=>r.json());assert.equal(me.session.campusId,campus.id);
+  assert.equal((await proof.collection('users').getList()).totalItems,0);
+  assert.equal((await root.collection('email_challenges').getList(1,1,{filter:root.filter('email={:email}',{email})})).totalItems,0);
+});

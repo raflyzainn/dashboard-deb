@@ -14,7 +14,6 @@ test('QA local browser discussion across campus and admin sessions', { timeout: 
   await mkdir(path.join(ROOT, '.qa'), { recursive: true });
   const instance = await provisionInstance(await mkdtemp(path.join(LOCAL, 'tests', 'discussion-ui-')), 'test');
   await migrate(instance);
-  process.env.DEB_MAIL_MODE = 'local';
   const pb = await start(instance);
   const origin = 'http://127.0.0.1:5177';
   let vite: ReturnType<typeof spawn> | undefined;
@@ -22,7 +21,7 @@ test('QA local browser discussion across campus and admin sessions', { timeout: 
   try {
     await seedLocal(instance);
     vite = spawn(process.execPath, [path.join(ROOT, 'node_modules/vite/bin/vite.js'), '--host', '127.0.0.1', '--port', '5177', '--strictPort'], {
-      cwd: ROOT, windowsHide: true, stdio: 'ignore', env: { ...process.env, PB_URL: instance.url, DEB_LOCAL_INSTANCE_DIR: instance.directory, DEB_LOCAL_PREVIEW_ENABLED: 'true' }
+      cwd: ROOT, windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'], env: { ...process.env, PB_URL: instance.url, DEB_LOCAL_INSTANCE_DIR: instance.directory, DEB_LOCAL_PREVIEW_ENABLED: 'true' }
     });
     for (let i = 0; i < 100; i++) {
       if (vite.exitCode !== null) throw new Error('Isolated Vite failed to start');

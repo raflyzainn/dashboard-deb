@@ -24,7 +24,7 @@
   $effect(()=>{const value=page.url.searchParams.get('token');if(value)untrack(()=>{token=value;void inspect();});});
   async function api(operation:string,body:object){const r=await fetch('/api/auth/'+operation,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const data=await r.json();if(!r.ok)throw new Error(data.message||'Permintaan belum dapat diproses.');return data;}
   function go(next:typeof screen){if(next==='activate'||next==='forgot')flow=next;screen=next;error='';microsoftNotice=false;password='';confirmation='';showPassword=false;showConfirmation=false;}
-  async function inspect(){busy=true;try{target=await api('inspect',{token});flow=target.purpose==='forgot'?'forgot':'activate';email=target.email;go('password');}catch{go('invalid');}finally{busy=false;}}
+  async function inspect(){busy=true;try{const result=await api('inspect',{token});target=result;token=result.token||token;flow=target.purpose==='forgot'?'forgot':'activate';email=target.email;go('password');}catch{go('invalid');}finally{busy=false;}}
   async function submit(){busy=true;error='';try{
     if(screen==='login'){await api('login',{email,password});await app.login('');if(app.session)await goto('/'+app.session.role+'/dashboard');else throw new Error('Sesi belum dapat dimuat.');}
     else if(screen==='password'){if(!longEnough||!hasNumber||!hasCapital)throw new Error('Password minimal 8 karakter, mengandung angka dan huruf kapital.');if(password!==confirmation)throw new Error('Konfirmasi password belum sama.');await api('confirm',{token,password,passwordConfirm:confirmation});go('success');replaceState('/login',{});}

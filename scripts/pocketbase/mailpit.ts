@@ -22,9 +22,9 @@ async function main() {
   }
   const action = process.argv[2] || 'serve';
   if (action === 'configure') {
-    const pb = await adminClient(await loadInstance());
-    await pb.settings.update({ smtp: { enabled: true, host: '127.0.0.1', port: 1025, username: '', password: '', tls: false, authMethod: '' }, meta: { senderName: 'DEB lokal', senderAddress: 'noreply@deb.local.test' } });
-    console.log('Local SMTP configured for Mailpit only. Inbox: http://127.0.0.1:8025'); return;
+    const pb=await adminClient(await loadInstance());
+    await pb.settings.update({smtp:{enabled:true,host:'127.0.0.1',port:1025,username:'',password:'',tls:false,authMethod:''},meta:{senderName:'DEB lokal',senderAddress:'test@deb.local.test'}});
+    console.log('PocketBase SMTP uses local Mailpit. Inbox: http://127.0.0.1:8025'); return;
   }
   const child = spawn(binary, ['--listen', '127.0.0.1:8025', '--smtp', '127.0.0.1:1025', '--database', path.join(folder, 'inbox.db')], { windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'] });
   child.on('error', () => { console.error('Mailpit failed to start.'); process.exitCode = 1; });

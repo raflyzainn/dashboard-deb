@@ -1,3 +1,6 @@
+// @ts-nocheck
+import { PreviewError as ApiError } from "../preview-error";
+import { StoreRecord as Record } from "../rest-store";
 // Invoked only inside the authenticated workflow transaction (same txApp and receipt).
 function fail(message, status = 400) { throw new ApiError(status, message); }
 function text(value, required = true, max = 200) {
@@ -22,7 +25,7 @@ function expected(r, payload) {
 function noPending(app) {
   if (list(app, 'deb_submissions', 'status = "pending"').length) fail('Masih ada pengajuan pending. Selesaikan Review Kampus sebelum mengubah indikator bersama.', 409);
 }
-exports.run = ({ app, actor, op, payload, event }) => {
+export const runMaster = ({ app, actor, op, payload, event }) => {
   if (actor.getString('role') !== 'admin') fail('Hanya Admin dapat mengelola master.', 403);
   let r, before = null, entity;
   if (['masterSaveDefinition', 'masterActivateDefinition', 'masterDeleteDefinition'].includes(op)) {

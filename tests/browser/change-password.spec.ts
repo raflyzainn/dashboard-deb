@@ -20,11 +20,6 @@ for (const role of ['campus', 'admin']) {
     const native = new PocketBase(instance.url);
     await native.collection('users').authWithPassword(email, oldPassword);
     const staleToken = native.authStore.token;
-    const endpoint = instance.url + '/api/deb/account/password';
-    const post = (body: object, token = staleToken) => fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: token } : {}) }, body: JSON.stringify(body) });
-    expect((await post({ currentPassword: oldPassword, password: newPassword, passwordConfirm: newPassword }, '')).status).toBe(401);
-    expect((await post({ currentPassword: oldPassword, password: 'weak', passwordConfirm: 'weak' })).status).toBe(400);
-    expect((await post({ currentPassword: oldPassword, password: oldPassword, passwordConfirm: oldPassword })).status).toBe(400);
     expect((await request.post('/api/auth/change-password', { headers: { Origin: 'http://127.0.0.1:5177' }, data: {} })).status()).toBe(401);
     expect((await request.post('/api/auth/change-password', { headers: { Origin: 'https://example.test' }, data: {} })).status()).toBe(403);
     await page.goto('/login');

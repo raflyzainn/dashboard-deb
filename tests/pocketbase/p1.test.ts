@@ -1,3 +1,4 @@
+import { restTestClient } from './rest-test-client';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
@@ -14,15 +15,16 @@ test('P1 real accounts on an isolated copy, Mailpit delivery and scoped authenti
   const suffix = randomUUID().slice(0,8), email = `p1-${suffix}@example.com`, email2 = `p1-other-${suffix}@example.com`, password = 'TestCampus123!';
   const adminEmail = `p1-admin-${suffix}@example.com`;
   await root.collection('users').create({ name:'P1 Test Admin',email:adminEmail,password,passwordConfirm:password,role:'admin',active:true,verified:true,simulated:false });
-  const roster = await qa.send('/api/deb/accounts', {method:'GET'}), first = roster.items[0], second = roster.items[1];
+  const api = await restTestClient(root, qa, instance);
+  const roster = await api.accounts(), first = roster.items[0], second = roster.items[1];
   const original = await root.collection('users').getFirstListItem(root.filter('campus = {:campus}',{campus:first.campusId}));
   const post = async (operation:string,body:object,cookie='') => fetch(origin+'/api/auth/'+operation,{method:'POST',headers:{Origin:origin,'Content-Type':'application/json',...(cookie?{Cookie:cookie}:{})},body:JSON.stringify(body)});
   let cookie='', invitationToken='';
   await t.test('persistent PIC, duplicate email and optimistic revision',async()=>{
-    await qa.send('/api/deb/accounts/save',{method:'POST',body:{changes:[{...first,name:'PIC Test',email},{...second,name:'Other PIC',email:email2}]}});
-    await assert.rejects(qa.send('/api/deb/accounts/save',{method:'POST',body:{changes:[{...second,revision:1,email,name:'Duplicate'}]}}), (e:unknown)=>(e as {status:number}).status===409);
-    await assert.rejects(qa.send('/api/deb/accounts/save',{method:'POST',body:{changes:[{...first,name:'Stale',email}]}}), (e:unknown)=>(e as {status:number}).status===409);
-    const rows=await qa.send('/api/deb/accounts',{method:'GET'});assert.equal(rows.items[0].email,email);
+    await api.accounts('save',{changes:[{...first,name:'PIC Test',email},{...second,name:'Other PIC',email:email2}]});
+    await assert.rejects(api.accounts('save',{changes:[{...second,revision:1,email,name:'Duplicate'}]}), (e:unknown)=>(e as {status:number}).status===409);
+    await assert.rejects(api.accounts('save',{changes:[{...first,name:'Stale',email}]}), (e:unknown)=>(e as {status:number}).status===409);
+    const rows=await api.accounts();assert.equal(rows.items[0].email,email);
   });
   await t.test('only registered PIC requests queue activation; admin save never sends email',async()=>{
     const invitations = (address:string) => root.collection('account_invitations').getFullList({filter:root.filter('email = {:email}',{email:address})});
@@ -31,7 +33,7 @@ test('P1 real accounts on an isolated copy, Mailpit delivery and scoped authenti
     const rejected=await post('request',{email:unknown,purpose:'activate'});
     assert.equal(rejected.status,200);
     assert.equal((await invitations(unknown)).length,0);
-    await root.crons.run('deb-email-queue');
+    await api.drain();
     const inbox=await fetch('http://127.0.0.1:8025/api/v1/search?query='+encodeURIComponent('to:'+unknown)).then(r=>r.json());
     assert.equal(inbox.messages?.length,0);
     for(const operation of ['send','recipients']) await assert.rejects(qa.send('/api/deb/accounts/'+operation,{method:'POST',body:{}}),(e:unknown)=>(e as {status:number}).status===404);
@@ -40,12 +42,12 @@ test('P1 real accounts on an isolated copy, Mailpit delivery and scoped authenti
     assert.deepEqual(await accepted.json(),await rejected.json());
     assert.equal((await post('request',{email,purpose:'activate'})).status,200);
     assert.equal((await root.collection('account_invitations').getFullList({filter:root.filter('email = {:email}',{email})})).length,1);
-    await root.crons.run('deb-email-queue');
+    await api.drain();
     let messages:any;
     for(let n=0;n<30;n++){messages=await fetch('http://127.0.0.1:8025/api/v1/search?query='+encodeURIComponent('to:'+email)).then(r=>r.json());if(messages.messages?.length)break;await new Promise(r=>setTimeout(r,200));}
     assert.equal(messages.messages?.length,1,'SMTP message should reach local inbox');
     const message=await fetch('http://127.0.0.1:8025/api/v1/message/'+messages.messages[0].ID).then(r=>r.json());
-    const link=String(message.Text).match(/http:\/\/127\.0\.0\.1:5177\/login\?token=([^\s]+)/);assert.ok(link);
+    const link=String(message.Text).match(/http:\/\/127\.0\.0\.1:5177\/login\?token=([\w.-]+)/);assert.ok(link);
     invitationToken=decodeURIComponent(link[1]);
     const inspected=await post('inspect',{token:invitationToken});assert.equal(inspected.status,200);assert.equal((await inspected.json()).campus,first.campus);
   });
@@ -68,10 +70,10 @@ test('P1 real accounts on an isolated copy, Mailpit delivery and scoped authenti
     await assert.rejects(member.send('/api/deb/accounts',{method:'GET'}));
   });
   await t.test('email replacement needs confirmation and invalidates the old session',async()=>{
-    const r=await qa.send('/api/deb/accounts',{method:'GET'});const current=r.items.find((a:any)=>a.campusId===first.campusId);
+    const r=await api.accounts();const current=r.items.find((a:any)=>a.campusId===first.campusId);
     const next={...current,email:`new-${email}`};
-    await assert.rejects(qa.send('/api/deb/accounts/save',{method:'POST',body:{changes:[next]}}));
-    await qa.send('/api/deb/accounts/save',{method:'POST',body:{changes:[next],confirmReset:true}});
+    await assert.rejects(api.accounts('save',{changes:[next]}));
+    await api.accounts('save',{changes:[next],confirmReset:true});
     assert.equal((await fetch(origin+'/api/auth/me',{headers:{Cookie:cookie}}).then(r=>r.json())).session,null);
     assert.equal((await post('login',{email,password})).status,401);
   });

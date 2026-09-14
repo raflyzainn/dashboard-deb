@@ -17,7 +17,7 @@ export function guardPreview(request: PreviewRequest, config: PreviewConfig) {
   if (request.headers.get('x-deb-preview') !== '1') throw new PreviewError(403, 'Header preview diperlukan.');
 }
 
-type Credentials = { users: Record<string, { email: string; password: string }> };
+type Credentials = { superuser: { email: string; password: string }; users: Record<string, { email: string; password: string }> };
 export async function previewContext(request: PreviewRequest, config: PreviewConfig) {
   guardPreview(request, config);
   const base = path.resolve(config.root, '.local/pocketbase');
@@ -31,9 +31,8 @@ export async function previewContext(request: PreviewRequest, config: PreviewCon
         url.username || url.password || url.pathname !== '/' || url.search || url.hash ||
         marker.project !== 'dashboard-deb' || marker.kind !== (fixture ? 'test' : 'development') ||
         marker.directory !== directory || marker.url !== url.origin || !marker.instanceId) throw new Error('Invalid instance');
-    const response = await fetch(url.origin + '/api/deb/local-instance', { redirect: 'error', signal: AbortSignal.timeout(5000) });
-    const identity = await response.json();
-    if (!response.ok || identity.project !== marker.project || identity.instanceId !== marker.instanceId || identity.version !== '0.40.3') throw new Error('Wrong instance');
+    const health = await fetch(url.origin + '/api/health', { redirect: 'error', signal: AbortSignal.timeout(5000) });
+    if (!health.ok) throw new Error('PocketBase unavailable');
     const credentials: Credentials = JSON.parse(await readFile(path.join(directory, 'credentials.json'), 'utf8'));
     const keys = Object.keys(credentials.users).filter(key => /^(campus-\d{3}|admin-[12])$/.test(key));
     async function account(key: string | null) {
@@ -54,7 +53,9 @@ export async function previewContext(request: PreviewRequest, config: PreviewCon
       async accounts(): Promise<PreviewAccount[]> {
         const pb = await account('admin-1');
         const campuses = await pb.collection('campuses').getFullList({ sort: 'name' });
-        const eligible = new Set<string>((await pb.send('/api/deb/accounts/qa', { method: 'GET' })).keys);
+        const root = new PocketBase(url.origin);
+        await root.collection('_superusers').authWithPassword(credentials.superuser.email, credentials.superuser.password);
+        const eligible = new Set<string>((await root.collection('users').getFullList({ filter: 'simulated = true && active = true', fields: 'legacyId' })).map(u => u.legacyId));
         // Each account is also checked on entry; migrated campus credentials are never reset by preview.
         const rows: PreviewAccount[] = campuses.filter(c => keys.includes(c.legacyId) && eligible.has(c.legacyId)).map(c => ({ key: c.legacyId, name: c.name, role: 'campus' }));
         return [...rows, ...keys.filter(k => k.startsWith('admin-') && eligible.has(k)).sort().map(key => ({ key, name: `Admin PF lokal ${key.slice(-1)}`, role: 'admin' as const }))];
