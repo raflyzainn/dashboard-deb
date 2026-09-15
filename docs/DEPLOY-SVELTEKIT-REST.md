@@ -71,6 +71,10 @@ Pada PocketBase 0.40.3, `smtp.tls=true` memilih koneksi TLS langsung. Untuk port
 
 ## Cara kerja aktivasi dan pemulihan
 
+Template berlogo ada di `docs/email-templates/account-access.html` dan disertakan dalam `db-schema/collections.json`. Field teks pada `email_challenges` diisi server dari PIC, kampus, dan tujuan undangan; placeholder native PocketBase mengisi dan meng-escape nilainya. Setelah memperbarui kode, provision schema terlebih dahulu agar field teks dan template tersedia. Perubahan template tidak mengubah email yang sudah diterima.
+
+Logo putih dimuat melalui HTTPS dari CDN resmi Pertamina Foundation, sehingga tidak bergantung pada localhost atau lampiran CID/hook. Klien email tetap dapat memblokir gambar eksternal. Saat mengubah HTML, perbarui template schema bersamaan; `tests/email-content.test.ts` memeriksa keduanya tetap sama.
+
 SvelteKit memeriksa email PIC dan membuat undangan serta record bukti email dalam satu transaksi. Aplikasi meminta **request-password-reset bawaan PocketBase pada `email_challenges`**, sehingga PocketBase sendiri mengirim email memakai SMTP dashboard. Record tersebut terpisah dari akun `users`, tidak memiliki role/campus/akses data bisnis.
 
 Saat tautan dibuka, SvelteKit memverifikasi token melalui API konfirmasi native PocketBase. Password acak deterministik khusus server memungkinkan pembukaan ulang tautan jika respons konfirmasi sebelumnya hilang. Setelah bukti valid, SvelteKit menerbitkan tiket aplikasi yang terikat undangan/PIC/revisi. Membuka tautan belum mengaktifkan akun kampus.

@@ -22,6 +22,11 @@ test('PocketBase SMTP proof verifies email without giving access to user account
   let message:any;
   for(let n=0;n<50;n++){const inbox=await fetch('http://127.0.0.1:8025/api/v1/search?query='+encodeURIComponent('to:'+email)).then(r=>r.json());if(inbox.messages?.length){message=await fetch('http://127.0.0.1:8025/api/v1/message/'+inbox.messages[0].ID).then(r=>r.json());break;}await new Promise(r=>setTimeout(r,100));}
   assert.ok(message,'Native PocketBase SMTP must deliver to Mailpit');
+  assert.match(message.HTML, /pertamina-foundation-logo-white\.png/);
+  assert.match(message.HTML, /QA native mail/);
+  assert.ok(message.HTML.includes(campus.name));
+  assert.match(message.HTML, /Selamat datang di DEB/);
+  assert.doesNotMatch(message.HTML, /\{RECORD:|\{TOKEN\}|\{APP_URL\}/);
   const nativeToken=decodeURIComponent(String(message.Text).match(/token=([\w.-]+)/)![1]);
   const fields=nativeToken.split('.');fields[2]=(fields[2][0]==='a'?'b':'a')+fields[2].slice(1);
   assert.equal((await post('inspect',{token:fields.join('.')})).status,400);
