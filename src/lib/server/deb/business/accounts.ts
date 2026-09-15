@@ -13,6 +13,12 @@ const norm = v => String(v || '').trim().toLowerCase();
 const valid = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) && v.length <= 254;
 const fail = (message, status = 400) => { throw new ApiError(status, message); };
 const now = () => Date.now();
+function retireAccount(app, user) {
+  // Auth email is required: retain the historical user ID with a non-deliverable address.
+  user.setEmail(user.id + '.' + $security.randomString(16) + '@revoked.invalid');
+  user.set('active', false); user.set('verified', false); user.set('tokenKey', $security.randomString(50));
+  app.save(user);
+}
 function key() { const value = config.get('DEB_INVITATION_KEY'); if (value.length < 32) fail('Konfigurasi aktivasi belum tersedia.', 503); return value; }
 function baseURL() {
   const url = config.get('DEB_PUBLIC_URL');
@@ -88,7 +94,12 @@ api.save = e => {
       const email = norm(v.email), name = String(v.name || '').trim();
       if ((email && !valid(email)) || name.length > 200) fail('Nama atau email tidak valid.');
       if (original.status === 'Aktif' && email !== original.email && input.confirmReset !== true) fail('Konfirmasi penggantian email akun aktif diperlukan.', 409);
-      const conflict = list(app, 'users', 'email = {:email} && campus != {:campus}', { email, campus: v.campusId }); if (email && conflict.length) fail('Email sudah digunakan akun lain.', 409);
+      const conflicts = email ? list(app, 'users', 'email = {:email} && campus != {:campus}', { email, campus: v.campusId }) : [];
+      for (const owner of conflicts) {
+        // Older releases disabled removed PICs but left their email reserved.
+        if (owner.getString('role') !== 'campus' || owner.getBool('active') || owner.getBool('verified') || owner.getBool('simulated') || list(app, 'campus_contacts', 'email = {:email}', { email }).length) fail('Email sudah digunakan akun lain.', 409);
+        retireAccount(app, owner);
+      }
     });
     const final = existing.map(r => { const v = changes.find(x => x.campusId === r.campusId); return v ? { ...r, email: norm(v.email) } : r; });
     const emails = final.filter(r => r.email).map(r => r.email); if (new Set(emails).size !== emails.length) fail('Email tidak boleh digunakan dua kampus.', 409);
@@ -100,7 +111,7 @@ api.save = e => {
       const u = list(app, 'users', 'campus = {:id} && role = "campus"', { id: v.campusId })[0];
       if (!c) c = put(app, 'campus_contacts', { campus: v.campusId, account: u ? u.id : '', revision: 0 });
       const emailChanged = before.email !== norm(v.email);
-      if (emailChanged) { revoke(app, c.id); if (u && !u.getBool('simulated')) { u.set('active', false); u.set('verified', false); u.set('tokenKey', $security.randomString(50)); app.save(u); } }
+      if (emailChanged) { revoke(app, c.id); if (u && !u.getBool('simulated')) retireAccount(app, u); }
       c.set('name', String(v.name || '').trim()); c.set('email', norm(v.email)); c.set('revision', c.getInt('revision') + 1); app.save(c);
       // Revision is bound to invitation contents: name edits invalidate queued invitations too.
       if (!emailChanged) revoke(app, c.id);

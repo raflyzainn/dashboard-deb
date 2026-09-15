@@ -1,0 +1,70 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import path from 'node:path';
+import { randomUUID } from 'node:crypto';
+import PocketBase from 'pocketbase';
+import { LOCAL, readJson, adminClient, credentialsPath, type LocalInstance, type Credentials } from '../../scripts/pocketbase/runtime';
+import { restTestClient } from './rest-test-client';
+import { accountApi } from '../../src/lib/server/deb/backend';
+import { StoreRecord } from '../../src/lib/server/deb/rest-store';
+
+test('released activated email can move campuses while active owners and history stay protected', async () => {
+  const instance = await readJson<LocalInstance>(path.join(LOCAL, 'p1-test-instance.json'));
+  assert.equal(instance.kind, 'test');
+  const root = await adminClient(instance), qa = new PocketBase(instance.url);
+  const credentials = await readJson<Credentials>(credentialsPath(instance));
+  await qa.collection('users').authWithPassword(credentials.users['admin-1'].email, credentials.users['admin-1'].password);
+  const api = await restTestClient(root, qa, instance);
+  const a = await root.collection('campuses').getFirstListItem('legacyId="campus-037"');
+  const b = await root.collection('campuses').getFirstListItem('legacyId="campus-038"');
+  const owner = await root.collection('users').getFirstListItem(root.filter('campus={:id}', { id: a.id }));
+  const email = `reuse-${randomUUID()}@example.test`, password = 'ReuseTest123!';
+  await root.collection('users').update(owner.id, { email, password, passwordConfirm: password, active: true, verified: true, simulated: false });
+  const contact = await root.collection('campus_contacts').getFullList({ filter: root.filter('campus={:id}', { id: a.id }) });
+  const values = { campus: a.id, account: owner.id, name: 'Reuse QA', email, revision: 0 };
+  if (contact[0]) await root.collection('campus_contacts').update(contact[0].id, values);
+  else await root.collection('campus_contacts').create(values);
+  const save = async (campusId: string, address: string) => {
+    const contacts = await root.collection('campus_contacts').getFullList({ filter: root.filter('campus={:id}', { id: campusId }) });
+    return api.accounts('save', { changes: [{ campusId, name: 'Reuse QA', email: address, revision: contacts[0]?.revision || 0 }], confirmReset: true });
+  };
+  await assert.rejects(save(b.id, email), (e: any) => e.status === 409);
+  await root.collection('users').update(owner.id, { active: false, verified: false });
+  await assert.rejects(save(b.id, email), (e: any) => e.status === 409); // Still assigned to its PIC.
+  await root.collection('users').update(owner.id, { active: true, verified: true });
+  const member = new PocketBase(instance.url);
+  await member.collection('users').authWithPassword(email, password);
+  await save(a.id, '');
+  await save(b.id, email);
+  const retired = await root.collection('users').getOne(owner.id);
+  assert.equal(retired.campus, a.id);
+  assert.equal(retired.active, false);
+  assert.equal(retired.verified, false);
+  assert.notEqual(retired.email, email);
+  await assert.rejects(member.collection('users').authRefresh());
+  await assert.rejects(new PocketBase(instance.url).collection('users').authWithPassword(email, password));
+  // Existing stale records created by older releases must be recoverable too.
+  await save(b.id, '');
+  await root.collection('users').update(owner.id, { email, active: false, verified: false });
+  await save(b.id, email);
+  assert.notEqual((await root.collection('users').getOne(owner.id)).email, email);
+  await api.accounts('request', { email, purpose: 'activate' });
+  const pending = () => root.collection('account_invitations').getFirstListItem(root.filter('email={:email} && revoked=false', { email }));
+  const first = await pending();
+  await api.accounts('request', { email, purpose: 'activate' });
+  assert.equal((await pending()).id, first.id); // Immediate retries respect the server cooldown.
+  await root.collection('account_invitations').update(first.id, { expires: Date.now() + 1739000 });
+  await api.accounts('request', { email, purpose: 'activate' });
+  const invitation = await pending();
+  assert.notEqual(invitation.id, first.id);
+  assert.equal((await root.collection('account_invitations').getOne(first.id)).revoked, true);
+  const token = accountApi(api.settings).token(new StoreRecord('account_invitations', invitation));
+  const nextPassword = 'NewCampusPass123!';
+  await api.accounts('confirm', { token, password: nextPassword, passwordConfirm: nextPassword });
+  const next = new PocketBase(instance.url);
+  const activated = await next.collection('users').authWithPassword(email, nextPassword);
+  assert.equal(activated.record.campus, b.id);
+  assert.notEqual(activated.record.id, owner.id);
+  assert.equal((await root.collection('users').getOne(owner.id)).active, false);
+  await assert.rejects(new PocketBase(instance.url).collection('users').authWithPassword(email, password));
+});
