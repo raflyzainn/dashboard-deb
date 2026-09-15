@@ -28,8 +28,34 @@ export function mapCampuses(data: Snapshot) {
       !Number.isFinite(location.latitude) || !Number.isFinite(location.longitude) ||
       location.longitude < 94.5 || location.longitude > 141.5 || location.latitude < -11.5 || location.latitude > 6.5) return [];
     const score = campusStats(data, campus.id).progress;
-    return [{ ...campus, ...location, x: 3 + (location.longitude - 94.5) / 47 * 94,
-      y: 7 + (6.5 - location.latitude) / 18 * 90, score, band: progressBand(score) }];
+    return [{ ...campus, ...location, x: (location.longitude - 94.5) / 47 * 100,
+      y: (6.5 - location.latitude) / 18 * 100, score, band: progressBand(score) }];
+  });
+}
+
+/** Separate individual touch targets; x/y remain the real geographic anchors. */
+export function layoutMapPoints<T extends { id: string; x: number; y: number }>(points: T[], width: number, height: number, zoom: number, stageHeight = height) {
+  const placed: { x: number; y: number }[] = [];
+  const w = width * zoom, h = height * zoom;
+  const verticalSpace = Math.max(0, (stageHeight - h) / 2);
+  return [...points].sort((a, b) => a.id.localeCompare(b.id)).map(point => {
+    if (!w || !h) return { ...point, markerX: point.x, markerY: point.y };
+    const origin = { x: point.x * w / 100, y: point.y * h / 100 };
+    const free = (x: number, y: number) => x >= 12 && x <= w - 12 && y >= 12 - verticalSpace && y <= h + verticalSpace - 12 && placed.every(p => Math.hypot(p.x - x, p.y - y) >= 26);
+    let target = { x: Math.max(12, Math.min(w - 12, origin.x)), y: Math.max(12, Math.min(h - 12, origin.y)) };
+    // ponytail: radial scans suit the current campus roster; use a spatial index for thousands of points.
+    search: if (!free(target.x, target.y)) {
+      for (let radius = 13; radius <= Math.hypot(w, h); radius += 13) {
+        const steps = Math.ceil(2 * Math.PI * radius / 13);
+        for (let step = 0; step < steps; step++) {
+          const angle = step * 2 * Math.PI / steps;
+          const x = origin.x + Math.cos(angle) * radius, y = origin.y + Math.sin(angle) * radius;
+          if (free(x, y)) { target = { x, y }; break search; }
+        }
+      }
+    }
+    placed.push(target);
+    return { ...point, markerX: target.x / w * 100, markerY: target.y / h * 100 };
   });
 }
 
