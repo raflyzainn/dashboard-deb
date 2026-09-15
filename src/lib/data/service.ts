@@ -46,7 +46,7 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
     if (input.tab) params.set('tab', input.tab);
     return request('/api/views/' + input.view + (params.size ? '?' + params : ''), response => response.json());
   }
-  async function write(url: string, method: string, body: object | FormData = {}): Promise<{ ok: true; id?: string }> {
+  async function write(url: string, method: string, body: object | FormData = {}): Promise<{ ok: true; id?: string; more?: boolean }> {
     const started = generation;
     const serialized = body instanceof FormData ? null : JSON.stringify(body);
     let fingerprint = method + ':' + url + ':' + serialized;
@@ -94,7 +94,14 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
     saveFaq: entry => done(write('/api/faq' + (entry.id ? '/' + idPath(entry.id) : ''), entry.id ? 'PATCH' : 'POST', { question: entry.question, answer: entry.answer })),
     moveFaq: (id, direction) => done(write('/api/faq/' + idPath(id) + '/move', 'POST', { direction })),
     deleteFaq: id => done(write('/api/faq/' + idPath(id), 'DELETE')),
-    readNotifications: ids => done(write('/api/notifications/read', 'POST', { ids }))
+    readNotifications: async ids => {
+      const started = generation;
+      let more: boolean | undefined;
+      do {
+        if (started !== generation) throw new DataReadError(409, 'Pilihan akun sudah berubah.');
+        more = (await write('/api/notifications/read', 'POST', { ids })).more;
+      } while (ids === undefined && more);
+    }
   };
   return { ...service, selectAccount, session, navigation, page, async accounts(): Promise<PreviewAccount[]> {
     return request('/api/dev/accounts', async response => (await response.json()).accounts);

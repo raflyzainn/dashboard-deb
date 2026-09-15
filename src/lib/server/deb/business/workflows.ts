@@ -196,7 +196,11 @@ export const runWorkflow = (e) => {
         if (!Array.isArray(payload.ids) || payload.ids.length > 1000) fail('Daftar notifikasi tidak valid.');
         notices = [...new Set(payload.ids)].map(id => get(app, 'notifications', id));
         if (notices.some(n => n.getString('recipientUser') !== actor.id)) fail('Notifikasi tidak ditemukan.', 404);
-      } else notices = list(app, 'notifications', 'recipientUser = {:u} && readAt = ""', { u: actor.id });
+      } else {
+        notices = list(app, 'notifications', 'recipientUser = {:u} && readAt = ""', { u: actor.id });
+        result.more = notices.length > 500;
+        notices = notices.slice(0, 500);
+      }
       notices.forEach(n => { if (!n.getString('readAt')) { n.set('readAt', now); app.save(n); } });
     } else fail('Workflow tidak ditemukan.', 404);
     create(app, 'workflow_operations', { actor: actor.id, key, operation: op, hash, result });

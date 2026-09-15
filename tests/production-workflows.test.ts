@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { BUSINESS_COLLECTIONS, RestStore, StoreRecord } from '../src/lib/server/deb/rest-store';
+import { atomic, BUSINESS_COLLECTIONS, RestStore, StoreRecord } from '../src/lib/server/deb/rest-store';
+import type PocketBase from 'pocketbase';
 import { runWorkflow } from '../src/lib/server/deb/business/workflows';
 
 test('new workflow and master records inherit the stored actor simulation flag', () => {
@@ -34,4 +35,18 @@ test('new workflow and master records inherit the stored actor simulation flag',
     for (const write of created) assert.equal(write.data.simulated, simulated, write.name);
     assert.equal(app.findRecordById('campuses', campus.id).data.simulated, undefined, 'existing data is not relabeled');
   }
+});
+
+test('oversized master-style transactions are rejected before any partial commit', async () => {
+  let sends = 0;
+  const pb = {
+    collection: () => ({ getList: async () => ({ items: [] }) }),
+    createBatch: () => ({ collection: () => ({ create() {} }), send: async () => { sends++; } })
+  } as unknown as PocketBase;
+  await assert.rejects(atomic(pb, store => {
+    for (let i = 0; i < 2000; i++) {
+      const row = new StoreRecord('faq_entries'); row.set('question', 'Bulk QA'); store.save(row);
+    }
+  }, { faq_entries: null }), (error: any) => error.status === 413);
+  assert.equal(sends, 0);
 });

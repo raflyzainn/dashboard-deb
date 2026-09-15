@@ -29,6 +29,7 @@ export interface FaqEntry { id: string; questionId?: string; question: string; a
 export interface Activity { id: string; campusId: string; text: string; createdAt: string }
 export interface Notification { id: string; campusId: string; recipient: Role; title: string; body: string; href: string; createdAt: string; readAt: string | null; simulated?: boolean }
 export interface Snapshot {
+  campusMetrics?: Record<string, { progress: number; achieved: number; total: number; revisions: number }>;
   locations?: LocationDto[];
   campusRosterVersion?: number;
   submissions?: DebSubmission[];

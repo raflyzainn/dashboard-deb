@@ -26,7 +26,7 @@ test('page APIs isolate payloads, ignore late navigation results and reload only
   await page.getByLabel('Pertanyaan FAQ').fill('QA page refresh only');
   await page.getByLabel('Jawaban FAQ').fill('Simulated response; no database write.');
   await page.getByRole('button',{name:'Simpan FAQ',exact:true}).click();
-  await expect(page.locator('.faq-entry summary')).toContainText('QA page refresh only');
+  await expect(page.locator('.faq-entry summary')).toHaveText(['QA page refresh only']);
   expect(traffic.slice(before).filter(p=>p.startsWith('/api/views/'))).toEqual(['/api/views/faq']);
   expect(traffic).not.toContain('/api/bootstrap');
 });
@@ -49,13 +49,12 @@ test('P4 admin masters, dynamic dashboard and all admin read routes',async({page
   const {data}=await login(page,'admin-1');
   await expect(page.locator('.hero-banner')).toContainText(`${data.campuses.length} kampus`);
   const expectedAverage=data.campuses.reduce((sum,c)=>{
-    const rows=data.indicators.filter(i=>i.campusId===c.id);
-    return sum+(rows.length?rows.reduce((n,i)=>n+Math.min(i.current/i.target*100,100),0)/rows.length:0);
+    return sum+data.campusMetrics![c.id].progress;
   },0)/(data.campuses.length||1);
   await expect(page.locator('.stats-grid').first()).toContainText(`${Math.round(expectedAverage)}%`);
   await page.getByRole('link',{name:'Master indikator',exact:true}).first().click();
   await expect(page.locator('.master-table').first()).toBeVisible();
-  await expect(page.locator('.master-panel').first()).toContainText(`${data.definitions.length} aktif`);
+  await expect(page.locator('.master-panel').first()).toContainText(`${Object.values(data.campusMetrics!)[0].total} aktif`);
   await expect(page.getByRole('button',{name:'Tambah indikator',exact:true})).toBeEnabled();
   let mapData: Bootstrap['data'] = data;
   page.on('response', async response => { if (new URL(response.url()).pathname === '/api/views/map' && response.ok()) mapData = (await response.json()).data; });

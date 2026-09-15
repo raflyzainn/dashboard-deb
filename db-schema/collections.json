@@ -3132,7 +3132,8 @@
                        }
                    ],
         "indexes":  [
-                        "CREATE UNIQUE INDEX idx_auth_limits_key ON auth_limits (key)"
+                        "CREATE UNIQUE INDEX idx_auth_limits_key ON auth_limits (key)",
+                        "CREATE INDEX idx_auth_limits_until ON auth_limits (until)"
                     ],
         "system":  false
     },
