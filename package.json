@@ -10,6 +10,7 @@
     "dev": "vite dev --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
+    "preview:cloudflare": "wrangler pages dev .svelte-kit/cloudflare --ip 127.0.0.1 --port 4177",
     "prepare": "svelte-kit sync",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "test": "tsx --test tests/*.test.ts",
@@ -40,7 +41,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.58.0",
-    "@sveltejs/adapter-vercel": "^6.3.4",
+    "@sveltejs/adapter-cloudflare": "^7.2.9",
     "@sveltejs/kit": "^2.49.1",
     "@sveltejs/vite-plugin-svelte": "^6.2.1",
     "@tailwindcss/vite": "^4.1.17",
@@ -50,6 +51,7 @@
     "tailwindcss": "^4.1.17",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vite": "^7.2.6"
+    "vite": "^7.2.6",
+    "wrangler": "^4.131.2"
   }
 }
