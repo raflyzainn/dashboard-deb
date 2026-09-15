@@ -86,16 +86,28 @@ export class RestStore {
 
 export const BUSINESS_COLLECTIONS = ['users', 'campuses', 'indicator_definitions', 'campus_indicators', 'deb_submissions', 'indicator_feedback', 'proposal_versions', 'questions', 'question_answers', 'question_replies', 'question_likes', 'faq_entries', 'activities', 'notifications', 'workflow_operations', 'master_audit', 'campus_contacts', 'account_invitations', 'account_audit', 'auth_limits', 'email_challenges'];
 
+type SnapshotQuery = { filter?: string; sort?: string; fields?: string; limit?: number };
+// null initializes a collection for inserts without downloading its history.
+export type SnapshotReads = Record<string, SnapshotQuery | SnapshotQuery[] | null>;
+
 /** The unique revision insert fences concurrent snapshots across serverless instances.
+ * ponytail: one global fence still serializes writes; introduce scoped fences only after load testing, with cross-scope operations coordinated.
  * Every application write must use this function. Direct superuser edits require maintenance.
  * PocketBase applies the fence and all writes in one native REST batch transaction.
  */
-export async function atomic<T>(pb: PocketBase, action: (store: RestStore) => T, names = BUSINESS_COLLECTIONS): Promise<T> {
+export async function atomic<T>(pb: PocketBase, action: (store: RestStore) => T, reads: string[] | SnapshotReads = BUSINESS_COLLECTIONS): Promise<T> {
+  const queries: SnapshotReads = Array.isArray(reads) ? Object.fromEntries(reads.map(name => [name, {}])) : reads;
   for (let attempt = 0; attempt < 8; attempt++) {
     const version = (await pb.collection('app_revisions').getList(1, 1, { sort: '-sequence' })).items[0]?.sequence || 0;
-    const rows = Object.fromEntries(await Promise.all(names.map(async name => [name, await pb.collection(name).getFullList({ sort: 'id' })])));
+    const rows = Object.fromEntries(await Promise.all(Object.entries(queries).map(async ([name, query]) => {
+      const lists = await Promise.all((query === null ? [] : Array.isArray(query) ? query : [query]).map(async ({ limit, ...options }) =>
+        limit ? (await pb.collection(name).getList(1, limit, { sort: 'id', ...options, skipTotal: true })).items : pb.collection(name).getFullList({ sort: 'id', ...options })));
+      return [name, [...new Map(lists.flat().map(record => [record.id, record])).values()]];
+    })));
     const store = new RestStore(rows), result = action(store);
     if (!store.writes.length) return result;
+    // Master changes must remain atomic; never split them into partially committed batches.
+    if (store.writes.length >= 2000) throw new PreviewError(413, 'Operasi melebihi kapasitas transaksi. Kurangi jumlah perubahan atau hubungi administrator.');
     const batch = pb.createBatch();
     batch.collection('app_revisions').create({ sequence: version + 1 });
     for (const write of store.writes) {

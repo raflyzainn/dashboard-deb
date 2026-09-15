@@ -1,7 +1,8 @@
 import type PocketBase from 'pocketbase';
 import type { RecordModel } from 'pocketbase';
 import type { Snapshot, AppSession } from '../../types';
-import type { PageRequest, NavigationData } from '../../page-data';
+import { emptyPageData, type PageRequest, type NavigationData } from '../../page-data';
+import { campusStats } from '../../domain';
 import * as map from './mappers';
 import { PreviewError } from './preview-error';
 
@@ -11,13 +12,26 @@ const collections = {
   likes: 'question_likes', faq: 'faq_entries', activities: 'activities', notifications: 'notifications'
 } as const;
 type Resource = keyof typeof collections;
+// Read only mapper inputs, excluding unused PocketBase metadata and storage fields.
+const fields: Record<Resource, string> = {
+  campuses: 'id,name,region,initials,acronym,city,source,revision,province,island,hasLocation,longitude,latitude,locationApproximate',
+  definitions: 'id,name,category,unit,description,baseline,target',
+  indicators: 'id,campus,definition,current,note,updated',
+  submissions: 'id,campus,version,status,snapshot,submittedAt,reviewedAt,reviewedBy,decisionNote,simulated',
+  feedback: 'id,campus,indicator,text,requiresRevision,state,created,updated',
+  proposals: 'id,campus,version,filename,size,changes,created,simulated',
+  questions: 'id,campus,title,body,categoryIds,replyCount,lastReplyRole,created',
+  answers: 'id,question,body,updated', likes: 'id,question,campus',
+  faq: 'id,sourceQuestion,question,answer,order', activities: 'id,campus,text,created',
+  notifications: 'id,campus,title,body,target,created,readAt,simulated'
+};
 const stats: Resource[] = ['campuses', 'definitions', 'indicators', 'feedback', 'proposals'];
 const dependencies: Record<PageRequest['view'], Resource[]> = {
   guide: [],
   dashboard: [...stats, 'activities', 'questions', 'likes'], campuses: stats,
   'campus-detail': [...stats, 'submissions'], accounts: ['campuses'], map: stats,
   indicators: ['campuses', 'definitions', 'indicators', 'feedback', 'submissions'], proposals: ['campuses', 'proposals'],
-  questions: ['campuses', 'questions', 'answers', 'likes', 'faq'], 'question-detail': ['campuses', 'questions', 'answers', 'likes', 'faq'],
+  questions: ['campuses', 'questions', 'answers', 'likes'], 'question-detail': ['campuses', 'questions', 'answers', 'likes', 'faq'],
   faq: ['faq'], notifications: ['campuses', 'notifications'], review: ['campuses', 'definitions', 'indicators', 'feedback', 'submissions'], masters: []
 };
 
@@ -29,6 +43,7 @@ export async function readPage(pb: PocketBase, actor: AppSession, request: PageR
   if (request.view === 'campus-detail' && !request.campus) throw new PreviewError(400, 'Kampus wajib dipilih.');
   if (request.view === 'question-detail' && !request.question) throw new PreviewError(400, 'Pertanyaan wajib dipilih.');
   let keys = [...dependencies[request.view]];
+  if (request.view === 'notifications' && actor.role === 'campus') keys = ['notifications'];
   if (request.view === 'campus-detail') {
     if (request.tab === 'Proposal') keys = ['campuses', 'proposals', 'feedback'];
     else if (request.tab === 'Feedback') keys = ['campuses', 'definitions', 'indicators', 'feedback'];
@@ -36,20 +51,33 @@ export async function readPage(pb: PocketBase, actor: AppSession, request: PageR
     else keys = stats;
   }
   const raw: Partial<Record<Resource, RecordModel[]>> = {};
+  if (request.view === 'review') {
+    raw.submissions = await pb.collection(collections.submissions).getFullList({ fields: fields.submissions, sort: 'id',
+      ...(request.campus ? { filter: pb.filter('campus = {:id}', { id: request.campus }) } : {}) });
+    keys = keys.filter(key => key !== 'submissions');
+  }
   await Promise.all(keys.map(async key => {
     const filters: string[] = [];
     if (key === 'definitions') filters.push('status = "active"');
     if (key === 'indicators') filters.push('definition.status = "active"');
+    if (key === 'indicators' && request.view === 'review') {
+      const pending = [...new Set(raw.submissions!.filter(s => s.status === 'pending').map(s => s.campus))];
+      if (!pending.length) { raw.indicators = []; return; }
+      filters.push('(' + pending.map(id => pb.filter('campus = {:id}', { id })).join(' || ') + ')');
+    }
     if (request.campus) {
       if (key === 'campuses') filters.push(pb.filter('id = {:id}', { id: request.campus }));
       else if (['indicators', 'feedback', 'submissions', 'proposals', 'activities'].includes(key)) filters.push(pb.filter('campus = {:id}', { id: request.campus }));
+    }
+    if (key === 'campuses' && !request.campus && actor.role === 'campus' && ['indicators', 'proposals'].includes(request.view)) {
+      filters.push(pb.filter('id = {:id}', { id: actor.campusId }));
     }
     if (request.question) {
       if (key === 'questions') filters.push(pb.filter('id = {:id}', { id: request.question }));
       if (['answers', 'likes'].includes(key)) filters.push(pb.filter('question = {:id}', { id: request.question }));
     }
     if (request.question && key === 'faq') filters.push(pb.filter('sourceQuestion = {:id}', { id: request.question }));
-    const options = { sort: key === 'faq' ? 'order,id' : 'id', ...(filters.length ? { filter: filters.join(' && ') } : {}) };
+    const options = { fields: fields[key], sort: key === 'faq' ? 'order,id' : 'id', ...(filters.length ? { filter: filters.join(' && ') } : {}) };
     // The dashboard only displays four activities. Other page collections are never queried here.
     raw[key] = key === 'activities' ? (await pb.collection(collections[key]).getList(1, 4, { ...options, sort: '-created,-id' })).items : await pb.collection(collections[key]).getFullList(options);
   }));
@@ -70,6 +98,16 @@ export async function readPage(pb: PocketBase, actor: AppSession, request: PageR
   if (raw.activities) data.activities = raw.activities.map(map.mapActivity);
   if (raw.notifications) data.notifications = raw.notifications.map(r => map.mapNotification(r, actor.role));
   if (raw.campuses && ['campuses', 'campus-detail', 'map'].includes(request.view)) data.locations = raw.campuses.map(map.mapLocation);
+  if (actor.role === 'admin' && ['dashboard', 'campuses', 'map'].includes(request.view)) {
+    const snapshot = { ...emptyPageData(), ...data };
+    data.campusMetrics = Object.fromEntries(snapshot.campuses.map(campus => {
+      const { progress, achieved, total, revisions } = campusStats(snapshot, campus.id);
+      return [campus.id, { progress, achieved, total, revisions }];
+    }));
+    delete data.definitions;
+    delete data.indicators;
+    delete data.feedback;
+  }
   return data;
 }
 

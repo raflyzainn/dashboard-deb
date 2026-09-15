@@ -10,6 +10,21 @@ import { mapCampuses, regionSummary } from '../src/lib/map';
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
+test('mark-all continues batches and retries only the uncertain batch with its existing key', async () => {
+  const keys: string[] = [];
+  const service = createHttpService(async (_url, options) => {
+    keys.push(new Headers(options?.headers).get('Idempotency-Key')!);
+    if (keys.length === 2) throw new Error('Response lost');
+    return Response.json({ ok: true, more: keys.length < 4 });
+  });
+  await assert.rejects(service.readNotifications());
+  await service.readNotifications();
+  assert.equal(keys.length, 4);
+  assert.notEqual(keys[0], keys[1]);
+  assert.equal(keys[1], keys[2]);
+  assert.notEqual(keys[2], keys[3]);
+});
+
 test('HTTP-only service sends preview key, not browser actor, and reads data/PDF', async () => {
   const requests: { url: string; options?: RequestInit }[] = [];
   const service = createHttpService(async (url, options) => {
