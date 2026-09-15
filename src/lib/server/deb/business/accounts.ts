@@ -2,6 +2,7 @@
 import { PreviewError as ApiError } from "../preview-error";
 import { StoreRecord as Record } from "../rest-store";
 import { security as $security } from "../security";
+import { emailContent } from '../email-content';
 export function createAccounts(config) {
 const api: Record<string, (...args: any[]) => any> = {};
 // All writes go through scoped native transactions. Never log passwords or invitation tokens.
@@ -113,6 +114,8 @@ function invite(app, c, purpose) {
   const invitation = put(app, 'account_invitations', { contact: c.id, account: c.getString('account'), purpose, email: c.getString('email'), revision: c.getInt('revision'), expires: now() + 1800000, delivery: 'queued', attempts: 0, nextAttempt: now() });
   let challenge = list(app, 'email_challenges', 'contact = {:id}', { id: c.id })[0];
   if (!challenge) challenge = new Record(app.findCollectionByNameOrId('email_challenges'));
+  const content = emailContent(purpose, c.getString('name'), get(app, 'campuses', c.getString('campus')).getString('name'));
+  for (const [field, value] of Object.entries(content)) challenge.set(field, value);
   challenge.set('contact', c.id); challenge.set('invitation', invitation.id); challenge.setEmail(c.getString('email')); challenge.setPassword($security.randomString(64)); app.save(challenge);
   return invitation;
 }

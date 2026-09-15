@@ -6,6 +6,8 @@ node_modules/
 build/
 .env
 .env.*
+.dev.vars
+.dev.vars.*
 !.env.example
 test-results/
 playwright-report/

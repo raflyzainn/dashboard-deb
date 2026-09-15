@@ -2,6 +2,24 @@
 
 Aturan bisnis dijalankan oleh API SvelteKit. PocketBase menyimpan data/file, memverifikasi password, menjalankan transaksi melalui Batch API, dan **mengirim email melalui Mail settings**. Penyiapan production hanya membutuhkan URL serta akses superuser PocketBase; tidak perlu memasang folder hook di server.
 
+## Cloudflare Pages
+
+Konfigurasi aktif memakai adapter Cloudflare. API SvelteKit berjalan sebagai Pages Functions; aplikasi ini tidak dapat di-deploy sebagai static export saja.
+
+- Framework preset: **SvelteKit**.
+- Build command: `npm run build`.
+- Build output directory: `.svelte-kit/cloudflare`.
+- Build environment: `NODE_VERSION=22`.
+- `wrangler.jsonc` menyimpan output directory, compatibility date, dan `nodejs_compat` untuk API Node pada autentikasi serta upload. Sesuaikan `name` jika nama proyek Pages berbeda.
+- Isi variabel tabel berikut pada runtime environment/secrets Pages. Kredensial PocketBase dan `DEB_INVITATION_KEY` harus berupa secret. Atur Production dan Preview secara terpisah; gunakan backend staging untuk Preview.
+- Matikan preview QA di kedua environment; jangan isi `DEB_LOCAL_INSTANCE_DIR` atau menjalankan seed QA terhadap production.
+
+Uji hasil build menggunakan `npm run preview:cloudflare` (Wrangler lokal, tanpa deploy), lalu jalankan `node tests/cloudflare-smoke.mjs` di terminal lain. Untuk menguji backend staging, simpan env lokal dalam `.dev.vars` yang diabaikan Git; tanpa file itu Wrangler dapat membaca `.env`. Jalur akun QA development memang tidak tersedia pada hasil build production.
+
+Sebelum membuka akses pengguna, uji login/logout, pembatasan akses kampus, transaksi, upload PDF, dan email pada URL HTTPS staging. Build lokal tidak membuktikan koneksi backend atau SMTP production.
+
+Referensi: [SvelteKit Cloudflare adapter](https://svelte.dev/docs/kit/adapter-cloudflare), [Cloudflare Pages SvelteKit](https://developers.cloudflare.com/pages/framework-guides/deploy-a-svelte-kit-site/).
+
 ## Environment SvelteKit
 
 | Variabel | Production |
@@ -49,9 +67,13 @@ Pada PocketBase 0.40.3, `smtp.tls=true` memilih koneksi TLS langsung. Untuk port
 3. Perintah mengimpor `db-schema/collections.json` tanpa menghapus collection lain atau record bisnis, mengaktifkan Batch API, dan mengatur **Application URL** PocketBase ke website DEB. Penambahan utama: `users.sessionVersion`, `app_revisions`, dan collection auth **`email_challenges`**. Schema revisi terbaru menambahkan `app_revisions.scope` dan mengganti index unik `sequence` dengan `(scope, sequence)`; riwayat lama tetap tersimpan dengan scope kosong. Selesaikan provisioning sebelum menyalakan versi aplikasi baru. Jangan menjalankan seed QA di production. Database kosong tetap memerlukan data kampus/PIC asli.
 4. Provision production menolak akun `simulated`, mengaktifkan rate limit native jika sebelumnya mati, dan merotasi secret token native `users`. Semua pengguna perlu masuk kembali. Provision ulang production juga membatalkan token login native yang sedang berlaku; lakukan saat maintenance.
 5. Template reset password `email_challenges` mengarah ke `{APP_URL}/login?token={TOKEN}` dan token berlaku 30 menit. Template lifecycle `users` tidak membagikan token: seluruh perubahan akun PIC harus lewat SvelteKit. Jangan mengembalikan template bertoken pada `users`.
-6. Deploy SvelteKit sebagai server Node, bukan static export. Isi env server, kemudian restart/redeploy. Uji staging sebelum membuka akses pengguna.
+6. Deploy SvelteKit dengan Cloudflare Pages Functions, bukan static export. Isi env server, kemudian redeploy. Uji staging sebelum membuka akses pengguna.
 
 ## Cara kerja aktivasi dan pemulihan
+
+Template berlogo ada di `docs/email-templates/account-access.html` dan disertakan dalam `db-schema/collections.json`. Field teks pada `email_challenges` diisi server dari PIC, kampus, dan tujuan undangan; placeholder native PocketBase mengisi dan meng-escape nilainya. Setelah memperbarui kode, provision schema terlebih dahulu agar field teks dan template tersedia. Perubahan template tidak mengubah email yang sudah diterima.
+
+Logo putih dimuat melalui HTTPS dari CDN resmi Pertamina Foundation, sehingga tidak bergantung pada localhost atau lampiran CID/hook. Klien email tetap dapat memblokir gambar eksternal. Saat mengubah HTML, perbarui template schema bersamaan; `tests/email-content.test.ts` memeriksa keduanya tetap sama.
 
 SvelteKit memeriksa email PIC dan membuat undangan serta record bukti email dalam satu transaksi. Aplikasi meminta **request-password-reset bawaan PocketBase pada `email_challenges`**, sehingga PocketBase sendiri mengirim email memakai SMTP dashboard. Record tersebut terpisah dari akun `users`, tidak memiliki role/campus/akses data bisnis.
 
