@@ -90,15 +90,21 @@ type SnapshotQuery = { filter?: string; sort?: string; fields?: string; limit?: 
 // null initializes a collection for inserts without downloading its history.
 export type SnapshotReads = Record<string, SnapshotQuery | SnapshotQuery[] | null>;
 
-/** The unique revision insert fences concurrent snapshots across serverless instances.
- * ponytail: one global fence still serializes writes; introduce scoped fences only after load testing, with cross-scope operations coordinated.
+/** Unique revision inserts fence every collection read or written by this snapshot.
+ * ponytail: overlapping collections still serialize, even for different records; use finer scopes only with coordinated cross-scope reads.
  * Every application write must use this function. Direct superuser edits require maintenance.
  * PocketBase applies the fence and all writes in one native REST batch transaction.
  */
-export async function atomic<T>(pb: PocketBase, action: (store: RestStore) => T, reads: string[] | SnapshotReads = BUSINESS_COLLECTIONS): Promise<T> {
+export async function atomic<T>(pb: PocketBase, action: (store: RestStore) => T, reads: string[] | SnapshotReads): Promise<T> {
   const queries: SnapshotReads = Array.isArray(reads) ? Object.fromEntries(reads.map(name => [name, {}])) : reads;
   for (let attempt = 0; attempt < 8; attempt++) {
-    const version = (await pb.collection('app_revisions').getList(1, 1, { sort: '-sequence' })).items[0]?.sequence || 0;
+    // Capture every possible write scope BEFORE reading business data, including insert-only collections.
+    const versions = new Map(await Promise.all(Object.keys(queries).map(async scope => {
+      const latest = await pb.collection('app_revisions').getList(1, 1, {
+        filter: pb.filter('scope = {:scope}', { scope }), sort: '-sequence', fields: 'sequence', skipTotal: true
+      });
+      return [scope, Number(latest.items[0]?.sequence || 0)] as const;
+    })));
     const rows = Object.fromEntries(await Promise.all(Object.entries(queries).map(async ([name, query]) => {
       const lists = await Promise.all((query === null ? [] : Array.isArray(query) ? query : [query]).map(async ({ limit, ...options }) =>
         limit ? (await pb.collection(name).getList(1, limit, { sort: 'id', ...options, skipTotal: true })).items : pb.collection(name).getFullList({ sort: 'id', ...options })));
@@ -107,9 +113,10 @@ export async function atomic<T>(pb: PocketBase, action: (store: RestStore) => T,
     const store = new RestStore(rows), result = action(store);
     if (!store.writes.length) return result;
     // Master changes must remain atomic; never split them into partially committed batches.
-    if (store.writes.length >= 2000) throw new PreviewError(413, 'Operasi melebihi kapasitas transaksi. Kurangi jumlah perubahan atau hubungi administrator.');
+    const scopes = [...new Set([...Object.keys(queries).filter(name => queries[name] !== null), ...store.writes.map(write => write.name)])].sort();
+    if (store.writes.length + scopes.length > 2000) throw new PreviewError(413, 'Operasi melebihi kapasitas transaksi. Kurangi jumlah perubahan atau hubungi administrator.');
     const batch = pb.createBatch();
-    batch.collection('app_revisions').create({ sequence: version + 1 });
+    for (const scope of scopes) batch.collection('app_revisions').create({ scope, sequence: versions.get(scope)! + 1 });
     for (const write of store.writes) {
       const collection = batch.collection(write.name);
       if (write.method === 'delete') collection.delete(write.id);
@@ -120,7 +127,7 @@ export async function atomic<T>(pb: PocketBase, action: (store: RestStore) => T,
     catch (error) {
       // Retry only a known rolled-back batch. Unknown transport outcomes retain the caller's idempotency key.
       const e = error as { status?: number; response?: any };
-      if (e.status === 400 && e.response?.data?.requests?.['0']) continue;
+      if (e.status === 400 && scopes.some((_, index) => e.response?.data?.requests?.[String(index)]?.response?.data?.sequence?.code === 'validation_not_unique')) continue;
       if (e.status === 400) throw new PreviewError(409, 'Data berubah atau tidak valid. Muat ulang sebelum mencoba lagi.');
       throw new PreviewError(503, 'Penyimpanan belum dapat dipastikan. Coba ulang operasi yang sama.');
     }

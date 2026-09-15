@@ -40,7 +40,8 @@ test('new workflow and master records inherit the stored actor simulation flag',
 test('oversized master-style transactions are rejected before any partial commit', async () => {
   let sends = 0;
   const pb = {
-    collection: () => ({ getList: async () => ({ items: [] }) }),
+    filter: () => '',
+    collection: () => ({ getList: async () => ({ items: [] }), getFullList: async () => [] }),
     createBatch: () => ({ collection: () => ({ create() {} }), send: async () => { sends++; } })
   } as unknown as PocketBase;
   await assert.rejects(atomic(pb, store => {
@@ -49,4 +50,10 @@ test('oversized master-style transactions are rejected before any partial commit
     }
   }, { faq_entries: null }), (error: any) => error.status === 413);
   assert.equal(sends, 0);
+  await assert.rejects(atomic(pb, store => {
+    for (let i = 0; i < 1999; i++) {
+      const row = new StoreRecord('faq_entries'); row.set('question', 'Bulk QA'); store.save(row);
+    }
+  }, { faq_entries: null, auth_limits: {} }), (error: any) => error.status === 413);
+  assert.equal(sends, 0, 'multiple revision fences also count toward the batch limit');
 });
