@@ -74,9 +74,9 @@ export const runWorkflow = (e) => {
     const eventKey = actor.id + ':' + key;
     const notify = (c, kind, source, message, recipientRole, target) => {
       const users = list(app, 'users', recipientRole === 'admin' ? 'active = true && role = "admin"' : 'active = true && role = "campus" && campus = {:c}', { c });
-      users.forEach(user => create(app, 'notifications', { recipientUser: user.id, campus: c, eventType: kind, eventKey, sourceId: source, title: message, body: message, target, simulated: true }));
+      users.forEach(user => create(app, 'notifications', { recipientUser: user.id, campus: c, eventType: kind, eventKey, sourceId: source, title: message, body: message, target, simulated: actor.getBool('simulated') }));
     };
-    const activity = (c, kind, source, message) => create(app, 'activities', { campus: c, actor: actor.id, eventType: kind, sourceId: source, text: message, simulated: true });
+    const activity = (c, kind, source, message) => create(app, 'activities', { campus: c, actor: actor.id, eventType: kind, sourceId: source, text: message, simulated: actor.getBool('simulated') });
     const event = (c, kind, source, message, recipientRole, target) => { activity(c, kind, source, message); notify(c, kind, source, message, recipientRole, target); };
     const pending = c => list(app, 'deb_submissions', 'campus = {:c} && status = "pending"', { c });
     const revisions = c => list(app, 'indicator_feedback', 'campus = {:c} && requiresRevision = true && state != "closed"', { c });
@@ -102,7 +102,7 @@ export const runWorkflow = (e) => {
       if (!rows.length || rows.length !== list(app, 'indicator_definitions', 'status = "active"').length || rows.some(r => !Number.isFinite(r.current) || r.current < 0 || r.target <= 0 || r.note.length > 5000)) fail('Lengkapi seluruh indikator sebelum mengirim.');
       const previous = list(app, 'deb_submissions', 'campus = {:c}', { c: campus }, '-version')[0];
       if (previous && previous.getString('status') === 'approved' && sameSnapshot(rows, JSON.parse(previous.get('snapshot')))) fail('Data terverifikasi belum berubah.', 409);
-      const r = create(app, 'deb_submissions', { campus, version: previous ? previous.getInt('version') + 1 : 1, status: 'pending', snapshot: rows, submittedBy: actor.id, submittedAt: now, simulated: true });
+      const r = create(app, 'deb_submissions', { campus, version: previous ? previous.getInt('version') + 1 : 1, status: 'pending', snapshot: rows, submittedBy: actor.id, submittedAt: now, simulated: actor.getBool('simulated') });
       result.id = r.id;
       event(campus, 'deb_submitted', r.id, 'Pengajuan DEB menunggu verifikasi.', 'admin', '/admin/verifikasi?submission=' + r.id);
     } else if (op === 'reviewDeb') {
@@ -117,7 +117,7 @@ export const runWorkflow = (e) => {
     } else if (op === 'addFeedback') {
       roleIs('admin'); const indicator = get(app, 'campus_indicators', payload.id), c = indicator.getString('campus');
       if (typeof payload.requiresRevision !== 'boolean') fail('Jenis feedback tidak valid.');
-      const r = create(app, 'indicator_feedback', { campus: c, indicator: indicator.id, author: actor.id, text: text(payload.text), requiresRevision: payload.requiresRevision, state: payload.requiresRevision ? 'open' : 'closed', simulated: true });
+      const r = create(app, 'indicator_feedback', { campus: c, indicator: indicator.id, author: actor.id, text: text(payload.text), requiresRevision: payload.requiresRevision, state: payload.requiresRevision ? 'open' : 'closed', simulated: actor.getBool('simulated') });
       result.id = r.id;
       event(c, 'feedback_created', r.id, payload.requiresRevision ? 'Admin meminta revisi indikator.' : 'Admin memberikan catatan indikator.', 'campus', '/campus/indicators');
     } else if (op === 'closeFeedback') {
@@ -126,20 +126,20 @@ export const runWorkflow = (e) => {
     } else if (op === 'uploadProposal') {
       roleIs('campus');
       const previous = list(app, 'proposal_versions', 'campus = {:c}', { c: campus }, '-version')[0];
-      const r = create(app, 'proposal_versions', { campus, version: previous ? previous.getInt('version') + 1 : 1, file, filename: file.name, size: file.size, changes: text(payload.changes, 5000, false), uploadedBy: actor.id, simulated: true });
+      const r = create(app, 'proposal_versions', { campus, version: previous ? previous.getInt('version') + 1 : 1, file, filename: file.name, size: file.size, changes: text(payload.changes, 5000, false), uploadedBy: actor.id, simulated: actor.getBool('simulated') });
       result.id = r.id;
       event(campus, 'proposal_uploaded', r.id, 'Kampus mengunggah versi proposal baru.', 'admin', '/admin/campuses/' + campus);
     } else if (op === 'ask') {
       roleIs('campus'); const selected = payload.categoryIds === undefined ? ['umum'] : payload.categoryIds;
       if (!Array.isArray(selected) || !selected.length || selected.some(c => !categories.includes(c))) fail('Kategori pertanyaan tidak valid.');
-      const r = create(app, 'questions', { campus, author: actor.id, title: text(payload.title, 180), body: text(payload.body), categoryIds: [...new Set(selected)], simulated: true });
+      const r = create(app, 'questions', { campus, author: actor.id, title: text(payload.title, 180), body: text(payload.body), categoryIds: [...new Set(selected)], simulated: actor.getBool('simulated') });
       result.id = r.id; event(campus, 'question_created', r.id, 'Pertanyaan baru dari kampus.', 'admin', '/admin/questions/' + r.id);
     } else if (op === 'answer') {
       roleIs('admin'); const q = get(app, 'questions', payload.id), body = text(payload.body);
       const old = list(app, 'question_answers', 'question = {:q}', { q: q.id })[0];
       if (!old || old.getString('body') !== body) {
         if (old) { old.set('body', body); old.set('author', actor.id); app.save(old); }
-        else create(app, 'question_answers', { question: q.id, author: actor.id, body, simulated: true });
+        else create(app, 'question_answers', { question: q.id, author: actor.id, body, simulated: actor.getBool('simulated') });
         event(q.getString('campus'), 'question_answered', q.id, 'Admin menjawab pertanyaan Anda.', 'campus', '/campus/questions/' + q.id);
       }
     } else if (op === 'reply') {
@@ -164,7 +164,7 @@ export const runWorkflow = (e) => {
       roleIs('campus'); const q = get(app, 'questions', payload.id);
       if (typeof payload.liked !== 'boolean') fail('Status like tidak valid.');
       const old = list(app, 'question_likes', 'question = {:q} && campus = {:c}', { q: q.id, c: campus })[0];
-      if (payload.liked && !old) create(app, 'question_likes', { question: q.id, campus, simulated: true });
+      if (payload.liked && !old) create(app, 'question_likes', { question: q.id, campus, simulated: actor.getBool('simulated') });
       if (!payload.liked && old) app.delete(old);
     } else if (op === 'promoteFaq' || op === 'saveFaq' || op === 'moveFaq' || op === 'deleteFaq') {
       roleIs('admin'); const entries = list(app, 'faq_entries', '', {}, 'order,id');
@@ -172,11 +172,11 @@ export const runWorkflow = (e) => {
         const q = get(app, 'questions', payload.id), answer = list(app, 'question_answers', 'question = {:q}', { q: q.id })[0];
         if (!answer) fail('Pertanyaan belum dijawab.');
         const old = entries.find(r => r.getString('sourceQuestion') === q.id);
-        result.id = old ? old.id : create(app, 'faq_entries', { sourceQuestion: q.id, question: q.getString('title'), answer: answer.getString('body'), order: entries.length ? entries[entries.length - 1].getInt('order') + 1 : 0, simulated: true }).id;
+        result.id = old ? old.id : create(app, 'faq_entries', { sourceQuestion: q.id, question: q.getString('title'), answer: answer.getString('body'), order: entries.length ? entries[entries.length - 1].getInt('order') + 1 : 0, simulated: actor.getBool('simulated') }).id;
       } else if (op === 'saveFaq') {
         const fields = { question: text(payload.question, 180), answer: text(payload.answer) };
         if (payload.id) { const r = get(app, 'faq_entries', payload.id); r.set('question', fields.question); r.set('answer', fields.answer); app.save(r); result.id = r.id; }
-        else result.id = create(app, 'faq_entries', Object.assign(fields, { order: entries.length ? entries[entries.length - 1].getInt('order') + 1 : 0, simulated: true })).id;
+        else result.id = create(app, 'faq_entries', Object.assign(fields, { order: entries.length ? entries[entries.length - 1].getInt('order') + 1 : 0, simulated: actor.getBool('simulated') })).id;
       } else if (op === 'deleteFaq') app.delete(get(app, 'faq_entries', payload.id));
       else {
         if (![1, -1].includes(payload.direction)) fail('Arah urutan tidak valid.');

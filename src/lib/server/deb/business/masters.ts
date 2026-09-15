@@ -40,7 +40,7 @@ export const runMaster = ({ app, actor, op, payload, event }) => {
       noPending(app);
       r.set('status', 'active'); r.set('revision', r.getInt('revision') + 1); app.save(r);
       for (const c of list(app, 'campuses')) {
-        create(app, 'campus_indicators', { campus: c.id, definition: r.id, baseline: r.getFloat('baseline'), target: r.getFloat('target'), current: 0, note: '', simulated: true });
+        create(app, 'campus_indicators', { campus: c.id, definition: r.id, baseline: r.getFloat('baseline'), target: r.getFloat('target'), current: 0, note: '', simulated: actor.getBool('simulated') });
         event(c.id, 'indicator_activated', r.id, 'Indikator bersama baru diaktifkan: ' + r.getString('name'), 'campus', '/campus/indicators');
       }
     } else {
@@ -49,7 +49,7 @@ export const runMaster = ({ app, actor, op, payload, event }) => {
       const code = text(payload.code, true, 100);
       if (list(app, entity, 'code = {:code}', { code }).some(d => !r || d.id !== r.id)) fail('Kode indikator sudah digunakan.', 409);
       const fields = { code, name: text(payload.name), category: text(payload.category), unit: text(payload.unit), description: text(payload.description, false, 5000), baseline: payload.baseline, target: payload.target };
-      if (!r) r = create(app, entity, Object.assign(fields, { status: 'draft', revision: 1, simulated: true }));
+      if (!r) r = create(app, entity, Object.assign(fields, { status: 'draft', revision: 1, simulated: actor.getBool('simulated') }));
       else {
         for (const k in fields) r.set(k, fields[k]); r.set('revision', r.getInt('revision') + 1); app.save(r);
         if (r.getString('status') === 'active') {
@@ -77,8 +77,8 @@ export const runMaster = ({ app, actor, op, payload, event }) => {
       if (typeof payload.approximate !== 'boolean') fail('Penanda lokasi tidak valid.');
       const fields = { name: text(payload.name), initials: text(payload.initials, true, 12), acronym: text(payload.acronym, false, 100), region: text(payload.region), city: text(payload.city, false), province: text(payload.province, false), island: text(payload.island, false), latitude: hasLocation ? payload.latitude : 0, longitude: hasLocation ? payload.longitude : 0, hasLocation, locationApproximate: payload.approximate };
       if (!r) {
-        r = create(app, entity, Object.assign(fields, { source: 'admin', revision: 1, simulated: true }));
-        for (const d of list(app, 'indicator_definitions', 'status = "active"')) create(app, 'campus_indicators', { campus: r.id, definition: d.id, baseline: d.getFloat('baseline'), target: d.getFloat('target'), current: 0, note: '', simulated: true });
+        r = create(app, entity, Object.assign(fields, { source: 'admin', revision: 1, simulated: actor.getBool('simulated') }));
+        for (const d of list(app, 'indicator_definitions', 'status = "active"')) create(app, 'campus_indicators', { campus: r.id, definition: d.id, baseline: d.getFloat('baseline'), target: d.getFloat('target'), current: 0, note: '', simulated: actor.getBool('simulated') });
       } else { for (const k in fields) r.set(k, fields[k]); r.set('revision', r.getInt('revision') + 1); app.save(r); }
     }
   } else fail('Operasi master tidak dikenal.', 404);

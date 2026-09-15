@@ -63,7 +63,13 @@ class AppState {
     } finally { if (revision === this.revision) this.loading = false; }
   }
   async logout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    try {
+      const response = await fetch('/api/auth/logout', { method: 'POST' });
+      if (!response.ok) throw new Error('Logout gagal. Coba lagi.');
+    } catch {
+      this.error = 'Belum berhasil keluar. Periksa koneksi dan coba lagi.';
+      return false;
+    }
     this.revision++; dataService.selectAccount('');
     this.pageRevision++; this.currentPage = null; this.pageId = ''; this.navigation = { pendingCount: 0, revisionCount: 0, unreadCount: 0 };
     this.readOnly = true; this.session = null; this.data = null; this.error = ''; this.toast = ''; this.loadedAt = ''; this.stale = false; this.loading = false; this.busy = false; this.dialogs = 0;
