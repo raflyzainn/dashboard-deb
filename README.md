@@ -14,6 +14,15 @@ Dashboard DEB untuk Admin Pertamina Foundation dan kampus mitra. Pada P2, **selu
 
 Data yang sudah di-seed di PocketBase tetap dipertahankan dan masih merupakan contoh, bukan data operasional resmi. Seeder/test fixture terpisah di `scripts/fixtures/`, tidak digunakan frontend.
 
+## Format komponen
+
+Komponen Svelte dan `src/app.css` memakai Prettier dengan indentation 2 spasi serta lebar baris 100 karakter. Konfigurasi tersimpan di `.prettierrc.json`.
+
+```sh
+npm run format        # Rapikan markup, script, dan CSS komponen
+npm run format:check  # Periksa konsistensi tanpa mengubah file
+```
+
 ## Menjalankan lokal
 
 Prasyarat: Node.js 22.x (minimal 22.13), npm, dan PocketBase lokal DEB dari setup P0.
