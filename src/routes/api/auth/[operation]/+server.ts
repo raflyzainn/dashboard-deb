@@ -2,7 +2,7 @@ import { json, type RequestHandler } from '@sveltejs/kit';
 import { client, SESSION_COOKIE } from '$lib/server/deb/auth';
 import { mapSession } from '$lib/server/deb/mappers';
 import { serverClient } from '$lib/server/deb/server-client';
-import { executeAccount, rateLimit } from '$lib/server/deb/backend';
+import { executeAccount, rateLimit, revokeSessions } from '$lib/server/deb/backend';
 import { drainEmails, inspectEmailToken } from '$lib/server/deb/mail';
 import { security } from '$lib/server/deb/security';
 import { PreviewError } from '$lib/server/deb/preview-error';
@@ -12,8 +12,15 @@ export const GET: RequestHandler = event => event.params.operation === 'me'
   : json({ message: 'Tidak ditemukan.' }, { status: 404 });
 export const POST: RequestHandler = async event => {
   const op = event.params.operation || '';
-  if (op === 'logout') { event.cookies.delete(SESSION_COOKIE, { path: '/' }); return json({ ok: true }); }
   try {
+    if (op === 'logout') {
+      if (event.locals.pb) {
+        const backend = await serverClient();
+        await revokeSessions(backend.pb, event.locals.pb.authStore.record!);
+      }
+      event.cookies.delete(SESSION_COOKIE, { path: '/' });
+      return json({ ok: true });
+    }
     const body=await readJsonBody(event.request,16384);
     const backend = await serverClient(), ip = event.getClientAddress();
     if ((backend.settings.DEB_INVITATION_KEY || '').length < 32) throw { status: 503 };

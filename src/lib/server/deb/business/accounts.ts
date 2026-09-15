@@ -48,6 +48,7 @@ function limit(app, label, maximum, duration) {
 function actor(e) {
   if (!e.auth) fail('Silakan login.', 401);
   const a = get(e.app, 'users', e.auth.id);
+  if (a.getString('tokenKey') !== e.auth.getString('tokenKey')) fail('Sesi sudah berakhir. Silakan masuk kembali.', 401);
   if (!a.getBool('active') || !a.getBool('verified') || a.getString('role') !== 'admin') fail('Hanya Admin.', 403);
   if (a.getBool('simulated') && !config.get('DEB_LOCAL_INSTANCE_ID')) fail('Akun QA hanya untuk lokal.', 403);
   return a;

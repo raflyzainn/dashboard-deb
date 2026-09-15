@@ -3298,6 +3298,11 @@
         "deleteRule":  null,
         "fields":  [
                        {
+                           "name":  "scope",
+                           "type":  "text",
+                           "max":  100
+                       },
+                       {
                            "name":  "sequence",
                            "type":  "number",
                            "min":  1,
@@ -3311,7 +3316,7 @@
                        }
                    ],
         "indexes":  [
-                        "CREATE UNIQUE INDEX idx_app_revisions_sequence ON app_revisions (sequence)"
+                        "CREATE UNIQUE INDEX idx_app_revisions_scope_sequence ON app_revisions (scope, sequence)"
                     ]
     },
     {

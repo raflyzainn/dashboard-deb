@@ -38,7 +38,7 @@ Pada PocketBase 0.40.3, `smtp.tls=true` memilih koneksi TLS langsung. Untuk port
 
 ## Penyiapan melalui API superuser
 
-1. Backup database dan file melalui dashboard. Hentikan sementara penulisan aplikasi saat cutover. Jika target lama masih menjalankan hook, operator server perlu menghentikannya, atau gunakan target PocketBase standar yang bersih. Hak superuser API tidak dapat menghapus file hook pada server lama.
+1. Backup database dan file melalui dashboard. Hentikan seluruh instance aplikasi lama dan tunggu request aktif selesai sebelum memperbarui schema. Jangan menjalankan versi revisi global bersama versi revisi per collection: kedua versi tidak berbagi pengaman transaksi yang sama. Jika target lama masih menjalankan hook, operator server perlu menghentikannya, atau gunakan target PocketBase standar yang bersih. Hak superuser API tidak dapat menghapus file hook pada server lama.
 2. Gunakan PocketBase dengan Batch API; versi yang diuji **0.40.3**. Dari komputer yang dapat mengakses target, isi `PB_URL`, kredensial superuser, serta `DEB_PUBLIC_URL` di environment terminal. Jalankan:
 
    ```sh
@@ -46,7 +46,7 @@ Pada PocketBase 0.40.3, `smtp.tls=true` memilih koneksi TLS langsung. Untuk port
    npm run pb:provision -- --apply
    ```
 
-3. Perintah mengimpor `db-schema/collections.json` tanpa menghapus collection lain atau record bisnis, mengaktifkan Batch API, dan mengatur **Application URL** PocketBase ke website DEB. Penambahan utama: `users.sessionVersion`, `app_revisions`, dan collection auth **`email_challenges`**. Jangan menjalankan seed QA di production. Database kosong tetap memerlukan data kampus/PIC asli.
+3. Perintah mengimpor `db-schema/collections.json` tanpa menghapus collection lain atau record bisnis, mengaktifkan Batch API, dan mengatur **Application URL** PocketBase ke website DEB. Penambahan utama: `users.sessionVersion`, `app_revisions`, dan collection auth **`email_challenges`**. Schema revisi terbaru menambahkan `app_revisions.scope` dan mengganti index unik `sequence` dengan `(scope, sequence)`; riwayat lama tetap tersimpan dengan scope kosong. Selesaikan provisioning sebelum menyalakan versi aplikasi baru. Jangan menjalankan seed QA di production. Database kosong tetap memerlukan data kampus/PIC asli.
 4. Provision production menolak akun `simulated`, mengaktifkan rate limit native jika sebelumnya mati, dan merotasi secret token native `users`. Semua pengguna perlu masuk kembali. Provision ulang production juga membatalkan token login native yang sedang berlaku; lakukan saat maintenance.
 5. Template reset password `email_challenges` mengarah ke `{APP_URL}/login?token={TOKEN}` dan token berlaku 30 menit. Template lifecycle `users` tidak membagikan token: seluruh perubahan akun PIC harus lewat SvelteKit. Jangan mengembalikan template bertoken pada `users`.
 6. Deploy SvelteKit sebagai server Node, bukan static export. Isi env server, kemudian restart/redeploy. Uji staging sebelum membuka akses pengguna.
@@ -63,7 +63,11 @@ Saat password baru disimpan, pemeriksaan PIC, perubahan akun, pembatalan undanga
 
 ## Transaksi dan batas operasional
 
-Setiap mutasi aplikasi menyertakan insert revisi unik bersama perubahan bisnis dalam Batch API. Konflik antar-instance membuat batch rollback dan dihitung ulang. `workflow_operations` menjaga retry dengan idempotency key yang sama. Kegagalan transport tidak dianggap sukses sampai hasil dapat dipastikan.
+Setiap pemanggil transaksi wajib menyebutkan collection yang dibutuhkan. Aplikasi mengambil satu revisi terbaru per scope collection sebelum membaca snapshot, lalu menyertakan insert revisi unik untuk setiap collection yang dibaca atau ditulis dalam Batch API yang sama. Collection insert-only yang tidak jadi ditulis tidak membutuhkan fence. Konflik pada salah satu fence membuat seluruh batch rollback dan dihitung ulang. `workflow_operations` menjaga retry dengan idempotency key yang sama. Kegagalan transport tidak dianggap sukses sampai hasil dapat dipastikan.
+
+Transaksi pada collection terpisah tidak lagi berebut satu revisi global. Operasi yang berbagi collection tetap dapat saling retry meskipun record-nya berbeda, termasuk workflow yang sama-sama membaca `users`; ini belum merupakan isolasi per kampus. Batas Batch API 2.000 mencakup seluruh operasi bisnis **dan** seluruh insert fence, sehingga kapasitas mutasi berkurang sesuai jumlah scope yang dilindungi.
+
+Logout mencabut **seluruh sesi akun tersebut**, termasuk perangkat lain, dengan merotasi `sessionVersion` dan `tokenKey` native PocketBase dalam satu transaksi. Cookie dihapus setelah commit berhasil; kegagalan backend mengembalikan error agar pengguna dapat mencoba lagi. Cookie tanpa sesi atau sesi yang sudah tidak valid tetap dapat dibersihkan. Password akun tidak diubah, sehingga pengguna dapat login kembali seperti biasa.
 
 Edit superuser langsung melewati validasi bisnis SvelteKit. Lakukan dalam maintenance; jangan mengedit/menghapus `app_revisions` atau `workflow_operations` saat aplikasi menulis. Mutasi saat ini membaca snapshot collection bisnis, sehingga uji beban sesuai ukuran data production tetap diperlukan.
 
@@ -74,3 +78,9 @@ Batas upload PDF aplikasi 10 MiB; batas request platform hosting tetap berlaku l
 `npm run pb:setup` membuat instance lokal standar dan mengimpor schema lewat REST. `npm run mail:serve` menyalakan Mailpit; `npm run mail:local` mengatur **SMTP PocketBase lokal** ke `127.0.0.1:1025`. Jangan menjalankan perintah itu terhadap production. Sandbox QA otomatis memakai Mailpit. Data/kredensial QA tidak digunakan pada production.
 
 `db-schema/pb_migrations` disimpan sebagai riwayat. Setup aktif tidak menjalankan migrasi native tersebut. Panduan P0–P4 lama merupakan catatan historis; gunakan panduan ini untuk deployment saat ini.
+
+Tes pencabutan sesi, replay token native, migrasi index, serta transaksi serentak memakai database disposable. Pastikan port lokal 8097 kosong, lalu jalankan:
+
+```sh
+npx tsx --test --test-concurrency=1 tests/pocketbase/logout.test.ts tests/pocketbase/transactions.test.ts
+```

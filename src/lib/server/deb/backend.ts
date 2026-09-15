@@ -79,6 +79,17 @@ export async function executeWorkflow(pb: PocketBase, actor: RecordModel | null,
 }
 
 export function accountApi(settings: Record<string, string>) { return createAccounts({ get: (key: string) => settings[key] || '' }); }
+export async function revokeSessions(pb: PocketBase, actor: RecordModel) {
+  await atomic(pb, store => {
+    const user = store.findRecordById('users', actor.id);
+    // A retry must not revoke sessions created after this logout already committed.
+    if (user.getString('sessionVersion') !== (actor.sessionVersion || '')) return;
+    user.set('sessionVersion', security.randomString(50));
+    // StoreRecord's legacy tokenKey setter aliases sessionVersion; rotate the native key explicitly too.
+    user.data.tokenKey = security.randomString(50);
+    store.save(user);
+  }, { users: { filter: pb.filter('id = {:id}', { id: actor.id }), fields: 'id,role,campus,sessionVersion' } });
+}
 export async function rateLimit(pb: PocketBase, settings: Record<string, string>, labels: { key: string; max: number; duration: number }[]) {
   const api = accountApi(settings);
   let failure: unknown;

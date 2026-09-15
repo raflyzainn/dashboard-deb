@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'vite';
 
-test('logout clears cookies without backend access and retains client state on failure', async t => {
-  const server = await createServer({ server: { middlewareMode: true, watch: null, preTransformRequests: false }, appType: 'custom' });
+test('logout requires session verification and retains client state on failure', async t => {
+  const server = await createServer({ server: { middlewareMode: true, ws: false, watch: null, preTransformRequests: false }, appType: 'custom' });
   t.after(() => server.close());
   const { handle } = await server.ssrLoadModule('/src/hooks.server.ts');
   const { POST } = await server.ssrLoadModule('/src/routes/api/auth/[operation]/+server.ts');
@@ -13,11 +13,10 @@ test('logout clears cookies without backend access and retains client state on f
     request: new Request('https://deb.example/api/auth/logout', { method: 'POST', headers: { origin: 'https://deb.example' } }),
     cookies: { get() { throw new Error('Session backend unavailable'); }, delete(name: string) { deleted.push(name); } }
   };
-  await t.test('same-origin logout reaches cookie deletion without session lookup', async () => {
+  await t.test('failed session verification cannot report a successful logout', async () => {
     const response = await handle({ event, resolve: POST });
-    assert.equal(response.status, 200);
-    assert.deepEqual(deleted, ['deb_session']);
-    assert.match(response.headers.get('cache-control'), /no-store/);
+    assert.equal(response.status, 503);
+    assert.deepEqual(deleted, []);
   });
   await t.test('cross-origin logout is rejected', async () => {
     deleted.length = 0;
