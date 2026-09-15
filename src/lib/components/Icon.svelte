@@ -33,8 +33,19 @@
     globe: 'M2 12h20M12 2c6 6 6 14 0 20-6-6-6-14 0-20Zm10 10a10 10 0 1 1-20 0 10 10 0 0 1 20 0',
     target: 'm16 8 6-6m-1 6h-5V3M18 12a6 6 0 1 1-6-6M22 12a10 10 0 1 1-10-10',
     trash: 'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7',
-    'eye-off': 'm3 3 18 18M10.6 5.1A12 12 0 0 1 12 5c6 0 10 7 10 7a19 19 0 0 1-3 3.7M6.3 6.3A22 22 0 0 0 2 12s4 7 10 7a13 13 0 0 0 5.7-1.3M9.9 9.9a3 3 0 0 0 4.2 4.2',
+    'eye-off':
+      'm3 3 18 18M10.6 5.1A12 12 0 0 1 12 5c6 0 10 7 10 7a19 19 0 0 1-3 3.7M6.3 6.3A22 22 0 0 0 2 12s4 7 10 7a13 13 0 0 0 5.7-1.3M9.9 9.9a3 3 0 0 0 4.2 4.2',
     eye: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Zm13 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0'
   };
 </script>
-<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={paths[name] || paths.leaf}/></svg>
+<svg
+  width={size}
+  height={size}
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.65"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"><path d={paths[name] || paths.leaf} /></svg
+>

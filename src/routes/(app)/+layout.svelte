@@ -21,11 +21,35 @@
     if (!authorized || !['questions', 'question-detail'].includes(request.view)) return;
     return pollVisible(() => app.refreshForum(), 5000);
   });
-  $effect(() => { if (authorized) { const next = request; untrack(() => { void app.openPage(next); }); } });
+  $effect(() => {
+    if (authorized) {
+      const next = request;
+      untrack(() => {
+        void app.openPage(next);
+      });
+    }
+  });
   $effect(() => {
     if (!app.ready) return;
     if (!app.session) goto('/login', { replaceState: true });
-    else if (routeRole !== app.session.role) goto(`/${app.session.role}/dashboard`, { replaceState: true });
+    else if (routeRole !== app.session.role)
+      goto(`/${app.session.role}/dashboard`, { replaceState: true });
   });
 </script>
-{#if authorized}<Shell>{#if app.data && app.pageId === requestKey}{#key app.session?.id}{@render children()}{/key}{:else if app.loading || app.pageId !== requestKey}<div class="loading-screen"><span class="spinner"></span>Memuat data kampus…</div>{:else}<section class="panel"><Empty title="Data belum dapat dimuat" description="Periksa koneksi PocketBase lalu coba kembali."/><div class="center-actions"><button class="button" onclick={() => app.reload()}>Coba muat ulang</button></div></section>{/if}</Shell>{:else}<main id="main-content" class="loading-screen"><span class="spinner"></span>Menyiapkan ruang kerja…</main>{/if}
+{#if authorized}<Shell
+    >{#if app.data && app.pageId === requestKey}{#key app.session?.id}{@render children()}{/key}{:else if app.loading || app.pageId !== requestKey}<div
+        class="loading-screen"
+      >
+        <span class="spinner"></span>Memuat data kampus…
+      </div>{:else}<section class="panel">
+        <Empty
+          title="Data belum dapat dimuat"
+          description="Periksa koneksi PocketBase lalu coba kembali."
+        />
+        <div class="center-actions">
+          <button class="button" onclick={() => app.reload()}>Coba muat ulang</button>
+        </div>
+      </section>{/if}</Shell
+  >{:else}<main id="main-content" class="loading-screen">
+    <span class="spinner"></span>Menyiapkan ruang kerja…
+  </main>{/if}
