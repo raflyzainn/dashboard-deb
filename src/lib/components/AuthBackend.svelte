@@ -2,7 +2,7 @@
   import { page } from '$app/state';
   import { goto, replaceState } from '$app/navigation';
   import { dev } from '$app/environment';
-  import { untrack } from 'svelte';
+  import { onDestroy, untrack } from 'svelte';
   import { app } from '$lib/state.svelte';
   import Icon from './Icon.svelte';
   import WelcomeGuide from './WelcomeGuide.svelte';
@@ -10,6 +10,14 @@
   let email=$state(''),password=$state(''),confirmation=$state(''),error=$state(''),busy=$state(false);
   let showPassword=$state(false),showConfirmation=$state(false),token=$state('');
   let flow=$state<'activate'|'forgot'>('activate');
+  let resendSeconds=$state(0),resent=$state(false);
+  let resendTimer: ReturnType<typeof setInterval> | undefined;
+  function startResendCooldown() {
+    if(resendTimer)clearInterval(resendTimer);
+    const until=Date.now()+60000;resendSeconds=60;
+    resendTimer=setInterval(()=>{resendSeconds=Math.max(0,Math.ceil((until-Date.now())/1000));if(!resendSeconds)clearInterval(resendTimer);},1000);
+  }
+  onDestroy(()=>{if(resendTimer)clearInterval(resendTimer);});
   // TODO(MICROSOFT-SSO): Implement server-side Microsoft OAuth/OIDC (state, nonce,
   // PKCE and tenant validation), map authorized employees to server-managed roles,
   // and establish a verified DEB session. The button currently only shows a notice.
@@ -25,10 +33,10 @@
   async function api(operation:string,body:object){const r=await fetch('/api/auth/'+operation,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const data=await r.json();if(!r.ok)throw new Error(data.message||'Permintaan belum dapat diproses.');return data;}
   function go(next:typeof screen){if(next==='activate'||next==='forgot')flow=next;screen=next;error='';microsoftNotice=false;password='';confirmation='';showPassword=false;showConfirmation=false;}
   async function inspect(){busy=true;try{const result=await api('inspect',{token});target=result;token=result.token||token;flow=target.purpose==='forgot'?'forgot':'activate';email=target.email;go('password');}catch{go('invalid');}finally{busy=false;}}
-  async function submit(){busy=true;error='';try{
+  async function submit(){if(busy || (screen==='sent' && resendSeconds>0))return;busy=true;error='';try{
     if(screen==='login'){await api('login',{email,password});await app.login('');if(app.session)await goto('/'+app.session.role+'/dashboard');else throw new Error('Sesi belum dapat dimuat.');}
     else if(screen==='password'){if(!longEnough||!hasNumber||!hasCapital)throw new Error('Password minimal 8 karakter, mengandung angka dan huruf kapital.');if(password!==confirmation)throw new Error('Konfirmasi password belum sama.');await api('confirm',{token,password,passwordConfirm:confirmation});go('success');replaceState('/login',{});}
-    else{await api('request',{email,purpose:screen==='forgot'?'forgot':'activate'});go('sent');}
+    else{const again=screen==='sent';await api('request',{email,purpose:flow});startResendCooldown();resent=again;go('sent');}
   }catch(e){error=(e as Error).message;}finally{busy=false;}}
 </script>
 <svelte:head><title>Login - Digitalisasi DEB</title><meta name="robots" content="noindex,nofollow"/></svelte:head>
@@ -66,7 +74,11 @@
   <span>Masuk dengan Microsoft</span>
 </button>
 {#if microsoftNotice}<p class="microsoft-notice" role="status">Login Microsoft belum diaktifkan. Hubungi admin DEB untuk informasi akses karyawan.</p>{/if}
-{:else if screen==='sent'}<p class="intro">Jika email terdaftar dan memenuhi syarat, tautan akan dikirim ke <strong class="email-destination">{email.trim().toLowerCase()}</strong>. Periksa inbox dan folder spam pada alamat tersebut.</p><button class="primary" onclick={()=>go('login')}>Kembali ke masuk</button>
+{:else if screen==='sent'}<p class="intro">Jika email terdaftar dan memenuhi syarat, tautan akan dikirim ke <strong class="email-destination">{email.trim().toLowerCase()}</strong>. Periksa inbox dan folder spam pada alamat tersebut.</p>
+{#if error}<p class="error" role="alert">{error}</p>{/if}
+{#if resent}<p class="intro" role="status">Permintaan kirim ulang diterima. Jika memenuhi syarat, gunakan tautan dari email terbaru.</p>{/if}
+<button class="primary" disabled={busy || resendSeconds>0} onclick={()=>submit()}>{busy?'Mengirim…':resendSeconds>0?`Kirim ulang email (${resendSeconds} detik)`:'Kirim ulang email'}</button>
+<button class="primary" disabled={busy} onclick={()=>go('login')}>Kembali ke masuk</button>
 {:else if screen==='success'}<p class="intro">Kenali DEB, lalu masuk dengan email dan password Anda.</p><WelcomeGuide/><button class="primary" onclick={()=>go('login')}>Lanjut ke masuk</button>
 {:else}<p class="intro">Tautan mungkin kedaluwarsa, sudah digunakan, atau telah diganti. Minta tautan baru sesuai kebutuhan akun Anda.</p><button class="primary" onclick={()=>go('activate')}>Minta tautan aktivasi</button><button class="inline-link" onclick={()=>go('forgot')}>Pemulihan password</button>{/if}
 </div><footer class="stage-footer"><img class="pf-color-logo" src="/logo-pf.png" alt="Pertamina Foundation" width="140" height="37"/><span>Digitalisasi DEB</span></footer>

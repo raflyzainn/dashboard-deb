@@ -44,8 +44,8 @@
   function emailError(a:Account){const email=normalizeEmail(drafts[a.campusId]??a.email);return email&&!validEmail(email)?'Format email belum valid.':email&&cached.some(b=>b.campusId!==a.campusId&&normalizeEmail(drafts[b.campusId]??b.email)===email)?'Email sudah digunakan kampus lain.':'';}
   function isEditing(a:Account){return (!a.name&&!a.email)||editing.includes(a.campusId);}
   function cancelEdit(a:Account){drafts[a.campusId]=a.email;names[a.campusId]=a.name;editing=editing.filter(id=>id!==a.campusId);error='';}
-  function save(){const active=changed.filter(a=>a.active&&normalizeEmail(drafts[a.campusId])!==a.email);if(active.length){resetAccounts=active;return;}void commitEmails();}
-  async function commitEmails(){busy=true;error='';try{await api('/save',{changes:changed.map(a=>({campusId:a.campusId,revision:a.revision,name:names[a.campusId],email:drafts[a.campusId]})),confirmReset:!!resetAccounts});cache={};drafts={};names={};editing=[];resetAccounts=null;await load();notice='Data PIC dan email tersimpan.';}catch(e){error=(e as Error).message;resetAccounts=null;}finally{busy=false;}}
+  function save(){const active=changed.filter(a=>a.status==='Aktif'&&normalizeEmail(drafts[a.campusId]??a.email)!==a.email);if(active.length){resetAccounts=active;return;}void commitEmails();}
+  async function commitEmails(){busy=true;error='';try{await api('/save',{changes:changed.map(a=>({campusId:a.campusId,revision:a.revision,name:names[a.campusId]??a.name,email:drafts[a.campusId]??a.email})),confirmReset:!!resetAccounts});cache={};drafts={};names={};editing=[];resetAccounts=null;await load();notice='Data PIC dan email tersimpan.';}catch(e){error=(e as Error).message;resetAccounts=null;}finally{busy=false;}}
 </script>
 <svelte:head><title>Akun kampus · DEB</title></svelte:head>
 <div class="page-heading"><div><span class="eyebrow">ADMINISTRASI AKSES</span><h1>Akun kampus</h1><p>Simpan nama dan email PIC. Kampus meminta tautan aktivasi sendiri melalui halaman login.</p></div></div>
