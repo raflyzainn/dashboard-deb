@@ -1,3 +1,4 @@
+import type { Period, PeriodState } from './periods';
 import type { ForumCategoryId } from './forum';
 export type Role = 'campus' | 'admin';
 export interface DemoSession { role: Role; name: string; campusId?: string }
@@ -7,16 +8,16 @@ export interface LocationDto { campusId: string; province: string; island: strin
 export interface Bootstrap { session: AppSession; data: Snapshot; locations: LocationDto[]; capabilities: { readOnly: boolean }; loadedAt: string }
 export interface Campus { id: string; name: string; region: string; initials: string; acronym?: string; city?: string; source?: 'user' | 'document' | 'admin'; revision?: number }
 export interface IndicatorDefinition { id: string; name: string; category: string; unit: string; description: string }
-export interface MasterDefinition extends IndicatorDefinition { code: string; baseline: number; target: number; status: 'draft' | 'active'; revision: number }
-export interface DefinitionInput { id?: string; revision?: number; code: string; name: string; category: string; unit: string; description: string; baseline: number; target: number }
+export interface MasterDefinition extends IndicatorDefinition { period?: string; periodState?: PeriodState; code: string; baseline: number; target: number; status: 'draft' | 'active'; revision: number }
+export interface DefinitionInput { period?: string; id?: string; revision?: number; code: string; name: string; category: string; unit: string; description: string; baseline: number; target: number }
 export interface CampusInput { id?: string; revision?: number; name: string; initials: string; acronym: string; region: string; city: string; province: string; island: string; latitude: number | null; longitude: number | null; approximate: boolean }
 export interface MasterAudit { id: string; actor: string; entity: string; entityId: string; operation: string; before: Record<string, unknown> | null; after: Record<string, unknown> | null; created: string }
 export interface MasterData { definitions: MasterDefinition[] }
 export interface MasterAuditPage { items: MasterAudit[]; page: number; totalItems: number; totalPages: number }
-export interface CampusIndicator { id: string; campusId: string; definitionId: string; baseline: number; target: number; current: number; note: string; updatedAt: string }
+export interface CampusIndicator { unfilled?: boolean; id: string; campusId: string; definitionId: string; baseline: number; target: number; current: number; note: string; updatedAt: string }
 export interface SubmissionIndicator extends CampusIndicator { name: string; category: string; unit: string; description?: string }
 export type VerificationStatus = 'pending' | 'approved' | 'revision';
-export interface DebSubmission { id: string; campusId: string; version: number; status: VerificationStatus; indicators: SubmissionIndicator[]; submittedAt: string; reviewedAt?: string; reviewedBy?: string; decisionNote?: string; simulated?: boolean }
+export interface DebSubmission { period?: string; id: string; campusId: string; version: number; status: VerificationStatus; indicators: SubmissionIndicator[]; submittedAt: string; reviewedAt?: string; reviewedBy?: string; decisionNote?: string; simulated?: boolean }
 export type FeedbackState = 'open' | 'responded' | 'closed';
 export interface Feedback { id: string; campusId: string; indicatorId: string; text: string; requiresRevision: boolean; state: FeedbackState; createdAt: string; updatedAt: string }
 export interface ProposalVersion { id: string; campusId: string; version: number; filename: string; size: number; createdAt: string; changes: string; simulated: boolean }
@@ -29,6 +30,7 @@ export interface FaqEntry { id: string; questionId?: string; question: string; a
 export interface Activity { id: string; campusId: string; text: string; createdAt: string }
 export interface Notification { id: string; campusId: string; recipient: Role; title: string; body: string; href: string; createdAt: string; readAt: string | null; simulated?: boolean }
 export interface Snapshot {
+  period?: Period; periods?: Period[];
   campusMetrics?: Record<string, { progress: number; achieved: number; total: number; revisions: number }>;
   locations?: LocationDto[];
   campusRosterVersion?: number;
@@ -38,6 +40,8 @@ export interface Snapshot {
   answers: Answer[]; likes: QuestionLike[]; faq: FaqEntry[]; activities: Activity[]; notifications: Notification[]; notificationSeedVersion?: number;
 }
 export interface DataService {
+  createPeriod(name: string): Promise<void>;
+  openPeriod(period: string): Promise<void>;
   masters(): Promise<MasterData>;
   masterAudit(query?: string, page?: number): Promise<MasterAuditPage>;
   saveCampus(input: CampusInput): Promise<void>;

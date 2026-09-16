@@ -11,7 +11,7 @@ export function pageEndpoint(view: PageView): RequestHandler {
     const campus = event.url.searchParams.get('campus') || undefined;
     const question = event.url.searchParams.get('question') || undefined;
     for (const id of [campus, question]) if (id && !/^[a-z0-9]{15}$/.test(id)) throw new PreviewError(400, 'ID tidak valid.');
-    const data = await readPage(pb, mapSession(pb.authStore.record!), { view, campus, question, tab: event.url.searchParams.get('tab') || undefined });
+    const data = await readPage(pb, mapSession(pb.authStore.record!), { view, campus, question, period: event.url.searchParams.has('period') ? event.url.searchParams.get('period')! : undefined, tab: event.url.searchParams.get('tab') || undefined });
     return json({ data, loadedAt: new Date().toISOString() });
   });
 }

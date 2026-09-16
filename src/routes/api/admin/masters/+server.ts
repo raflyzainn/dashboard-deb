@@ -5,5 +5,5 @@ export const GET: RequestHandler = event => previewEndpoint(event, async context
   const pb = await context.account(event.request.headers.get('x-deb-preview-account'));
   if (pb.authStore.record?.role !== 'admin') throw new PreviewError(403, 'Hanya Admin dapat mengelola master.');
   const definitions = await pb.collection('indicator_definitions').getFullList({ sort: 'status,code' });
-  return json({ definitions: definitions.map(r => ({ id:r.id, code:r.code, name:r.name, category:r.category, unit:r.unit, description:r.description, baseline:r.baseline, target:r.target, status:r.status, revision:r.revision })) });
+  return json({ definitions: definitions.map(r => ({ id:r.id, period:r.period || '', periodState:r.periodState || 'active', code:r.code, name:r.name, category:r.category, unit:r.unit, description:r.description, baseline:r.baseline, target:r.target, status:r.status, revision:r.revision })) });
 });

@@ -1,0 +1,41 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { RestStore } from '../src/lib/server/deb/rest-store';
+import { runWorkflow } from '../src/lib/server/deb/business/workflows';
+
+test('period transitions copy targets, preserve archives, and require fresh input including explicit zero', () => {
+  const admin = { id:'admin0000000000', role:'admin', active:true, verified:true, sessionVersion:'a' };
+  const campus = { id:'user00000000000', role:'campus', campus:'campus000000000', active:true, verified:true, sessionVersion:'c' };
+  const store = new RestStore(Object.fromEntries(['users','campuses','indicator_definitions','campus_indicators','deb_submissions','indicator_feedback','activities','notifications','master_audit','workflow_operations'].map(n => [n, []])));
+  store.records.get('users')!.push(...[admin,campus].map(r => new StoreRecord('users',r)));
+  store.records.get('campuses')!.push(new StoreRecord('campuses',{id:campus.campus,name:'Kampus'}));
+  store.records.get('indicator_definitions')!.push(new StoreRecord('indicator_definitions',{id:'definition00000',code:'D1',name:'Energi',category:'Energi',unit:'kWh',description:'',baseline:2,target:10,status:'active',revision:1}));
+  store.records.get('campus_indicators')!.push(new StoreRecord('campus_indicators',{id:'indicator000000',campus:campus.campus,definition:'definition00000',baseline:2,target:10,current:7,note:'Riwayat',updated:'2026-01-01'}));
+  const run = (op:string, payload:object, actor=admin) => runWorkflow({app:store,auth:actor,local:true,request:{pathValue:()=>op,header:{get:()=>randomUUID()}},requestInfo:()=>({body:payload}),json:(_s:number,v:unknown)=>v});
+  assert.throws(()=>run('masterCreatePeriod',{name:'2027'},campus), /Admin/);
+  run('masterCreatePeriod',{name:'2027'});
+  const copied = store.findRecordsByFilter('indicator_definitions','period = "2027"')[0];
+  assert.equal(copied.getFloat('target'),10);
+  assert.equal(copied.getString('periodState'),'draft');
+  assert.equal(store.records.get('campus_indicators')!.length,1);
+  run('submitDeb',{},campus);
+  assert.throws(()=>run('masterOpenPeriod',{period:'2027'}), /pending|review/i);
+  const submission = store.records.get('deb_submissions')![0];
+  run('reviewDeb',{id:submission.id,decision:'approved',note:''});
+  run('masterOpenPeriod',{period:'2027'});
+  assert.equal(store.findRecordById('indicator_definitions','definition00000').getString('periodState'),'archived');
+  assert.equal(store.findRecordById('campus_indicators','indicator000000').getFloat('current'),7);
+  assert.throws(()=>run('updateIndicator',{id:'indicator000000',current:9,note:''},campus), /periode|arsip/i);
+  assert.throws(()=>run('masterSaveDefinition',{id:'definition00000',revision:2,code:'D1',name:'Changed',category:'Energi',unit:'kWh',description:'',baseline:0,target:20}), /arsip/i);
+  assert.throws(()=>run('submitDeb',{},campus), /Lengkapi/);
+  const fresh = store.records.get('campus_indicators')!.find(r=>r.getString('definition')===copied.id)!;
+  assert.equal(fresh.getBool('unfilled'),true);
+  run('updateIndicator',{id:fresh.id,current:0,note:''},campus);
+  assert.equal(fresh.getBool('unfilled'),false);
+  run('submitDeb',{},campus);
+  assert.equal(store.records.get('deb_submissions')![1].getString('period'),'2027');
+  assert.equal(store.records.get('deb_submissions')![1].getInt('version'),1);
+});
+
+import { StoreRecord } from '../src/lib/server/deb/rest-store';

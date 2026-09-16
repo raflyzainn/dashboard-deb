@@ -70,7 +70,9 @@ for (const role of ['admin', 'campus'] as const) test(`${role} pages render with
       const response = await pending;
       expect(response.status(), entry.route).toBe(200);
       const text = await response.text(), body = JSON.parse(text);
-      expect(Object.keys(body.data).sort(), entry.route).toEqual(entry.keys!.slice().sort());
+      const expectedKeys = entry.keys!.slice();
+      if (expectedKeys.some(key => ['definitions','indicators','campusMetrics'].includes(key))) expectedKeys.push('period','periods');
+      expect(Object.keys(body.data).sort(), entry.route).toEqual(expectedKeys.sort());
       if (entry.endpoint === 'question-detail') expect(body.data.questions).toHaveLength(1);
       if (entry.endpoint === 'campus-detail') {
         expect(body.data.campuses).toHaveLength(1);

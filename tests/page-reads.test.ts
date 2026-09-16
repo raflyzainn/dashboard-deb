@@ -78,7 +78,7 @@ test('review queries current indicators only for pending campuses and preserves 
     assert.equal(data.submissions?.length, 4);
     assert.deepEqual(data.submissions?.map(s => s.indicators[0].current), [0, 1, 2, 3]);
     assert.equal(data.feedback?.[0].text, 'Historical feedback');
-    assert.equal(client.calls.find(c => c.collection === 'indicator_feedback')?.options.filter, undefined);
+    assert.match(String(client.calls.find(c => c.collection === 'indicator_feedback')?.options.filter), /indicator.definition.period/);
     const indicators = client.calls.find(c => c.collection === 'campus_indicators');
     if (pending) {
       assert.match(String(indicators?.options.filter), /definition.status = "active"/);
@@ -133,7 +133,7 @@ test('campus indicators and proposals read only their campus while shared views 
 test('page reads project mapper fields while preserving indicator targets, proposal history and locations', async () => {
   const client = fakeClient();
   await readPage(client.pb, actor, { view: 'campus-detail', campus: 'own' });
-  const fields = (collection: string) => String(client.calls.find(c => c.collection === collection)?.options.fields).split(',');
+  const fields = (collection: string) => String(client.calls.filter(c => c.collection === collection).at(-1)?.options.fields).split(',');
   assert.ok(fields('indicator_definitions').includes('baseline'));
   assert.ok(fields('indicator_definitions').includes('target'));
   assert.ok(fields('campuses').includes('longitude'));

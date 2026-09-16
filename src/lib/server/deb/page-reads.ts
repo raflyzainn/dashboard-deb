@@ -5,6 +5,7 @@ import { emptyPageData, type PageRequest, type NavigationData } from '../../page
 import { campusStats } from '../../domain';
 import * as map from './mappers';
 import { PreviewError } from './preview-error';
+import { periodsFrom, activePeriodFilter } from '../../periods';
 
 const collections = {
   campuses: 'campuses', definitions: 'indicator_definitions', indicators: 'campus_indicators', submissions: 'deb_submissions',
@@ -15,9 +16,9 @@ type Resource = keyof typeof collections;
 // Read only mapper inputs, excluding unused PocketBase metadata and storage fields.
 const fields: Record<Resource, string> = {
   campuses: 'id,name,region,initials,acronym,city,source,revision,province,island,hasLocation,longitude,latitude,locationApproximate',
-  definitions: 'id,name,category,unit,description,baseline,target',
-  indicators: 'id,campus,definition,current,note,updated',
-  submissions: 'id,campus,version,status,snapshot,submittedAt,reviewedAt,reviewedBy,decisionNote,simulated',
+  definitions: 'id,name,category,unit,description,baseline,target,period,periodState',
+  indicators: 'id,campus,definition,current,unfilled,note,updated',
+  submissions: 'id,campus,period,version,status,snapshot,submittedAt,reviewedAt,reviewedBy,decisionNote,simulated',
   feedback: 'id,campus,indicator,text,requiresRevision,state,created,updated',
   proposals: 'id,campus,version,filename,size,changes,created,simulated',
   questions: 'id,campus,title,body,categoryIds,replyCount,lastReplyRole,created',
@@ -51,13 +52,21 @@ export async function readPage(pb: PocketBase, actor: AppSession, request: PageR
     else keys = stats;
   }
   const raw: Partial<Record<Resource, RecordModel[]>> = {};
+  const periodPage = keys.some(key => ['definitions','indicators','submissions'].includes(key));
+  const periods = periodPage ? periodsFrom(await pb.collection('indicator_definitions').getFullList({ fields: 'id,period,periodState', filter: 'periodState != "draft"', sort: 'created,id' })) : [];
+  const selected = request.period === undefined ? periods.find(p => p.state === 'active') : periods.find(p => p.id === request.period);
+  if (request.period !== undefined && periodPage && !selected) throw new PreviewError(404, 'Periode tidak ditemukan.');
+  const periodFilter = pb.filter('period = {:period}', { period: selected?.id || '' });
   if (request.view === 'review') {
     raw.submissions = await pb.collection(collections.submissions).getFullList({ fields: fields.submissions, sort: 'id',
-      ...(request.campus ? { filter: pb.filter('campus = {:id}', { id: request.campus }) } : {}) });
+      filter: periodFilter + (request.campus ? ' && ' + pb.filter('campus = {:id}', { id: request.campus }) : '') });
     keys = keys.filter(key => key !== 'submissions');
   }
   await Promise.all(keys.map(async key => {
     const filters: string[] = [];
+    if (key === 'definitions' || key === 'submissions') filters.push(periodFilter);
+    if (key === 'indicators') filters.push('definition.' + periodFilter);
+    if (key === 'feedback') filters.push(periodPage ? 'indicator.definition.' + periodFilter : activePeriodFilter.replaceAll('periodState', 'indicator.definition.periodState'));
     if (key === 'definitions') filters.push('status = "active"');
     if (key === 'indicators') filters.push('definition.status = "active"');
     if (key === 'indicators' && request.view === 'review') {
@@ -81,7 +90,7 @@ export async function readPage(pb: PocketBase, actor: AppSession, request: PageR
     // The dashboard only displays four activities. Other page collections are never queried here.
     raw[key] = key === 'activities' ? (await pb.collection(collections[key]).getList(1, 4, { ...options, sort: '-created,-id' })).items : await pb.collection(collections[key]).getFullList(options);
   }));
-  const data: Partial<Snapshot> = {};
+  const data: Partial<Snapshot> = periodPage ? { periods, period: selected } : {};
   if (raw.campuses) data.campuses = raw.campuses.map(map.mapCampus);
   if (raw.definitions) data.definitions = raw.definitions.map(map.mapDefinition);
   if (raw.indicators) {
@@ -115,7 +124,7 @@ export async function readNavigation(pb: PocketBase, actor: AppSession): Promise
   const count = async (collection: string, filter: string) => (await pb.collection(collection).getList(1, 1, { filter, fields: 'id' })).totalItems;
   const [pendingCount, revisionCount, unreadCount, campus] = await Promise.all([
     actor.role === 'admin' ? count('deb_submissions', 'status = "pending"') : 0,
-    actor.role === 'campus' ? count('indicator_feedback', 'requiresRevision = true && state != "closed"') : 0,
+    actor.role === 'campus' ? count('indicator_feedback', 'requiresRevision = true && state != "closed" && ' + activePeriodFilter.replaceAll('periodState', 'indicator.definition.periodState')) : 0,
     count('notifications', 'readAt = ""'),
     actor.campusId ? pb.collection('campuses').getOne(actor.campusId).then(map.mapCampus) : undefined
   ]);

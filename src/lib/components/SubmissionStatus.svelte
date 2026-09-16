@@ -14,13 +14,19 @@
   const latest = $derived(latestSubmission(app.data!, app.session!.campusId!));
   const changed = $derived(latest ? changedSinceSubmission(app.data!, latest) : false);
   const pending = $derived(latest?.status === 'pending');
+  const unfilledCount = $derived(
+    app.data!.indicators.filter((i) => i.campusId === app.session!.campusId && i.unfilled).length
+  );
   const complete = $derived(
     app.data!.definitions.length > 0 &&
       app.data!.indicators.filter((i) => i.campusId === app.session!.campusId).length ===
         app.data!.definitions.length
   );
   const canSubmit = $derived(
-    complete && !pending && (!latest || latest.status === 'revision' || changed)
+    complete &&
+      app.data?.period?.state !== 'archived' &&
+      !pending &&
+      (!latest || latest.status === 'revision' || changed)
   );
   let confirm = $state(false);
 </script>
@@ -39,13 +45,17 @@
     {@render statusIcon?.()}
   </div>
   <p>
-    {blocked
-      ? 'Simpan atau batalkan perubahan indikator sebelum mengirim verifikasi.'
-      : pending
-        ? 'Data yang dikirim sedang diperiksa Admin PF. Nilai indikator dikunci sampai ada keputusan.'
-        : latest?.status === 'approved' && !changed
-          ? 'Admin PF telah mengonfirmasi data pengajuan ini. Pembaruan berikutnya perlu dikirim kembali untuk diverifikasi.'
-          : 'Lengkapi indikator, lalu kirim data untuk ditinjau. Admin dapat menyetujui atau mengembalikan data dengan catatan revisi.'}
+    {app.data?.period?.state === 'archived'
+      ? 'Arsip periode ini hanya dapat dibaca. Pilih periode aktif untuk mengisi data.'
+      : unfilledCount
+        ? `Lengkapi ${unfilledCount} indikator yang belum diisi. Angka nol tetap harus diisikan jika belum ada capaian.`
+        : blocked
+          ? 'Simpan atau batalkan perubahan indikator sebelum mengirim verifikasi.'
+          : pending
+            ? 'Data yang dikirim sedang diperiksa Admin PF. Nilai indikator dikunci sampai ada keputusan.'
+            : latest?.status === 'approved' && !changed
+              ? 'Admin PF telah mengonfirmasi data pengajuan ini. Pembaruan berikutnya perlu dikirim kembali untuk diverifikasi.'
+              : 'Lengkapi indikator, lalu kirim data untuk ditinjau. Admin dapat menyetujui atau mengembalikan data dengan catatan revisi.'}
   </p>
   {#if latest && !compact}<small
       >Pengajuan #{latest.version} · Dikirim {date(latest.submittedAt)}{#if latest.reviewedAt}
@@ -60,7 +70,12 @@
     </p>{/if}
   {#if canSubmit}<button
       class="button"
-      disabled={blocked || app.readOnly || app.loading || app.busy || app.stale}
+      disabled={blocked ||
+        unfilledCount > 0 ||
+        app.readOnly ||
+        app.loading ||
+        app.busy ||
+        app.stale}
       onclick={() => (confirm = true)}
       >{latest ? 'Kirim ulang untuk verifikasi' : 'Kirim untuk verifikasi'}</button
     >{/if}
@@ -79,7 +94,13 @@
         >Batal</button
       ><button
         class="button"
-        disabled={blocked || !canSubmit || app.readOnly || app.loading || app.busy || app.stale}
+        disabled={blocked ||
+          unfilledCount > 0 ||
+          !canSubmit ||
+          app.readOnly ||
+          app.loading ||
+          app.busy ||
+          app.stale}
         onclick={async () => {
           if (await app.mutate(() => dataService.submitDeb(), 'Data DEB dikirim untuk verifikasi.'))
             confirm = false;

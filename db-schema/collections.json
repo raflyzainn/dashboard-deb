@@ -551,14 +551,16 @@
     },
     {
         "id":  "pbc_2904941258",
-        "listRule":  "@request.auth.id != \"\" \u0026\u0026 @request.auth.active = true \u0026\u0026 (@request.auth.role = \"admin\" || (@request.auth.role = \"campus\" \u0026\u0026 status = \"active\"))",
-        "viewRule":  "@request.auth.id != \"\" \u0026\u0026 @request.auth.active = true \u0026\u0026 (@request.auth.role = \"admin\" || (@request.auth.role = \"campus\" \u0026\u0026 status = \"active\"))",
+        "listRule":  "@request.auth.id != \"\" \u0026\u0026 @request.auth.active = true \u0026\u0026 (@request.auth.role = \"admin\" || (@request.auth.role = \"campus\" \u0026\u0026 status = \"active\" \u0026\u0026 periodState != \"draft\"))",
+        "viewRule":  "@request.auth.id != \"\" \u0026\u0026 @request.auth.active = true \u0026\u0026 (@request.auth.role = \"admin\" || (@request.auth.role = \"campus\" \u0026\u0026 status = \"active\" \u0026\u0026 periodState != \"draft\"))",
         "createRule":  null,
         "updateRule":  null,
         "deleteRule":  null,
         "name":  "indicator_definitions",
         "type":  "base",
         "fields":  [
+                       {"name": "period", "type": "text", "max": 80},
+                       {"name": "periodState", "type": "select", "values": ["draft", "active", "archived"], "maxSelect": 1},
                        {
                            "autogeneratePattern":  "[a-z0-9]{15}",
                            "help":  "",
@@ -751,7 +753,7 @@
                    ],
         "indexes":  [
                         "CREATE UNIQUE INDEX idx_indicator_definitions_legacy ON indicator_definitions (legacyId) WHERE legacyId != \u0027\u0027",
-                        "CREATE UNIQUE INDEX idx_indicator_definitions_code ON indicator_definitions (code)"
+                        "CREATE UNIQUE INDEX idx_indicator_definitions_code ON indicator_definitions (period, code)"
                     ],
         "system":  false
     },
@@ -765,6 +767,7 @@
         "name":  "campus_indicators",
         "type":  "base",
         "fields":  [
+                       {"name": "unfilled", "type": "bool"},
                        {
                            "autogeneratePattern":  "[a-z0-9]{15}",
                            "help":  "",
@@ -925,6 +928,7 @@
         "name":  "deb_submissions",
         "type":  "base",
         "fields":  [
+                       {"name": "period", "type": "text", "max": 80},
                        {
                            "autogeneratePattern":  "[a-z0-9]{15}",
                            "help":  "",
@@ -1109,7 +1113,7 @@
                    ],
         "indexes":  [
                         "CREATE UNIQUE INDEX idx_deb_submissions_legacy ON deb_submissions (legacyId) WHERE legacyId != \u0027\u0027",
-                        "CREATE UNIQUE INDEX idx_deb_submissions_version ON deb_submissions (campus, version)",
+                        "CREATE UNIQUE INDEX idx_deb_submissions_version ON deb_submissions (campus, period, version)",
                         "CREATE UNIQUE INDEX idx_deb_submissions_pending ON deb_submissions (campus) WHERE status = \u0027pending\u0027",
                         "CREATE INDEX idx_deb_submissions_campus_created ON deb_submissions (campus, created)"
                     ],

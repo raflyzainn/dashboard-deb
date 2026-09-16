@@ -21,6 +21,7 @@ test('new workflow and master records inherit the stored actor simulation flag',
     const definition = call(admin, 'masterSaveDefinition', { code: 'TEST', name: 'Indicator', category: 'Energy', unit: 'kWh', description: '', baseline: 0, target: 10 });
     call(admin, 'masterActivateDefinition', { id: definition.id, revision: 1 });
     call(admin, 'masterSaveCampus', { name: 'New campus', initials: 'NC', acronym: '', region: 'Java', city: '', province: '', island: '', latitude: null, longitude: null, approximate: false });
+    call(user, 'updateIndicator', { id: app.records.get('campus_indicators')!.find(r => r.getString('campus') === campus.id)!.id, current: 0, note: '' });
     call(user, 'submitDeb');
     call(user, 'uploadProposal', {}, new File(['%PDF-1.4'], 'test.pdf', { type: 'application/pdf' }));
     const question = call(user, 'ask', { title: 'Question', body: 'Body' });
