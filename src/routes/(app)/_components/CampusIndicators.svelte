@@ -140,26 +140,44 @@
 </script>
 
 {#snippet saveIcon()}
-  {#if saving}<span class="save-spinner" aria-hidden="true"></span>
+  {#if saving}<span
+      class="[&&]:w-[15px] [&&]:h-[15px] [&&]:shrink-0 [&&]:[border-top-color:#0284c7] [&&]:[border-right-color:rgb(201,_229,_248)] [&&]:[border-bottom-color:rgb(201,_229,_248)] [&&]:[border-left-color:rgb(201,_229,_248)] [&&]:[animation-duration:0.8s] [&&]:[animation-timing-function:linear] [&&]:[animation-delay:0s] [&&]:[animation-iteration-count:infinite] [&&]:[animation-direction:normal] [&&]:[animation-fill-mode:none] [&&]:[animation-play-state:running] [&&]:[animation-name:saving-spin] [&&]:[animation-timeline:auto] [&&]:[animation-range-start:normal] [&&]:[animation-range-end:normal] [&&]:border-[2px] [&&]:border-solid [&&]:rounded-[50%] [@media(prefers-reduced-motion:_reduce)]:[&&]:[animation-duration:auto] [@media(prefers-reduced-motion:_reduce)]:[&&]:[animation-timing-function:ease] [@media(prefers-reduced-motion:_reduce)]:[&&]:[animation-delay:0s] [@media(prefers-reduced-motion:_reduce)]:[&&]:[animation-iteration-count:1] [@media(prefers-reduced-motion:_reduce)]:[&&]:[animation-direction:normal] [@media(prefers-reduced-motion:_reduce)]:[&&]:[animation-fill-mode:none] [@media(prefers-reduced-motion:_reduce)]:[&&]:[animation-play-state:running] [@media(prefers-reduced-motion:_reduce)]:[&&]:[animation-name:none] [@media(prefers-reduced-motion:_reduce)]:[&&]:[animation-timeline:auto] [@media(prefers-reduced-motion:_reduce)]:[&&]:[animation-range-start:normal] [@media(prefers-reduced-motion:_reduce)]:[&&]:[animation-range-end:normal] [.status-labels>&]:flex [.status-labels>&]:items-center [.status-labels>&]:gap-y-[8px] [.status-labels>&]:gap-x-[8px] [.summary-heading>&]:text-[11px] [.summary-heading>&]:text-[color:var(--muted)] [.group-heading>&]:text-[11px] [.group-heading>&]:text-[color:var(--muted)] [.summary-metric>&]:text-[11px] [.summary-metric>&]:text-[color:var(--muted)] [.meter>&]:h-[100%] [.meter>&]:block [.meter>&]:[background-image:initial] [.meter>&]:[background-color:rgb(2,_132,_199)] [.meter>&]:rounded-[inherit] [.indicator-summary>.meter>&]:[background-image:initial] [.indicator-summary>.meter>&]:[background-color:rgb(32,_165,_106)] [.meter.achieved>&]:[background-image:initial] [.meter.achieved>&]:[background-color:rgb(32,_165,_106)] [.unit-input>&]:w-[max-content] [.unit-input>&]:shrink-0 [.unit-input>&]:flex [.unit-input>&]:items-center [.unit-input>&]:[background-image:initial] [.unit-input>&]:[background-color:rgb(234,_246,_255)] [.unit-input>&]:text-[10px] [.unit-input>&]:max-w-[60%] [.unit-input>&]:wrap-anywhere [.unit-input>&]:px-[9px] [.unit-input>&]:py-[0px] [.reference-value>&]:text-[10px] [.reference-value>&]:text-[color:var(--muted)] [.reference-value>&]:wrap-anywhere max-[700.01px]:[.card-fields>&:nth-child(3)]:[grid-column-start:1] max-[700.01px]:[.card-fields>&:nth-child(3)]:[grid-column-end:-1] save-spinner"
+      aria-hidden="true"
+    ></span>
   {:else}<Icon
       name={saveFailed || app.stale ? 'alert' : dirtyCount ? 'clock' : 'save'}
       size={17}
     />{/if}
 {/snippet}
 
-<div class="campus-indicators">
-  <header class="indicator-heading">
+<div
+  class="[&&]:[--ink:#163e55] [&&]:[--muted:#658295] [&&]:[--line:#d8edf9] [&&]:text-[color:var(--ink)] [&&]:pb-[16px] campus-indicators"
+>
+  <header
+    class="[&&]:flex [&&]:justify-between [&&]:items-center [&&]:gap-y-[20px] [&&]:gap-x-[20px] [&&]:mb-[20px] max-[700.01px]:[&&]:items-start max-[700.01px]:[&&]:gap-y-[10px] max-[700.01px]:[&&]:gap-x-[10px] max-[700.01px]:[&&]:flex-wrap indicator-heading"
+  >
     <div>
-      <h1>Indikator Baseline</h1>
-      <p>
+      <h1
+        class="font-[650] [&&]:text-[color:var(--ink)] [&&]:text-[24px] [&&]:tracking-[-0.7px] leading-[1.3] m-[0px] max-[700.01px]:[&&]:text-[22px]"
+      >
+        Indikator Baseline
+      </h1>
+      <p
+        class="[&&]:mt-[8px] mb-[0px] [&&]:leading-[1.8] [&&]:max-w-[700px] [&&]:text-[12px] [&&]:text-[color:var(--muted)] mx-[0px] max-[700.01px]:[&&]:text-[11px]"
+      >
         Catat perkembangan indikator DEB {campus?.name || 'kampus Anda'}. Lengkapi nilai aktual dan
         catatan sebelum mengirim verifikasi.
       </p>
     </div>
-    <div class="heading-status">
-      <span class="heading-tag"><Icon name="indicators" size={15} />DEB Putih</span>
+    <div
+      class="[&&]:flex [&&]:flex-col [&&]:items-end [&&]:gap-y-[10px] [&&]:gap-x-[10px] max-[700.01px]:[&&]:items-start heading-status"
+    >
       <span
-        class="save-status"
+        class="[&&]:flex [&&]:items-center [&&]:gap-y-[8px] [&&]:gap-x-[8px] [&&]:[background-image:initial] [&&]:[background-color:rgb(241,_250,_255)] [&&]:text-[11px] [&&]:[white-space-collapse:collapse] [&&]:[text-wrap-mode:nowrap] [&&]:text-[#0278b3] [&&]:px-[12px] [&&]:py-[7px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:var(--line)] [&&]:rounded-[20px] max-[700.01px]:[&&]:text-[9px] max-[700.01px]:[&&]:px-[8px] max-[700.01px]:[&&]:py-[6px] heading-tag"
+        ><Icon name="indicators" size={15} />DEB Putih</span
+      >
+      <span
+        class="[&&]:flex [&&]:items-center [&&]:gap-y-[6px] [&&]:gap-x-[6px] [&&]:text-[11px] [&&]:text-[#397866] [&.save-error]:text-[#b45309] save-status"
         class:save-error={saveFailed || app.stale}
         role="status"
         aria-label="Status penyimpanan"
@@ -169,84 +187,157 @@
     </div>
   </header>
 
-  <section class="status-strip" aria-label="Ringkasan status indikator">
-    <div class="status-labels">
+  <section
+    class="[&&]:[background-image:initial] [&&]:[background-color:white] [&&]:[box-shadow:0_2px_5px_#0c4a6e05] [&&]:flex [&&]:items-center [&&]:justify-between [&&]:flex-wrap [&&]:gap-y-[10px] [&&]:gap-x-[10px] [&&]:mb-[16px] [&&]:px-[18px] [&&]:py-[14px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:var(--line)] [&&]:rounded-[14px] max-[700.01px]:[&&]:p-[12px] status-strip"
+    aria-label="Ringkasan status indikator"
+  >
+    <div
+      class="[&&]:flex [&&]:items-center [&&]:gap-y-[14px] [&&]:gap-x-[14px] [&&]:flex-wrap [&&]:text-[11px] [&&]:text-[color:var(--muted)] status-labels"
+    >
       <Badge tone={pending ? 'blue' : latest?.status === 'approved' && !changed ? 'green' : 'amber'}
         >{submissionLabel}</Badge
       >
-      <span><Icon name="indicators" size={15} />{indicators.length} indikator tersedia</span>
+      <span class="[&&]:flex [&&]:items-center [&&]:gap-y-[8px] [&&]:gap-x-[8px]"
+        ><Icon name="indicators" size={15} />{indicators.length} indikator tersedia</span
+      >
     </div>
-    <p>
+    <p class="leading-[1.8] [&&]:text-[color:var(--muted)] [&&]:text-[10px] m-[0px]">
       {dirtyCount
         ? `${dirtyCount} indikator memiliki perubahan belum disimpan.`
         : 'Perubahan disimpan otomatis setelah 2 detik tanpa ketikan.'}
     </p>
   </section>
 
-  {#if latest}<p class="submission-history">
+  {#if latest}<p
+      class="[&&]:mt-[-4px] [&&]:mb-[16px] leading-[1.8] [&&]:text-[color:var(--muted)] [&&]:text-[11px] [&&]:mx-[0px] submission-history"
+    >
       Pengajuan #{latest.version} · Dikirim {date(latest.submittedAt)}{#if latest.reviewedAt}
         · Ditinjau {date(latest.reviewedAt)}{/if}
     </p>{/if}
-  {#if latest?.decisionNote}<aside class="review-note">
+  {#if latest?.decisionNote}<aside
+      class="[&&]:[background-image:initial] [&&]:[background-color:rgb(255,_246,_220)] [&&]:[border-left-width:3px] [&&]:[border-left-style:solid] [&&]:[border-left-color:rgb(224,_172,_73)] [&&]:[border-top-left-radius:0px] [&&]:[border-top-right-radius:8px] [&&]:[border-bottom-right-radius:8px] [&&]:[border-bottom-left-radius:0px] [&&]:flex [&&]:gap-y-[10px] [&&]:gap-x-[10px] [&&]:mb-[16px] [&&]:text-[12px] [&&]:px-[14px] [&&]:py-[12px] review-note"
+    >
       <Icon name="questions" size={18} />
       <div>
-        <strong>Catatan Admin PF</strong>
-        <p class="pre-wrap">{latest.decisionNote}</p>
+        <strong class="font-[650]">Catatan Admin PF</strong>
+        <p
+          class="[&&]:mt-[8px] mb-[0px] leading-[1.8] [white-space-collapse:preserve] [text-wrap-mode:wrap] wrap-anywhere [&&]:text-[11px] mx-[0px] pre-wrap"
+        >
+          {latest.decisionNote}
+        </p>
       </div>
     </aside>{/if}
 
-  <section class="indicator-summary" aria-label="Ringkasan capaian indikator">
-    <div class="summary-heading">
-      <h2>Capaian Indikator</h2>
-      <span>{number(score)}%</span>
+  <section
+    class="[&&]:[background-image:initial] [&&]:[background-color:white] [&&]:[box-shadow:0_2px_5px_#0c4a6e05] [&&]:mb-[18px] [&&]:p-[20px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:var(--line)] [&&]:rounded-[14px] max-[700.01px]:[&&]:p-[14px] indicator-summary"
+    aria-label="Ringkasan capaian indikator"
+  >
+    <div
+      class="[&&]:flex [&&]:items-center [&&]:justify-between [&&]:gap-y-[16px] [&&]:gap-x-[16px] summary-heading"
+    >
+      <h2
+        class="font-[650] [&&]:text-[color:var(--ink)] [&&]:text-[13px] [&&]:tracking-[-0.15px] m-[0px]"
+      >
+        Capaian Indikator
+      </h2>
+      <span class="[&&]:text-[11px] [&&]:text-[color:var(--muted)]">{number(score)}%</span>
     </div>
-    <div class="summary-grid">
-      <div class="summary-metric">
-        <span>Indikator tersedia</span><strong
-          >{indicators.length}<small> / {app.data!.definitions.length}</small></strong
+    <div
+      class="[&&]:grid [&&]:grid-cols-[repeat(3,_minmax(0,_1fr))] [&&]:gap-y-[14px] [&&]:gap-x-[14px] [&&]:mx-[0px] [&&]:my-[16px] max-[700.01px]:[&&]:grid-cols-[1fr] max-[700.01px]:[&&]:gap-y-[8px] max-[700.01px]:[&&]:gap-x-[8px] summary-grid"
+    >
+      <div
+        class="[&&]:p-[15px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:var(--line)] [&&]:rounded-[12px] [&:first-child]:[border-left-width:3px] [&:first-child]:[border-left-style:solid] [&:first-child]:[border-left-color:rgb(14,_165,_233)] max-[700.01px]:[&&]:p-[12px] summary-metric"
+      >
+        <span class="[&&]:text-[11px] [&&]:text-[color:var(--muted)]">Indikator tersedia</span
+        ><strong
+          class="font-[650] [&&]:block [&&]:text-[27px] [&&]:leading-[1.6] [&&]:tracking-[-0.8px] max-[700.01px]:[&&]:text-[24px]"
+          >{indicators.length}<small
+            class="[&&]:text-[12px] [&&]:text-[color:var(--muted)] leading-[1.7] [&&]:tracking-[0] [&&]:font-[500]"
+          >
+            / {app.data!.definitions.length}</small
+          ></strong
         >
-        <p>indikator aktif untuk kampus Anda</p>
+        <p class="leading-[1.8] [&&]:text-[10px] [&&]:text-[color:var(--muted)] m-[0px]">
+          indikator aktif untuk kampus Anda
+        </p>
       </div>
-      <div class="summary-metric">
-        <span>Capaian rata-rata</span><strong>{number(score)}<small>%</small></strong>
-        <p>terhadap target masing-masing indikator</p>
-      </div>
-      <div class="summary-metric">
-        <span>Belum mencapai target</span><strong
-          >{indicators.length - achieved}<small> indikator</small></strong
+      <div
+        class="[&&]:p-[15px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:var(--line)] [&&]:rounded-[12px] [&:first-child]:[border-left-width:3px] [&:first-child]:[border-left-style:solid] [&:first-child]:[border-left-color:rgb(14,_165,_233)] max-[700.01px]:[&&]:p-[12px] summary-metric"
+      >
+        <span class="[&&]:text-[11px] [&&]:text-[color:var(--muted)]">Capaian rata-rata</span
+        ><strong
+          class="font-[650] [&&]:block [&&]:text-[27px] [&&]:leading-[1.6] [&&]:tracking-[-0.8px] max-[700.01px]:[&&]:text-[24px]"
+          >{number(score)}<small
+            class="[&&]:text-[12px] [&&]:text-[color:var(--muted)] leading-[1.7] [&&]:tracking-[0] [&&]:font-[500]"
+            >%</small
+          ></strong
         >
-        <p>{achieved} indikator sudah mencapai target</p>
+        <p class="leading-[1.8] [&&]:text-[10px] [&&]:text-[color:var(--muted)] m-[0px]">
+          terhadap target masing-masing indikator
+        </p>
+      </div>
+      <div
+        class="[&&]:p-[15px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:var(--line)] [&&]:rounded-[12px] [&:first-child]:[border-left-width:3px] [&:first-child]:[border-left-style:solid] [&:first-child]:[border-left-color:rgb(14,_165,_233)] max-[700.01px]:[&&]:p-[12px] summary-metric"
+      >
+        <span class="[&&]:text-[11px] [&&]:text-[color:var(--muted)]">Belum mencapai target</span
+        ><strong
+          class="font-[650] [&&]:block [&&]:text-[27px] [&&]:leading-[1.6] [&&]:tracking-[-0.8px] max-[700.01px]:[&&]:text-[24px]"
+          >{indicators.length - achieved}<small
+            class="[&&]:text-[12px] [&&]:text-[color:var(--muted)] leading-[1.7] [&&]:tracking-[0] [&&]:font-[500]"
+          >
+            indikator</small
+          ></strong
+        >
+        <p class="leading-[1.8] [&&]:text-[10px] [&&]:text-[color:var(--muted)] m-[0px]">
+          {achieved} indikator sudah mencapai target
+        </p>
       </div>
     </div>
     <div
-      class="meter"
+      class="[&&]:h-[5px] [&&]:overflow-x-hidden [&&]:overflow-y-hidden [&&]:[background-image:initial] [&&]:[background-color:rgb(225,_242,_252)] [&&]:rounded-[10px] meter"
       role="progressbar"
       aria-label="Capaian rata-rata indikator"
       aria-valuenow={Math.round(score)}
       aria-valuemin="0"
       aria-valuemax="100"
     >
-      <span style:width={`${score}%`}></span>
+      <span
+        class="w-[var(--progress)] [&&]:block [&&]:h-[100%] [&&&]:[background-image:initial] [&&&]:[background-color:rgb(32,_165,_106)] [&&]:rounded-[inherit]"
+        style:--progress={`${score}%`}
+      ></span>
     </div>
-    <p class="summary-help">
+    <p
+      class="[&&]:mt-[12px] mb-[0px] leading-[1.8] [&&]:text-[10px] [&&]:text-[color:var(--muted)] mx-[0px] summary-help"
+    >
       Ringkasan menggunakan nilai yang sudah disimpan. Baseline dan target ditetapkan oleh Admin PF;
       nilai nol tetap merupakan nilai aktual yang valid.
     </p>
   </section>
 
-  <div class="indicator-filters">
-    <div class="search-field">
+  <div
+    class="[&&]:flex [&&]:gap-y-[10px] [&&]:gap-x-[10px] [&&]:mx-[0px] [&&]:my-[20px] max-[700.01px]:[&&]:flex-wrap indicator-filters"
+  >
+    <div
+      class="flex items-center [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#7b94b4] [&&&]:grow [&&&]:shrink [&&&]:[flex-basis:0%] [&&&]:min-w-[0] [&&&]:max-w-[none] px-[12px] py-[0px] border-[1px] border-solid border-[color:rgb(211,_226,_243)] rounded-[7px] [&_input]:[background-image:initial] [&_input]:[background-color:transparent] [&_input]:min-w-[0] [&_input]:w-[100%] [&_input]:text-[11px] [&_input]:p-[10px] [&_input]:border-[0px] [&_input]:border-none [&_input]:border-[color:currentcolor] [&:focus-within]:[outline-color:#7fc1ff] [&:focus-within]:[outline-style:solid] [&:focus-within]:[outline-width:2px] [&_input:focus]:[outline-color:initial] [&_input:focus]:[outline-style:none] [&_input:focus]:[outline-width:initial] max-[700.01px]:[&&&]:[flex-basis:100%] search-field"
+    >
       <Icon name="search" size={17} /><input
+        class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#17365f] max-w-[100%] px-[12px] py-[11px] border-[1px] border-solid border-[color:rgb(212,_225,_241)] rounded-[7px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(39,_144,_232)] [&::placeholder]:text-[#8ea1bc]"
         aria-label="Cari indikator"
         placeholder="Cari indikator…"
         bind:value={search}
       />
     </div>
-    <select aria-label="Filter bidang indikator" bind:value={category}
+    <select
+      class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[11px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:[background-image:initial] [&&]:[background-color:white] text-[#17365f] [&&]:max-w-[250px] min-h-[37px] [&&]:w-[auto] px-[12px] py-[11px] border-[1px] border-solid [&&]:border-[color:var(--line)] rounded-[7px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:var(--line)] max-[700.01px]:[&&]:max-w-[none] max-[700.01px]:[&&]:grow max-[700.01px]:[&&]:shrink max-[700.01px]:[&&]:[flex-basis:0%] max-[700.01px]:[&&]:min-w-[0]"
+      aria-label="Filter bidang indikator"
+      bind:value={category}
       ><option value="">Semua bidang</option>{#each categories as item}<option>{item}</option
         >{/each}</select
     >
-    <select aria-label="Filter status indikator" bind:value={status}
+    <select
+      class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[11px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:[background-image:initial] [&&]:[background-color:white] text-[#17365f] [&&]:max-w-[250px] min-h-[37px] [&&]:w-[auto] px-[12px] py-[11px] border-[1px] border-solid [&&]:border-[color:var(--line)] rounded-[7px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:var(--line)] max-[700.01px]:[&&]:max-w-[none] max-[700.01px]:[&&]:grow max-[700.01px]:[&&]:shrink max-[700.01px]:[&&]:[flex-basis:0%] max-[700.01px]:[&&]:min-w-[0]"
+      aria-label="Filter status indikator"
+      bind:value={status}
       ><option value="all">Semua status</option><option value="achieved">Tercapai</option><option
         value="progress">Dalam proses</option
       ><option value="revision">Perlu tindak lanjut</option></select
@@ -255,21 +346,45 @@
 
   {#each categories as group}
     {@const grouped = rows.filter((i) => definition(i.definitionId).category === group)}
-    {#if grouped.length}<section class="indicator-group" aria-label={group}>
-        <header class="group-heading">
-          <h2>{group}</h2>
-          <span>{grouped.length} indikator</span>
+    {#if grouped.length}<section
+        class="[&&]:[background-image:initial] [&&]:[background-color:white] [&&]:[box-shadow:0_2px_5px_#0c4a6e05] [&&]:mb-[18px] [&&]:p-[18px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:var(--line)] [&&]:rounded-[14px] max-[700.01px]:[&&]:p-[12px] indicator-group"
+        aria-label={group}
+      >
+        <header
+          class="[&&]:flex [&&]:items-center [&&]:justify-between [&&]:gap-y-[16px] [&&]:gap-x-[16px] [&&]:mb-[14px] group-heading"
+        >
+          <h2
+            class="font-[650] [&&]:text-[color:var(--ink)] [&&]:text-[13px] [&&]:tracking-[-0.15px] m-[0px]"
+          >
+            {group}
+          </h2>
+          <span class="[&&]:text-[11px] [&&]:text-[color:var(--muted)]"
+            >{grouped.length} indikator</span
+          >
         </header>
         {#each grouped as item (item.id)}
           {@const d = definition(item.definitionId)}
           {@const draft = drafts[item.id]}
           {@const feedback = comments(item.id)}
           {@const revising = feedback.some((f) => f.requiresRevision && f.state !== 'closed')}
-          <article class="indicator-card" aria-label={`Indikator: ${d.name}`}>
-            <header class="card-heading">
-              <div>
-                <h3>{d.name}</h3>
-                <p>{d.description || `Satuan: ${d.unit}`}</p>
+          <article
+            class="[&&]:[background-image:initial] [&&]:[background-color:rgb(246,_251,_255)] [&&]:p-[16px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:var(--line)] [&&]:rounded-[12px] max-[700.01px]:[&&]:p-[12px] [&+.indicator-card]:mt-[12px] indicator-card"
+            aria-label={`Indikator: ${d.name}`}
+          >
+            <header
+              class="[&&]:flex [&&]:items-start [&&]:justify-between [&&]:gap-y-[16px] [&&]:gap-x-[16px] [&&]:mb-[18px] max-[700.01px]:[&&]:gap-y-[8px] max-[700.01px]:[&&]:gap-x-[8px] max-[700.01px]:[&&]:flex-wrap card-heading"
+            >
+              <div class="[&&]:min-w-[0]">
+                <h3
+                  class="font-[650] [&&]:text-[color:var(--ink)] [&&]:text-[12px] leading-[1.5] [&&]:wrap-anywhere m-[0px]"
+                >
+                  {d.name}
+                </h3>
+                <p
+                  class="[&&]:mt-[4px] mb-[0px] leading-[1.8] [&&]:text-[10px] [&&]:text-[color:var(--muted)] mx-[0px]"
+                >
+                  {d.description || `Satuan: ${d.unit}`}
+                </p>
               </div>
               <Badge
                 tone={dirty(item) || revising
@@ -289,16 +404,27 @@
               >
             </header>
             <form
+              class="[&_label]:flex [&_label]:flex-col [&_label]:gap-y-[9px] [&_label]:gap-x-[9px] [&_label]:text-[12px] [&_label]:font-[600] [&_label]:mb-[18px] [&_input]:w-[100%] [&_textarea]:w-[100%]"
               onsubmit={(event) => {
                 event.preventDefault();
                 void save(item);
               }}
             >
-              <div class="card-fields">
-                <div class="field">
-                  <label for={`actual-${item.id}`}>Nilai aktual</label>
-                  <div class="unit-input">
+              <div
+                class="[&&]:grid [&&]:grid-cols-[1fr_1fr_1.2fr_1.6fr] [&&]:gap-y-[20px] [&&]:gap-x-[20px] max-[1150.01px]:[&&]:grid-cols-[repeat(3,_minmax(0,_1fr))] max-[1150.01px]:[&&]:gap-y-[16px] max-[1150.01px]:[&&]:gap-x-[16px] max-[700.01px]:[&&]:grid-cols-[repeat(2,_minmax(0,_1fr))] max-[700.01px]:[&&]:gap-y-[14px] max-[700.01px]:[&&]:gap-x-[14px] card-fields"
+              >
+                <div
+                  class="[&&]:min-w-[0] max-[700.01px]:[&:nth-child(3)]:[grid-column-start:1] max-[700.01px]:[&:nth-child(3)]:[grid-column-end:-1] field"
+                >
+                  <label
+                    class="[&&]:block [&&]:text-[10px] [&&]:text-[color:var(--ink)] [&&]:font-[650] [&&]:mt-[0px] [&&]:mb-[8px] [&&]:mx-[0px]"
+                    for={`actual-${item.id}`}>Nilai aktual</label
+                  >
+                  <div
+                    class="[&&]:flex [&&]:items-stretch [&&]:overflow-x-hidden [&&]:overflow-y-hidden [&&]:[background-image:initial] [&&]:[background-color:white] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(201,_229,_248)] [&&]:rounded-[7px] [&:focus-within]:[outline-color:rgb(56,_189,_248)] [&:focus-within]:[outline-style:solid] [&:focus-within]:[outline-width:2px] [&:focus-within]:outline-offset-[2px] unit-input"
+                  >
                     <input
+                      class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:text-[color:var(--ink)] max-w-[100%] [&&]:min-w-[0] [&&]:grow [&&]:shrink [&&]:[flex-basis:0%] [&&]:w-[0] [&&]:[box-shadow:none] [&&]:[outline-color:initial] [&&]:[outline-style:none] [&&]:[outline-width:initial] [&&]:p-[10px] [&&]:m-[0px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[0px] [&:focus]:[outline-color:initial] [&:focus]:[outline-style:none] [&:focus]:[outline-width:initial] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:currentcolor] [&::placeholder]:text-[color:var(--ink)] [&:disabled]:[background-image:initial] [&:disabled]:[background-color:rgb(237,_244,_248)] [&:disabled]:text-[#607d90] [&:disabled]:cursor-not-allowed"
                       id={`actual-${item.id}`}
                       aria-label={`Nilai aktual ${d.name}`}
                       type="number"
@@ -311,26 +437,55 @@
                         const value = event.currentTarget.valueAsNumber;
                         edit(item).current = Number.isNaN(value) ? undefined : value;
                       }}
-                    /><span>{d.unit}</span>
+                    /><span
+                      class="[&&]:flex [&&]:shrink-0 [&&]:items-center [&&]:[background-image:initial] [&&]:[background-color:rgb(234,_246,_255)] [&&]:text-[10px] [&&]:w-[max-content] [&&]:max-w-[60%] [&&]:wrap-anywhere [&&]:px-[9px] [&&]:py-[0px]"
+                      >{d.unit}</span
+                    >
                   </div>
                   <small
+                    class="[&&]:text-[10px] [&&]:text-[color:var(--muted)] [&&]:leading-[1.7] [&&]:block [&&]:mt-[6px] [&&]:wrap-anywhere"
                     >{item.unfilled
                       ? 'Belum diisi'
                       : `Tersimpan: ${number(item.current)} ${d.unit}`}</small
                   >
                 </div>
-                <div class="field">
-                  <span class="field-label">Target indikator</span>
-                  <div class="reference-value">{number(item.target)} <span>{d.unit}</span></div>
-                  <small>Ditetapkan oleh Admin PF</small>
+                <div
+                  class="[&&]:min-w-[0] max-[700.01px]:[&:nth-child(3)]:[grid-column-start:1] max-[700.01px]:[&:nth-child(3)]:[grid-column-end:-1] field"
+                >
+                  <span
+                    class="[&&]:block [&&]:text-[10px] [&&]:text-[color:var(--ink)] [&&]:font-[650] [&&]:mt-[0px] [&&]:mb-[8px] [&&]:mx-[0px] field-label"
+                    >Target indikator</span
+                  >
+                  <div
+                    class="[&&]:flex [&&]:items-center [&&]:justify-between [&&]:gap-y-[6px] [&&]:gap-x-[6px] [&&]:min-h-[39px] [&&]:[background-image:initial] [&&]:[background-color:rgb(238,_247,_252)] [&&]:text-[12px] [&&]:px-[10px] [&&]:py-[9px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:var(--line)] [&&]:rounded-[7px] reference-value"
+                  >
+                    {number(item.target)}
+                    <span class="[&&]:text-[10px] [&&]:text-[color:var(--muted)] [&&]:wrap-anywhere"
+                      >{d.unit}</span
+                    >
+                  </div>
+                  <small
+                    class="[&&]:text-[10px] [&&]:text-[color:var(--muted)] [&&]:leading-[1.7] [&&]:block [&&]:mt-[6px] [&&]:wrap-anywhere"
+                    >Ditetapkan oleh Admin PF</small
+                  >
                 </div>
-                <div class="field">
-                  <span class="field-label">Baseline &amp; capaian</span>
-                  <div class="baseline-value">
-                    Baseline <strong>{number(item.baseline)} {d.unit}</strong>
+                <div
+                  class="[&&]:min-w-[0] max-[700.01px]:[&:nth-child(3)]:[grid-column-start:1] max-[700.01px]:[&:nth-child(3)]:[grid-column-end:-1] field"
+                >
+                  <span
+                    class="[&&]:block [&&]:text-[10px] [&&]:text-[color:var(--ink)] [&&]:font-[650] [&&]:mt-[0px] [&&]:mb-[8px] [&&]:mx-[0px] field-label"
+                    >Baseline &amp; capaian</span
+                  >
+                  <div
+                    class="[&&]:text-[10px] [&&]:leading-[1.8] [&&]:mb-[12px] [&&]:text-[color:var(--muted)] baseline-value"
+                  >
+                    Baseline <strong
+                      class="font-[650] [&&]:block [&&]:text-[12px] [&&]:text-[color:var(--ink)] [&&]:wrap-anywhere"
+                      >{number(item.baseline)} {d.unit}</strong
+                    >
                   </div>
                   <div
-                    class="meter"
+                    class="[&&]:h-[5px] [&&]:overflow-x-hidden [&&]:overflow-y-hidden [&&]:[background-image:initial] [&&]:[background-color:rgb(225,_242,_252)] [&&]:rounded-[10px] meter"
                     class:achieved={item.current >= item.target}
                     role="progressbar"
                     aria-label={`Capaian ${d.name}`}
@@ -338,15 +493,25 @@
                     aria-valuemin="0"
                     aria-valuemax="100"
                   >
-                    <span style:width={`${progress(item)}%`}></span>
+                    <span
+                      class="w-[var(--progress)] [&&]:block [&&]:h-[100%] [&&]:[background-image:initial] [&&]:[background-color:rgb(2,_132,_199)] [&&]:rounded-[inherit] [.meter.achieved>&]:[background-image:initial] [.meter.achieved>&]:[background-color:rgb(32,_165,_106)]"
+                      style:--progress={`${progress(item)}%`}
+                    ></span>
                   </div>
                   <small
+                    class="[&&]:text-[10px] [&&]:text-[color:var(--muted)] [&&]:leading-[1.7] [&&]:block [&&]:mt-[6px] [&&]:wrap-anywhere"
                     >{number(progress(item))}% dari target{#if item.current < item.target}
                       · kurang {number(item.target - item.current)} {d.unit}{/if}</small
                   >
                 </div>
-                <div class="field note-field">
-                  <label for={`note-${item.id}`}>Catatan perkembangan</label><textarea
+                <div
+                  class="[&&]:min-w-[0] max-[1150.01px]:[&&]:[grid-column-start:1] max-[1150.01px]:[&&]:[grid-column-end:-1] max-[700.01px]:[&:nth-child(3)]:[grid-column-start:1] max-[700.01px]:[&:nth-child(3)]:[grid-column-end:-1] max-[700.01px]:[&&]:[grid-column-start:1] max-[700.01px]:[&&]:[grid-column-end:-1] field note-field"
+                >
+                  <label
+                    class="[&&]:block [&&]:text-[10px] [&&]:text-[color:var(--ink)] [&&]:font-[650] [&&]:mt-[0px] [&&]:mb-[8px] [&&]:mx-[0px]"
+                    for={`note-${item.id}`}>Catatan perkembangan</label
+                  ><textarea
+                    class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[11px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:[background-image:initial] [&&]:[background-color:white] [&&]:text-[color:var(--ink)] max-w-[100%] [&&]:[resize:vertical] [&&]:min-h-[65px] [&&]:block [&&]:w-[100%] [&&]:px-[10px] [&&]:py-[9px] [&&]:m-[0px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(201,_229,_248)] [&&]:rounded-[7px] [&:focus]:[outline-color:#38bdf8] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(56,_189,_248)] [&::placeholder]:text-[color:var(--ink)] [&:disabled]:[background-image:initial] [&:disabled]:[background-color:rgb(237,_244,_248)] [&:disabled]:text-[#607d90] [&:disabled]:cursor-not-allowed"
                     id={`note-${item.id}`}
                     aria-label={`Catatan perkembangan ${d.name}`}
                     rows="2"
@@ -357,23 +522,29 @@
                       edit(item).note = event.currentTarget.value;
                     }}
                     placeholder="Periode data, kegiatan, dan hasil yang dicapai…"></textarea><small
+                    class="[&&]:text-[10px] [&&]:text-[color:var(--muted)] [&&]:leading-[1.7] [&&]:block [&&]:mt-[6px] [&&]:wrap-anywhere"
                     >Sertakan sumber atau konteks data untuk membantu verifikasi.</small
                   >
                 </div>
               </div>
-              <footer class="card-footer">
-                <small><Icon name="clock" size={13} />Diperbarui {date(item.updatedAt)}</small>
-                <div>
+              <footer
+                class="[&&]:flex [&&]:items-center [&&]:justify-between [&&]:gap-y-[12px] [&&]:gap-x-[12px] [&&]:mt-[16px] max-[700.01px]:[&&]:items-start max-[700.01px]:[&&]:flex-wrap card-footer"
+              >
+                <small
+                  class="[&&]:text-[9px] [&&]:text-[color:var(--muted)] leading-[1.7] [&&]:flex [&&]:items-center [&&]:gap-y-[7px] [&&]:gap-x-[7px]"
+                  ><Icon name="clock" size={13} />Diperbarui {date(item.updatedAt)}</small
+                >
+                <div class="[&&]:flex [&&]:items-center [&&]:gap-y-[7px] [&&]:gap-x-[7px]">
                   {#if dirty(item)}<button
                       type="button"
-                      class="cancel-edit"
+                      class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [&&]:font-[600] [font-stretch:inherit] [&&]:text-[10px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer [&&]:text-[color:var(--muted)] [&&]:inline-flex [&&]:items-center [&&]:justify-center [&&]:gap-y-[5px] [&&]:gap-x-[5px] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:px-[10px] [&&]:py-[7px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:transparent] [&&]:rounded-[6px] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] cancel-edit"
                       disabled={disabled || !!saving}
                       onclick={() => {
                         delete drafts[item.id];
                         saveFailed = false;
                       }}>Batal</button
                     >{/if}<button
-                    class="save-indicator"
+                    class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [&&]:font-[600] [font-stretch:inherit] [&&]:text-[10px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer [&&]:text-[#0278b3] [&&]:inline-flex [&&]:items-center [&&]:justify-center [&&]:gap-y-[5px] [&&]:gap-x-[5px] [&&]:[background-image:initial] [&&]:[background-color:white] [&&]:px-[10px] [&&]:py-[7px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(201,_229,_248)] [&&]:rounded-[6px] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:enabled:hover]:text-[white] [&:enabled:hover]:[background-image:initial] [&:enabled:hover]:[background-color:rgb(2,_132,_199)] [&:enabled:hover]:border-[color:rgb(2,_132,_199)] save-indicator"
                     disabled={disabled ||
                       !!saving ||
                       !dirty(item) ||
@@ -387,13 +558,21 @@
                 </div>
               </footer>
             </form>
-            {#if feedback.length}<div class="indicator-feedback" aria-label={`Feedback ${d.name}`}>
+            {#if feedback.length}<div
+                class="[&&]:mt-[14px] indicator-feedback"
+                aria-label={`Feedback ${d.name}`}
+              >
                 {#each feedback as comment}<div
-                    class="feedback-entry"
+                    class="[&&]:[background-image:initial] [&&]:[background-color:rgb(255,_246,_220)] [&&]:[border-left-width:3px] [&&]:[border-left-style:solid] [&&]:[border-left-color:rgb(224,_172,_73)] [&&]:[border-top-left-radius:0px] [&&]:[border-top-right-radius:8px] [&&]:[border-bottom-right-radius:8px] [&&]:[border-bottom-left-radius:0px] [&&]:px-[14px] [&&]:py-[12px] [&.resolved]:[background-image:initial] [&.resolved]:[background-color:rgb(237,_249,_242)] [&.resolved]:border-[color:rgb(102,_185,_139)] feedback-entry"
                     class:resolved={comment.state === 'closed'}
                   >
-                    <div class="feedback-heading">
-                      <span class="feedback-avatar">PF</span><strong>Admin PF</strong><Badge
+                    <div
+                      class="[&&]:flex [&&]:items-center [&&]:gap-y-[8px] [&&]:gap-x-[8px] [&&]:flex-wrap [&&]:text-[10px] feedback-heading"
+                    >
+                      <span
+                        class="[&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:w-[25px] [&&]:h-[25px] [&&]:[background-image:initial] [&&]:[background-color:rgb(14,_165,_233)] [&&]:text-[white] [&&]:text-[9px] [&&]:font-[700] [&&]:rounded-[50%] feedback-avatar"
+                        >PF</span
+                      ><strong class="font-[650]">Admin PF</strong><Badge
                         tone={comment.state === 'closed'
                           ? 'green'
                           : comment.state === 'responded'
@@ -402,27 +581,37 @@
                         >{comment.requiresRevision
                           ? feedbackLabel[comment.state]
                           : 'Catatan'}</Badge
-                      ><small>{date(comment.createdAt)}</small>
+                      ><small class="[&&]:text-[9px] text-[color:var(--muted)] leading-[1.7]"
+                        >{date(comment.createdAt)}</small
+                      >
                     </div>
-                    <p class="pre-wrap">{comment.text}</p>
+                    <p
+                      class="[&&]:mt-[8px] mb-[0px] leading-[1.8] [white-space-collapse:preserve] [text-wrap-mode:wrap] wrap-anywhere [&&]:text-[11px] mx-[0px] pre-wrap"
+                    >
+                      {comment.text}
+                    </p>
                   </div>{/each}
               </div>{/if}
           </article>
         {/each}
       </section>{/if}
   {/each}
-  {#if !rows.length}<div class="indicator-group">
+  {#if !rows.length}<div
+      class="[&&]:[background-image:initial] [&&]:[background-color:white] [&&]:[box-shadow:0_2px_5px_#0c4a6e05] [&&]:mb-[18px] [&&]:p-[18px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:var(--line)] [&&]:rounded-[14px] max-[700.01px]:[&&]:p-[12px] indicator-group"
+    >
       <Empty
         title="Tidak ada indikator yang cocok"
         description="Ubah pencarian, bidang, atau filter status."
       />
     </div>{/if}
 
-  <div class="indicator-submit">
+  <div
+    class="[&&]:sticky [&&]:bottom-[12px] [&&]:z-[12] [&&]:mt-[20px] max-[700.01px]:[&&]:bottom-[8px] indicator-submit"
+  >
     <SubmissionStatus compact blocked={dirtyCount > 0 || !!saving}>
       {#snippet statusIcon()}
         <span
-          class="save-status floating-save-icon"
+          class="[&&]:flex [&&]:items-center [&&]:gap-y-[6px] [&&]:gap-x-[6px] [&&]:text-[11px] [&&]:text-[#397866] [&&]:justify-center [&&]:w-[28px] [&&]:h-[28px] [&&]:[background-image:initial] [&&]:[background-color:rgb(237,_248,_244)] [&&]:rounded-[50%] [&.save-error]:text-[#b45309] [.status-labels>&]:flex [.status-labels>&]:items-center [.status-labels>&]:gap-y-[8px] [.status-labels>&]:gap-x-[8px] [.summary-heading>&]:text-[11px] [.summary-heading>&]:text-[color:var(--muted)] [.group-heading>&]:text-[11px] [.group-heading>&]:text-[color:var(--muted)] [.summary-metric>&]:text-[11px] [.summary-metric>&]:text-[color:var(--muted)] [.meter>&]:block [.meter>&]:h-[100%] [.meter>&]:[background-image:initial] [.meter>&]:[background-color:rgb(2,_132,_199)] [.meter>&]:rounded-[inherit] [.indicator-summary>.meter>&]:[background-image:initial] [.indicator-summary>.meter>&]:[background-color:rgb(32,_165,_106)] [.meter.achieved>&]:[background-image:initial] [.meter.achieved>&]:[background-color:rgb(32,_165,_106)] [.unit-input>&]:flex [.unit-input>&]:items-center [.unit-input>&]:text-[10px] [.unit-input>&]:w-[max-content] [.unit-input>&]:[background-image:initial] [.unit-input>&]:[background-color:rgb(234,_246,_255)] [.unit-input>&]:shrink-0 [.unit-input>&]:max-w-[60%] [.unit-input>&]:wrap-anywhere [.unit-input>&]:px-[9px] [.unit-input>&]:py-[0px] [.reference-value>&]:text-[10px] [.reference-value>&]:text-[color:var(--muted)] [.reference-value>&]:wrap-anywhere max-[700.01px]:[.card-fields>&:nth-child(3)]:[grid-column-start:1] max-[700.01px]:[.card-fields>&:nth-child(3)]:[grid-column-end:-1] save-status floating-save-icon"
           class:save-error={saveFailed || app.stale}
           role="img"
           aria-label={saveLabel}
@@ -434,542 +623,3 @@
     </SubmissionStatus>
   </div>
 </div>
-
-<style>
-  .heading-status {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 10px;
-  }
-  .save-status {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: #397866;
-  }
-  .save-error {
-    color: #b45309;
-  }
-  .floating-save-icon {
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: #edf8f4;
-  }
-  .save-spinner {
-    width: 15px;
-    height: 15px;
-    flex-shrink: 0;
-    border: 2px solid #c9e5f8;
-    border-top-color: #0284c7;
-    border-radius: 50%;
-    animation: saving-spin 0.8s linear infinite;
-  }
-  @keyframes saving-spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .save-spinner {
-      animation: none;
-    }
-  }
-  .campus-indicators {
-    --ink: #163e55;
-    --muted: #658295;
-    --line: #d8edf9;
-    color: var(--ink);
-    padding-bottom: 16px;
-  }
-  h1,
-  h2,
-  h3 {
-    color: var(--ink);
-  }
-  .indicator-heading {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 20px;
-    margin-bottom: 20px;
-  }
-  h1 {
-    font-size: 24px;
-    letter-spacing: -0.7px;
-  }
-  .indicator-heading p {
-    max-width: 700px;
-    font-size: 12px;
-    color: var(--muted);
-    margin-top: 8px;
-    line-height: 1.8;
-  }
-  .heading-tag,
-  .status-labels,
-  .status-labels > span {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .heading-tag {
-    padding: 7px 12px;
-    border: 1px solid var(--line);
-    border-radius: 20px;
-    background: #f1faff;
-    font-size: 11px;
-    white-space: nowrap;
-    color: #0278b3;
-  }
-  .status-strip,
-  .indicator-summary,
-  .indicator-group {
-    background: white;
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    box-shadow: 0 2px 5px #0c4a6e05;
-  }
-  .status-strip {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
-    padding: 14px 18px;
-    margin-bottom: 16px;
-  }
-  .status-labels {
-    flex-wrap: wrap;
-    gap: 14px;
-    font-size: 11px;
-    color: var(--muted);
-  }
-  .status-strip p {
-    color: var(--muted);
-    font-size: 10px;
-  }
-  .indicator-summary {
-    padding: 20px;
-    margin-bottom: 18px;
-  }
-  .summary-heading,
-  .group-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-  }
-  h2 {
-    font-size: 13px;
-    letter-spacing: -0.15px;
-  }
-  .summary-heading > span,
-  .group-heading > span {
-    font-size: 11px;
-    color: var(--muted);
-  }
-  .summary-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
-    margin: 16px 0;
-  }
-  .summary-metric {
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 15px;
-  }
-  .summary-metric:first-child {
-    border-left: 3px solid #0ea5e9;
-  }
-  .summary-metric > span {
-    font-size: 11px;
-    color: var(--muted);
-  }
-  .summary-metric > strong {
-    display: block;
-    font-size: 27px;
-    line-height: 1.6;
-    letter-spacing: -0.8px;
-  }
-  .summary-metric small {
-    font-size: 12px;
-    letter-spacing: 0;
-    color: var(--muted);
-    font-weight: 500;
-  }
-  .summary-metric p,
-  .summary-help {
-    font-size: 10px;
-    color: var(--muted);
-  }
-  .summary-help {
-    margin-top: 12px;
-  }
-  .submission-history {
-    margin: -4px 0 16px;
-    color: var(--muted);
-    font-size: 11px;
-  }
-  .meter {
-    height: 5px;
-    border-radius: 10px;
-    overflow: hidden;
-    background: #e1f2fc;
-  }
-  .meter > span {
-    display: block;
-    height: 100%;
-    background: #0284c7;
-    border-radius: inherit;
-  }
-  .indicator-summary > .meter > span,
-  .meter.achieved > span {
-    background: #20a56a;
-  }
-  .indicator-filters {
-    display: flex;
-    gap: 10px;
-    margin: 20px 0;
-  }
-  .indicator-filters .search-field {
-    flex: 1;
-    min-width: 0;
-    max-width: none;
-  }
-  .indicator-filters select {
-    width: auto;
-    max-width: 250px;
-    background: white;
-    font-size: 11px;
-    border-color: var(--line);
-  }
-  .indicator-group {
-    padding: 18px;
-    margin-bottom: 18px;
-  }
-  .group-heading {
-    margin-bottom: 14px;
-  }
-  .indicator-card {
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    background: #f6fbff;
-    padding: 16px;
-  }
-  .indicator-card + .indicator-card {
-    margin-top: 12px;
-  }
-  .card-heading {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 18px;
-  }
-  .card-heading > div {
-    min-width: 0;
-  }
-  h3 {
-    font-size: 12px;
-    overflow-wrap: anywhere;
-  }
-  .card-heading p {
-    font-size: 10px;
-    color: var(--muted);
-    margin-top: 4px;
-  }
-  .card-fields {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1.2fr 1.6fr;
-    gap: 20px;
-  }
-  .field {
-    min-width: 0;
-  }
-  .field label,
-  .field-label {
-    display: block;
-    font-size: 10px;
-    color: var(--ink);
-    font-weight: 650;
-    margin: 0 0 8px;
-  }
-  .field small {
-    display: block;
-    margin-top: 6px;
-    font-size: 10px;
-    color: var(--muted);
-    line-height: 1.7;
-    overflow-wrap: anywhere;
-  }
-  .unit-input {
-    display: flex;
-    align-items: stretch;
-    border: 1px solid #c9e5f8;
-    border-radius: 7px;
-    overflow: hidden;
-    background: white;
-  }
-  .unit-input:focus-within {
-    outline: 2px solid #38bdf8;
-    outline-offset: 2px;
-  }
-  .unit-input input {
-    min-width: 0;
-    flex: 1;
-    width: 0;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-    outline: none;
-    margin: 0;
-    padding: 10px;
-    font-size: 12px;
-    color: var(--ink);
-    background: transparent;
-  }
-  .unit-input > span {
-    display: flex;
-    flex-shrink: 0;
-    align-items: center;
-    background: #eaf6ff;
-    font-size: 10px;
-    padding: 0 9px;
-    width: max-content;
-    max-width: 60%;
-    overflow-wrap: anywhere;
-  }
-  .reference-value {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-    min-height: 39px;
-    padding: 9px 10px;
-    border: 1px solid var(--line);
-    border-radius: 7px;
-    background: #eef7fc;
-    font-size: 12px;
-  }
-  .reference-value > span {
-    font-size: 10px;
-    color: var(--muted);
-    overflow-wrap: anywhere;
-  }
-  .baseline-value {
-    font-size: 10px;
-    line-height: 1.8;
-    margin-bottom: 12px;
-    color: var(--muted);
-  }
-  .baseline-value strong {
-    display: block;
-    font-size: 12px;
-    color: var(--ink);
-    overflow-wrap: anywhere;
-  }
-  .field textarea {
-    display: block;
-    width: 100%;
-    min-height: 65px;
-    resize: vertical;
-    margin: 0;
-    border: 1px solid #c9e5f8;
-    border-radius: 7px;
-    background: white;
-    padding: 9px 10px;
-    font-size: 11px;
-    color: var(--ink);
-  }
-  .field textarea:focus {
-    outline-color: #38bdf8;
-    border-color: #38bdf8;
-  }
-  .field input:disabled,
-  .field textarea:disabled {
-    color: #607d90;
-    cursor: not-allowed;
-    background: #edf4f8;
-  }
-  .card-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-top: 16px;
-  }
-  .card-footer > small,
-  .card-footer > div {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-  }
-  .card-footer > small {
-    font-size: 9px;
-    color: var(--muted);
-  }
-  .save-indicator,
-  .cancel-edit {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    border: 1px solid #c9e5f8;
-    border-radius: 6px;
-    padding: 7px 10px;
-    font-size: 10px;
-    font-weight: 600;
-    background: white;
-    color: #0278b3;
-  }
-  .save-indicator:enabled:hover {
-    background: #0284c7;
-    border-color: #0284c7;
-    color: white;
-  }
-  .cancel-edit {
-    border-color: transparent;
-    background: transparent;
-    color: var(--muted);
-  }
-  .indicator-feedback {
-    margin-top: 14px;
-  }
-  .feedback-entry,
-  .review-note {
-    background: #fff6dc;
-    border-left: 3px solid #e0ac49;
-    padding: 12px 14px;
-    border-radius: 0 8px 8px 0;
-  }
-  .feedback-entry + .feedback-entry {
-    margin-top: 8px;
-  }
-  .feedback-entry.resolved {
-    background: #edf9f2;
-    border-color: #66b98b;
-  }
-  .feedback-heading {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    font-size: 10px;
-  }
-  .feedback-avatar {
-    display: grid;
-    place-items: center;
-    width: 25px;
-    height: 25px;
-    border-radius: 50%;
-    background: #0ea5e9;
-    color: white;
-    font-size: 9px;
-    font-weight: 700;
-  }
-  .feedback-heading small {
-    font-size: 9px;
-  }
-  .feedback-entry p,
-  .review-note p {
-    font-size: 11px;
-    margin-top: 8px;
-  }
-  .review-note {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 16px;
-    font-size: 12px;
-  }
-  .indicator-submit {
-    position: sticky;
-    bottom: 12px;
-    z-index: 12;
-    margin-top: 20px;
-  }
-  @media (max-width: 1150px) {
-    .card-fields {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
-    }
-    .note-field {
-      grid-column: 1 / -1;
-    }
-  }
-  @media (max-width: 700px) {
-    h1 {
-      font-size: 22px;
-    }
-    .indicator-heading {
-      flex-wrap: wrap;
-      align-items: flex-start;
-      gap: 10px;
-    }
-    .heading-status {
-      align-items: flex-start;
-    }
-    .heading-tag {
-      font-size: 9px;
-      padding: 6px 8px;
-    }
-    .indicator-heading p {
-      font-size: 11px;
-    }
-    .status-strip {
-      padding: 12px;
-    }
-    .summary-grid {
-      grid-template-columns: 1fr;
-      gap: 8px;
-    }
-    .summary-metric {
-      padding: 12px;
-    }
-    .summary-metric > strong {
-      font-size: 24px;
-    }
-    .indicator-summary {
-      padding: 14px;
-    }
-    .indicator-filters {
-      flex-wrap: wrap;
-    }
-    .indicator-filters .search-field {
-      flex-basis: 100%;
-    }
-    .indicator-filters select {
-      flex: 1;
-      min-width: 0;
-      max-width: none;
-    }
-    .indicator-group {
-      padding: 12px;
-    }
-    .indicator-card {
-      padding: 12px;
-    }
-    .card-heading {
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .card-fields {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
-    }
-    .card-fields > :nth-child(3),
-    .note-field {
-      grid-column: 1 / -1;
-    }
-    .card-footer {
-      align-items: flex-start;
-      flex-wrap: wrap;
-    }
-    .indicator-submit {
-      bottom: 8px;
-    }
-  }
-</style>

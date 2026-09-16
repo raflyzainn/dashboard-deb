@@ -22,7 +22,8 @@
     plus: 'M12 5v14M5 12h14',
     search: 'M21 21l-5-5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',
     edit: 'm14 4 6 6M3 21l5-1L21 7l-5-5L3 15v6Z',
-    calendar: 'M8 2v4m8-4v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2ZM7 14h2m4 0h2m-8 4h2',
+    calendar:
+      'M8 2v4m8-4v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2ZM7 14h2m4 0h2m-8 4h2',
     clock: 'M12 6v6l4 2M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0',
     upload: 'M12 16V3m-5 5 5-5 5 5M4 15v6h16v-6',
     download: 'M12 3v13m-5-5 5 5 5-5M4 17v4h16v-4',
@@ -41,6 +42,7 @@
   };
 </script>
 <svg
+  class="shrink-0"
   width={size}
   height={size}
   viewBox="0 0 24 24"

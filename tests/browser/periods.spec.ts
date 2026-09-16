@@ -55,7 +55,7 @@ test('admin opens a copied period; campus fills fresh values and can only read t
   await page.getByRole('button',{name:'Ya, buka periode',exact:true}).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.setViewportSize({width:1440,height:1000});
-  expect((await page.locator('aside.sidebar').boundingBox())!.width).toBeLessThan(224);
+  await expect(page.locator('aside.sidebar')).toHaveCSS('width', '224px');
   await page.screenshot({path:'.qa/period-admin-desktop.png'});
   await page.setViewportSize({width:390,height:844});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
