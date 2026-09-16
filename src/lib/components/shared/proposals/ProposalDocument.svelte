@@ -53,7 +53,7 @@
     <iframe
       src={url + '#view=Fit&navpanes=0'}
       title={`Pratinjau ${proposal.filename}`}
-      class="h-[300px] max-[700px]:h-[260px] w-full rounded-[8px] border border-[#dce7f7] bg-[#f3f7ff]"
+      class="h-[620px] max-[700px]:h-[400px] w-full rounded-[8px] border border-[#dce7f7] bg-[#f3f7ff]"
     ></iframe>
     <div class="mt-[12px] flex flex-wrap items-center justify-between gap-[12px] text-[12px]">
       <p class="text-[#647699]">

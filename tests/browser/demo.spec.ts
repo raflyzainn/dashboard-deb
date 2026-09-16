@@ -49,7 +49,7 @@ test('static demo: autosave, PDF versions, admin response, persistence and reset
   await page.getByRole('button', { name: 'Ajukan versi baru', exact: true }).click();
   await expect(page.locator('iframe')).toHaveAttribute('title', 'Pratinjau demo-upload.pdf');
   await expect(page.locator('iframe')).toHaveCount(1);
-  await expect(page.locator('iframe')).toHaveCSS('height', '300px');
+  await expect(page.locator('iframe')).toHaveCSS('height', '620px');
   await expect(page.getByRole('heading', { name: 'Riwayat versi', exact: true })).toBeVisible();
   await logout(page);
   await login(page, 'admin-1');

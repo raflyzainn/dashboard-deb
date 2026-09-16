@@ -30,7 +30,7 @@ test('proposal versions preview automatically and admin responses persist with c
     await expect(page.locator('iframe')).toHaveCount(1);
     await expect(page.getByRole('heading',{name:'Proposal terbaru',exact:true})).toBeVisible();
     await expect(page.getByRole('heading',{name:'Riwayat versi',exact:true})).toBeVisible();
-    await expect(page.locator('iframe')).toHaveCSS('height','300px');
+    await expect(page.locator('iframe')).toHaveCSS('height','620px');
     const data = await (await page.request.get('/api/views/proposals', {headers:headers('campus-010')})).json();
     const latest = data.data.proposals.find((p:any)=>p.id===uploaded[1]);
     const previous = data.data.proposals.find((p:any)=>p.id===uploaded[0]);

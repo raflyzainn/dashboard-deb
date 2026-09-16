@@ -32,7 +32,7 @@
       goto(`/${app.session.role}/dashboard`);
   }
 </script>
-<svelte:head><title>Demo mandiri Â· Digitalisasi DEB</title></svelte:head>
+<svelte:head><title>Demo mandiri · Digitalisasi DEB</title></svelte:head>
 
 <main
   id="main-content"
@@ -75,7 +75,7 @@
       >
         <div>
           <strong class="font-[650]"
-            >{app.accounts.filter((a) => a.role === 'campus').length || 'â€”'}</strong
+            >{app.accounts.filter((a) => a.role === 'campus').length || '—'}</strong
           ><span>Kampus mitra</span>
         </div>
         <div><strong class="font-[650]">Demo</strong><span>Sumber data tunggal</span></div>
@@ -164,7 +164,7 @@
           id="account-search"
           type="search"
           bind:value={search}
-          placeholder={role === 'campus' ? 'Ketik nama kampusâ€¦' : 'Ketik nama administratorâ€¦'}
+          placeholder={role === 'campus' ? 'Ketik nama kampus...' : 'Ketik nama administrator...'}
           disabled={app.accountsLoading || app.loading}
         />
         <div
@@ -220,11 +220,11 @@
         <button
           class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[650] [font-stretch:inherit] text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[white] inline-flex items-center [&&]:justify-center gap-y-[9px] gap-x-[9px] min-h-[42px] [background-image:linear-gradient(135deg,_rgb(8,_119,_216),_rgb(21,_89,_214))] [background-color:initial] [transition-behavior:normal,_normal] [transition-duration:0.15s,_0.15s] [transition-timing-function:ease,_ease] [transition-delay:0s,_0s] [transition-property:background,_box-shadow] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [box-shadow:0_8px_18px_#075fc71a] px-[18px] py-[11px] border-[1px] border-solid border-[color:rgb(8,_107,_201)] rounded-[8px] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:linear-gradient(135deg,_rgb(5,_104,_196),_rgb(18,_75,_197))] [&:hover:not(:disabled)]:[background-color:initial] [&:hover:not(:disabled)]:[box-shadow:0_10px_24px_#075fc72c] max-[700.01px]:text-[11px] max-[700.01px]:px-[15px] max-[700.01px]:py-[10px] button"
           disabled={!account || app.accountsLoading || app.loading}
-          >{app.loading ? 'Memuat demoâ€¦' : 'Buka ruang kerja'}<Icon name="arrow" /></button
+          >{app.loading ? 'Memuat demo...' : 'Buka ruang kerja'}<Icon name="arrow" /></button
         >
       </form>
       {#if app.accountsLoading}<p class="[&&]:leading-[1.6] m-[0px]" role="status">
-          Memuat akun demoâ€¦
+          Memuat akun demo...
         </p>{:else if !app.accounts.length}<p class="[&&]:leading-[1.6] m-[0px]">
           Daftar akun demo belum tersedia. Izinkan penyimpanan browser dan coba muat ulang.
         </p>{/if}
