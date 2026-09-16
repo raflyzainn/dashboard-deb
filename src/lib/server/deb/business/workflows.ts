@@ -3,6 +3,7 @@
 import { PreviewError as ApiError } from "../preview-error";
 import { StoreRecord as Record } from "../rest-store";
 import { security as $security } from "../security";
+import { activeDefinitions, requireOpenDefinition, runPeriod } from "./periods";
 import { runMaster } from "./masters";
 const categories = ['indikator', 'proposal', 'social-mapping', 'toc', 'ikm', 'energi', 'ekonomi', 'sosial', 'umum'];
 function fail(message, status = 400) { throw new ApiError(status, message); }
@@ -21,9 +22,10 @@ function create(app, name, fields) {
   app.save(record); return record;
 }
 function snapshot(app, campus) {
-  return list(app, 'campus_indicators', 'campus = {:c} && definition.status = "active"', { c: campus }).map(r => {
+  const ids = new Set(activeDefinitions(app).map(d => d.id));
+  return list(app, 'campus_indicators', 'campus = {:c}', { c: campus }).filter(r => ids.has(r.getString('definition'))).map(r => {
     const d = get(app, 'indicator_definitions', r.getString('definition'));
-    return { id: r.id, campusId: campus, definitionId: d.id, name: d.getString('name'), category: d.getString('category'), unit: d.getString('unit'), description: d.getString('description'), baseline: d.getFloat('baseline'), target: d.getFloat('target'), current: r.getFloat('current'), note: r.getString('note'), updatedAt: r.getString('updated') };
+    return { id: r.id, campusId: campus, definitionId: d.id, name: d.getString('name'), category: d.getString('category'), unit: d.getString('unit'), description: d.getString('description'), baseline: d.getFloat('baseline'), target: d.getFloat('target'), current: r.getFloat('current'), unfilled: r.getBool('unfilled'), note: r.getString('note'), updatedAt: r.getString('updated') };
   });
 }
 function sameSnapshot(a, b) {
@@ -79,19 +81,21 @@ export const runWorkflow = (e) => {
     const activity = (c, kind, source, message) => create(app, 'activities', { campus: c, actor: actor.id, eventType: kind, sourceId: source, text: message, simulated: actor.getBool('simulated') });
     const event = (c, kind, source, message, recipientRole, target) => { activity(c, kind, source, message); notify(c, kind, source, message, recipientRole, target); };
     const pending = c => list(app, 'deb_submissions', 'campus = {:c} && status = "pending"', { c });
-    const revisions = c => list(app, 'indicator_feedback', 'campus = {:c} && requiresRevision = true && state != "closed"', { c });
+    const revisions = c => list(app, 'indicator_feedback', 'campus = {:c} && requiresRevision = true && state != "closed"', { c }).filter(f => activeDefinitions(app).some(d => d.id === get(app, 'campus_indicators', f.getString('indicator')).getString('definition')));
     const now = new Date().toISOString();
     result = { ok: true };
-    if (op.startsWith('master')) {
+    if (['masterCreatePeriod','masterOpenPeriod'].includes(op)) {
+      result = runPeriod(app, actor, op, payload);
+    } else if (op.startsWith('master')) {
       result = runMaster({ app, actor, op, payload, event });
     } else if (op === 'updateIndicator') {
       roleIs('campus'); const r = own(get(app, 'campus_indicators', payload.id));
-      if (get(app, 'indicator_definitions', r.getString('definition')).getString('status') !== 'active') fail('Indikator belum aktif.', 404);
+      requireOpenDefinition(app, r.getString('definition'));
       if (pending(campus).length) fail('Indikator dikunci selama menunggu review.', 409);
       if (typeof payload.current !== 'number' || !Number.isFinite(payload.current) || payload.current < 0) fail('Nilai aktual harus angka nonnegatif.');
       const note = text(payload.note, 5000, false);
-      if (r.getFloat('current') !== payload.current || r.getString('note') !== note) {
-        r.set('current', payload.current); r.set('note', note); app.save(r);
+      if (r.getBool('unfilled') || r.getFloat('current') !== payload.current || r.getString('note') !== note) {
+        r.set('unfilled', false); r.set('current', payload.current); r.set('note', note); app.save(r);
         list(app, 'indicator_feedback', 'indicator = {:i} && requiresRevision = true && state = "open"', { i: r.id }).forEach(f => { f.set('state', 'responded'); app.save(f); });
         event(campus, 'indicator_updated', r.id, 'Kampus memperbarui indikator.', 'admin', '/admin/campuses/' + campus);
       }
@@ -99,14 +103,16 @@ export const runWorkflow = (e) => {
       roleIs('campus');
       if (pending(campus).length) fail('Pengajuan masih menunggu review.', 409);
       const rows = snapshot(app, campus);
-      if (!rows.length || rows.length !== list(app, 'indicator_definitions', 'status = "active"').length || rows.some(r => !Number.isFinite(r.current) || r.current < 0 || r.target <= 0 || r.note.length > 5000)) fail('Lengkapi seluruh indikator sebelum mengirim.');
-      const previous = list(app, 'deb_submissions', 'campus = {:c}', { c: campus }, '-version')[0];
+      if (!rows.length || rows.length !== activeDefinitions(app).length || rows.some(r => r.unfilled || !Number.isFinite(r.current) || r.current < 0 || r.target <= 0 || r.note.length > 5000)) fail('Lengkapi seluruh indikator sebelum mengirim.');
+      const period = activeDefinitions(app)[0]?.getString('period') || '';
+      const previous = list(app, 'deb_submissions', 'campus = {:c} && period = {:p}', { c: campus, p: period }, '-version')[0];
       if (previous && previous.getString('status') === 'approved' && sameSnapshot(rows, JSON.parse(previous.get('snapshot')))) fail('Data terverifikasi belum berubah.', 409);
-      const r = create(app, 'deb_submissions', { campus, version: previous ? previous.getInt('version') + 1 : 1, status: 'pending', snapshot: rows, submittedBy: actor.id, submittedAt: now, simulated: actor.getBool('simulated') });
+      const r = create(app, 'deb_submissions', { campus, period, version: previous ? previous.getInt('version') + 1 : 1, status: 'pending', snapshot: rows, submittedBy: actor.id, submittedAt: now, simulated: actor.getBool('simulated') });
       result.id = r.id;
       event(campus, 'deb_submitted', r.id, 'Pengajuan DEB menunggu verifikasi.', 'admin', '/admin/verifikasi?submission=' + r.id);
     } else if (op === 'reviewDeb') {
       roleIs('admin'); const r = get(app, 'deb_submissions', payload.id), c = r.getString('campus');
+      if (r.getString('period') !== (activeDefinitions(app)[0]?.getString('period') || '')) fail('Pengajuan periode arsip tidak dapat diubah.', 409);
       if (r.getString('status') !== 'pending') fail('Pengajuan sudah diputuskan.', 409);
       if (!['approved', 'revision'].includes(payload.decision)) fail('Keputusan tidak valid.');
       const note = text(payload.note, 5000, payload.decision === 'revision');
@@ -116,12 +122,14 @@ export const runWorkflow = (e) => {
       event(c, 'deb_' + payload.decision, r.id, payload.decision === 'approved' ? 'Data DEB telah dikonfirmasi.' : 'Pengajuan DEB perlu revisi.', 'campus', '/campus/indicators');
     } else if (op === 'addFeedback') {
       roleIs('admin'); const indicator = get(app, 'campus_indicators', payload.id), c = indicator.getString('campus');
+      requireOpenDefinition(app, indicator.getString('definition'));
       if (typeof payload.requiresRevision !== 'boolean') fail('Jenis feedback tidak valid.');
       const r = create(app, 'indicator_feedback', { campus: c, indicator: indicator.id, author: actor.id, text: text(payload.text), requiresRevision: payload.requiresRevision, state: payload.requiresRevision ? 'open' : 'closed', simulated: actor.getBool('simulated') });
       result.id = r.id;
       event(c, 'feedback_created', r.id, payload.requiresRevision ? 'Admin meminta revisi indikator.' : 'Admin memberikan catatan indikator.', 'campus', '/campus/indicators');
     } else if (op === 'closeFeedback') {
       roleIs('admin'); const r = get(app, 'indicator_feedback', payload.id);
+      requireOpenDefinition(app, get(app, 'campus_indicators', r.getString('indicator')).getString('definition'));
       if (r.getString('state') !== 'closed') { r.set('state', 'closed'); app.save(r); event(r.getString('campus'), 'feedback_closed', r.id, 'Feedback indikator ditandai selesai.', 'campus', '/campus/indicators'); }
     } else if (op === 'uploadProposal') {
       roleIs('campus');

@@ -41,6 +41,7 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
   async function page(input: PageRequest): Promise<PageResponse> {
     if (input.view === 'masters' || input.view === 'guide') return { data: {}, loadedAt: new Date().toISOString() };
     const params = new URLSearchParams();
+    if (input.period !== undefined) params.set('period', input.period);
     if (input.campus) params.set('campus', input.campus);
     if (input.question) params.set('question', input.question);
     if (input.tab) params.set('tab', input.tab);
@@ -71,6 +72,8 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
   const done = async (value: Promise<unknown>): Promise<void> => { await value; };
   const idPath = (id: string) => encodeURIComponent(id);
   const service: DataService = {
+    createPeriod: name => done(write('/api/admin/periods', 'POST', { name })),
+    openPeriod: period => done(write('/api/admin/periods/open', 'POST', { period })),
     masters: () => request('/api/admin/masters', response => response.json()),
     masterAudit: (query = '', page = 1) => request('/api/admin/master-audit?' + new URLSearchParams({ q: query, page: String(page) }), response => response.json()),
     saveCampus: input => done(write('/api/admin/campuses' + (input.id ? '/' + idPath(input.id) : ''), input.id ? 'PATCH' : 'POST', input)),

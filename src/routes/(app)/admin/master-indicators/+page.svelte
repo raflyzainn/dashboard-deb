@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Icon from '$lib/components/Icon.svelte';
+  import { periodsFrom } from '$lib/periods';
   import { untrack } from 'svelte';
   import { app } from '$lib/state.svelte';
   import { dataService } from '$lib/data/service';
@@ -15,11 +17,23 @@
     null
   );
   let generation = 0;
+  let selectedPeriod = $state<string | undefined>(undefined);
+  let creatingPeriod = $state(false);
+  let periodName = $state('');
+  let openingPeriod = $state(false);
+  const periods = $derived(periodsFrom(data.definitions));
+  const chosen = $derived(
+    periods.find((p) => p.id === selectedPeriod) || periods.find((p) => p.state === 'active')
+  );
+  const archived = $derived(chosen?.state === 'archived');
   const pending = $derived(app.navigation.pendingCount);
+  const reviewBlocked = $derived(chosen?.state !== 'draft' && pending > 0);
   const disabled = $derived(app.busy || app.loading || loading);
   const filtered = $derived(
-    data.definitions.filter((d) =>
-      `${d.code} ${d.name} ${d.category}`.toLowerCase().includes(search.toLowerCase())
+    data.definitions.filter(
+      (d) =>
+        (d.period || '') === (chosen?.id || '') &&
+        `${d.code} ${d.name} ${d.category}`.toLowerCase().includes(search.toLowerCase())
     )
   );
   async function refresh() {
@@ -50,6 +64,7 @@
       ? {
           id: record.id,
           revision: record.revision,
+          period: record.period || '',
           code: record.code,
           name: record.name,
           category: record.category,
@@ -58,7 +73,16 @@
           baseline: record.baseline,
           target: record.target
         }
-      : { code: '', name: '', category: '', unit: '', description: '', baseline: 0, target: 1 };
+      : {
+          period: chosen?.id || '',
+          code: '',
+          name: '',
+          category: '',
+          unit: '',
+          description: '',
+          baseline: 0,
+          target: 1
+        };
   }
   async function save() {
     if (!editing) return;
@@ -87,10 +111,64 @@
   <div>
     <span class="eyebrow">PENGATURAN BERSAMA</span>
     <h1>Master indikator</h1>
-    <p>Satu katalog, baseline, dan target untuk seluruh kampus.</p>
+    <p>Kelola periode penilaian, indikator, baseline, dan target untuk kampus mitra.</p>
   </div>
-  <button class="button" {disabled} onclick={() => edit()}>Tambah indikator</button>
+  <button class="button" disabled={disabled || archived} onclick={() => edit()}
+    >Tambah indikator</button
+  >
 </div>
+<section class="panel period-management" aria-label="Pengaturan periode">
+  <div class="period-heading">
+    <span class="period-symbol"><Icon name="clock" size={22} /></span>
+    <div>
+      <h2>Periode penilaian</h2>
+      <p>Siapkan periode berikutnya tanpa mengubah riwayat kampus.</p>
+    </div>
+    <span class="period-badge" class:draft={chosen?.state === 'draft'} class:archived
+      >{chosen?.state === 'draft' ? 'Persiapan' : archived ? 'Arsip' : 'Sedang berjalan'}</span
+    >
+  </div>
+  <div class="period-controls">
+    <label
+      >Pilih periode<select
+        aria-label="Kelola periode"
+        value={chosen?.id ?? ''}
+        onchange={(event) => (selectedPeriod = event.currentTarget.value)}
+        {disabled}
+      >
+        {#each periods as period}<option value={period.id}
+            >{period.name} · {period.state === 'active'
+              ? 'Aktif'
+              : period.state === 'draft'
+                ? 'Draft'
+                : 'Arsip'}</option
+          >{/each}
+      </select></label
+    >
+    <div class="master-actions">
+      <button
+        class="button secondary"
+        disabled={disabled || periods.some((p) => p.state === 'draft')}
+        onclick={() => {
+          periodName = '';
+          creatingPeriod = true;
+        }}>Periode baru</button
+      >
+      {#if chosen?.state === 'draft'}<button
+          class="button"
+          disabled={disabled || pending > 0}
+          onclick={() => (openingPeriod = true)}>Buka periode</button
+        >{/if}
+    </div>
+  </div>
+  <p class="period-help">
+    {archived
+      ? 'Arsip hanya dapat dibaca. Indikator dan hasil periode ini tetap dipertahankan.'
+      : chosen?.state === 'draft'
+        ? 'Sesuaikan indikator, baseline, dan target sebelum membuka periode untuk kampus.'
+        : 'Periode aktif digunakan untuk pengisian dan verifikasi kampus.'}
+  </p>
+</section>
 <section class="panel master-intro">
   <strong>Aktual dan catatan tetap milik masing-masing kampus.</strong>
   <p>
@@ -110,8 +188,10 @@
     <div>
       <h2>Katalog bersama</h2>
       <p>
-        {data.definitions.filter((d) => d.status === 'active').length} aktif · {data.definitions.filter(
-          (d) => d.status === 'draft'
+        {data.definitions.filter(
+          (d) => (d.period || '') === (chosen?.id || '') && d.status === 'active'
+        ).length} aktif · {data.definitions.filter(
+          (d) => (d.period || '') === (chosen?.id || '') && d.status === 'draft'
         ).length} draft
       </p>
     </div>
@@ -144,18 +224,18 @@
                 ><div class="master-actions">
                   <button
                     class="button secondary small"
-                    disabled={disabled || (d.status === 'active' && pending > 0)}
+                    disabled={disabled || archived || (d.status === 'active' && reviewBlocked)}
                     onclick={() => edit(d)}>Edit</button
                   >{#if d.status === 'draft'}<button
                       class="button small"
-                      disabled={disabled || pending > 0}
+                      disabled={disabled || archived || reviewBlocked}
                       onclick={() => {
                         app.error = '';
                         confirmation = { record: d, action: 'activate' };
                       }}>Aktifkan</button
                     >{/if}<button
                     class="button secondary small danger-text"
-                    {disabled}
+                    disabled={disabled || archived}
                     onclick={() => {
                       app.error = '';
                       confirmation = { record: d, action: 'delete' };
@@ -169,6 +249,76 @@
     </div>{/if}
 </section>
 <MasterAudit />
+{#if creatingPeriod}<Modal
+    title="Buat draft periode baru"
+    onclose={() => {
+      if (!app.busy) creatingPeriod = false;
+    }}
+  >
+    <form
+      onsubmit={async (event) => {
+        event.preventDefault();
+        if (
+          await app.mutate(
+            () => dataService.createPeriod(periodName.trim()),
+            'Draft periode dibuat. Sesuaikan indikator sebelum membuka.'
+          )
+        ) {
+          selectedPeriod = periodName.trim();
+          creatingPeriod = false;
+        }
+      }}
+    >
+      <label
+        >Nama periode<input
+          required
+          maxlength="80"
+          bind:value={periodName}
+          placeholder="Contoh: Semester I 2027"
+        /></label
+      >
+      <p>
+        Indikator aktif, baseline, dan target disalin dari periode aktif. Nilai capaian kampus tidak
+        disalin.
+      </p>
+      <div class="dialog-actions">
+        <button
+          type="button"
+          class="button secondary"
+          disabled={app.busy}
+          onclick={() => (creatingPeriod = false)}>Batal</button
+        ><button class="button" disabled={app.busy}>Buat draft periode</button>
+      </div>
+    </form>
+  </Modal>{/if}
+{#if openingPeriod && chosen}<Modal
+    title="Buka periode baru?"
+    onclose={() => {
+      if (!app.busy) openingPeriod = false;
+    }}
+  >
+    <p>
+      Periode <strong>{chosen.name}</strong> akan dibuka. Periode aktif sebelumnya menjadi arsip baca
+      saja. Kampus mulai mengisi capaian dan catatan baru.
+    </p>
+    <div class="dialog-actions">
+      <button class="button secondary" disabled={app.busy} onclick={() => (openingPeriod = false)}
+        >Batal</button
+      ><button
+        class="button"
+        disabled={app.busy || pending > 0}
+        onclick={async () => {
+          if (
+            await app.mutate(
+              () => dataService.openPeriod(chosen!.id),
+              'Periode baru dibuka. Data sebelumnya tersimpan sebagai arsip.'
+            )
+          )
+            openingPeriod = false;
+        }}>Ya, buka periode</button
+      >
+    </div>
+  </Modal>{/if}
 
 {#if editing}<Modal
     title={editing.id ? 'Edit indikator bersama' : 'Tambah draft indikator'}
@@ -229,7 +379,7 @@
     ><p><strong>{confirmation.record.name}</strong></p>
     <p>
       {confirmation.action === 'activate'
-        ? `Indikator ini menjadi kewajiban seluruh ${app.data?.campuses.length || 0} kampus. Nilai aktual dimulai dari nol; baseline dan target mengikuti master.`
+        ? `Indikator ini menjadi kewajiban seluruh ${app.data?.campuses.length || 0} kampus. Kampus perlu mengisi nilai aktual; baseline dan target mengikuti master.`
         : 'Hanya indikator tanpa isian atau riwayat terkait yang dapat dihapus. Riwayat audit tetap disimpan.'}
     </p>
     <div class="master-actions">
@@ -240,3 +390,110 @@
       >
     </div></Modal
   >{/if}
+
+<style>
+  .period-management {
+    padding: 22px 24px;
+    margin-bottom: 20px;
+    background: linear-gradient(120deg, #ffffff, #f3faff);
+  }
+  .period-heading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  .period-symbol {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: #e6f3ff;
+    color: #087dba;
+    flex-shrink: 0;
+  }
+  .period-heading h2 {
+    font-size: 16px;
+    margin: 0 0 4px;
+  }
+  .period-heading p {
+    color: #71869f;
+    font-size: 12px;
+    line-height: 1.6;
+    margin: 0;
+  }
+  .period-badge {
+    margin-left: auto;
+    padding: 6px 10px;
+    font-size: 10px;
+    font-weight: 650;
+    border-radius: 20px;
+    background: #e5f7ee;
+    color: #287154;
+    white-space: nowrap;
+  }
+  .period-badge.draft {
+    background: #fff2d6;
+    color: #966313;
+  }
+  .period-badge.archived {
+    background: #edf1f7;
+    color: #687b95;
+  }
+  .period-controls {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  .period-controls label {
+    display: grid;
+    gap: 8px;
+    flex: 1;
+    max-width: 400px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #59718c;
+  }
+  .period-controls select {
+    margin: 0;
+    width: 100%;
+    background: white;
+  }
+  .period-help {
+    margin: 18px 0 0;
+    padding-top: 14px;
+    border-top: 1px solid #dfeaf5;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #6e849e;
+  }
+  @media (max-width: 700px) {
+    .period-management {
+      padding: 16px;
+    }
+    .period-heading {
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .period-heading > div {
+      flex: 1;
+      min-width: 160px;
+    }
+    .period-badge {
+      margin-left: 0;
+    }
+    .period-controls {
+      align-items: stretch;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .period-controls label {
+      max-width: none;
+    }
+    .period-controls .master-actions {
+      flex-wrap: wrap;
+    }
+  }
+</style>

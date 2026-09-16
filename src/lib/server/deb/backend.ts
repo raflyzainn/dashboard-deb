@@ -11,11 +11,13 @@ function workflowReads(pb: PocketBase, actor: RecordModel, operation: string, bo
     updateIndicator: ['indicator_definitions', 'campus_indicators', 'deb_submissions', 'indicator_feedback'],
     submitDeb: ['indicator_definitions', 'campus_indicators', 'deb_submissions'],
     reviewDeb: ['indicator_definitions', 'campus_indicators', 'deb_submissions', 'indicator_feedback'],
-    addFeedback: ['campus_indicators'], closeFeedback: ['indicator_feedback', 'campus_indicators'],
+    addFeedback: ['campus_indicators','indicator_definitions'], closeFeedback: ['indicator_feedback', 'campus_indicators','indicator_definitions'],
     uploadProposal: ['proposal_versions'], ask: [], answer: ['questions', 'question_answers'],
     reply: ['campuses', 'questions', 'question_answers', 'question_replies'], setLike: ['questions', 'question_likes'],
     promoteFaq: ['questions', 'question_answers', 'faq_entries'], saveFaq: ['faq_entries'], moveFaq: ['faq_entries'], deleteFaq: ['faq_entries'],
     readNotifications: ['notifications'],
+    masterCreatePeriod: ['indicator_definitions'],
+    masterOpenPeriod: ['indicator_definitions','campuses','deb_submissions'],
     masterSaveDefinition: ['campuses', 'indicator_definitions', 'campus_indicators', 'deb_submissions'],
     masterActivateDefinition: ['campuses', 'indicator_definitions', 'campus_indicators', 'deb_submissions'],
     masterDeleteDefinition: ['indicator_definitions', 'campus_indicators', 'deb_submissions'],
@@ -41,7 +43,7 @@ function workflowReads(pb: PocketBase, actor: RecordModel, operation: string, bo
   if (operation === 'uploadProposal') reads.proposal_versions = { filter: campus, sort: '-version', limit: 1 };
   if (operation === 'submitDeb') {
     reads.campus_indicators = { filter: campus };
-    reads.deb_submissions = [{ filter: campus, sort: '-version', limit: 1 }, { filter: campus + ' && status = "pending"', limit: 1 }];
+    reads.deb_submissions = { filter: campus }; // Versions are scoped to the active period inside the transaction.
   }
   if (operation === 'updateIndicator') {
     reads.campus_indicators = id;

@@ -12,8 +12,8 @@ export const mapCampus = (r: RecordModel): Campus => ({ id: r.id, name: r.name, 
 export const mapLocation = (r: RecordModel) => ({ campusId: r.id, province: r.province as string, island: r.island as string,
   longitude: r.hasLocation ? r.longitude as number : null, latitude: r.hasLocation ? r.latitude as number : null, approximate: r.locationApproximate as boolean });
 export const mapDefinition = (r: RecordModel): IndicatorDefinition => ({ id: r.id, name: r.name, category: r.category, unit: r.unit, description: r.description });
-export const mapIndicator = (r: RecordModel): CampusIndicator => ({ id: r.id, campusId: r.campus, definitionId: r.definition, baseline: r.baseline, target: r.target, current: r.current, note: r.note, updatedAt: date(r.updated) });
-export const mapSubmission = (r: RecordModel): DebSubmission => ({ id: r.id, campusId: r.campus, version: r.version, status: r.status,
+export const mapIndicator = (r: RecordModel): CampusIndicator => ({ id: r.id, campusId: r.campus, definitionId: r.definition, baseline: r.baseline, target: r.target, current: r.current, unfilled: Boolean(r.unfilled), note: r.note, updatedAt: date(r.updated) });
+export const mapSubmission = (r: RecordModel): DebSubmission => ({ id: r.id, campusId: r.campus, version: r.version, period: r.period || '', status: r.status,
   indicators: r.snapshot.map((i: SubmissionIndicator) => ({ name: i.name, category: i.category, unit: i.unit, description: i.description, id: i.id, campusId: i.campusId, definitionId: i.definitionId, baseline: i.baseline, target: i.target, current: i.current, note: i.note, updatedAt: date(i.updatedAt) })),
   submittedAt: date(r.submittedAt), reviewedAt: r.reviewedAt ? date(r.reviewedAt) : undefined, reviewedBy: r.reviewedBy || undefined, decisionNote: r.decisionNote || undefined, simulated: r.simulated });
 export const mapFeedback = (r: RecordModel): Feedback => ({ id: r.id, campusId: r.campus, indicatorId: r.indicator, text: r.text, requiresRevision: r.requiresRevision, state: r.state, createdAt: date(r.created), updatedAt: date(r.updated) });

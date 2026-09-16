@@ -1,7 +1,7 @@
 import type { Snapshot, Campus, AppSession } from './types';
 
 export type PageView = 'dashboard' | 'campuses' | 'campus-detail' | 'accounts' | 'map' | 'indicators' | 'proposals' | 'questions' | 'question-detail' | 'faq' | 'notifications' | 'review' | 'masters' | 'guide';
-export interface PageRequest { view: PageView; campus?: string; question?: string; tab?: string }
+export interface PageRequest { view: PageView; period?: string; campus?: string; question?: string; tab?: string }
 export interface PageResponse { data: Partial<Snapshot>; loadedAt: string }
 export interface NavigationData { pendingCount: number; revisionCount: number; unreadCount: number; campus?: Campus }
 export interface SessionResponse { session: AppSession; capabilities: { readOnly: boolean }; navigation: NavigationData }
@@ -12,6 +12,11 @@ export function emptyPageData(): Snapshot {
 }
 
 export function pageRequest(url: URL): PageRequest {
+  const request = routeRequest(url);
+  if (url.searchParams.has('period') && ['dashboard','campuses','campus-detail','map','review','indicators'].includes(request.view)) request.period = url.searchParams.get('period')!;
+  return request;
+}
+function routeRequest(url: URL): PageRequest {
   const [, , section, id] = url.pathname.split('/');
   switch (section) {
     case 'guide': return { view: 'guide' };

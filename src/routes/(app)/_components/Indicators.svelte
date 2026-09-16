@@ -24,6 +24,7 @@
   let note = $state('');
   let feedback = $state('');
   let revision = $state(true);
+  const archived = $derived(app.data?.period?.state === 'archived');
   const isAdmin = $derived(app.session?.role === 'admin');
   const activeCampus = $derived(campusId || (isAdmin ? campus : app.session!.campusId!));
   const locked = $derived(
@@ -45,8 +46,8 @@
             (status === 'revision'
               ? revising
               : status === 'achieved'
-                ? i.current >= i.target
-                : i.current < i.target))
+                ? !i.unfilled && i.current >= i.target
+                : i.unfilled || i.current < i.target))
         );
       })
   );
@@ -148,11 +149,11 @@
                   >{d.category} · {d.unit}</small
                 ></td
               ><td>{number(i.baseline)}</td><td>{number(i.target)}</td><td
-                ><strong>{number(i.current)}</strong></td
+                ><strong>{i.unfilled ? 'Belum diisi' : number(i.current)}</strong></td
               ><td class="progress-cell"><Progress value={progress(i)} showValue /></td><td
                 ><div class="badge-stack">
-                  <Badge tone={i.current >= i.target ? 'green' : 'neutral'}
-                    >{i.current >= i.target ? 'Tercapai' : 'Dalam proses'}</Badge
+                  <Badge tone={!i.unfilled && i.current >= i.target ? 'green' : 'neutral'}
+                    >{i.unfilled ? 'Belum diisi' : i.current >= i.target ? 'Tercapai' : 'Dalam proses'}</Badge
                   >{#if revise}<Badge tone="amber">Perlu tindak lanjut</Badge>{/if}
                 </div></td
               ><td
@@ -195,7 +196,7 @@
       >
         <label
           >Nilai aktual<input
-            readonly={app.readOnly || locked || app.busy}
+            readonly={archived || app.readOnly || locked || app.busy}
             type="number"
             min="0"
             step="any"
@@ -204,19 +205,21 @@
           /></label
         ><label
           >Catatan perkembangan<textarea
-            readonly={app.readOnly || locked || app.busy}
+            readonly={archived || app.readOnly || locked || app.busy}
             rows="3"
             maxlength="5000"
             bind:value={note}
             placeholder="Periode data, kegiatan, dan hasil yang dicapai…"></textarea></label
-        ><button class="button" disabled={app.readOnly || app.loading || locked || app.busy}
+        ><button
+          class="button"
+          disabled={archived || app.readOnly || app.loading || locked || app.busy}
           >{app.busy ? 'Menyimpan…' : 'Simpan perubahan'}</button
         >
       </form>{:else}{@const actual = app.data!.indicators.find((i) => i.id === selected!.id)!}
       <div class="info-note">
         <Icon name="indicators" />
         <div>
-          <strong>Nilai aktual: {number(actual.current)}</strong>
+          <strong>Nilai aktual: {actual.unfilled ? 'Belum diisi' : number(actual.current)}</strong>
           <p>{actual.note || 'Belum ada catatan dari kampus.'}</p>
           <small>Diperbarui {date(actual.updatedAt)}</small>
         </div>
@@ -235,7 +238,7 @@
             <div class="row-between">
               <small>{date(f.createdAt)}</small>{#if isAdmin && f.state !== 'closed'}<button
                   class="text-link"
-                  disabled={app.readOnly || app.loading || app.busy}
+                  disabled={archived || app.readOnly || app.loading || app.busy}
                   onclick={() =>
                     app.mutate(() => dataService.closeFeedback(f.id), 'Feedback ditandai selesai.')}
                   ><Icon name="check" size={15} />Tandai selesai</button
@@ -253,7 +256,7 @@
       >
         <label
           >Feedback baru<textarea
-            readonly={app.readOnly}
+            readonly={archived || app.readOnly}
             rows="3"
             required
             maxlength="5000"
@@ -261,7 +264,7 @@
             placeholder="Tuliskan arahan atau masukan untuk kampus…"></textarea></label
         ><label class="checkbox-label"
           ><input type="checkbox" bind:checked={revision} />Minta revisi data</label
-        ><button class="button" disabled={app.readOnly || app.loading || app.busy}
+        ><button class="button" disabled={archived || app.readOnly || app.loading || app.busy}
           >{app.busy ? 'Mengirim…' : 'Kirim feedback'}</button
         >
       </form>{/if}</Modal

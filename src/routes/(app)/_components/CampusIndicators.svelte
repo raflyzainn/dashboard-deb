@@ -23,7 +23,11 @@
   const changed = $derived(latest ? changedSinceSubmission(app.data!, latest) : false);
   const pending = $derived(latest?.status === 'pending');
   const disabled = $derived(
-    pending || app.readOnly || app.stale || (!saving && (app.loading || app.busy))
+    app.data?.period?.state === 'archived' ||
+      pending ||
+      app.readOnly ||
+      app.stale ||
+      (!saving && (app.loading || app.busy))
   );
   const categories = $derived([...new Set(app.data!.definitions.map((d) => d.category))]);
   const achieved = $derived(indicators.filter((i) => i.current >= i.target).length);
@@ -79,12 +83,15 @@
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   function dirty(item: CampusIndicator) {
     const draft = drafts[item.id];
-    return !!draft && (draft.current !== item.current || draft.note !== item.note);
+    return !!draft && (item.unfilled || draft.current !== item.current || draft.note !== item.note);
   }
   function edit(item: CampusIndicator) {
     saveFailed = false;
     app.toast = '';
-    return (drafts[item.id] ||= { current: item.current, note: item.note });
+    return (drafts[item.id] ||= {
+      current: item.unfilled ? undefined : item.current,
+      note: item.note
+    });
   }
 
   // One request at a time: app.mutate reloads the shared page after each write.
@@ -272,11 +279,13 @@
                     : 'blue'}
                 >{dirty(item)
                   ? 'Belum disimpan'
-                  : revising
-                    ? 'Perlu tindak lanjut'
-                    : item.current >= item.target
-                      ? 'Tercapai'
-                      : 'Dalam proses'}</Badge
+                  : item.unfilled
+                    ? 'Belum diisi'
+                    : revising
+                      ? 'Perlu tindak lanjut'
+                      : item.current >= item.target
+                        ? 'Tercapai'
+                        : 'Dalam proses'}</Badge
               >
             </header>
             <form
@@ -297,14 +306,18 @@
                       step="any"
                       required
                       {disabled}
-                      value={draft ? draft.current : item.current}
+                      value={draft ? draft.current : item.unfilled ? undefined : item.current}
                       oninput={(event) => {
                         const value = event.currentTarget.valueAsNumber;
                         edit(item).current = Number.isNaN(value) ? undefined : value;
                       }}
                     /><span>{d.unit}</span>
                   </div>
-                  <small>Tersimpan: {number(item.current)} {d.unit}</small>
+                  <small
+                    >{item.unfilled
+                      ? 'Belum diisi'
+                      : `Tersimpan: ${number(item.current)} ${d.unit}`}</small
+                  >
                 </div>
                 <div class="field">
                   <span class="field-label">Target indikator</span>

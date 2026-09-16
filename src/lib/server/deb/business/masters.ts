@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { PreviewError as ApiError } from "../preview-error";
+import { activeDefinitions } from "./periods";
 import { StoreRecord as Record } from "../rest-store";
 // Invoked only inside the authenticated workflow transaction (same txApp and receipt).
 function fail(message, status = 400) { throw new ApiError(status, message); }
@@ -16,7 +17,7 @@ function create(app, name, fields) {
   const r = new Record(app.findCollectionByNameOrId(name));
   for (const k in fields) r.set(k, fields[k]); app.save(r); return r;
 }
-const definitionFields = ['code', 'name', 'category', 'unit', 'description', 'baseline', 'target', 'status', 'revision'];
+const definitionFields = ['code', 'name', 'category', 'unit', 'description', 'baseline', 'target', 'status', 'revision', 'period', 'periodState'];
 const campusFields = ['name', 'initials', 'acronym', 'region', 'city', 'source', 'province', 'island', 'latitude', 'longitude', 'hasLocation', 'locationApproximate', 'revision'];
 function view(r, fields) { const value = {}; fields.forEach(k => value[k] = r.get(k)); return value; }
 function expected(r, payload) {
@@ -31,28 +32,35 @@ export const runMaster = ({ app, actor, op, payload, event }) => {
   if (['masterSaveDefinition', 'masterActivateDefinition', 'masterDeleteDefinition'].includes(op)) {
     entity = 'indicator_definitions';
     if (payload.id) { r = get(app, entity, payload.id); expected(r, payload); before = view(r, definitionFields); }
+    const catalog = list(app, entity);
+    const period = r ? r.getString('period') : payload.period ?? activeDefinitions(app)[0]?.getString('period') ?? '';
+    const group = catalog.filter(d => d.getString('period') === period);
+    if (!r && !group.length && catalog.length) fail('Periode tidak ditemukan.', 404);
+    const periodState = group[0]?.getString('periodState') || 'active';
+    if (periodState === 'archived') fail('Indikator periode arsip tidak dapat diubah.', 409);
     if (op !== 'masterSaveDefinition' && !r) fail('Master tidak ditemukan.', 404);
     if (op === 'masterDeleteDefinition') {
+      if (group.length === 1) fail('Periode harus memiliki minimal satu indikator.', 409);
       if (list(app, 'campus_indicators', 'definition = {:id}', { id: r.id }).length || list(app, 'deb_submissions').some(s => JSON.parse(s.get('snapshot')).some(i => i.definitionId === r.id))) fail('Indikator sudah digunakan oleh isian atau riwayat kampus dan tidak dapat dihapus.', 409);
       app.delete(r);
     } else if (op === 'masterActivateDefinition') {
       if (r.getString('status') !== 'draft') fail('Indikator sudah aktif.', 409);
-      noPending(app);
+      if (periodState !== 'draft') noPending(app);
       r.set('status', 'active'); r.set('revision', r.getInt('revision') + 1); app.save(r);
-      for (const c of list(app, 'campuses')) {
-        create(app, 'campus_indicators', { campus: c.id, definition: r.id, baseline: r.getFloat('baseline'), target: r.getFloat('target'), current: 0, note: '', simulated: actor.getBool('simulated') });
+      for (const c of periodState === 'draft' ? [] : list(app, 'campuses')) {
+        create(app, 'campus_indicators', { campus: c.id, definition: r.id, baseline: r.getFloat('baseline'), target: r.getFloat('target'), current: 0, note: '', unfilled: true, simulated: actor.getBool('simulated') });
         event(c.id, 'indicator_activated', r.id, 'Indikator bersama baru diaktifkan: ' + r.getString('name'), 'campus', '/campus/indicators');
       }
     } else {
-      if (r && r.getString('status') === 'active') noPending(app);
+      if (r && r.getString('status') === 'active') if (periodState !== 'draft') noPending(app);
       if (typeof payload.baseline !== 'number' || !Number.isFinite(payload.baseline) || payload.baseline < 0 || typeof payload.target !== 'number' || !Number.isFinite(payload.target) || payload.target <= 0) fail('Baseline harus nonnegatif dan target harus lebih dari nol.');
       const code = text(payload.code, true, 100);
-      if (list(app, entity, 'code = {:code}', { code }).some(d => !r || d.id !== r.id)) fail('Kode indikator sudah digunakan.', 409);
+      if (list(app, entity, 'code = {:code} && period = {:period}', { code, period }).some(d => !r || d.id !== r.id)) fail('Kode indikator sudah digunakan.', 409);
       const fields = { code, name: text(payload.name), category: text(payload.category), unit: text(payload.unit), description: text(payload.description, false, 5000), baseline: payload.baseline, target: payload.target };
-      if (!r) r = create(app, entity, Object.assign(fields, { status: 'draft', revision: 1, simulated: actor.getBool('simulated') }));
+      if (!r) r = create(app, entity, Object.assign(fields, { status: 'draft', period, periodState, revision: 1, simulated: actor.getBool('simulated') }));
       else {
         for (const k in fields) r.set(k, fields[k]); r.set('revision', r.getInt('revision') + 1); app.save(r);
-        if (r.getString('status') === 'active') {
+        if (r.getString('status') === 'active' && periodState !== 'draft') {
           for (const i of list(app, 'campus_indicators', 'definition = {:id}', { id: r.id })) {
             i.set('baseline', payload.baseline); i.set('target', payload.target); app.save(i);
           }
@@ -78,7 +86,7 @@ export const runMaster = ({ app, actor, op, payload, event }) => {
       const fields = { name: text(payload.name), initials: text(payload.initials, true, 12), acronym: text(payload.acronym, false, 100), region: text(payload.region), city: text(payload.city, false), province: text(payload.province, false), island: text(payload.island, false), latitude: hasLocation ? payload.latitude : 0, longitude: hasLocation ? payload.longitude : 0, hasLocation, locationApproximate: payload.approximate };
       if (!r) {
         r = create(app, entity, Object.assign(fields, { source: 'admin', revision: 1, simulated: actor.getBool('simulated') }));
-        for (const d of list(app, 'indicator_definitions', 'status = "active"')) create(app, 'campus_indicators', { campus: r.id, definition: d.id, baseline: d.getFloat('baseline'), target: d.getFloat('target'), current: 0, note: '', simulated: actor.getBool('simulated') });
+        for (const d of activeDefinitions(app)) create(app, 'campus_indicators', { campus: r.id, definition: d.id, baseline: d.getFloat('baseline'), target: d.getFloat('target'), current: 0, note: '', unfilled: true, simulated: actor.getBool('simulated') });
       } else { for (const k in fields) r.set(k, fields[k]); r.set('revision', r.getInt('revision') + 1); app.save(r); }
     }
   } else fail('Operasi master tidak dikenal.', 404);

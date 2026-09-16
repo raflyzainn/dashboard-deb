@@ -66,7 +66,7 @@ export function validateRecord(e) {
     if (actor.getString('role') === 'campus' && actor.getString('campus') !== r.getString('campus')) fail('Activity campus mismatch');
   }
   if (!r.isNew() && ['proposal_versions', 'deb_submissions'].includes(name)) {
-    for (const field of name === 'proposal_versions' ? ['campus', 'version', 'file', 'filename', 'size', 'changes', 'uploadedBy'] : ['campus', 'version', 'submittedBy', 'submittedAt']) {
+    for (const field of name === 'proposal_versions' ? ['campus', 'version', 'file', 'filename', 'size', 'changes', 'uploadedBy'] : ['campus', 'period', 'version', 'submittedBy', 'submittedAt']) {
       if (String(r.original().get(field)) !== String(r.get(field))) fail('Historical field is immutable: ' + field);
     }
   }
