@@ -2,14 +2,14 @@
   // Shared presentation for the explicit Campus/Admin routes.
   import { app } from '$lib/state.svelte';
   import { campusStats, percent, date, feedbackLabel } from '$lib/domain';
-  import Icon from '$lib/components/Icon.svelte';
-  import Badge from '$lib/components/Badge.svelte';
-  import Stat from '$lib/components/Stat.svelte';
-  import CampusTable from '$lib/components/CampusTable.svelte';
-  import CampusMaster from '$lib/components/CampusMaster.svelte';
-  import Empty from '$lib/components/Empty.svelte';
-  import Indicators from './Indicators.svelte';
-  import Proposals from './Proposals.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
+  import Badge from '$lib/components/ui/Badge.svelte';
+  import Stat from '$lib/components/ui/Stat.svelte';
+  import CampusTable from './CampusTable.svelte';
+  import CampusMaster from './CampusMaster.svelte';
+  import Empty from '$lib/components/ui/Empty.svelte';
+  import Indicators from '$lib/components/shared/indicators/Indicators.svelte';
+  import Proposals from '$lib/components/shared/proposals/Proposals.svelte';
   let { id = '' }: { id?: string } = $props();
   import { page } from '$app/state';
   import { goto } from '$app/navigation';

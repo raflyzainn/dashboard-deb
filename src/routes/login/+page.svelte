@@ -1,5 +1,5 @@
 <script lang="ts">
-  import AuthBackend from '$lib/components/AuthBackend.svelte';
+  import AuthBackend from '$lib/components/auth/AuthBackend.svelte';
   import { untrack } from 'svelte';
   import { page } from '$app/state';
   import { dev } from '$app/environment';
@@ -12,7 +12,7 @@
   });
   import { goto } from '$app/navigation';
   import { app } from '$lib/state.svelte';
-  import Icon from '$lib/components/Icon.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
   let account = $state('');
   let search = $state('');
   let role = $state<'campus' | 'admin'>('campus');

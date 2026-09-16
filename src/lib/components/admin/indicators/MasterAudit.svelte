@@ -3,7 +3,7 @@
   import { dataService } from '$lib/data/service';
   import { auditOperations, auditFields } from '$lib/master-audit';
   import type { MasterAuditPage } from '$lib/types';
-  import Empty from './Empty.svelte';
+  import Empty from '$lib/components/ui/Empty.svelte';
   let query = $state(''),
     pageNumber = $state(1),
     retry = $state(0);

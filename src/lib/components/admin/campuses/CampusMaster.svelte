@@ -2,7 +2,7 @@
   import { app } from '$lib/state.svelte';
   import { dataService } from '$lib/data/service';
   import type { Campus, CampusInput } from '$lib/types';
-  import Modal from './Modal.svelte';
+  import Modal from '$lib/components/ui/Modal.svelte';
   let { campus }: { campus?: Campus } = $props();
   let form = $state<CampusInput | null>(null),
     deleting = $state(false);

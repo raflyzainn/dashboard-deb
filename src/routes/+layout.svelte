@@ -3,7 +3,7 @@
   import '@fontsource-variable/plus-jakarta-sans';
   import { untrack } from 'svelte';
   import { app } from '$lib/state.svelte';
-  import Icon from '$lib/components/Icon.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
   let { children } = $props();
   $effect(() => {
     if (!app.toast) return;

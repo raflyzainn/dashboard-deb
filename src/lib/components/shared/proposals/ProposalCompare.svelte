@@ -8,7 +8,7 @@
     type ExtractedProposal
   } from '$lib/data/proposal-diff';
   import { date } from '$lib/domain';
-  import Icon from './Icon.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
 
   let {
     versions,

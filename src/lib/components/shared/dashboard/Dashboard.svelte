@@ -2,11 +2,11 @@
   // Shared presentation for the explicit Campus/Admin routes.
   import { app } from '$lib/state.svelte';
   import { average, campusStats, date, percent, progress } from '$lib/domain';
-  import Stat from '$lib/components/Stat.svelte';
-  import Progress from '$lib/components/Progress.svelte';
-  import Icon from '$lib/components/Icon.svelte';
-  import Empty from '$lib/components/Empty.svelte';
-  import CampusTable from '$lib/components/CampusTable.svelte';
+  import Stat from '$lib/components/ui/Stat.svelte';
+  import Progress from '$lib/components/ui/Progress.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
+  import Empty from '$lib/components/ui/Empty.svelte';
+  import CampusTable from '$lib/components/admin/campuses/CampusTable.svelte';
   const isAdmin = $derived(app.session?.role === 'admin');
   const all = $derived(
     (app.data?.campuses || []).map((c) => ({ ...c, ...campusStats(app.data!, c.id) }))

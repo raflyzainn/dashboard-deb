@@ -5,8 +5,8 @@
   import { pageRequest, pageKey } from '$lib/page-data';
   import { page } from '$app/state';
   import { app } from '$lib/state.svelte';
-  import Shell from '$lib/components/Shell.svelte';
-  import Empty from '$lib/components/Empty.svelte';
+  import Shell from '$lib/components/layout/Shell.svelte';
+  import Empty from '$lib/components/ui/Empty.svelte';
   let { children } = $props();
   const routeRole = $derived(page.url.pathname.split('/')[1]);
   const authorized = $derived(app.ready && app.session && routeRole === app.session.role);

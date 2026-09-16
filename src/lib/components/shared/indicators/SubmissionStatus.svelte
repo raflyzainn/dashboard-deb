@@ -4,8 +4,8 @@
   import { dataService } from '$lib/data/service';
   import { latestSubmission, changedSinceSubmission, verificationLabel } from '$lib/verification';
   import { date } from '$lib/domain';
-  import Badge from './Badge.svelte';
-  import Modal from './Modal.svelte';
+  import Badge from '$lib/components/ui/Badge.svelte';
+  import Modal from '$lib/components/ui/Modal.svelte';
   let {
     compact = false,
     blocked = false,
