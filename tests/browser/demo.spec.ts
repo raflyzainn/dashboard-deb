@@ -208,10 +208,14 @@ test('forum conversation and account edits persist in the demo', async ({ page }
     page.getByText('Admin dapat membuka periode setelah review selesai.', { exact: true })
   ).toBeVisible();
   await page.goto('/admin/campuses?tab=accounts');
-  await page.getByRole('button', { name: 'Ubah PIC Universitas Indonesia', exact: true }).click();
-  await page.getByLabel('Nama PIC Universitas Indonesia', { exact: true }).fill('PIC Demo Diubah');
+  await page.getByLabel('Cari kampus, PIC, atau email').fill('Universitas Indonesia');
+  await page.getByRole('button', { name: 'Ubah PIC 1 Universitas Indonesia', exact: true }).click();
+  await page
+    .getByLabel('Nama PIC 1 Universitas Indonesia', { exact: true })
+    .fill('PIC Demo Diubah');
   await page.getByRole('button', { name: /Simpan perubahan/ }).click();
   await page.reload();
+  await page.getByLabel('Cari kampus, PIC, atau email').fill('Universitas Indonesia');
   await expect(page.getByText('PIC Demo Diubah', { exact: true })).toBeVisible();
   await logout(page);
   await login(page, 'campus-001');
@@ -226,5 +230,59 @@ test('forum conversation and account edits persist in the demo', async ({ page }
   await expect(page.getByText('Baik, terima kasih admin.', { exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByText('Baik, terima kasih admin.', { exact: true })).toBeVisible();
+  expect(api).toEqual([]);
+});
+test('admin manages two PIC emails per campus while demo login still lists 40 campuses', async ({
+  page
+}) => {
+  const api: string[] = [];
+  page.on('request', (r) => {
+    if (r.url().includes('/api/')) api.push(r.url());
+  });
+  await page.goto('/login');
+  await expect(page.locator('input[name="preview-account"]')).toHaveCount(40);
+  await login(page, 'admin-1');
+  await page.goto('/admin/campuses?tab=accounts');
+  await page.getByLabel('Cari kampus, PIC, atau email').fill('Universitas Indonesia');
+  const group = page.getByRole('region', { name: 'PIC Universitas Indonesia', exact: true });
+  await expect(group.getByRole('article')).toHaveCount(2);
+  for (const slot of [1, 2]) {
+    await group
+      .getByRole('button', { name: `Ubah PIC ${slot} Universitas Indonesia`, exact: true })
+      .click();
+    await group
+      .getByLabel(`Nama PIC ${slot} Universitas Indonesia`, { exact: true })
+      .fill(`Nama PIC ${slot} Test`);
+    await group
+      .getByLabel(`Email PIC ${slot} Universitas Indonesia`, { exact: true })
+      .fill(`pic${slot}@kampus.example.test`);
+  }
+  await page.getByRole('button', { name: /Simpan perubahan/ }).click();
+  await page.getByRole('button', { name: 'Simpan email demo', exact: true }).click();
+  await expect(page.getByText('Data PIC dan email tersimpan.', { exact: true })).toBeVisible();
+  await page.reload();
+  await page.getByLabel('Cari kampus, PIC, atau email').fill('Universitas Indonesia');
+  for (const slot of [1, 2]) {
+    await expect(group.getByText(`Nama PIC ${slot} Test`, { exact: true })).toBeVisible();
+    await expect(group.getByText(`pic${slot}@kampus.example.test`, { exact: true })).toBeVisible();
+  }
+  await group
+    .getByRole('button', { name: 'Ubah PIC 2 Universitas Indonesia', exact: true })
+    .click();
+  await group
+    .getByLabel('Email PIC 2 Universitas Indonesia', { exact: true })
+    .fill('pic1@kampus.example.test');
+  await expect(
+    group.getByText('Email sudah digunakan akun PIC lain.', { exact: true })
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: /Simpan perubahan/ })).toBeDisabled();
+  await group
+    .getByRole('button', { name: 'Batal ubah PIC 2 Universitas Indonesia', exact: true })
+    .click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: '.qa/two-pic-mobile.png', fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.screenshot({ path: '.qa/two-pic-desktop.png', fullPage: false });
   expect(api).toEqual([]);
 });

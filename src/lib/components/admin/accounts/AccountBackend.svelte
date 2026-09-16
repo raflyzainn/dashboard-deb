@@ -4,15 +4,7 @@
   import Icon from '$lib/components/ui/Icon.svelte';
   import Modal from '$lib/components/ui/Modal.svelte';
   import { normalizeEmail, validEmail } from '$lib/account-validation';
-  type Account = {
-    campusId: string;
-    campus: string;
-    name: string;
-    email: string;
-    revision: number;
-    status: string;
-    active: boolean;
-  };
+  import type { DemoAccount as Account } from '$lib/data/demo/store';
   let cache = $state<Record<string, Account>>({}),
     ids = $state<string[]>([]);
   const cached = $derived(Object.values(cache));
@@ -23,7 +15,7 @@
     filter = $state('all'),
     currentPage = $state(1),
     total = $state(0);
-  let stats = $state({ total: 0, email: 0, waiting: 0, active: 0 });
+  let stats = $state({ total: 0, campuses: 0, email: 0, waiting: 0, active: 0 });
   let busy = $state(false),
     notice = $state(''),
     error = $state('');
@@ -37,11 +29,18 @@
     pageNumber = $derived(Math.min(currentPage, pageCount));
   const visible = $derived(ids.map((id) => cache[id]).filter(Boolean)),
     paged = $derived(visible);
+  const campusGroups = $derived(
+    [...new Set(paged.map((a) => a.campusId))].map((id) => ({
+      id,
+      name: paged.find((a) => a.campusId === id)!.campus,
+      accounts: paged.filter((a) => a.campusId === id)
+    }))
+  );
   const changed = $derived(
     cached.filter(
       (a) =>
-        normalizeEmail(drafts[a.campusId] ?? a.email) !== a.email ||
-        (names[a.campusId] ?? a.name).trim() !== a.name
+        normalizeEmail(drafts[a.id] ?? a.email) !== a.email ||
+        (names[a.id] ?? a.name).trim() !== a.name
     )
   );
   const hasErrors = $derived(cached.some((a) => !!emailError(a)));
@@ -63,16 +62,16 @@
   }
   function remember(rows: Account[]) {
     for (const value of rows) {
-      const old = cache[value.campusId];
+      const old = cache[value.id];
       const dirty =
         old &&
-        (normalizeEmail(drafts[value.campusId] ?? old.email) !== old.email ||
-          (names[value.campusId] ?? old.name).trim() !== old.name);
+        (normalizeEmail(drafts[value.id] ?? old.email) !== old.email ||
+          (names[value.id] ?? old.name).trim() !== old.name);
       // Keep the original revision for unsaved edits so the server can report conflicts.
       if (!dirty) {
-        cache[value.campusId] = { ...value, active: value.status === 'Aktif' };
-        drafts[value.campusId] = value.email;
-        names[value.campusId] = value.name;
+        cache[value.id] = { ...value, active: value.status === 'Aktif' };
+        drafts[value.id] = value.email;
+        names[value.id] = value.name;
       }
     }
   }
@@ -86,7 +85,7 @@
       );
       if (revision !== generation) return;
       remember(data.items);
-      ids = data.items.map((a: Account) => a.campusId);
+      ids = data.items.map((a: Account) => a.id);
       total = data.total;
       stats = data.stats;
       currentPage = data.page;
@@ -99,29 +98,26 @@
     }
   }
   function emailError(a: Account) {
-    const email = normalizeEmail(drafts[a.campusId] ?? a.email);
+    const email = normalizeEmail(drafts[a.id] ?? a.email);
     return email && !validEmail(email)
       ? 'Format email belum valid.'
       : email &&
-          cached.some(
-            (b) =>
-              b.campusId !== a.campusId && normalizeEmail(drafts[b.campusId] ?? b.email) === email
-          )
-        ? 'Email sudah digunakan kampus lain.'
+          cached.some((b) => b.id !== a.id && normalizeEmail(drafts[b.id] ?? b.email) === email)
+        ? 'Email sudah digunakan akun PIC lain.'
         : '';
   }
   function isEditing(a: Account) {
-    return (!a.name && !a.email) || editing.includes(a.campusId);
+    return (!a.name && !a.email) || editing.includes(a.id);
   }
   function cancelEdit(a: Account) {
-    drafts[a.campusId] = a.email;
-    names[a.campusId] = a.name;
-    editing = editing.filter((id) => id !== a.campusId);
+    drafts[a.id] = a.email;
+    names[a.id] = a.name;
+    editing = editing.filter((id) => id !== a.id);
     error = '';
   }
   function save() {
     const active = changed.filter(
-      (a) => a.status === 'Aktif' && normalizeEmail(drafts[a.campusId] ?? a.email) !== a.email
+      (a) => a.status === 'Aktif' && normalizeEmail(drafts[a.id] ?? a.email) !== a.email
     );
     if (active.length) {
       resetAccounts = active;
@@ -135,10 +131,10 @@
     try {
       await api('/save', {
         changes: changed.map((a) => ({
-          campusId: a.campusId,
+          id: a.id,
           revision: a.revision,
-          name: names[a.campusId] ?? a.name,
-          email: drafts[a.campusId] ?? a.email
+          name: names[a.id] ?? a.name,
+          email: drafts[a.id] ?? a.email
         })),
         confirmReset: !!resetAccounts
       });
@@ -192,7 +188,7 @@
     class="[&&]:grid [&&]:gap-y-[12px] [&&]:gap-x-[12px] [&&]:[background-image:initial] [&&]:[background-color:white] [&&]:p-[22px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(220,_231,_247)] [&&]:rounded-[11px] max-[750.01px]:[&&]:p-[16px]"
   >
     <span class="[&&]:text-[12px] [&&]:text-[#6a809d]">Kampus mitra</span><strong
-      class="font-[650] [&&]:text-[29px]">{stats.total}</strong
+      class="font-[650] [&&]:text-[29px]">{stats.campuses}</strong
     >
   </article>
   <article
@@ -205,8 +201,8 @@
   <article
     class="[&&]:grid [&&]:gap-y-[12px] [&&]:gap-x-[12px] [&&]:[background-image:initial] [&&]:[background-color:white] [&&]:p-[22px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(220,_231,_247)] [&&]:rounded-[11px] max-[750.01px]:[&&]:p-[16px]"
   >
-    <span class="[&&]:text-[12px] [&&]:text-[#6a809d]">Menunggu aktivasi</span><strong
-      class="font-[650] [&&]:text-[29px]">{stats.waiting}</strong
+    <span class="[&&]:text-[12px] [&&]:text-[#6a809d]">Total akun PIC</span><strong
+      class="font-[650] [&&]:text-[29px]">{stats.total}</strong
     >
   </article>
   <article
@@ -229,7 +225,7 @@
         Daftar akun kampus
       </h2>
       <p class="[&&]:mt-[7px] mb-[0px] leading-[1.8] [&&]:text-[12px] [&&]:text-[#7185a0] mx-[0px]">
-        Satu alamat email untuk setiap kampus mitra.
+        Dua PIC dengan nama dan email masing-masing untuk setiap kampus mitra.
       </p>
     </div>
     <button
@@ -267,7 +263,7 @@
   >
     {#if error}Jumlah hasil belum dapat diperbarui.{:else if resultsPending}Memuat hasil filter…{:else}Menampilkan
       <strong class="[&&]:font-[650] [&&]:text-[#335580]">{total}</strong> dari
-      <strong class="[&&]:font-[650] [&&]:text-[#335580]">{stats.total}</strong>
+      <strong class="[&&]:font-[650] [&&]:text-[#335580]">{stats.campuses}</strong>
       kampus{#if filter !== 'all'}
         · {filter}{/if}{/if}
   </p>
@@ -302,113 +298,124 @@
     ><span class="[&:last-child]:text-right max-[750.01px]:[&&]:hidden">Status & tindakan</span>
   </div>
   <div class="roster">
-    {#each paged as account (account.campusId)}
-      {@const issue = emailError(account)}
-      <article
-        class="[&&]:grid [&&]:grid-cols-[minmax(220px,_1.1fr)_minmax(200px,_1fr)_minmax(185px,_0.8fr)] [&&]:gap-y-[22px] [&&]:gap-x-[22px] [&&]:items-center [&&]:[border-bottom-width:1px] [&&]:[border-bottom-style:solid] [&&]:[border-bottom-color:rgb(229,_237,_247)] [&&]:px-[24px] [&&]:py-[19px] [&:hover]:[background-image:initial] [&:hover]:[background-color:rgb(250,_252,_255)] max-[1100.01px]:[&&]:grid-cols-[minmax(180px,_1fr)_minmax(170px,_1fr)_minmax(160px,_0.8fr)] max-[1100.01px]:[&&]:gap-y-[14px] max-[1100.01px]:[&&]:gap-x-[14px] max-[750.01px]:[&&]:flex max-[750.01px]:[&&]:gap-y-[12px] max-[750.01px]:[&&]:gap-x-[12px] max-[750.01px]:[&&]:items-stretch max-[750.01px]:[&&]:flex-col max-[750.01px]:[&&]:px-[18px] max-[750.01px]:[&&]:py-[20px] min-[751px]:[&&]:gap-y-[8px] min-[751px]:[&&]:grid-rows-[auto_auto] min-[751px]:[&:not(.editing)]:gap-y-[4px] account-row"
-        class:editing={isEditing(account)}
-        aria-label={account.campus}
-      >
-        <div
-          class="[&&]:items-center [&&]:flex [&&]:gap-y-[13px] [&&]:gap-x-[13px] min-[751px]:[&&&]:[align-items:start] min-[751px]:[&&&]:grid min-[751px]:[&&&]:gap-y-[inherit] min-[751px]:[&&&]:[grid-column-start:1] min-[751px]:[&&&]:[grid-column-end:auto] min-[751px]:[&&&]:[grid-row-start:1] min-[751px]:[&&&]:[grid-row-end:span_2] min-[751px]:[&&&]:grid-cols-[38px_minmax(0,_1fr)] min-[751px]:[&&&]:grid-rows-[subgrid] [@media(min-width:_751px)_and_(max-width:_1100px)]:[&&&]:grid-cols-[minmax(0,_1fr)] campus-cell"
+    {#each campusGroups as group (group.id)}
+      <section aria-label={`PIC ${group.name}`}>
+        <h3
+          class="border-b border-[#dce7f7] bg-[#f3f8ff] px-[24px] py-[14px] text-[13px] font-semibold text-[#17365f]"
         >
-          <span
-            class="[&&]:w-[38px] [&&]:h-[38px] [&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:text-[#2c76c9] [&&]:[background-image:initial] [&&]:[background-color:rgb(237,_245,_255)] [&&]:shrink-0 [&&&]:mt-[5px] [&&]:rounded-[10px] max-[1100.01px]:[&&]:hidden min-[751px]:[.account-row:not(.editing)_.campus-cell>&]:mt-[0] min-[751px]:[.account-row:not(.editing)_.campus-cell>&]:[align-self:center] min-[751px]:[&&&&]:[grid-column-start:1] min-[751px]:[&&&&]:[grid-column-end:auto] min-[751px]:[&&&&]:[grid-row-start:1] min-[751px]:[&&&&]:[grid-row-end:span_2] avatar"
-            ><Icon name="campus" /></span
+          {group.name}
+        </h3>
+        {#each group.accounts as account (account.id)}
+          {@const issue = emailError(account)}
+          <article
+            class="[&&]:grid [&&]:grid-cols-[minmax(220px,_1.1fr)_minmax(200px,_1fr)_minmax(185px,_0.8fr)] [&&]:gap-y-[22px] [&&]:gap-x-[22px] [&&]:items-center [&&]:[border-bottom-width:1px] [&&]:[border-bottom-style:solid] [&&]:[border-bottom-color:rgb(229,_237,_247)] [&&]:px-[24px] [&&]:py-[19px] [&:hover]:[background-image:initial] [&:hover]:[background-color:rgb(250,_252,_255)] max-[1100.01px]:[&&]:grid-cols-[minmax(180px,_1fr)_minmax(170px,_1fr)_minmax(160px,_0.8fr)] max-[1100.01px]:[&&]:gap-y-[14px] max-[1100.01px]:[&&]:gap-x-[14px] max-[750.01px]:[&&]:flex max-[750.01px]:[&&]:gap-y-[12px] max-[750.01px]:[&&]:gap-x-[12px] max-[750.01px]:[&&]:items-stretch max-[750.01px]:[&&]:flex-col max-[750.01px]:[&&]:px-[18px] max-[750.01px]:[&&]:py-[20px] min-[751px]:[&&]:gap-y-[8px] min-[751px]:[&&]:grid-rows-[auto_auto] min-[751px]:[&:not(.editing)]:gap-y-[4px] account-row"
+            class:editing={isEditing(account)}
+            aria-label={`${account.campus} PIC ${account.slot}`}
           >
-          <div
-            class="[&&]:grow [&&]:shrink [&&]:[flex-basis:0%] [&&]:min-w-[0] min-[751px]:[&&&]:[grid-column-start:2] min-[751px]:[&&&]:[grid-column-end:auto] min-[751px]:[&&&]:[grid-row-start:1] min-[751px]:[&&&]:[grid-row-end:span_2] min-[751px]:[&&&]:grid min-[751px]:[&&&]:grid-rows-[subgrid] [@media(min-width:_751px)_and_(max-width:_1100px)]:[&&&]:[grid-column-start:1] [@media(min-width:_751px)_and_(max-width:_1100px)]:[&&&]:[grid-column-end:auto] campus-details"
-          >
-            <strong
-              class="font-[650] [&&]:text-[12px] [&&]:leading-[1.7] max-[750.01px]:[&&]:text-[13px] min-[751px]:[.account-row:not(.editing)_.campus-details>&]:[align-self:end]"
-              >{account.campus}</strong
+            <div
+              class="[&&]:items-center [&&]:flex [&&]:gap-y-[13px] [&&]:gap-x-[13px] min-[751px]:[&&&]:[align-items:start] min-[751px]:[&&&]:grid min-[751px]:[&&&]:gap-y-[inherit] min-[751px]:[&&&]:[grid-column-start:1] min-[751px]:[&&&]:[grid-column-end:auto] min-[751px]:[&&&]:[grid-row-start:1] min-[751px]:[&&&]:[grid-row-end:span_2] min-[751px]:[&&&]:grid-cols-[38px_minmax(0,_1fr)] min-[751px]:[&&&]:grid-rows-[subgrid] [@media(min-width:_751px)_and_(max-width:_1100px)]:[&&&]:grid-cols-[minmax(0,_1fr)] campus-cell"
             >
-            <div class="pic-field">
+              <span
+                class="[&&]:w-[38px] [&&]:h-[38px] [&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:text-[#2c76c9] [&&]:[background-image:initial] [&&]:[background-color:rgb(237,_245,_255)] [&&]:shrink-0 [&&&]:mt-[5px] [&&]:rounded-[10px] max-[1100.01px]:[&&]:hidden min-[751px]:[.account-row:not(.editing)_.campus-cell>&]:mt-[0] min-[751px]:[.account-row:not(.editing)_.campus-cell>&]:[align-self:center] min-[751px]:[&&&&]:[grid-column-start:1] min-[751px]:[&&&&]:[grid-column-end:auto] min-[751px]:[&&&&]:[grid-row-start:1] min-[751px]:[&&&&]:[grid-row-end:span_2] avatar"
+                ><Icon name="campus" /></span
+              >
+              <div
+                class="[&&]:grow [&&]:shrink [&&]:[flex-basis:0%] [&&]:min-w-[0] min-[751px]:[&&&]:[grid-column-start:2] min-[751px]:[&&&]:[grid-column-end:auto] min-[751px]:[&&&]:[grid-row-start:1] min-[751px]:[&&&]:[grid-row-end:span_2] min-[751px]:[&&&]:grid min-[751px]:[&&&]:grid-rows-[subgrid] [@media(min-width:_751px)_and_(max-width:_1100px)]:[&&&]:[grid-column-start:1] [@media(min-width:_751px)_and_(max-width:_1100px)]:[&&&]:[grid-column-end:auto] campus-details"
+              >
+                <strong
+                  class="font-[650] [&&]:text-[12px] [&&]:leading-[1.7] max-[750.01px]:[&&]:text-[13px] min-[751px]:[.account-row:not(.editing)_.campus-details>&]:[align-self:end]"
+                  >PIC {account.slot}</strong
+                >
+                <div class="pic-field">
+                  {#if isEditing(account)}<label
+                      class="[&&]:block [&&]:text-[10px] [&&]:text-[#607b9d] [&&]:mt-[0px] [&&]:mb-[7px] [&&]:mx-[0px]"
+                      for={`pic-${account.id}`}>Nama PIC</label
+                    ><input
+                      class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#17365f] max-w-[100%] [&&]:w-[100%] [&&]:min-w-[0] [&&]:min-h-[44px] [&&]:h-[44px] px-[12px] py-[11px] border-[1px] border-solid border-[color:rgb(212,_225,_241)] rounded-[7px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(39,_144,_232)] [&::placeholder]:text-[#8ea1bc]"
+                      id={`pic-${account.id}`}
+                      aria-label={`Nama PIC ${account.slot} ${account.campus}`}
+                      placeholder="Nama penanggung jawab"
+                      bind:value={names[account.id]}
+                      oninput={() => (notice = '')}
+                    />{:else}<p
+                      class="[&&]:mt-[7px] mb-[0px] [&&]:leading-[1.7] [&&]:text-[12px] [&&]:text-[#6b819c] [&&]:wrap-anywhere mx-[0px] min-[751px]:[.account-row:not(.editing)_&]:leading-[1.7] min-[751px]:[.account-row:not(.editing)_&]:m-[0px] saved-pic"
+                    >
+                      {account.name || 'Nama PIC belum diisi'}
+                    </p>{/if}
+                </div>
+              </div>
+            </div>
+            <div
+              class="[&&]:min-w-[0] max-[750.01px]:[&&]:ml-[0] min-[751px]:[&&&]:[grid-column-start:2] min-[751px]:[&&&]:[grid-column-end:auto] min-[751px]:[&&&]:[grid-row-start:2] min-[751px]:[&&&]:[grid-row-end:auto] min-[751px]:[&&&]:[align-self:start] email-cell"
+            >
               {#if isEditing(account)}<label
                   class="[&&]:block [&&]:text-[10px] [&&]:text-[#607b9d] [&&]:mt-[0px] [&&]:mb-[7px] [&&]:mx-[0px]"
-                  for={`pic-${account.campusId}`}>Nama PIC</label
+                  for={`email-${account.id}`}>Email kampus</label
                 ><input
-                  class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#17365f] max-w-[100%] [&&]:w-[100%] [&&]:min-w-[0] [&&]:min-h-[44px] [&&]:h-[44px] px-[12px] py-[11px] border-[1px] border-solid border-[color:rgb(212,_225,_241)] rounded-[7px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(39,_144,_232)] [&::placeholder]:text-[#8ea1bc]"
-                  id={`pic-${account.campusId}`}
-                  aria-label={`Nama PIC ${account.campus}`}
-                  placeholder="Nama penanggung jawab"
-                  bind:value={names[account.campusId]}
-                  oninput={() => (notice = '')}
-                />{:else}<p
-                  class="[&&]:mt-[7px] mb-[0px] [&&]:leading-[1.7] [&&]:text-[12px] [&&]:text-[#6b819c] [&&]:wrap-anywhere mx-[0px] min-[751px]:[.account-row:not(.editing)_&]:leading-[1.7] min-[751px]:[.account-row:not(.editing)_&]:m-[0px] saved-pic"
-                >
-                  {account.name || 'Nama PIC belum diisi'}
-                </p>{/if}
+                  class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#17365f] max-w-[100%] [&&]:w-[100%] [&&]:min-w-[0] [&&]:min-h-[44px] [&&]:h-[44px] px-[12px] py-[11px] border-[1px] border-solid border-[color:rgb(212,_225,_241)] rounded-[7px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(39,_144,_232)] [&::placeholder]:text-[#8ea1bc] [&[aria-invalid='true']]:border-[color:rgb(206,_103,_92)]"
+                  id={`email-${account.id}`}
+                  type="email"
+                  aria-label={`Email PIC ${account.slot} ${account.campus}`}
+                  aria-invalid={!!issue}
+                  aria-describedby={issue ? `email-error-${account.id}` : undefined}
+                  placeholder="pic@example.com"
+                  bind:value={drafts[account.id]}
+                  oninput={() => {
+                    notice = '';
+                    error = '';
+                  }}
+                />{#if issue}<small
+                    id={`email-error-${account.id}`}
+                    class="[&&]:text-[10px] [&&&]:text-[#a33b31] leading-[1.7] [&&]:block [&&]:mt-[7px] [&&]:wrap-anywhere field-error"
+                    >{issue}</small
+                  >{/if}{#if normalizeEmail(drafts[account.id] ?? account.email) !== account.email || (names[account.id] ?? account.name).trim() !== account.name}<small
+                    class="[&&]:text-[10px] [&&]:text-[#7e91aa] leading-[1.7] [&&]:block [&&]:mt-[7px] [&&]:wrap-anywhere"
+                    >Belum disimpan</small
+                  >{/if}{:else}{#if account.email}<a
+                    class="[-webkit-tap-highlight-color:transparent] [&&]:text-[#2368b5] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] [&&]:text-[12px] [&&]:leading-[1.8] [&&]:wrap-anywhere [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:[text-decoration-line:underline] [&:hover]:[text-decoration-thickness:initial] [&:hover]:[text-decoration-style:initial] [&:hover]:[text-decoration-color:initial] min-[751px]:[.account-row:not(.editing)_&]:leading-[1.7] min-[751px]:[.account-row:not(.editing)_&]:block saved-email"
+                    href={`mailto:${account.email}`}>{account.email}</a
+                  >{:else}<p
+                    class="[&&]:mt-[7px] mb-[0px] [&&]:leading-[1.7] [&&]:text-[12px] [&&]:text-[#6b819c] [&&]:wrap-anywhere mx-[0px] min-[751px]:[.account-row:not(.editing)_&]:leading-[1.7] min-[751px]:[.account-row:not(.editing)_&]:m-[0px] saved-pic"
+                  >
+                    Email belum diisi
+                  </p>{/if}{/if}
             </div>
-          </div>
-        </div>
-        <div
-          class="[&&]:min-w-[0] max-[750.01px]:[&&]:ml-[0] min-[751px]:[&&&]:[grid-column-start:2] min-[751px]:[&&&]:[grid-column-end:auto] min-[751px]:[&&&]:[grid-row-start:2] min-[751px]:[&&&]:[grid-row-end:auto] min-[751px]:[&&&]:[align-self:start] email-cell"
-        >
-          {#if isEditing(account)}<label
-              class="[&&]:block [&&]:text-[10px] [&&]:text-[#607b9d] [&&]:mt-[0px] [&&]:mb-[7px] [&&]:mx-[0px]"
-              for={`email-${account.campusId}`}>Email kampus</label
-            ><input
-              class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#17365f] max-w-[100%] [&&]:w-[100%] [&&]:min-w-[0] [&&]:min-h-[44px] [&&]:h-[44px] px-[12px] py-[11px] border-[1px] border-solid border-[color:rgb(212,_225,_241)] rounded-[7px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(39,_144,_232)] [&::placeholder]:text-[#8ea1bc] [&[aria-invalid='true']]:border-[color:rgb(206,_103,_92)]"
-              id={`email-${account.campusId}`}
-              type="email"
-              aria-label={`Email ${account.campus}`}
-              aria-invalid={!!issue}
-              aria-describedby={issue ? `email-error-${account.campusId}` : undefined}
-              placeholder="pic@example.com"
-              bind:value={drafts[account.campusId]}
-              oninput={() => {
-                notice = '';
-                error = '';
-              }}
-            />{#if issue}<small
-                id={`email-error-${account.campusId}`}
-                class="[&&]:text-[10px] [&&&]:text-[#a33b31] leading-[1.7] [&&]:block [&&]:mt-[7px] [&&]:wrap-anywhere field-error"
-                >{issue}</small
-              >{/if}{#if normalizeEmail(drafts[account.campusId] ?? account.email) !== account.email || (names[account.campusId] ?? account.name).trim() !== account.name}<small
-                class="[&&]:text-[10px] [&&]:text-[#7e91aa] leading-[1.7] [&&]:block [&&]:mt-[7px] [&&]:wrap-anywhere"
-                >Belum disimpan</small
-              >{/if}{:else}{#if account.email}<a
-                class="[-webkit-tap-highlight-color:transparent] [&&]:text-[#2368b5] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] [&&]:text-[12px] [&&]:leading-[1.8] [&&]:wrap-anywhere [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:[text-decoration-line:underline] [&:hover]:[text-decoration-thickness:initial] [&:hover]:[text-decoration-style:initial] [&:hover]:[text-decoration-color:initial] min-[751px]:[.account-row:not(.editing)_&]:leading-[1.7] min-[751px]:[.account-row:not(.editing)_&]:block saved-email"
-                href={`mailto:${account.email}`}>{account.email}</a
-              >{:else}<p
-                class="[&&]:mt-[7px] mb-[0px] [&&]:leading-[1.7] [&&]:text-[12px] [&&]:text-[#6b819c] [&&]:wrap-anywhere mx-[0px] min-[751px]:[.account-row:not(.editing)_&]:leading-[1.7] min-[751px]:[.account-row:not(.editing)_&]:m-[0px] saved-pic"
+            <div
+              class="[&&]:text-right [&&]:min-w-[0] max-[750.01px]:[&&]:ml-[0] min-[751px]:[&&&]:[grid-column-start:3] min-[751px]:[&&&]:[grid-column-end:auto] min-[751px]:[&&&]:[grid-row-start:1] min-[751px]:[&&&]:[grid-row-end:span_2] row-actions"
+            >
+              <span
+                class="[&&&]:inline-flex items-center gap-y-[5px] gap-x-[5px] text-[10px] leading-[1.6] font-[600] [background-image:initial] [background-color:rgb(241,_243,_238)] text-[#8a9580] [white-space-collapse:collapse] [text-wrap-mode:nowrap] px-[7px] py-[4px] rounded-[5px] [&.green]:[background-image:initial] [&.green]:[background-color:rgb(231,_246,_236)] [&.green]:text-[#187347] [&.amber]:[background-image:initial] [&.amber]:[background-color:rgb(255,_244,_214)] [&.amber]:text-[#956000] max-[700.01px]:text-[9px] [&.missing]:[background-image:initial] [&.missing]:[background-color:rgb(255,_240,_238)] [&.missing]:text-[#b42318] badge"
+                class:green={account.active}
+                class:amber={!!account.email &&
+                  !account.active &&
+                  account.status !== 'Gagal dikirim'}
+                class:missing={!account.email || account.status === 'Gagal dikirim'}
+                >{account.status}</span
               >
-                Email belum diisi
-              </p>{/if}{/if}
-        </div>
-        <div
-          class="[&&]:text-right [&&]:min-w-[0] max-[750.01px]:[&&]:ml-[0] min-[751px]:[&&&]:[grid-column-start:3] min-[751px]:[&&&]:[grid-column-end:auto] min-[751px]:[&&&]:[grid-row-start:1] min-[751px]:[&&&]:[grid-row-end:span_2] row-actions"
-        >
-          <span
-            class="[&&&]:inline-flex items-center gap-y-[5px] gap-x-[5px] text-[10px] leading-[1.6] font-[600] [background-image:initial] [background-color:rgb(241,_243,_238)] text-[#8a9580] [white-space-collapse:collapse] [text-wrap-mode:nowrap] px-[7px] py-[4px] rounded-[5px] [&.green]:[background-image:initial] [&.green]:[background-color:rgb(231,_246,_236)] [&.green]:text-[#187347] [&.amber]:[background-image:initial] [&.amber]:[background-color:rgb(255,_244,_214)] [&.amber]:text-[#956000] max-[700.01px]:text-[9px] [&.missing]:[background-image:initial] [&.missing]:[background-color:rgb(255,_240,_238)] [&.missing]:text-[#b42318] badge"
-            class:green={account.active}
-            class:amber={!!account.email && !account.active && account.status !== 'Gagal dikirim'}
-            class:missing={!account.email || account.status === 'Gagal dikirim'}
-            >{account.status}</span
-          >
-          <div
-            class="[&&]:justify-end [&&]:flex [&&]:gap-y-[15px] [&&]:gap-x-[15px] [&&]:flex-wrap [&&]:mt-[9px] max-[750.01px]:[&&]:justify-end"
-          >
-            {#if account.name || account.email}{#if isEditing(account)}<button
-                  class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [font-size:inherit] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#2368b5] [&&]:inline-flex [&&]:items-center [&&]:justify-center [&&]:w-[40px] [&&]:h-[40px] [&&]:shrink-0 [&&]:[background-image:initial] [&&]:[background-color:rgb(243,_248,_255)] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(196,_216,_240)] [&&]:rounded-[8px] [&:disabled]:cursor-pointer [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:rgb(145,_191,_255)] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[3px] [&:hover]:[background-image:initial] [&:hover]:[background-color:rgb(227,_239,_255)] edit-button"
-                  aria-label={`Batal ubah PIC ${account.campus}`}
-                  title="Batal ubah PIC"
-                  onclick={() => cancelEdit(account)}><Icon name="close" size={17} /></button
-                >{:else}<button
-                  class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [font-size:inherit] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#2368b5] [&&]:inline-flex [&&]:items-center [&&]:justify-center [&&]:w-[40px] [&&]:h-[40px] [&&]:shrink-0 [&&]:[background-image:initial] [&&]:[background-color:rgb(243,_248,_255)] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(196,_216,_240)] [&&]:rounded-[8px] [&:disabled]:cursor-pointer [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:rgb(145,_191,_255)] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[3px] [&:hover]:[background-image:initial] [&:hover]:[background-color:rgb(227,_239,_255)] edit-button"
-                  aria-label={`Ubah PIC ${account.campus}`}
-                  title="Ubah nama dan email PIC"
-                  onclick={() => (editing = [...editing, account.campusId])}
-                  ><Icon name="edit" size={17} /></button
-                >{/if}{/if}
-          </div>
-        </div>
-      </article>
+              <div
+                class="[&&]:justify-end [&&]:flex [&&]:gap-y-[15px] [&&]:gap-x-[15px] [&&]:flex-wrap [&&]:mt-[9px] max-[750.01px]:[&&]:justify-end"
+              >
+                {#if account.name || account.email}{#if isEditing(account)}<button
+                      class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [font-size:inherit] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#2368b5] [&&]:inline-flex [&&]:items-center [&&]:justify-center [&&]:w-[40px] [&&]:h-[40px] [&&]:shrink-0 [&&]:[background-image:initial] [&&]:[background-color:rgb(243,_248,_255)] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(196,_216,_240)] [&&]:rounded-[8px] [&:disabled]:cursor-pointer [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:rgb(145,_191,_255)] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[3px] [&:hover]:[background-image:initial] [&:hover]:[background-color:rgb(227,_239,_255)] edit-button"
+                      aria-label={`Batal ubah PIC ${account.slot} ${account.campus}`}
+                      title="Batal ubah PIC"
+                      onclick={() => cancelEdit(account)}><Icon name="close" size={17} /></button
+                    >{:else}<button
+                      class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [font-size:inherit] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#2368b5] [&&]:inline-flex [&&]:items-center [&&]:justify-center [&&]:w-[40px] [&&]:h-[40px] [&&]:shrink-0 [&&]:[background-image:initial] [&&]:[background-color:rgb(243,_248,_255)] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(196,_216,_240)] [&&]:rounded-[8px] [&:disabled]:cursor-pointer [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:rgb(145,_191,_255)] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[3px] [&:hover]:[background-image:initial] [&:hover]:[background-color:rgb(227,_239,_255)] edit-button"
+                      aria-label={`Ubah PIC ${account.slot} ${account.campus}`}
+                      title="Ubah nama dan email PIC"
+                      onclick={() => (editing = [...editing, account.id])}
+                      ><Icon name="edit" size={17} /></button
+                    >{/if}{/if}
+              </div>
+            </div>
+          </article>
+        {/each}
+      </section>
     {:else}<p
         class="leading-[1.8] [&&]:text-center [&&]:text-[12px] [&&]:text-[#6b829e] [&&]:p-[40px] m-[0px] empty-result"
       >
-        Tidak ada kampus yang cocok dengan pencarian atau filter.
+        Tidak ada akun PIC yang cocok dengan pencarian atau filter.
       </p>{/each}
   </div>
   <nav
@@ -445,7 +452,7 @@
           class="[&&]:[border-bottom-width:1px] [&&]:[border-bottom-style:solid] [&&]:[border-bottom-color:rgb(224,_234,_246)] [&&]:grid [&&]:gap-y-[7px] [&&]:gap-x-[7px] [&&]:text-[12px] [&&]:wrap-anywhere [&&]:px-[0px] [&&]:py-[12px]"
         >
           <strong class="font-[650]">{a.campus}</strong><span class="[&&]:text-[#6b819c]"
-            >{a.email} → {normalizeEmail(drafts[a.campusId]) || 'Email dikosongkan'}</span
+            >{a.email} → {normalizeEmail(drafts[a.id]) || 'Email dikosongkan'}</span
           >
         </li>{/each}
     </ul>

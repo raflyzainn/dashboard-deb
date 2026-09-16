@@ -2,6 +2,8 @@ import { createSeed } from './fixtures/seed';
 import type { Snapshot, MasterDefinition, MasterAudit, QuestionReply } from '../../types';
 
 export interface DemoAccount {
+  id: string;
+  slot: 1 | 2;
   campusId: string;
   campus: string;
   name: string;
@@ -49,16 +51,41 @@ export function initialState(): DemoState {
     files: Object.fromEntries(seed.files.map((f) => [f.id, f.blob])),
     replies: [],
     audit: [],
-    accounts: seed.data.campuses.map((c, i) => ({
-      campusId: c.id,
-      campus: c.name,
-      name: `PIC Demo ${i + 1}`,
-      email: `kampus${i + 1}@example.test`,
-      revision: 1,
-      status: 'Aktif',
-      active: true
-    }))
+    accounts: seed.data.campuses.flatMap(createCampusAccounts)
   };
+}
+export function createCampusAccounts(campus: { id: string; name: string }): DemoAccount[] {
+  return ([1, 2] as const).map((slot) => ({
+    id: slot === 1 ? campus.id : `${campus.id}-pic2`,
+    slot,
+    campusId: campus.id,
+    campus: campus.name,
+    name: `PIC ${slot} Demo`,
+    email: `${campus.id}.pic${slot}@example.test`,
+    revision: 1,
+    status: 'Aktif',
+    active: true
+  }));
+}
+// Upgrade existing browser data in place, preserving PIC 1 edits and all campus work.
+export function upgradeAccounts(state: DemoState): boolean {
+  let changed = false;
+  for (const account of state.accounts) {
+    if (!account.id) {
+      account.id = account.campusId;
+      account.slot = 1;
+      changed = true;
+    }
+  }
+  for (const campus of state.data.campuses) {
+    for (const account of createCampusAccounts(campus)) {
+      if (!state.accounts.some((a) => a.campusId === campus.id && a.slot === account.slot)) {
+        state.accounts.push(account);
+        changed = true;
+      }
+    }
+  }
+  return changed;
 }
 let database: Promise<IDBDatabase> | undefined;
 function open() {
@@ -92,8 +119,9 @@ export async function transaction<T>(action: (state: DemoState) => T, write = fa
     request.onsuccess = () => {
       try {
         const state: DemoState = request.result || initialState();
+        const upgraded = upgradeAccounts(state);
         result = action(state);
-        if (write || !request.result) store.put(state, 'current');
+        if (write || !request.result || upgraded) store.put(state, 'current');
       } catch (error) {
         failure = error;
         tx.abort();

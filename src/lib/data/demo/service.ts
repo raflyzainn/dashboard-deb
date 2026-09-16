@@ -9,7 +9,7 @@ import type { PageRequest, NavigationData } from '../../page-data';
 import { periodsFrom } from '../../periods';
 import { validateCategories } from '../../forum';
 import { changedSinceSubmission } from '../../verification';
-import { transaction, resetDemo, type DemoState } from './store';
+import { transaction, resetDemo, createCampusAccounts, type DemoState } from './store';
 const now = () => new Date().toISOString();
 const id = () => crypto.randomUUID();
 const text = (value: string, max = 5000) => {
@@ -326,15 +326,7 @@ export function createDemoService() {
           if (old) Object.assign(old, row);
           else {
             s.data.campuses.push(row);
-            s.accounts.push({
-              campusId: key,
-              campus: row.name,
-              name: 'PIC Demo',
-              email: '',
-              revision: 1,
-              status: 'Email belum diisi',
-              active: false
-            });
+            s.accounts.push(...createCampusAccounts(row));
             for (const d of defs(s))
               s.data.indicators.push({
                 id: id(),
@@ -796,13 +788,13 @@ export function createDemoService() {
     reset: resetDemo,
     accountsAdmin: (
       path: string,
-      body?: { changes?: { campusId: string; name: string; email: string; revision: number }[] }
+      body?: { changes?: { id: string; name: string; email: string; revision: number }[] }
     ) =>
       run(
         (s) => {
           if (body) {
             for (const change of body.changes || []) {
-              const a = s.accounts.find((a) => a.campusId === change.campusId);
+              const a = s.accounts.find((a) => a.id === change.id);
               if (!a) throw Error('Akun tidak ditemukan.');
               revision(a.revision, change.revision);
               if (change.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(change.email))
@@ -811,8 +803,7 @@ export function createDemoService() {
                 change.email &&
                 s.accounts.some(
                   (other) =>
-                    other.campusId !== a.campusId &&
-                    other.email.toLowerCase() === change.email.toLowerCase()
+                    other.id !== a.id && other.email.toLowerCase() === change.email.toLowerCase()
                 )
               )
                 throw Error('Email sudah digunakan.');
@@ -834,18 +825,30 @@ export function createDemoService() {
               ...a,
               campus: s.data.campuses.find((c) => c.id === a.campusId)?.name || a.campus
             }))
+            .sort((a, b) => a.campus.localeCompare(b.campus, 'id') || a.slot - b.slot)
             .filter(
               (a) =>
                 (a.campus + ' ' + a.name + ' ' + a.email).toLowerCase().includes(q) &&
                 (!status || a.status === status)
             );
           const page = Math.max(1, Number(params.get('page')) || 1);
+          const campusIds = [...new Set(rows.map((a) => a.campusId))];
+          const selectedCampuses = campusIds.slice((page - 1) * 10, page * 10);
           return {
-            items: rows.slice((page - 1) * 10, page * 10),
+            items: selectedCampuses.flatMap((campusId) =>
+              s.accounts
+                .filter((a) => a.campusId === campusId)
+                .sort((a, b) => a.slot - b.slot)
+                .map((a) => ({
+                  ...a,
+                  campus: s.data.campuses.find((c) => c.id === campusId)?.name || a.campus
+                }))
+            ),
             page,
-            total: rows.length,
+            total: campusIds.length,
             stats: {
               total: s.accounts.length,
+              campuses: s.data.campuses.length,
               email: s.accounts.filter((a) => a.email).length,
               waiting: 0,
               active: s.accounts.filter((a) => a.active).length

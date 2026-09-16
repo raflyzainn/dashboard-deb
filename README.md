@@ -17,6 +17,8 @@ Data awal mencakup 40 kampus, 30 indikator, proposal PDF contoh, pengajuan, foru
 
 Isian indikator, periode, versi PDF, tanggapan admin, forum, dan perubahan lainnya bertahan setelah reload pada browser dan origin yang sama. Ganti akun melalui sidebar untuk mencoba alur kampus/admin dengan data yang sama. **Reset data demo** mengembalikan contoh awal setelah konfirmasi.
 
+Halaman admin Akun kampus menampilkan dua PIC per kampus, masing-masing dengan nama dan email yang dapat diedit. Login dummy tetap satu pilihan per kampus (40 pilihan awal). Penyimpanan versi lama ditingkatkan otomatis dengan mempertahankan PIC pertama dan seluruh data kampus.
+
 Data tidak tersinkron antarperangkat atau pengunjung. Menghapus penyimpanan situs juga menghapus perubahan demo. Pemilih peran bukan autentikasi; jangan gunakan demo untuk data pribadi atau dokumen operasional.
 
 ## Build dan pengujian
