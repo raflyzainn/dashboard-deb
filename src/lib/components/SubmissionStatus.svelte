@@ -1,10 +1,16 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
   import { app } from '$lib/state.svelte';
   import { dataService } from '$lib/data/service';
   import { latestSubmission, changedSinceSubmission, verificationLabel } from '$lib/verification';
   import { date } from '$lib/domain';
   import Badge from './Badge.svelte';
   import Modal from './Modal.svelte';
+  let {
+    compact = false,
+    blocked = false,
+    statusIcon
+  }: { compact?: boolean; blocked?: boolean; statusIcon?: Snippet } = $props();
   const latest = $derived(latestSubmission(app.data!, app.session!.campusId!));
   const changed = $derived(latest ? changedSinceSubmission(app.data!, latest) : false);
   const pending = $derived(latest?.status === 'pending');
@@ -18,7 +24,7 @@
   );
   let confirm = $state(false);
 </script>
-<section class="panel submission-status" aria-label="Status pengajuan DEB">
+<section class="panel submission-status" class:compact aria-label="Status pengajuan DEB">
   <div class="row-between">
     <h2>Verifikasi data DEB</h2>
     <Badge tone={pending ? 'blue' : latest?.status === 'approved' && !changed ? 'green' : 'amber'}
@@ -30,19 +36,22 @@
             ? verificationLabel[latest.status]
             : 'Belum dikirim'}</Badge
     >
+    {@render statusIcon?.()}
   </div>
   <p>
-    {pending
-      ? 'Data yang dikirim sedang diperiksa Admin PF. Nilai indikator dikunci sampai ada keputusan.'
-      : latest?.status === 'approved' && !changed
-        ? 'Admin PF telah mengonfirmasi data pengajuan ini. Pembaruan berikutnya perlu dikirim kembali untuk diverifikasi.'
-        : 'Lengkapi indikator, lalu kirim data untuk ditinjau. Admin dapat menyetujui atau mengembalikan data dengan catatan revisi.'}
+    {blocked
+      ? 'Simpan atau batalkan perubahan indikator sebelum mengirim verifikasi.'
+      : pending
+        ? 'Data yang dikirim sedang diperiksa Admin PF. Nilai indikator dikunci sampai ada keputusan.'
+        : latest?.status === 'approved' && !changed
+          ? 'Admin PF telah mengonfirmasi data pengajuan ini. Pembaruan berikutnya perlu dikirim kembali untuk diverifikasi.'
+          : 'Lengkapi indikator, lalu kirim data untuk ditinjau. Admin dapat menyetujui atau mengembalikan data dengan catatan revisi.'}
   </p>
-  {#if latest}<small
+  {#if latest && !compact}<small
       >Pengajuan #{latest.version} · Dikirim {date(latest.submittedAt)}{#if latest.reviewedAt}
         · Ditinjau {date(latest.reviewedAt)}{/if}</small
     >{/if}
-  {#if latest?.decisionNote}<div class="decision-note">
+  {#if latest?.decisionNote && !compact}<div class="decision-note">
       <strong>Catatan Admin PF</strong>
       <p class="pre-wrap">{latest.decisionNote}</p>
     </div>{/if}
@@ -51,7 +60,7 @@
     </p>{/if}
   {#if canSubmit}<button
       class="button"
-      disabled={app.readOnly || app.loading || app.busy}
+      disabled={blocked || app.readOnly || app.loading || app.busy || app.stale}
       onclick={() => (confirm = true)}
       >{latest ? 'Kirim ulang untuk verifikasi' : 'Kirim untuk verifikasi'}</button
     >{/if}
@@ -70,7 +79,7 @@
         >Batal</button
       ><button
         class="button"
-        disabled={app.readOnly || app.loading || app.busy}
+        disabled={blocked || !canSubmit || app.readOnly || app.loading || app.busy || app.stale}
         onclick={async () => {
           if (await app.mutate(() => dataService.submitDeb(), 'Data DEB dikirim untuk verifikasi.'))
             confirm = false;
@@ -110,5 +119,53 @@
   .row-between {
     gap: 12px;
     flex-wrap: wrap;
+  }
+  .compact {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 24px;
+    padding: 16px 20px;
+    margin: 0;
+    border-color: #cce7f8;
+    box-shadow: 0 4px 20px #0c4a6e12;
+  }
+  .compact .row-between {
+    justify-content: flex-start;
+    grid-column: 1;
+  }
+  .compact h2 {
+    color: #153e56;
+    font-size: 13px;
+  }
+  .compact p {
+    grid-column: 1;
+    margin: 5px 0 0;
+    color: #607d90;
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  .compact > .button {
+    grid-column: 2;
+    grid-row: 1 / 4;
+    margin: 0;
+    background: #0284c7;
+    border-color: #0284c7;
+  }
+  @media (max-width: 700px) {
+    .compact {
+      grid-template-columns: 1fr;
+      padding: 12px 14px;
+      gap: 4px;
+    }
+    .compact > .button {
+      grid-column: 1;
+      grid-row: auto;
+      width: 100%;
+      margin-top: 6px;
+    }
+    .compact .row-between {
+      gap: 8px;
+    }
   }
 </style>

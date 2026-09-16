@@ -177,8 +177,6 @@ api.changePassword = e => {
   return e.json(200, { ok: true });
 };
 
-api.qa = e => { actor(e); return e.json(200, { keys: list(e.app, 'users', 'simulated = true && active = true').map(r => r.getString('legacyId')) }); };
-
 api.token = token;
 return api;
 }

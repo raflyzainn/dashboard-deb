@@ -11,7 +11,6 @@ import { configureRestSchema } from './rest-schema';
 export const VERSION = '0.40.3';
 export const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 export const LOCAL = path.join(ROOT, '.local', 'pocketbase');
-export const MIGRATIONS = path.join(ROOT, 'db-schema', 'pb_migrations');
 export const BINARY = path.join(LOCAL, 'bin', VERSION, process.platform === 'win32' ? 'pocketbase.exe' : 'pocketbase');
 export type LocalInstance = { project: 'dashboard-deb'; instanceId: string; kind: 'development' | 'test'; url: string; directory: string };
 export type Credential = { email: string; password: string };
