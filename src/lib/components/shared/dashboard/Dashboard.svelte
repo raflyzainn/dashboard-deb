@@ -71,7 +71,7 @@
     <p class="leading-[1.8] m-[0px]">
       {isAdmin
         ? `Satu pandangan untuk perjalanan ${app.data!.campuses.length} kampus. Pantau capaian dan perkembangan bersama.`
-        : 'Tinjau capaian, dokumen, dan pembelajaran bersama kampus lain dari PocketBase.'}
+        : 'Tinjau capaian, dokumen, dan pembelajaran bersama kampus lain menggunakan data simulasi.'}
     </p>
     <a
       class="[-webkit-tap-highlight-color:transparent] [&&]:text-[#0b4c9a] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] inline-flex items-center justify-center gap-y-[9px] gap-x-[9px] min-h-[42px] [&&]:[background-image:initial] [&&]:[background-color:rgb(220,_236,_255)] text-[12px] font-[650] [transition-behavior:normal,_normal] [transition-duration:0.15s,_0.15s] [transition-timing-function:ease,_ease] [transition-delay:0s,_0s] [transition-property:background,_box-shadow] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [box-shadow:0_8px_18px_#075fc71a] px-[18px] py-[11px] border-[1px] border-solid [&&]:border-[color:rgb(190,_220,_255)] rounded-[8px] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:linear-gradient(135deg,_rgb(5,_104,_196),_rgb(18,_75,_197))] [&:hover:not(:disabled)]:[background-color:initial] [&:hover:not(:disabled)]:[box-shadow:0_10px_24px_#075fc72c] [&:hover]:[background-image:initial] [&:hover]:[background-color:rgb(205,_229,_255)] max-[700.01px]:text-[11px] max-[700.01px]:px-[15px] max-[700.01px]:py-[10px] button mint"

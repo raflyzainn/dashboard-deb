@@ -2,7 +2,7 @@ import type { AppSession, PreviewAccount, Snapshot } from './types';
 import { dataService, DataReadError, READ_ONLY_MESSAGE } from './data/service';
 import { emptyPageData, pageKey, type PageRequest, type NavigationData } from './page-data';
 
-const SESSION_KEY = 'deb-pocketbase-preview-account';
+const SESSION_KEY = 'deb-standalone-demo-account';
 class AppState {
   session = $state<AppSession | null>(null);
   data = $state<Snapshot | null>(null);
@@ -31,10 +31,8 @@ class AppState {
     this.initializing = true;
     let key = '';
     try { key = sessionStorage.getItem(SESSION_KEY) || ''; } catch { /* Selection persistence is optional. */ }
-    const current = await fetch('/api/auth/me').then(r => r.json()).catch(() => ({ session: null }));
-    if (current.session) await this.login('');
-    else if (key) await this.login(key);
-    // QA accounts are loaded only when the user opens the explicit development option.
+    if (key) await this.login(key);
+    // Demo accounts are loaded by the account picker.
     this.ready = true;
     this.initializing = false;
   }
@@ -63,13 +61,6 @@ class AppState {
     } finally { if (revision === this.revision) this.loading = false; }
   }
   async logout() {
-    try {
-      const response = await fetch('/api/auth/logout', { method: 'POST' });
-      if (!response.ok) throw new Error('Logout gagal. Coba lagi.');
-    } catch {
-      this.error = 'Belum berhasil keluar. Periksa koneksi dan coba lagi.';
-      return false;
-    }
     this.revision++; dataService.selectAccount('');
     this.pageRevision++; this.currentPage = null; this.pageId = ''; this.navigation = { pendingCount: 0, revisionCount: 0, unreadCount: 0 };
     this.readOnly = true; this.session = null; this.data = null; this.error = ''; this.toast = ''; this.loadedAt = ''; this.stale = false; this.loading = false; this.busy = false; this.dialogs = 0;
@@ -146,6 +137,6 @@ class AppState {
       return false;
     } finally { if (revision === this.revision) this.busy = false; }
   }
-  private message(error: unknown) { return error instanceof Error ? error.message : 'Pembacaan PocketBase gagal. Coba muat ulang.'; }
+  private message(error: unknown) { return error instanceof Error ? error.message : 'Data demo belum dapat dimuat. Coba muat ulang.'; }
 }
 export const app = new AppState();

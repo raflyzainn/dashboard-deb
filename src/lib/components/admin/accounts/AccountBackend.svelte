@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { dataService } from '$lib/data/service';
   import { untrack } from 'svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
   import Modal from '$lib/components/ui/Modal.svelte';
@@ -57,20 +58,8 @@
       void load(query, state, page);
     });
   });
-  async function api(path: string, body?: object, key?: string) {
-    const qa = sessionStorage.getItem('deb-pocketbase-preview-account');
-    const r = await fetch('/api/admin/accounts' + path, {
-      method: body ? 'POST' : 'GET',
-      headers: {
-        ...(qa ? { 'X-DEB-Preview': '1', 'X-DEB-Preview-Account': qa } : {}),
-        ...(body ? { 'Content-Type': 'application/json' } : {}),
-        ...(key ? { 'Idempotency-Key': key } : {})
-      },
-      body: body ? JSON.stringify(body) : undefined
-    });
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.message || 'Data akun belum dapat dimuat.');
-    return data;
+  async function api(path: string, body?: object, _key?: string): Promise<any> {
+    return dataService.accountsAdmin(path, body);
   }
   function remember(rows: Account[]) {
     for (const value of rows) {
@@ -183,15 +172,15 @@
       Akun kampus
     </h1>
     <p class="leading-[1.8] m-[0px]">
-      Simpan nama dan email PIC. Kampus meminta tautan aktivasi sendiri melalui halaman login.
+      Simulasi pengelolaan nama dan email PIC. Perubahan hanya tersimpan di browser ini.
     </p>
   </div>
 </div>
 <p
   class="mt-[0px] [&&]:mb-[22px] [&&]:leading-[1.8] [&&]:text-[11px] [&&]:text-[#607b9d] [&&]:[background-image:initial] [&&]:[background-color:rgb(241,_247,_255)] [&&]:px-[17px] [&&]:py-[13px] mx-[0px] [&&]:border-[1px] [&&]:border-dashed [&&]:border-[color:rgb(189,_212,_240)] [&&]:rounded-[9px] mock-note"
 >
-  Setelah data disimpan, PIC memilih Aktivasi akun di halaman login dan memasukkan email yang
-  terdaftar. Menyimpan data tidak mengirim email. <button
+  Mode demo: email tidak dikirim dan akun nyata tidak dibuat. Gunakan pilihan role pada halaman
+  masuk untuk mencoba alur kampus dan admin. <button
     class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[650] [font-stretch:inherit] [&&]:text-[11px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[#0668ce] inline-flex items-center gap-y-[7px] gap-x-[7px] [background-image:none] [background-color:initial] [white-space-collapse:collapse] [text-wrap-mode:nowrap] p-[0px] border-[0px] border-none border-[color:currentcolor] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.4] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:text-[#0a3eaa] text-link"
     onclick={() => load()}>Muat ulang status</button
   >
@@ -267,9 +256,7 @@
       aria-label="Filter status akun"
       bind:value={filter}
       ><option value="all">Semua status</option
-      >{#each ['Email belum diisi', 'Belum aktivasi', 'Dalam antrean', 'Menunggu aktivasi', 'Gagal dikirim', 'Aktif'] as value}<option
-          >{value}</option
-        >{/each}</select
+      >{#each ['Email belum diisi', 'Aktif'] as value}<option>{value}</option>{/each}</select
     >
   </div>
   <p
@@ -287,8 +274,7 @@
   {#if changed.length}<p
       class="[&&]:leading-[1.8] [&&]:text-[11px] [&&]:text-[#607b9d] [&&]:mx-[24px] [&&]:my-[12px] max-[750.01px]:[&&]:mx-[18px] hint"
     >
-      Simpan perubahan nama dan email agar PIC dapat meminta tautan aktivasi menggunakan data
-      terbaru.
+      Simpan nama dan email contoh untuk simulasi pengelolaan PIC. Tidak ada email yang dikirim.
     </p>{/if}
   {#if hasErrors}<p
       class="[&&]:leading-[1.8] [&&]:text-[11px] [&&]:text-[#a33b31] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_240,_238)] [&&]:p-[12px] [&&]:mx-[24px] [&&]:my-[12px] [&&]:rounded-[7px] max-[750.01px]:[&&]:mx-[18px] error"
@@ -449,8 +435,8 @@
 </section>
 {#if resetAccounts}<Modal title="Ubah email akun aktif?" onclose={() => (resetAccounts = null)}
     ><p class="leading-[1.8] m-[0px]">
-      Perubahan email akan membatalkan tautan lama, mencabut akses lama dan mengharuskan aktivasi
-      ulang.
+      Perubahan ini hanya mengganti email contoh di browser ini. Tidak ada tautan aktivasi atau
+      email yang dikirim.
     </p>
     <ul
       class="[&&]:[list-style-position:initial] [&&]:[list-style-image:initial] [&&]:[list-style-type:none] [&&]:max-h-[320px] [&&]:overflow-x-auto [&&]:overflow-y-auto [&&]:p-[0px] [&&]:mx-[0px] [&&]:my-[20px] recipient-list"
@@ -470,7 +456,7 @@
       ><button
         class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[650] [font-stretch:inherit] text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[white] inline-flex items-center justify-center gap-y-[9px] gap-x-[9px] min-h-[42px] [background-image:linear-gradient(135deg,_rgb(8,_119,_216),_rgb(21,_89,_214))] [background-color:initial] [transition-behavior:normal,_normal] [transition-duration:0.15s,_0.15s] [transition-timing-function:ease,_ease] [transition-delay:0s,_0s] [transition-property:background,_box-shadow] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [box-shadow:0_8px_18px_#075fc71a] px-[18px] py-[11px] border-[1px] border-solid border-[color:rgb(8,_107,_201)] rounded-[8px] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:linear-gradient(135deg,_rgb(5,_104,_196),_rgb(18,_75,_197))] [&:hover:not(:disabled)]:[background-color:initial] [&:hover:not(:disabled)]:[box-shadow:0_10px_24px_#075fc72c] max-[700.01px]:text-[11px] max-[700.01px]:px-[15px] max-[700.01px]:py-[10px] button"
         disabled={busy}
-        onclick={commitEmails}>Simpan & reset aktivasi</button
+        onclick={commitEmails}>Simpan email demo</button
       >
     </div></Modal
   >{/if}

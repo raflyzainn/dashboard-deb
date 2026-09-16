@@ -58,8 +58,8 @@
     <div>
       <strong class="font-[650] [&&]:text-[15px]">{unread} belum dibaca</strong>
       <p class="[&&]:mt-[7px] mb-[0px] leading-[1.8] [&&]:text-[11px] [&&]:text-[#718176] mx-[0px]">
-        Notifikasi berasal dari PocketBase. Membuka tautan detail menandai notifikasi sebagai
-        dibaca.
+        Notifikasi simulasi tersimpan di browser ini. Membuka tautan detail menandai notifikasi
+        sebagai dibaca.
       </p>
     </div>
     <button
