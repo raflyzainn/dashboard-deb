@@ -4,8 +4,8 @@
   import { dataService } from '$lib/data/service';
   import type { Notification } from '$lib/types';
   import { date } from '$lib/domain';
-  import Icon from '$lib/components/Icon.svelte';
-  import Empty from '$lib/components/Empty.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
+  import Empty from '$lib/components/ui/Empty.svelte';
   let unreadOnly = $state(false);
   const notices = $derived(
     [...(app.data?.notifications || [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt))

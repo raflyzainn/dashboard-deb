@@ -2,8 +2,8 @@
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { app } from '$lib/state.svelte';
-  import Icon from './Icon.svelte';
-  import ChangePassword from './ChangePassword.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
+  import ChangePassword from '$lib/components/auth/ChangePassword.svelte';
   let changingPassword = $state(false);
   import type { Snippet } from 'svelte';
   let { children }: { children: Snippet } = $props();

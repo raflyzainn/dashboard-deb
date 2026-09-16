@@ -5,12 +5,12 @@
   import { date, number, progress } from '$lib/domain';
   import { verificationLabel } from '$lib/verification';
   import type { VerificationStatus } from '$lib/types';
-  import Indicators from '../../_components/Indicators.svelte';
-  import Badge from '$lib/components/Badge.svelte';
-  import Icon from '$lib/components/Icon.svelte';
-  import Empty from '$lib/components/Empty.svelte';
-  import Progress from '$lib/components/Progress.svelte';
-  import Modal from '$lib/components/Modal.svelte';
+  import Indicators from '$lib/components/shared/indicators/Indicators.svelte';
+  import Badge from '$lib/components/ui/Badge.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
+  import Empty from '$lib/components/ui/Empty.svelte';
+  import Progress from '$lib/components/ui/Progress.svelte';
+  import Modal from '$lib/components/ui/Modal.svelte';
 
   let search = $state('');
   let status = $state<VerificationStatus>('pending');

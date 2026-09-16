@@ -3,9 +3,9 @@
   import { app } from '$lib/state.svelte';
   import { dataService } from '$lib/data/service';
   import type { FaqEntry } from '$lib/types';
-  import Icon from '$lib/components/Icon.svelte';
-  import Modal from '$lib/components/Modal.svelte';
-  import Empty from '$lib/components/Empty.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
+  import Modal from '$lib/components/ui/Modal.svelte';
+  import Empty from '$lib/components/ui/Empty.svelte';
   let search = $state('');
   let editing = $state(false);
   let editId = $state<string | undefined>();

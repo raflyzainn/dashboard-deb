@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Faq from '../../_components/Faq.svelte';
+  import Faq from '$lib/components/shared/faq/Faq.svelte';
 </script>
 
 <svelte:head><title>Pusat bantuan · Digitalisasi DEB</title></svelte:head>

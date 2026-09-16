@@ -10,8 +10,8 @@
   } from '$lib/map';
   import { number } from '$lib/domain';
   import { INDONESIA_PATHS } from '$lib/indonesia-map';
-  import Icon from '$lib/components/Icon.svelte';
-  import Progress from '$lib/components/Progress.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
+  import Progress from '$lib/components/ui/Progress.svelte';
 
   let region = $state('Semua wilayah');
   let band = $state<'all' | ProgressBand>('all');

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import Modal from './Modal.svelte';
-  import Icon from './Icon.svelte';
+  import Modal from '$lib/components/ui/Modal.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
   let { onclose }: { onclose: () => void } = $props();
   let currentPassword = $state(''),
     password = $state(''),

@@ -5,11 +5,11 @@
   import { dataService } from '$lib/data/service';
   import { date, size } from '$lib/domain';
   import type { ProposalVersion } from '$lib/types';
-  import Icon from '$lib/components/Icon.svelte';
-  import Badge from '$lib/components/Badge.svelte';
-  import Modal from '$lib/components/Modal.svelte';
-  import Empty from '$lib/components/Empty.svelte';
-  import ProposalCompare from '$lib/components/ProposalCompare.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
+  import Badge from '$lib/components/ui/Badge.svelte';
+  import Modal from '$lib/components/ui/Modal.svelte';
+  import Empty from '$lib/components/ui/Empty.svelte';
+  import ProposalCompare from './ProposalCompare.svelte';
   let { campusId = '', embedded = false }: { campusId?: string; embedded?: boolean } = $props();
   let campus = $state('');
   $effect(() => {

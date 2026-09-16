@@ -1,7 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import Icon from './Icon.svelte';
-  import Modal from './Modal.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
+  import Modal from '$lib/components/ui/Modal.svelte';
   import { normalizeEmail, validEmail } from '$lib/account-validation';
   type Account = {
     campusId: string;

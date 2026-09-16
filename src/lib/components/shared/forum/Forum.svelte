@@ -1,17 +1,17 @@
 <script lang="ts">
   // Shared presentation for the explicit Campus/Admin routes.
-  import Discussion from '$lib/components/Discussion.svelte';
+  import Discussion from './Discussion.svelte';
   import { goto } from '$app/navigation';
   import { app } from '$lib/state.svelte';
   import { dataService } from '$lib/data/service';
   import { date } from '$lib/domain';
-  import Icon from '$lib/components/Icon.svelte';
-  import Badge from '$lib/components/Badge.svelte';
-  import Modal from '$lib/components/Modal.svelte';
-  import Empty from '$lib/components/Empty.svelte';
-  import CategoryTags from '$lib/components/CategoryTags.svelte';
-  import TopRatedQuestions from '$lib/components/TopRatedQuestions.svelte';
-  import MyQuestions from '$lib/components/MyQuestions.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
+  import Badge from '$lib/components/ui/Badge.svelte';
+  import Modal from '$lib/components/ui/Modal.svelte';
+  import Empty from '$lib/components/ui/Empty.svelte';
+  import CategoryTags from './CategoryTags.svelte';
+  import TopRatedQuestions from './TopRatedQuestions.svelte';
+  import MyQuestions from './MyQuestions.svelte';
   import {
     FORUM_CATEGORIES,
     questionStatus,

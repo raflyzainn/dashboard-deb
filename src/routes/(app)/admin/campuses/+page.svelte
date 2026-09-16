@@ -1,6 +1,6 @@
 <script lang="ts">
-  import Campuses from '../../_components/Campuses.svelte';
-  import AccountBackend from '$lib/components/AccountBackend.svelte';
+  import Campuses from '$lib/components/admin/campuses/Campuses.svelte';
+  import AccountBackend from '$lib/components/admin/accounts/AccountBackend.svelte';
   import { page } from '$app/state';
   const accounts = $derived(page.url.searchParams.get('tab') === 'accounts');
 </script>

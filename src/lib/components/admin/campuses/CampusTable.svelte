@@ -4,10 +4,10 @@
   const CAMPUS_REGIONS = $derived(
     [...new Set(app.data?.campuses.map((c) => c.region) || [])].sort()
   );
-  import Icon from './Icon.svelte';
-  import Progress from './Progress.svelte';
-  import Badge from './Badge.svelte';
-  import Empty from './Empty.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
+  import Progress from '$lib/components/ui/Progress.svelte';
+  import Badge from '$lib/components/ui/Badge.svelte';
+  import Empty from '$lib/components/ui/Empty.svelte';
   let { compact = false }: { compact?: boolean } = $props();
   let search = $state('');
   let filter = $state('all');

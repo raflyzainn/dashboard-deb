@@ -4,13 +4,13 @@
   import { dataService } from '$lib/data/service';
   import { progress, number, date, feedbackLabel } from '$lib/domain';
   import type { CampusIndicator } from '$lib/types';
-  import SubmissionStatus from '$lib/components/SubmissionStatus.svelte';
+  import SubmissionStatus from './SubmissionStatus.svelte';
   import { latestSubmission } from '$lib/verification';
-  import Icon from '$lib/components/Icon.svelte';
-  import Badge from '$lib/components/Badge.svelte';
-  import Progress from '$lib/components/Progress.svelte';
-  import Modal from '$lib/components/Modal.svelte';
-  import Empty from '$lib/components/Empty.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
+  import Badge from '$lib/components/ui/Badge.svelte';
+  import Progress from '$lib/components/ui/Progress.svelte';
+  import Modal from '$lib/components/ui/Modal.svelte';
+  import Empty from '$lib/components/ui/Empty.svelte';
   let { campusId = '', embedded = false }: { campusId?: string; embedded?: boolean } = $props();
   let campus = $state('');
   $effect(() => {

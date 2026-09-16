@@ -3,7 +3,7 @@
   import { date } from '$lib/domain';
   import { questionCategories, questionStatus, QUESTION_STATUS_LABELS } from '$lib/forum';
   import CategoryTags from './CategoryTags.svelte';
-  import Icon from './Icon.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
 
   let { onask }: { onask: () => void } = $props();
   let visibleCount = $state(3);

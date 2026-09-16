@@ -5,10 +5,10 @@
   import { average, progress, number, date, feedbackLabel } from '$lib/domain';
   import { latestSubmission, changedSinceSubmission, verificationLabel } from '$lib/verification';
   import type { CampusIndicator } from '$lib/types';
-  import Icon from '$lib/components/Icon.svelte';
-  import Badge from '$lib/components/Badge.svelte';
-  import Empty from '$lib/components/Empty.svelte';
-  import SubmissionStatus from '$lib/components/SubmissionStatus.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
+  import Badge from '$lib/components/ui/Badge.svelte';
+  import Empty from '$lib/components/ui/Empty.svelte';
+  import SubmissionStatus from '$lib/components/shared/indicators/SubmissionStatus.svelte';
 
   let search = $state('');
   let category = $state('');

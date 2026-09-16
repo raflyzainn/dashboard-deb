@@ -4,7 +4,7 @@
   import { dev } from '$app/environment';
   import { onDestroy, untrack } from 'svelte';
   import { app } from '$lib/state.svelte';
-  import Icon from './Icon.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
   import WelcomeGuide from './WelcomeGuide.svelte';
   let screen = $state<
     'login' | 'employee' | 'activate' | 'forgot' | 'password' | 'sent' | 'success' | 'invalid'

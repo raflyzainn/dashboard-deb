@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import Campuses from '../../../_components/Campuses.svelte';
+  import Campuses from '$lib/components/admin/campuses/Campuses.svelte';
 </script>
 
 <svelte:head><title>Kampus mitra · Digitalisasi DEB</title></svelte:head>

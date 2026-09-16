@@ -1,13 +1,13 @@
 <script lang="ts">
-  import Icon from '$lib/components/Icon.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
   import { periodsFrom } from '$lib/periods';
   import { untrack } from 'svelte';
   import { app } from '$lib/state.svelte';
   import { dataService } from '$lib/data/service';
   import type { DefinitionInput, MasterData, MasterDefinition } from '$lib/types';
-  import Modal from '$lib/components/Modal.svelte';
-  import Empty from '$lib/components/Empty.svelte';
-  import MasterAudit from '$lib/components/MasterAudit.svelte';
+  import Modal from '$lib/components/ui/Modal.svelte';
+  import Empty from '$lib/components/ui/Empty.svelte';
+  import MasterAudit from '$lib/components/admin/indicators/MasterAudit.svelte';
   let data = $state<MasterData>({ definitions: [] });
   let loading = $state(true),
     error = $state(''),
