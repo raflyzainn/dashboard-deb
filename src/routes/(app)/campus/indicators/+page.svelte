@@ -1,6 +1,6 @@
 <script lang="ts">
-  import Indicators from '../../_components/Indicators.svelte';
+  import CampusIndicators from '../../_components/CampusIndicators.svelte';
 </script>
 
 <svelte:head><title>Indikator · Digitalisasi DEB</title></svelte:head>
-<Indicators />
+<CampusIndicators />

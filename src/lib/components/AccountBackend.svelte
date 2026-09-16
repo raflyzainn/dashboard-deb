@@ -11,7 +11,6 @@
     revision: number;
     status: string;
     active: boolean;
-    sentAt: string | null;
   };
   let cache = $state<Record<string, Account>>({}),
     ids = $state<string[]>([]);
@@ -82,7 +81,7 @@
           (names[value.campusId] ?? old.name).trim() !== old.name);
       // Keep the original revision for unsaved edits so the server can report conflicts.
       if (!dirty) {
-        cache[value.campusId] = { ...value, active: value.status === 'Aktif', sentAt: null };
+        cache[value.campusId] = { ...value, active: value.status === 'Aktif' };
         drafts[value.campusId] = value.email;
         names[value.campusId] = value.name;
       }
@@ -295,9 +294,6 @@
                   ><Icon name="edit" size={17} /></button
                 >{/if}{/if}
           </div>
-          {#if account.sentAt}<small
-              >Terakhir: {new Date(account.sentAt).toLocaleString('id-ID')}</small
-            >{/if}
         </div>
       </article>
     {:else}<p class="empty-result">
@@ -617,8 +613,7 @@
   .email-cell input[aria-invalid='true'] {
     border-color: #ce675c;
   }
-  .email-cell small,
-  .row-actions small {
+  .email-cell small {
     display: block;
     font-size: 10px;
     color: #7e91aa;

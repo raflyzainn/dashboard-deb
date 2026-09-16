@@ -6,6 +6,11 @@
   import Icon from '$lib/components/Icon.svelte';
   let { children } = $props();
   $effect(() => {
+    if (!app.toast) return;
+    const timer = setTimeout(() => (app.toast = ''), 4000);
+    return () => clearTimeout(timer);
+  });
+  $effect(() => {
     untrack(() => {
       void app.init();
     });

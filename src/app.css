@@ -1790,77 +1790,8 @@ form textarea {
   font-size: 9px;
   letter-spacing: 1px;
 }
-.author-line {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-}
-.author-line strong {
-  display: block;
-  font-size: 11px;
-}
-.author-line small {
-  display: block;
-  font-size: 9px;
-}
-.question-body {
-  font-size: 14px;
-  color: #617153;
-  line-height: 1.95;
-  margin: 24px 0;
-}
-.question-bottom {
-  display: flex;
-  justify-content: space-between;
-  gap: 15px;
-  align-items: center;
-  border-top: 1px solid #eaf0e1;
-  padding-top: 20px;
-}
 .question-bottom .muted {
   font-size: 10px;
-}
-.answer-panel {
-  margin: 22px 0;
-}
-.official-answer {
-  display: flex;
-  gap: 17px;
-  padding: 5px 26px 25px;
-}
-.admin-avatar {
-  width: 37px;
-  height: 37px;
-  flex-shrink: 0;
-  border-radius: 9px;
-  background: #285837;
-  color: #e0f1c9;
-  display: grid;
-  place-items: center;
-  font-size: 12px;
-  font-weight: 750;
-}
-.official-answer strong {
-  font-size: 12px;
-}
-.official-answer small {
-  display: block;
-  margin: 4px 0 13px;
-}
-.official-answer p {
-  font-size: 13px;
-  line-height: 1.9;
-  color: #667758;
-}
-.answer-actions {
-  display: flex;
-  gap: 12px;
-  padding: 0 26px 25px;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-}
-.answer-form {
-  padding: 0 25px 25px;
 }
 .faq-header {
   text-align: center;
@@ -2137,55 +2068,6 @@ form textarea {
   margin: 14px 0 35px;
   max-width: 350px;
 }
-.role-card {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  gap: 16px;
-  border: 1px solid #dce6d2;
-  background: #fff;
-  border-radius: 11px;
-  text-align: left;
-  padding: 22px 20px;
-  margin-bottom: 16px;
-  transition:
-    transform 0.18s,
-    border-color 0.18s,
-    box-shadow 0.18s;
-}
-.role-card:hover:not(:disabled) {
-  border-color: #95b77b;
-  transform: translateY(-2px);
-  box-shadow: 0 7px 20px #415d2410;
-}
-.role-card > span:nth-child(2) {
-  flex: 1;
-}
-.role-card strong {
-  display: block;
-  font-size: 13px;
-  color: #365830;
-}
-.role-card small {
-  display: block;
-  font-size: 10px;
-  color: #9aa88c;
-  margin-top: 8px;
-  line-height: 1.6;
-}
-.role-card > svg {
-  color: #9bb288;
-}
-.role-icon {
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  background: #eef5e5;
-  color: #88a96a;
-  border-radius: 11px;
-  flex-shrink: 0;
-}
 .role-icon.admin {
   background: #e9f1e9;
   color: #789b80;
@@ -2202,12 +2084,6 @@ form textarea {
 }
 .login-hint > svg {
   margin-top: 3px;
-}
-.login-bottom {
-  margin-top: 55px;
-  font-size: 10px;
-  color: #afbaa5;
-  text-align: center;
 }
 @media (min-width: 1500px) {
   .hero-banner {
@@ -2344,13 +2220,6 @@ form textarea {
   }
   .login-panel {
     padding: 30px;
-  }
-  .role-card {
-    padding: 17px 14px;
-    gap: 10px;
-  }
-  .role-card small {
-    font-size: 9px;
   }
   .login-form h2 {
     font-size: 30px;
@@ -2584,16 +2453,6 @@ form textarea {
   .question-detail h1 {
     font-size: 22px;
   }
-  .question-bottom {
-    flex-wrap: wrap;
-  }
-  .official-answer {
-    padding-inline: 19px;
-    gap: 13px;
-  }
-  .official-answer p {
-    font-size: 12px;
-  }
   .proposal-current {
     padding: 0 20px 24px;
     gap: 20px;
@@ -2774,19 +2633,6 @@ form textarea {
   .login-intro {
     font-size: 12px;
     margin: 12px 0 25px;
-  }
-  .role-card {
-    padding: 18px;
-    gap: 13px;
-  }
-  .role-card strong {
-    font-size: 12px;
-  }
-  .role-card small {
-    font-size: 10px;
-  }
-  .login-bottom {
-    margin-top: 27px;
   }
   .login-hint p {
     font-size: 10px;
@@ -2970,12 +2816,6 @@ td {
 }
 .login-hint {
   color: #728363;
-}
-.role-card small {
-  color: #768769;
-}
-.login-bottom {
-  color: #809070;
 }
 @media (max-width: 700px) {
   .stat-top {
@@ -3502,10 +3342,6 @@ dialog::backdrop {
 .question-summary a:hover h3 {
   color: #075fc7;
 }
-.admin-avatar {
-  background: #145ee8;
-  color: #fff;
-}
 .faq-entry {
   border-color: #dce7f5;
 }
@@ -3577,22 +3413,6 @@ dialog::backdrop {
 .login-intro {
   color: #60789b;
 }
-.role-card {
-  border-color: #d4e4f5;
-}
-.role-card:hover:not(:disabled) {
-  border-color: #57a5ec;
-  box-shadow: 0 12px 28px #13599f18;
-}
-.role-card strong {
-  color: #173e70;
-}
-.role-card small {
-  color: #6d82a0;
-}
-.role-card > svg {
-  color: #6e9dcc;
-}
 .role-icon,
 .role-icon.admin {
   background: #e5f2ff;
@@ -3600,9 +3420,6 @@ dialog::backdrop {
 }
 .login-hint {
   color: #6784a8;
-}
-.login-bottom {
-  color: #7990ae;
 }
 .hill {
   background: #1554d1;
@@ -3755,10 +3572,6 @@ dialog::backdrop {
 }
 .upload-zone {
   color: #4376a8 !important;
-}
-.version-number {
-  background: #e7f2ff !important;
-  color: #1769bd !important;
 }
 .version-item:before {
   background: #d9e8f7 !important;
@@ -3913,19 +3726,6 @@ dialog::backdrop {
 .audit-list p {
   font-size: 11px;
   margin: 10px 0;
-}
-.audit-values {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  font-size: 11px;
-}
-.audit-values pre {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  background: #f5f8fc;
-  padding: 12px;
-  border-radius: 8px;
 }
 .search-label {
   min-width: 180px;
