@@ -144,86 +144,188 @@
 
 <svelte:head><title>Peta Persebaran · Digitalisasi DEB</title></svelte:head>
 
-<div class="page-heading">
+<div
+  class="flex items-center justify-between gap-y-[20px] gap-x-[20px] mb-[27px] [&_p]:text-[12px] [&_p]:text-[#637796] [&_p]:mt-[8px] max-[900.01px]:[&_h1]:text-[24px] max-[700.01px]:[&&]:items-start max-[700.01px]:gap-y-[15px] max-[700.01px]:gap-x-[15px] max-[700.01px]:mb-[22px] max-[700.01px]:flex-wrap max-[700.01px]:[&_h1]:text-[23px] max-[700.01px]:[&_p]:text-[12px] max-[700.01px]:[&_p]:leading-[1.9] max-[700.01px]:[&_p]:max-w-[340px] max-[700.01px]:[&_.period]:hidden page-heading"
+>
   <div>
-    <span class="eyebrow">PANDANGAN WILAYAH ADMIN</span>
-    <h1>Peta Persebaran Kampus</h1>
-    <p>
+    <span
+      class="block text-[10px] tracking-[1.9px] font-[750] text-[#3975b7] mb-[9px] max-[700.01px]:text-[8px] eyebrow"
+      >PANDANGAN WILAYAH ADMIN</span
+    >
+    <h1
+      class="font-[650] text-[color:var(--navy)] text-[29px] tracking-[-1.15px] leading-[1.3] m-[0px]"
+    >
+      Peta Persebaran Kampus
+    </h1>
+    <p class="leading-[1.8] m-[0px]">
       Lihat jangkauan {app.data!.campuses.length} kampus mitra dan progres simulasi program DEB di berbagai
       wilayah Indonesia.
     </p>
   </div>
-  <span class="readonly"><Icon name="eye" size={15} />Hanya baca</span>
+  <span
+    class="[&&]:flex [&&]:items-center [&&]:gap-y-[7px] [&&]:gap-x-[7px] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_255,_255)] text-[#52739b]! [&&]:text-[11px] [&&]:px-[13px] [&&]:py-[9px] [&&]:border-[1px] [&&]:border-solid border-[color:rgb(210,_227,_245)]! [&&]:rounded-[999px] max-[700.01px]:[&&]:[align-self:flex-start] readonly"
+    ><Icon name="eye" size={15} />Hanya baca</span
+  >
 </div>
 
-<p role="status" class="map-missing">
+<p role="status" class="leading-[1.8] m-[0px] map-missing">
   {app.data!.campuses.length - allPoints.length} kampus belum dapat dipetakan karena koordinat kosong
   atau di luar area peta.
 </p>
-<section class="map-stats" aria-label="Ringkasan persebaran">
-  <article>
-    <span class="stat-icon green"><Icon name="campuses" /></span>
+<section
+  class="[&_small]:text-[#6680a0]! [&_p]:text-[#6680a0]! [&_strong]:text-[#183b68]! [&&]:grid [&&]:grid-cols-[repeat(4,_minmax(0,_1fr))] [&&]:gap-y-[15px] [&&]:gap-x-[15px] [&&]:mb-[22px] max-[1150.01px]:[&&]:grid-cols-[repeat(2,_minmax(0,_1fr))] max-[700.01px]:[&&]:gap-y-[8px] max-[700.01px]:[&&]:gap-x-[8px] map-stats"
+  aria-label="Ringkasan persebaran"
+>
+  <article
+    class="[&&]:flex [&&]:items-start [&&]:gap-y-[13px] [&&]:gap-x-[13px] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_255,_255)] [&&]:p-[20px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(223,_231,_218)] [&&]:rounded-[12px] max-[700.01px]:[&&]:gap-y-[9px] max-[700.01px]:[&&]:gap-x-[9px] max-[700.01px]:[&&]:p-[13px]"
+  >
+    <span
+      class="[&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:w-[38px] [&&]:h-[38px] [&&]:[background-image:initial]! [&&]:[background-color:rgb(231,_243,_255)]! [&&]:text-[#1671ce]! [&&]:shrink-0 [&&]:rounded-[10px] max-[700.01px]:[&&]:w-[32px] max-[700.01px]:[&&]:h-[32px] max-[700.01px]:[&>svg]:w-[17px] max-[700.01px]:[&>svg]:h-[17px] stat-icon green"
+      ><Icon name="campuses" /></span
+    >
     <div>
-      <small>Kampus ditampilkan</small><strong
-        >{visible.length}<span>dari {app.data!.campuses.length}</span></strong
+      <small class="[&&]:text-[10px] [&&]:text-[#74826f] leading-[1.7] [&&]:block"
+        >Kampus ditampilkan</small
+      ><strong
+        class="font-[650] [&&]:flex [&&]:items-baseline [&&]:gap-y-[7px] [&&]:gap-x-[7px] [&&]:text-[26px] [&&]:mt-[5px] [&&]:mb-[4px] [&&]:mx-[0px] max-[700.01px]:[&&]:text-[21px]"
+        >{visible.length}<span class="[&&]:text-[10px] [&&]:font-[500] [&&]:text-[#71806b]"
+          >dari {app.data!.campuses.length}</span
+        ></strong
       >
-      <p>{region}</p>
+      <p
+        class="leading-[1.8] [&&]:text-[9px] [&&]:text-[#84917e] m-[0px] max-[700.01px]:[&&]:hidden"
+      >
+        {region}
+      </p>
     </div>
   </article>
-  <article>
-    <span class="stat-icon blue"><Icon name="sebaran" /></span>
+  <article
+    class="[&&]:flex [&&]:items-start [&&]:gap-y-[13px] [&&]:gap-x-[13px] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_255,_255)] [&&]:p-[20px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(223,_231,_218)] [&&]:rounded-[12px] max-[700.01px]:[&&]:gap-y-[9px] max-[700.01px]:[&&]:gap-x-[9px] max-[700.01px]:[&&]:p-[13px]"
+  >
+    <span
+      class="[&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:w-[38px] [&&]:h-[38px] [&&]:[background-image:initial]! [&&]:[background-color:rgb(231,_243,_255)]! [&&]:text-[#1671ce]! [&&]:shrink-0 [&&]:rounded-[10px] max-[700.01px]:[&&]:w-[32px] max-[700.01px]:[&&]:h-[32px] max-[700.01px]:[&>svg]:w-[17px] max-[700.01px]:[&>svg]:h-[17px] stat-icon blue"
+      ><Icon name="sebaran" /></span
+    >
     <div>
-      <small>Provinsi terjangkau</small><strong>{provinceCount}<span>provinsi</span></strong>
-      <p>Lokasi kampus pada filter aktif</p>
+      <small class="[&&]:text-[10px] [&&]:text-[#74826f] leading-[1.7] [&&]:block"
+        >Provinsi terjangkau</small
+      ><strong
+        class="font-[650] [&&]:flex [&&]:items-baseline [&&]:gap-y-[7px] [&&]:gap-x-[7px] [&&]:text-[26px] [&&]:mt-[5px] [&&]:mb-[4px] [&&]:mx-[0px] max-[700.01px]:[&&]:text-[21px]"
+        >{provinceCount}<span class="[&&]:text-[10px] [&&]:font-[500] [&&]:text-[#71806b]"
+          >provinsi</span
+        ></strong
+      >
+      <p
+        class="leading-[1.8] [&&]:text-[9px] [&&]:text-[#84917e] m-[0px] max-[700.01px]:[&&]:hidden"
+      >
+        Lokasi kampus pada filter aktif
+      </p>
     </div>
   </article>
-  <article>
-    <span class="stat-icon amber"><Icon name="target" /></span>
+  <article
+    class="[&&]:flex [&&]:items-start [&&]:gap-y-[13px] [&&]:gap-x-[13px] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_255,_255)] [&&]:p-[20px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(223,_231,_218)] [&&]:rounded-[12px] max-[700.01px]:[&&]:gap-y-[9px] max-[700.01px]:[&&]:gap-x-[9px] max-[700.01px]:[&&]:p-[13px]"
+  >
+    <span
+      class="[&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:w-[38px] [&&]:h-[38px] [&&&]:[background-image:initial] [&&&]:[background-color:rgb(251,_240,_217)] [&&&]:text-[#a37523] [&&]:shrink-0 [&&]:rounded-[10px] max-[700.01px]:[&&]:w-[32px] max-[700.01px]:[&&]:h-[32px] max-[700.01px]:[&>svg]:w-[17px] max-[700.01px]:[&>svg]:h-[17px] stat-icon amber"
+      ><Icon name="target" /></span
+    >
     <div>
-      <small>Rata-rata progres</small><strong>{number(average)}<span>%</span></strong>
-      <p>Perhitungan data simulasi</p>
+      <small class="[&&]:text-[10px] [&&]:text-[#74826f] leading-[1.7] [&&]:block"
+        >Rata-rata progres</small
+      ><strong
+        class="font-[650] [&&]:flex [&&]:items-baseline [&&]:gap-y-[7px] [&&]:gap-x-[7px] [&&]:text-[26px] [&&]:mt-[5px] [&&]:mb-[4px] [&&]:mx-[0px] max-[700.01px]:[&&]:text-[21px]"
+        >{number(average)}<span class="[&&]:text-[10px] [&&]:font-[500] [&&]:text-[#71806b]">%</span
+        ></strong
+      >
+      <p
+        class="leading-[1.8] [&&]:text-[9px] [&&]:text-[#84917e] m-[0px] max-[700.01px]:[&&]:hidden"
+      >
+        Perhitungan data simulasi
+      </p>
     </div>
   </article>
-  <article>
-    <span class="stat-icon mint"><Icon name="check" /></span>
+  <article
+    class="[&&]:flex [&&]:items-start [&&]:gap-y-[13px] [&&]:gap-x-[13px] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_255,_255)] [&&]:p-[20px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(223,_231,_218)] [&&]:rounded-[12px] max-[700.01px]:[&&]:gap-y-[9px] max-[700.01px]:[&&]:gap-x-[9px] max-[700.01px]:[&&]:p-[13px]"
+  >
+    <span
+      class="[&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:w-[38px] [&&]:h-[38px] [&&]:[background-image:initial]! [&&]:[background-color:rgb(231,_243,_255)]! [&&]:text-[#1671ce]! [&&]:shrink-0 [&&]:rounded-[10px] max-[700.01px]:[&&]:w-[32px] max-[700.01px]:[&&]:h-[32px] max-[700.01px]:[&>svg]:w-[17px] max-[700.01px]:[&>svg]:h-[17px] stat-icon mint"
+      ><Icon name="check" /></span
+    >
     <div>
-      <small>Progres tertinggi</small><strong>{reached}<span>kampus</span></strong>
-      <p>Progres simulasi minimal 70%</p>
+      <small class="[&&]:text-[10px] [&&]:text-[#74826f] leading-[1.7] [&&]:block"
+        >Progres tertinggi</small
+      ><strong
+        class="font-[650] [&&]:flex [&&]:items-baseline [&&]:gap-y-[7px] [&&]:gap-x-[7px] [&&]:text-[26px] [&&]:mt-[5px] [&&]:mb-[4px] [&&]:mx-[0px] max-[700.01px]:[&&]:text-[21px]"
+        >{reached}<span class="[&&]:text-[10px] [&&]:font-[500] [&&]:text-[#71806b]">kampus</span
+        ></strong
+      >
+      <p
+        class="leading-[1.8] [&&]:text-[9px] [&&]:text-[#84917e] m-[0px] max-[700.01px]:[&&]:hidden"
+      >
+        Progres simulasi minimal 70%
+      </p>
     </div>
   </article>
 </section>
 
-<section class="panel map-filters" aria-label="Penyaring peta">
-  <div>
-    <strong>Jelajahi persebaran</strong>
-    <p>Filter akan memperbarui titik peta dan ringkasan wilayah.</p>
+<section
+  class="[background-image:initial] [background-color:white] min-w-[0] overflow-x-hidden overflow-y-hidden [box-shadow:0_10px_30px_#1a4d8f08] [&&]:grid [&&]:grid-cols-[minmax(210px,_1fr)_minmax(260px,_1.5fr)_240px] [&&]:items-center [&&]:gap-y-[18px] [&&]:gap-x-[18px] [&&]:mb-[22px] [&&]:px-[20px] [&&]:py-[18px] border-[1px] border-solid border-[color:rgb(220,_231,_247)] rounded-[11px] [&:hover]:border-[color:rgb(210,_226,_245)] max-[1150.01px]:[&&]:grid-cols-[1fr_1fr] max-[700.01px]:[&&]:grid-cols-[1fr] max-[700.01px]:[&&]:p-[16px] panel map-filters"
+  aria-label="Penyaring peta"
+>
+  <div
+    class="max-[1150.01px]:[&&]:[grid-column-start:1] max-[1150.01px]:[&&]:[grid-column-end:-1] max-[700.01px]:[&&]:[grid-column-start:auto] max-[700.01px]:[&&]:[grid-column-end:auto]"
+  >
+    <strong class="font-[650] [&&]:text-[13px]">Jelajahi persebaran</strong>
+    <p class="[&&]:mt-[5px] mb-[0px] leading-[1.8] [&&]:text-[10px] [&&]:text-[#778473] mx-[0px]">
+      Filter akan memperbarui titik peta dan ringkasan wilayah.
+    </p>
   </div>
-  <label class="search-field"
+  <label
+    class="flex items-center [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#7b94b4] grow shrink [flex-basis:0%] min-w-[200px] [&&&]:w-[100%] px-[12px] py-[0px] border-[1px] border-solid border-[color:rgb(211,_226,_243)] rounded-[7px] [&_input]:[background-image:initial] [&_input]:[background-color:transparent] [&_input]:min-w-[0] [&_input]:w-[100%] [&_input]:text-[11px] [&_input]:p-[10px] [&_input]:border-[0px] [&_input]:border-none [&_input]:border-[color:currentcolor] [&:focus-within]:[outline-color:#7fc1ff] [&:focus-within]:[outline-style:solid] [&:focus-within]:[outline-width:2px] [&_input:focus]:[outline-color:initial] [&_input:focus]:[outline-style:none] [&_input:focus]:[outline-width:initial] search-field"
     ><Icon name="search" size={17} /><input
+      class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#17365f] max-w-[100%] [&&]:min-w-[0] px-[12px] py-[11px] border-[1px] border-solid border-[color:rgb(212,_225,_241)] rounded-[7px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(39,_144,_232)] [&::placeholder]:text-[#8ea1bc]"
       aria-label="Cari kampus di peta"
       placeholder="Cari kampus, singkatan, atau provinsi…"
       bind:value={search}
     /></label
   >
-  <select aria-label="Filter wilayah peta" bind:value={region}
+  <select
+    class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] text-[11px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#17365f] max-w-[290px] min-h-[37px] px-[12px] py-[11px] border-[1px] border-solid border-[color:rgb(212,_225,_241)] rounded-[7px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(39,_144,_232)]"
+    aria-label="Filter wilayah peta"
+    bind:value={region}
     >{#each regions as item}<option value={item}>{item}</option>{/each}</select
   >
 </section>
 
-<div class="map-layout">
-  <section class="panel map-panel">
-    <header>
+<div
+  class="[&&]:grid [&&]:grid-cols-[minmax(0,_1.8fr)_minmax(270px,_0.72fr)] [&&]:gap-y-[22px] [&&]:gap-x-[22px] [&&]:[align-items:start] max-[1150.01px]:[&&]:grid-cols-[1fr] map-layout"
+>
+  <section
+    class="[background-image:initial] [background-color:white] [&&]:min-w-[0] overflow-x-hidden overflow-y-hidden [box-shadow:0_10px_30px_#1a4d8f08] border-[1px] border-solid border-[color:rgb(220,_231,_247)] rounded-[11px] [&:hover]:border-[color:rgb(210,_226,_245)] [&_header_p]:text-[#6680a0]! [&_h2]:text-[#183b68]! [&_header>span]:text-[#3970aa]! [&_header>span]:[background-image:initial]! [&_header>span]:[background-color:rgb(234,_243,_255)]! panel map-panel"
+  >
+    <header
+      class="[&&]:flex [&&]:items-start [&&]:justify-between [&&]:gap-y-[12px] [&&]:gap-x-[12px] [&&]:[border-bottom-width:1px] [&&]:[border-bottom-style:solid] [&&]:[border-bottom-color:rgb(231,_236,_227)] [&&]:px-[22px] [&&]:py-[20px] max-[700.01px]:[&&]:p-[17px]"
+    >
       <div>
-        <h2>Sebaran geografis</h2>
-        <p>Ketuk titik untuk memilih kampus. Gunakan +/− untuk zoom, lalu geser peta.</p>
+        <h2 class="font-[650] text-[color:var(--navy)] [&&]:text-[15px] tracking-[-0.45px] m-[0px]">
+          Sebaran geografis
+        </h2>
+        <p
+          class="[&&]:mt-[5px] mb-[0px] leading-[1.8] [&&]:text-[10px] [&&]:text-[#74816f] mx-[0px]"
+        >
+          Ketuk titik untuk memilih kampus. Gunakan +/− untuk zoom, lalu geser peta.
+        </p>
       </div>
-      <span>{visible.length} kampus</span>
+      <span
+        class="[&&]:text-[10px] [&&]:text-[#6a7b66] [&&]:[background-image:initial] [&&]:[background-color:rgb(240,_245,_236)] [&&]:px-[10px] [&&]:py-[7px] [&&]:rounded-[999px]"
+        >{visible.length} kampus</span
+      >
     </header>
     <div
       bind:this={mapStage}
       bind:clientWidth={stageWidth}
       bind:clientHeight={stageHeight}
-      class="map-stage"
+      class="[&&]:relative [&&]:[aspect-ratio:100/56] [&&]:min-h-[370px] [&&]:overflow-x-hidden [&&]:overflow-y-hidden [background-image:radial-gradient(circle_at_45%_45%,_rgb(251,_253,_255),_rgb(237,_245,_255))]! [background-color:initial]! [&&]:[border-bottom-width:1px] [&&]:[border-bottom-style:solid] [&&]:[border-bottom-color:rgb(229,_235,_225)] [&&]:[cursor:grab] [&&]:[touch-action:none] [&&]:[overscroll-behavior-x:contain] [&&]:[overscroll-behavior-y:contain] [&.dragging]:[cursor:grabbing] max-[700.01px]:[&&]:[aspect-ratio:auto] max-[700.01px]:[&&]:min-h-[310px] map-stage"
       class:dragging
       class:wheel-zooming={wheelZooming}
       role="group"
@@ -234,33 +336,58 @@
       onpointerup={endPan}
       onpointercancel={endPan}
     >
-      <div class="map-controls" aria-label="Kontrol pembesaran peta">
-        <button aria-label="Perkecil peta" disabled={zoom <= 1} onclick={() => setZoom(zoom - 0.25)}
-          >−</button
-        ><output aria-label="Tingkat pembesaran">{Math.round(zoom * 100)}%</output><button
+      <div
+        class="[&&]:absolute [&&]:top-[14px] [&&]:right-[14px] [&&]:flex [&&]:items-center [&&]:z-[7] [&&]:[background-image:initial] [&&]:[background-color:rgba(255,_255,_255,_0.94)] [&&]:[box-shadow:0_5px_14px_#29482912] [&&]:p-[4px] [&&]:border-[1px] [&&]:border-solid border-[color:rgb(200,_222,_244)]! [&&]:rounded-[10px] [&_button]:text-[#1767b8]! [&_output]:text-[#1767b8]! [&_button:hover:not(:disabled)]:[background-image:initial]! [&_button:hover:not(:disabled)]:[background-color:rgb(232,_243,_255)]! map-controls"
+        aria-label="Kontrol pembesaran peta"
+      >
+        <button
+          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[15px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#456342] [&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:h-[40px] [&&]:min-w-[40px] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[7px] [&:disabled]:cursor-default [&:disabled]:opacity-[0.35] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(237,_244,_232)]"
+          aria-label="Perkecil peta"
+          disabled={zoom <= 1}
+          onclick={() => setZoom(zoom - 0.25)}>−</button
+        ><output
+          class="[&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:h-[40px] [&&]:min-w-[48px] [&&]:[border-top-width:0px] [&&]:[border-right-width:1px] [&&]:[border-bottom-width:0px] [&&]:[border-left-width:1px] [&&]:[border-top-style:none] [&&]:[border-right-style:solid] [&&]:[border-bottom-style:none] [&&]:[border-left-style:solid] [&&]:[border-top-color:currentcolor] [&&]:[border-right-color:rgb(226,_233,_221)] [&&]:[border-bottom-color:currentcolor] [&&]:[border-left-color:rgb(226,_233,_221)] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:text-[#456342] [&&]:text-[9px]"
+          aria-label="Tingkat pembesaran">{Math.round(zoom * 100)}%</output
+        ><button
+          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[15px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#456342] [&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:h-[40px] [&&]:min-w-[40px] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[7px] [&:disabled]:cursor-default [&:disabled]:opacity-[0.35] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(237,_244,_232)]"
           aria-label="Perbesar peta"
           disabled={zoom >= 3}
           onclick={() => setZoom(zoom + 0.25)}>+</button
         ><button
-          class="reset-zoom"
+          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[15px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#456342] [&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:h-[40px] [&&]:min-w-[40px] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&&]:ml-[3px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[7px] [&:disabled]:cursor-default [&:disabled]:opacity-[0.35] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(237,_244,_232)] reset-zoom"
           aria-label="Atur ulang pembesaran"
           disabled={zoom === 1 && panX === 0 && panY === 0}
           onclick={resetMap}><Icon name="reset" size={14} /></button
         >
       </div>
-      <div class="map-world" style={`--zoom:${zoom};--pan-x:${panX}px;--pan-y:${panY}px`}>
-        <svg class="archipelago" viewBox="0 0 1000 520" aria-hidden="true">
+      <div
+        class="[&&]:absolute [&&]:left-[3%] [&&]:top-[50%] [&&]:w-[94%] [&&]:[aspect-ratio:1000/520] [&&]:[transform:translate(var(--pan-x),_calc(-50%_+_var(--pan-y)))_scale(var(--zoom))] [&&]:[transform-origin:50%_50%] [&&]:[transition-behavior:normal] [&&]:[transition-duration:0.18s] [&&]:[transition-timing-function:ease] [&&]:[transition-delay:0s] [&&]:[transition-property:transform] [&&]:[will-change:transform] [.map-stage.dragging_&]:[transition-behavior:normal] [.map-stage.dragging_&]:[transition-duration:0s] [.map-stage.dragging_&]:[transition-timing-function:ease] [.map-stage.dragging_&]:[transition-delay:0s] [.map-stage.dragging_&]:[transition-property:none] [.map-stage.wheel-zooming_&]:[transition-behavior:normal] [.map-stage.wheel-zooming_&]:[transition-duration:0s] [.map-stage.wheel-zooming_&]:[transition-timing-function:ease] [.map-stage.wheel-zooming_&]:[transition-delay:0s] [.map-stage.wheel-zooming_&]:[transition-property:none] map-world"
+        style={`--zoom:${zoom};--pan-x:${panX}px;--pan-y:${panY}px`}
+      >
+        <svg
+          class="shrink-0 [&&]:absolute [&&]:top-[0px] [&&]:right-[0px] [&&]:bottom-[0px] [&&]:left-[0px] [&&]:w-[100%] [&&]:h-[100%] [filter:drop-shadow(0_4px_6px_#245b9d22)]! [&_path]:[stroke:#79a9d8]! archipelago"
+          viewBox="0 0 1000 520"
+          aria-hidden="true"
+        >
           <defs
             ><linearGradient id="land" x1="0" y1="0" x2="1" y2="1"
               ><stop stop-color="#dcecff" /><stop offset="1" stop-color="#b9d8ff" /></linearGradient
             ></defs
           >
-          {#each INDONESIA_PATHS as path}<path d={path} />{/each}
+          {#each INDONESIA_PATHS as path}<path
+              class="[&&]:[fill:url(#land)] [&&]:[stroke:#9eb79a] [&&]:[stroke-width:2]"
+              d={path}
+            />{/each}
         </svg>
-        <svg class="marker-links" viewBox="0 0 1000 520" aria-hidden="true">
+        <svg
+          class="shrink-0 [&&]:overflow-x-visible [&&]:overflow-y-visible [&&]:absolute [&&]:top-[0px] [&&]:right-[0px] [&&]:bottom-[0px] [&&]:left-[0px] [&&]:w-[100%] [&&]:h-[100%] [&&]:[pointer-events:none] marker-links"
+          viewBox="0 0 1000 520"
+          aria-hidden="true"
+        >
           {#each markers as point (point.id)}
             {#if Math.abs(point.markerX - point.x) + Math.abs(point.markerY - point.y) > 0.01}
               <line
+                class="[&&]:[stroke:#7796b8] [&&]:[stroke-width:1] [&&]:[stroke-opacity:0.65]"
                 x1={point.x * 10}
                 y1={point.y * 5.2}
                 x2={point.markerX * 10}
@@ -272,585 +399,128 @@
         </svg>
         {#each markers as point (point.id)}
           <button
-            class="map-dot"
+            class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [font-size:inherit] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer text-[inherit] [&&]:absolute [&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:w-[24px] [&&]:h-[24px] [&&]:[transform:translate(-50%,_-50%)_scale(calc(1_/_var(--zoom)))] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:z-[2] [&&]:p-[0px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[50%] [&:disabled]:cursor-pointer [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:rgb(20,_94,_232)] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:2px] [&:focus-visible]:outline-offset-[1px] [&:hover]:z-[4] [&.selected]:z-[4] map-dot left-[var(--marker-x)] top-[var(--marker-y)]"
             class:selected={point.id === selectedId}
-            style={`left:${point.markerX}%;top:${point.markerY}%;--dot:${progressBands[point.band].color};--size:13px`}
+            style={`--marker-x:${point.markerX}%;--marker-y:${point.markerY}%;--dot:${progressBands[point.band].color};--size:13px`}
             aria-label={`${point.name}, ${point.province}, progres ${number(point.score)} persen`}
             title={point.name}
-            onclick={() => (selectedId = point.id)}><span></span></button
+            onclick={() => (selectedId = point.id)}
+            ><span
+              class="[&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:w-[var(--size)] [&&]:h-[var(--size)] [&&]:[background-image:initial] [&&]:[background-color:var(--dot)] [&&]:[box-shadow:0_2px_6px_#1c3d2d45] [&&]:border-[2px] [&&]:border-solid [&&]:border-[color:rgb(255,_255,_255)] [&&]:rounded-[50%] [.map-dot.selected_&]:[outline-color:rgba(20,_94,_232,_0.3)] [.map-dot.selected_&]:[outline-style:solid] [.map-dot.selected_&]:[outline-width:3px]"
+            ></span></button
           >
         {/each}
       </div>
     </div>
-    {#if selected}<article class="map-card" aria-label="Detail kampus terpilih">
-        <div class="map-card-top">
-          <span class="map-avatar">{selected.initials}</span><button
+    {#if selected}<article
+        class="[&&]:relative [&&]:w-[auto] [&&]:[background-image:initial] [&&]:[background-color:rgba(255,_255,_255,_0.95)] [&&]:[backdrop-filter:blur(8px)] [&&]:[box-shadow:0_12px_28px_#2948291f] [&&]:z-[5] [&&]:p-[16px] [&&]:mx-[20px] [&&]:my-[16px] [&&]:border-[1px] [&&]:border-solid border-[color:rgb(207,_226,_245)]! [&&]:rounded-[12px] [&_a]:text-[#075fc7]! max-[700.01px]:[&&]:w-[auto] max-[700.01px]:[&&]:m-[12px] map-card"
+        aria-label="Detail kampus terpilih"
+      >
+        <div class="[&&]:flex [&&]:justify-between [&&]:items-center [&&]:mb-[9px] map-card-top">
+          <span
+            class="[&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:min-w-[30px] [&&]:h-[30px] [background-image:initial]! [background-color:rgb(230,_242,_255)]! text-[#1768bd]! [&&]:text-[9px] [&&]:font-[700] [&&]:px-[7px] [&&]:py-[0px] [&&]:rounded-[8px] map-avatar"
+            >{selected.initials}</span
+          ><button
+            class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[20px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#70806b] [&&]:min-w-[44px] [&&]:min-h-[44px] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&:disabled]:cursor-pointer [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px]"
             aria-label="Tutup detail titik"
             onclick={() => {
               selectedId = '';
             }}>×</button
           >
         </div>
-        <strong>{selected.name}</strong><small>{selected.province} · {selected.island}</small>
-        <div class="row-between">
+        <strong class="font-[650] [&&]:block [&&]:text-[12px] [&&]:leading-[1.6]"
+          >{selected.name}</strong
+        ><small
+          class="[&&]:text-[9px] [&&]:text-[#758170] leading-[1.7] [&&]:block [&&]:mt-[3px] [&&]:mb-[12px] [&&]:mx-[0px]"
+          >{selected.province} · {selected.island}</small
+        >
+        <div
+          class="flex items-center justify-between gap-y-[12px] gap-x-[12px] [&&&]:text-[10px] [&&&]:mb-[7px] row-between"
+        >
           <span>{progressBands[selected.band].label}</span><b>{number(selected.score)}%</b>
         </div>
         <Progress value={selected.score} label={`Progres ${selected.name}`} /><a
+          class="[-webkit-tap-highlight-color:transparent] [&&]:text-[#176f35] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] [&&]:flex [&&]:items-center [&&]:gap-y-[6px] [&&]:gap-x-[6px] [&&]:text-[10px] [&&]:font-[650] [&&]:mt-[12px] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px]"
           href={`/admin/campuses/${selected.id}`}
           >Lihat detail kampus <Icon name="arrow" size={14} /></a
         >
       </article>
     {/if}
-    <div class="map-legend">
+    <div
+      class="[&_button:hover]:[background-image:initial]! [&_button:hover]:[background-color:rgb(238,_246,_255)]! [&_button:hover]:border-[color:rgb(209,_229,_248)]! [&_button.active]:[background-image:initial]! [&_button.active]:[background-color:rgb(238,_246,_255)]! [&_button.active]:border-[color:rgb(209,_229,_248)]! [&_small]:text-[#6680a0]! [&_button]:text-[#183b68]! [&&]:grid [&&]:grid-cols-[repeat(4,_minmax(0,_1fr))] [&&]:gap-y-[9px] [&&]:gap-x-[9px] [&&]:px-[20px] [&&]:py-[16px] max-[700.01px]:[&&]:grid-cols-[repeat(2,_minmax(0,_1fr))] max-[700.01px]:[&&]:p-[12px] map-legend"
+    >
       {#each Object.entries(progressBands) as [key, item]}<button
+          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [font-size:inherit] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#465d43] [&&]:flex [&&]:items-center [&&]:gap-y-[8px] [&&]:gap-x-[8px] [&&]:text-left [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:p-[8px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:transparent] [&&]:rounded-[8px] [&:disabled]:cursor-pointer [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:[background-image:initial] [&:hover]:[background-color:rgb(242,_246,_239)] [&:hover]:border-[color:rgb(216,_228,_209)] [&.active]:[background-image:initial] [&.active]:[background-color:rgb(242,_246,_239)] [&.active]:border-[color:rgb(216,_228,_209)]"
           class:active={band === key}
           onclick={() => (band = band === key ? 'all' : (key as ProgressBand))}
-          ><i style={`--legend:${item.color}`}></i><span
+          ><i
+            class="[&&]:w-[11px] [&&]:h-[11px] [&&]:[background-image:initial] [&&]:[background-color:var(--legend)] [&&]:shrink-0 [&&]:rounded-[50%]"
+            style={`--legend:${item.color}`}
+          ></i><span class="[&&]:text-[9px]"
             >{item.label}<small
+              class="text-[11px] [&&]:text-[#82907d] leading-[1.7] [&&]:block [&&]:mt-[3px]"
               >{item.short} · {allPoints.filter((point) => point.band === key).length} kampus</small
             ></span
           ></button
         >{/each}
     </div>
-    <p class="map-note">
+    <p
+      class="[&&]:mt-[0px] [&&]:mb-[18px] leading-[1.8] [&&]:flex [&&]:items-center [&&]:gap-y-[8px] [&&]:gap-x-[8px] [background-image:initial]! [background-color:rgb(245,_249,_255)]! text-[#5c789b]! [&&]:text-[9px] [&&]:px-[13px] [&&]:py-[11px] [&&]:mx-[20px] [&&]:rounded-[8px] max-[700.01px]:[&&]:mt-[0px] max-[700.01px]:[&&]:mb-[14px] max-[700.01px]:[&&]:leading-[1.6] max-[700.01px]:[&&]:mx-[12px] map-note"
+    >
       <Icon name="faq" size={15} />Setiap titik mewakili satu kampus. Garis tipis menghubungkan
       titik yang direnggangkan ke lokasi aslinya.
     </p>
   </section>
 
-  <aside class="panel region-panel">
-    <header>
+  <aside
+    class="[background-image:initial] [background-color:white] [&&]:min-w-[0] overflow-x-hidden overflow-y-hidden [box-shadow:0_10px_30px_#1a4d8f08] border-[1px] border-solid border-[color:rgb(220,_231,_247)] rounded-[11px] [&:hover]:border-[color:rgb(210,_226,_245)] [&_header_p]:text-[#6680a0]! [&_h2]:text-[#183b68]! [&_header>span]:text-[#3970aa]! [&_header>span]:[background-image:initial]! [&_header>span]:[background-color:rgb(234,_243,_255)]! panel region-panel"
+  >
+    <header
+      class="[&&]:flex [&&]:items-start [&&]:justify-between [&&]:gap-y-[12px] [&&]:gap-x-[12px] [&&]:[border-bottom-width:1px] [&&]:[border-bottom-style:solid] [&&]:[border-bottom-color:rgb(231,_236,_227)] [&&]:px-[22px] [&&]:py-[20px] max-[700.01px]:[&&]:p-[17px]"
+    >
       <div>
-        <h2>Ringkasan wilayah</h2>
-        <p>Dikelompokkan per pulau atau kepulauan.</p>
+        <h2 class="font-[650] text-[color:var(--navy)] [&&]:text-[15px] tracking-[-0.45px] m-[0px]">
+          Ringkasan wilayah
+        </h2>
+        <p
+          class="[&&]:mt-[5px] mb-[0px] leading-[1.8] [&&]:text-[10px] [&&]:text-[#74816f] mx-[0px]"
+        >
+          Dikelompokkan per pulau atau kepulauan.
+        </p>
       </div>
-      <span>{summaries.length} wilayah</span>
+      <span
+        class="[&&]:text-[10px] [&&]:text-[#6a7b66] [&&]:[background-image:initial] [&&]:[background-color:rgb(240,_245,_236)] [&&]:px-[10px] [&&]:py-[7px] [&&]:rounded-[999px]"
+        >{summaries.length} wilayah</span
+      >
     </header>
-    <div class="region-list">
+    <div
+      class="[&_button:hover]:[background-image:initial]! [&_button:hover]:[background-color:rgb(238,_246,_255)]! [&_button:hover]:border-[color:rgb(209,_229,_248)]! [&_button.active]:[background-image:initial]! [&_button.active]:[background-color:rgb(238,_246,_255)]! [&_button.active]:border-[color:rgb(209,_229,_248)]! [&_small]:text-[#6680a0]! [&_button]:text-[#183b68]! [&&]:p-[8px] max-[1150.01px]:[&&]:grid max-[1150.01px]:[&&]:grid-cols-[repeat(2,_minmax(0,_1fr))] max-[700.01px]:[&&]:grid-cols-[1fr] region-list"
+    >
       {#each summaries as row}<button
+          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [font-size:inherit] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#385038] [&&]:w-[100%] [&&]:grid [&&]:grid-cols-[35px_minmax(0,_1fr)_auto] [&&]:items-center [&&]:gap-y-[10px] [&&]:gap-x-[10px] [&&]:text-left [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:p-[12px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:transparent] [&&]:rounded-[9px] [&:disabled]:cursor-pointer [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:[background-image:initial] [&:hover]:[background-color:rgb(241,_246,_237)] [&:hover]:border-[color:rgb(217,_229,_210)] [&.active]:[background-image:initial] [&.active]:[background-color:rgb(241,_246,_237)] [&.active]:border-[color:rgb(217,_229,_210)]"
           class:active={region === row.island}
           onclick={() => (region = region === row.island ? 'Semua wilayah' : row.island)}
-          ><span class="region-mark"><Icon name="sebaran" size={17} /></span><span
-            ><strong>{row.island}</strong><small
+          ><span
+            class="[&&]:w-[32px] [&&]:h-[32px] [&&]:grid [&&]:items-center [&&]:[justify-items:center] [background-image:initial]! [background-color:rgb(230,_242,_255)]! text-[#1768bd]! [&&]:rounded-[8px] region-mark"
+            ><Icon name="sebaran" size={17} /></span
+          ><span
+            ><strong class="font-[650] [&&]:text-[11px]">{row.island}</strong><small
+              class="[&&]:text-[9px] [&&]:text-[#7b8976] leading-[1.7] [&&]:block [&&]:mt-[4px]"
               >{row.provinces} provinsi · {row.campuses} kampus</small
             ></span
-          ><b>{number(row.average)}%</b></button
+          ><b class="[&&]:text-[11px]">{number(row.average)}%</b></button
         >{/each}
     </div>
-    <div class="region-foot">
-      <strong>Tentang data peta</strong>
-      <p>
+    <div
+      class="[&&]:[border-top-width:1px] [&&]:[border-top-style:solid] [&&]:[border-top-color:rgb(231,_236,_227)] [background-image:initial]! [background-color:rgb(245,_249,_255)]! [&&]:px-[20px] [&&]:py-[17px] [&_p]:text-[#6680a0]! region-foot"
+    >
+      <strong class="font-[650] [&&]:text-[10px]">Tentang data peta</strong>
+      <p
+        class="[&&]:mt-[7px] mb-[0px] [&&]:leading-[1.7] [&&]:text-[9px] [&&]:text-[#788574] mx-[0px]"
+      >
         Nama kampus berasal dari daftar proyek. Posisi dan seluruh nilai capaian masih bersifat
         simulasi untuk kebutuhan prototype.
       </p>
     </div>
   </aside>
 </div>
-
-<style>
-  .readonly {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    padding: 9px 13px;
-    border: 1px solid #d9e4d3;
-    border-radius: 999px;
-    background: #fff;
-    color: #61735d;
-    font-size: 11px;
-  }
-  .map-stats {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 15px;
-    margin-bottom: 22px;
-  }
-  .map-stats article {
-    display: flex;
-    align-items: flex-start;
-    gap: 13px;
-    padding: 20px;
-    background: #fff;
-    border: 1px solid #dfe7da;
-    border-radius: 12px;
-  }
-  .stat-icon {
-    display: grid;
-    place-items: center;
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    flex-shrink: 0;
-  }
-  .stat-icon.green {
-    background: #eaf3e4;
-    color: #4b7b39;
-  }
-  .stat-icon.blue {
-    background: #e7f1f5;
-    color: #347b97;
-  }
-  .stat-icon.amber {
-    background: #fbf0d9;
-    color: #a37523;
-  }
-  .stat-icon.mint {
-    background: #e4f2e8;
-    color: #328153;
-  }
-  .map-stats small {
-    display: block;
-    font-size: 10px;
-    color: #74826f;
-  }
-  .map-stats strong {
-    display: flex;
-    align-items: baseline;
-    gap: 7px;
-    font-size: 26px;
-    margin: 5px 0 4px;
-  }
-  .map-stats strong span {
-    font-size: 10px;
-    font-weight: 500;
-    color: #71806b;
-  }
-  .map-stats p {
-    font-size: 9px;
-    color: #84917e;
-  }
-  .map-filters {
-    display: grid;
-    grid-template-columns: minmax(210px, 1fr) minmax(260px, 1.5fr) 240px;
-    align-items: center;
-    gap: 18px;
-    padding: 18px 20px;
-    margin-bottom: 22px;
-  }
-  .map-filters strong {
-    font-size: 13px;
-  }
-  .map-filters p {
-    font-size: 10px;
-    color: #778473;
-    margin-top: 5px;
-  }
-  .map-filters .search-field {
-    width: 100%;
-  }
-  .map-filters input {
-    min-width: 0;
-  }
-  .map-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1.8fr) minmax(270px, 0.72fr);
-    gap: 22px;
-    align-items: start;
-  }
-  .map-panel,
-  .region-panel {
-    min-width: 0;
-  }
-  .map-panel > header,
-  .region-panel > header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 20px 22px;
-    border-bottom: 1px solid #e7ece3;
-  }
-  .map-panel h2,
-  .region-panel h2 {
-    font-size: 15px;
-  }
-  .map-panel header p,
-  .region-panel header p {
-    font-size: 10px;
-    color: #74816f;
-    margin-top: 5px;
-  }
-  .map-panel header > span,
-  .region-panel header > span {
-    font-size: 10px;
-    color: #6a7b66;
-    background: #f0f5ec;
-    padding: 7px 10px;
-    border-radius: 999px;
-  }
-  .map-stage {
-    position: relative;
-    aspect-ratio: 100/56;
-    min-height: 370px;
-    overflow: hidden;
-    background: radial-gradient(circle at 45% 45%, #fbfdfa, #f0f6ec);
-    border-bottom: 1px solid #e5ebe1;
-    cursor: grab;
-    touch-action: none;
-    overscroll-behavior: contain;
-  }
-  .map-stage.dragging {
-    cursor: grabbing;
-  }
-  .map-world {
-    position: absolute;
-    left: 3%;
-    top: 50%;
-    width: 94%;
-    aspect-ratio: 1000/520;
-    transform: translate(var(--pan-x), calc(-50% + var(--pan-y))) scale(var(--zoom));
-    transform-origin: 50% 50%;
-    transition: transform 0.18s ease;
-    will-change: transform;
-  }
-  .map-stage.dragging .map-world,
-  .map-stage.wheel-zooming .map-world {
-    transition: none;
-  }
-  .map-controls {
-    position: absolute;
-    top: 14px;
-    right: 14px;
-    display: flex;
-    align-items: center;
-    z-index: 7;
-    padding: 4px;
-    border: 1px solid #d5e1cf;
-    border-radius: 10px;
-    background: #fffffff0;
-    box-shadow: 0 5px 14px #29482912;
-  }
-  .map-controls button,
-  .map-controls output {
-    display: grid;
-    place-items: center;
-    height: 40px;
-    min-width: 40px;
-    border: 0;
-    background: transparent;
-    color: #456342;
-    font-size: 15px;
-  }
-  .map-controls button {
-    cursor: pointer;
-    border-radius: 7px;
-  }
-  .map-controls button:hover:not(:disabled) {
-    background: #edf4e8;
-  }
-  .map-controls button:disabled {
-    opacity: 0.35;
-    cursor: default;
-  }
-  .map-controls output {
-    min-width: 48px;
-    font-size: 9px;
-    border-inline: 1px solid #e2e9dd;
-  }
-  .map-controls .reset-zoom {
-    margin-left: 3px;
-  }
-  .archipelago {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    filter: drop-shadow(0 4px 5px #335d3420);
-  }
-  .archipelago path {
-    fill: url(#land);
-    stroke: #9eb79a;
-    stroke-width: 2;
-  }
-  .map-dot {
-    position: absolute;
-    display: grid;
-    place-items: center;
-    width: 24px;
-    height: 24px;
-    padding: 0;
-    transform: translate(-50%, -50%) scale(calc(1 / var(--zoom)));
-    border: 0;
-    border-radius: 50%;
-    background: transparent;
-    cursor: pointer;
-    z-index: 2;
-  }
-  .map-dot span {
-    display: grid;
-    place-items: center;
-    width: var(--size);
-    height: var(--size);
-    border: 2px solid #fff;
-    border-radius: 50%;
-    background: var(--dot);
-    box-shadow: 0 2px 6px #1c3d2d45;
-  }
-  .map-dot:hover,
-  .map-dot.selected {
-    z-index: 4;
-  }
-  .map-dot:focus-visible {
-    outline: 2px solid #145ee8;
-    outline-offset: 1px;
-  }
-  .map-dot.selected span {
-    outline: 3px solid #145ee84d;
-  }
-  .map-card {
-    position: relative;
-    margin: 16px 20px;
-    width: auto;
-    padding: 16px;
-    border: 1px solid #d7e3d1;
-    border-radius: 12px;
-    background: #fffffff2;
-    backdrop-filter: blur(8px);
-    box-shadow: 0 12px 28px #2948291f;
-    z-index: 5;
-  }
-  .map-card-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 9px;
-  }
-  .map-avatar {
-    display: grid;
-    place-items: center;
-    min-width: 30px;
-    height: 30px;
-    padding: 0 7px;
-    border-radius: 8px;
-    background: #eaf2e4;
-    color: #4c743c;
-    font-size: 9px;
-    font-weight: 700;
-  }
-  .map-card-top button {
-    min-width: 44px;
-    min-height: 44px;
-    border: 0;
-    background: transparent;
-    color: #70806b;
-    font-size: 20px;
-    cursor: pointer;
-  }
-  .map-card > strong {
-    display: block;
-    font-size: 12px;
-    line-height: 1.6;
-  }
-  .map-card > small {
-    display: block;
-    font-size: 9px;
-    color: #758170;
-    margin: 3px 0 12px;
-  }
-  .map-card .row-between {
-    font-size: 10px;
-    margin-bottom: 7px;
-  }
-  .map-card a {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: #176f35;
-    font-size: 10px;
-    font-weight: 650;
-    margin-top: 12px;
-  }
-  .map-legend {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 9px;
-    padding: 16px 20px;
-  }
-  .map-legend button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    text-align: left;
-    border: 1px solid transparent;
-    border-radius: 8px;
-    background: transparent;
-    padding: 8px;
-    color: #465d43;
-    cursor: pointer;
-  }
-  .map-legend button:hover,
-  .map-legend button.active {
-    background: #f2f6ef;
-    border-color: #d8e4d1;
-  }
-  .map-legend i {
-    width: 11px;
-    height: 11px;
-    border-radius: 50%;
-    background: var(--legend);
-    flex-shrink: 0;
-  }
-  .map-legend span {
-    font-size: 9px;
-  }
-  .map-legend small {
-    display: block;
-    color: #82907d;
-    margin-top: 3px;
-  }
-  .map-note {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0 20px 18px;
-    padding: 11px 13px;
-    border-radius: 8px;
-    background: #f5f8f2;
-    color: #6d7d68;
-    font-size: 9px;
-  }
-  .region-list {
-    padding: 8px;
-  }
-  .region-list button {
-    width: 100%;
-    display: grid;
-    grid-template-columns: 35px minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 10px;
-    text-align: left;
-    border: 1px solid transparent;
-    border-radius: 9px;
-    background: transparent;
-    padding: 12px;
-    color: #385038;
-    cursor: pointer;
-  }
-  .region-list button:hover,
-  .region-list button.active {
-    background: #f1f6ed;
-    border-color: #d9e5d2;
-  }
-  .region-mark {
-    width: 32px;
-    height: 32px;
-    display: grid;
-    place-items: center;
-    border-radius: 8px;
-    background: #eaf2e5;
-    color: #5b7b4c;
-  }
-  .region-list strong {
-    font-size: 11px;
-  }
-  .region-list small {
-    display: block;
-    font-size: 9px;
-    color: #7b8976;
-    margin-top: 4px;
-  }
-  .region-list b {
-    font-size: 11px;
-  }
-  .region-foot {
-    border-top: 1px solid #e7ece3;
-    padding: 17px 20px;
-    background: #fafcf9;
-  }
-  .region-foot strong {
-    font-size: 10px;
-  }
-  .region-foot p {
-    font-size: 9px;
-    line-height: 1.7;
-    color: #788574;
-    margin-top: 7px;
-  }
-  @media (max-width: 1150px) {
-    .map-stats {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .map-layout {
-      grid-template-columns: 1fr;
-    }
-    .region-list {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .map-filters {
-      grid-template-columns: 1fr 1fr;
-    }
-    .map-filters > div {
-      grid-column: 1/-1;
-    }
-  }
-  @media (max-width: 700px) {
-    .page-heading {
-      align-items: flex-start;
-    }
-    .map-stats {
-      gap: 8px;
-    }
-    .map-stats article {
-      padding: 13px;
-      gap: 9px;
-    }
-    .stat-icon {
-      width: 32px;
-      height: 32px;
-    }
-    .map-stats strong {
-      font-size: 21px;
-    }
-    .map-stats p {
-      display: none;
-    }
-    .map-filters {
-      grid-template-columns: 1fr;
-      padding: 16px;
-    }
-    .map-filters > div {
-      grid-column: auto;
-    }
-    .map-stage {
-      min-height: 310px;
-      aspect-ratio: auto;
-    }
-    .map-card {
-      margin: 12px;
-      width: auto;
-    }
-    .map-legend {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      padding: 12px;
-    }
-    .map-note {
-      margin: 0 12px 14px;
-      line-height: 1.6;
-    }
-    .region-list {
-      grid-template-columns: 1fr;
-    }
-    .map-panel > header,
-    .region-panel > header {
-      padding: 17px;
-    }
-    .readonly {
-      align-self: flex-start;
-    }
-  }
-
-  .marker-links {
-    overflow: visible;
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-  }
-  .marker-links line {
-    stroke: #7796b8;
-    stroke-width: 1;
-    stroke-opacity: 0.65;
-  }
-</style>
