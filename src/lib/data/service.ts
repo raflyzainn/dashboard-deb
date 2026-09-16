@@ -81,6 +81,7 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
     saveDefinition: input => done(write('/api/admin/definitions' + (input.id ? '/' + idPath(input.id) : ''), input.id ? 'PATCH' : 'POST', input)),
     activateDefinition: (id, revision) => done(write('/api/admin/definitions/' + idPath(id) + '/activate', 'POST', { revision })),
     deleteDefinition: (id, revision) => done(write('/api/admin/definitions/' + idPath(id), 'DELETE', { revision })),
+    reviewProposal: (id, note, revision) => done(write(`/api/proposals/${encodeURIComponent(id)}/review`, 'POST', { note, revision })),
     proposalFile: async (id) => request(`/api/proposals/${encodeURIComponent(id)}/file`, response => response.blob()),
     submitDeb: () => done(write('/api/submissions', 'POST')),
     reviewDeb: (id, decision, note) => done(write('/api/submissions/' + idPath(id) + '/review', 'POST', { decision, note })),

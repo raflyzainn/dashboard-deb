@@ -151,17 +151,12 @@ test('database edits appear on refresh, failed refresh preserves same-account da
   } finally { await pb.collection('campuses').update(campus.id, { name: campus.name }); }
 });
 
-test('PDF preview, download and actual text comparison use protected PocketBase files', async ({ page }) => {
+test('PDF preview, version selection and download use protected PocketBase files', async ({ page }) => {
   await login(page, 'campus-001');
   await page.goto('/campus/proposal');
-  await expect(page.getByRole('region', { name: 'Perbandingan proposal' })).toBeVisible();
-  await expect(page.locator('.comparison')).toContainText('Versi 3');
-  await expect(page.locator('.comparison')).not.toContainText('Membaca teks PDF', { timeout: 30000 });
-  await expect(page.locator('.comparison')).toContainText('Versi 2');
-  await page.getByRole('button', { name: 'Tukar versi perbandingan' }).click();
-  await expect(page.locator('.comparison')).toContainText('Dasar: versi 3');
-  await page.getByRole('button', { name: 'Lihat proposal', exact: true }).click();
-  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.locator('iframe')).toHaveAttribute('src', /^blob:/);
+  await page.getByLabel('Pilih versi proposal').selectOption({ index: 1 });
+  await expect(page.getByRole('region', { name: 'Dokumen proposal versi 2', exact: true })).toBeVisible();
   await expect(page.locator('iframe')).toHaveAttribute('src', /^blob:/);
   const download = page.waitForEvent('download');
   await page.getByRole('link', { name: /Unduh/ }).click();

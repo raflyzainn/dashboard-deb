@@ -20,7 +20,7 @@ export type VerificationStatus = 'pending' | 'approved' | 'revision';
 export interface DebSubmission { period?: string; id: string; campusId: string; version: number; status: VerificationStatus; indicators: SubmissionIndicator[]; submittedAt: string; reviewedAt?: string; reviewedBy?: string; decisionNote?: string; simulated?: boolean }
 export type FeedbackState = 'open' | 'responded' | 'closed';
 export interface Feedback { id: string; campusId: string; indicatorId: string; text: string; requiresRevision: boolean; state: FeedbackState; createdAt: string; updatedAt: string }
-export interface ProposalVersion { id: string; campusId: string; version: number; filename: string; size: number; createdAt: string; changes: string; simulated: boolean }
+export interface ProposalVersion { reviewNote?: string; reviewedAt?: string; reviewedBy?: string; reviewRevision?: number; id: string; campusId: string; version: number; filename: string; size: number; createdAt: string; changes: string; simulated: boolean }
 export interface Question { id: string; campusId: string; title: string; body: string; createdAt: string; categoryIds?: ForumCategoryId[]; replyCount?: number; lastReplyRole?: Role }
 export interface QuestionReply { id: string; questionId: string; sequence: number; authorRole: Role; authorName: string; body: string; createdAt: string; replyTo?: string; quote?: { authorName: string; body: string } }
 export interface ReplyPage { items: QuestionReply[]; hasMore: boolean }
@@ -56,6 +56,7 @@ export interface DataService {
   closeFeedback(id: string): Promise<void>;
   uploadProposal(file: File, changes: string): Promise<void>;
   proposalFile(id: string): Promise<Blob>;
+  reviewProposal(id: string, note: string, revision: number): Promise<void>;
   ask(title: string, body: string, categoryIds?: ForumCategoryId[]): Promise<string>;
   replies(questionId: string, cursor?: { before?: number; after?: number }): Promise<ReplyPage>;
   reply(questionId: string, body: string, replyTo?: string): Promise<void>;

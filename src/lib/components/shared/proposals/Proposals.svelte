@@ -1,15 +1,15 @@
 <script lang="ts">
   // Shared presentation for the explicit Campus/Admin routes.
-  import { onDestroy } from 'svelte';
+  import { page } from '$app/state';
   import { app } from '$lib/state.svelte';
   import { dataService } from '$lib/data/service';
   import { date, size } from '$lib/domain';
-  import type { ProposalVersion } from '$lib/types';
-  import Icon from '$lib/components/ui/Icon.svelte';
   import Badge from '$lib/components/ui/Badge.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
   import Modal from '$lib/components/ui/Modal.svelte';
   import Empty from '$lib/components/ui/Empty.svelte';
-  import ProposalCompare from './ProposalCompare.svelte';
+  import ProposalDocument from './ProposalDocument.svelte';
+  import ProposalReview from './ProposalReview.svelte';
   let { campusId = '', embedded = false }: { campusId?: string; embedded?: boolean } = $props();
   let campus = $state('');
   $effect(() => {
@@ -20,8 +20,7 @@
   let upload = $state(false);
   let file = $state<File | null>(null);
   let changes = $state('');
-  let preview = $state<{ url: string; proposal: ProposalVersion } | null>(null);
-  let fileLoading = $state(false);
+  let selectedId = $state('');
   const isAdmin = $derived(app.session?.role === 'admin');
   const activeCampus = $derived(campusId || (isAdmin ? campus : app.session!.campusId!));
   const versions = $derived(
@@ -30,6 +29,11 @@
       .sort((a, b) => b.version - a.version)
   );
   const current = $derived(versions[0]);
+  const selected = $derived(versions.find((p) => p.id === selectedId) || versions[0]);
+  $effect(() => {
+    activeCampus;
+    selectedId = page.url.searchParams.get('version') || '';
+  });
   const campuses = $derived(
     app.data!.campuses.filter(
       (c) =>
@@ -40,29 +44,6 @@
             : !app.data!.proposals.some((p) => p.campusId === c.id)))
     )
   );
-  function closePreview() {
-    if (preview) URL.revokeObjectURL(preview.url);
-    preview = null;
-  }
-  let destroyed = false;
-  onDestroy(() => {
-    destroyed = true;
-    closePreview();
-  });
-  async function view(proposal: ProposalVersion) {
-    fileLoading = true;
-    try {
-      const blob = await dataService.proposalFile(proposal.id);
-      if (!destroyed) {
-        closePreview();
-        preview = { url: URL.createObjectURL(blob), proposal };
-      }
-    } catch (e) {
-      if (!destroyed) app.error = e instanceof Error ? e.message : 'PDF tidak dapat dibuka.';
-    } finally {
-      fileLoading = false;
-    }
-  }
   async function save() {
     if (!file) {
       app.error = 'Pilih PDF untuk diunggah.';
@@ -75,14 +56,12 @@
       )
     ) {
       upload = false;
+      selectedId = '';
       file = null;
       changes = '';
     }
   }
 </script>
-{#snippet comparison()}
-  {#key activeCampus}<ProposalCompare {versions} actor={app.session!} onview={view} />{/key}
-{/snippet}
 {#if !embedded}<div
     class="flex items-center justify-between gap-y-[20px] gap-x-[20px] mb-[27px] [&_p]:text-[12px] [&_p]:text-[#637796] [&_p]:mt-[8px] max-[900.01px]:[&_h1]:text-[24px] max-[700.01px]:items-start max-[700.01px]:gap-y-[15px] max-[700.01px]:gap-x-[15px] max-[700.01px]:mb-[22px] max-[700.01px]:flex-wrap max-[700.01px]:[&_h1]:text-[23px] max-[700.01px]:[&_p]:text-[12px] max-[700.01px]:[&_p]:leading-[1.9] max-[700.01px]:[&_p]:max-w-[340px] max-[700.01px]:[&_.period]:hidden page-heading"
   >
@@ -215,11 +194,7 @@
                 {date(current.createdAt)} · {size(current.size)} · PDF
               </p>
               <div class="flex items-center gap-y-[10px] gap-x-[10px] flex-wrap button-row">
-                <button
-                  class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[650] [font-stretch:inherit] text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[white] inline-flex items-center justify-center gap-y-[9px] gap-x-[9px] min-h-[42px] [background-image:linear-gradient(135deg,_rgb(8,_119,_216),_rgb(21,_89,_214))] [background-color:initial] [transition-behavior:normal,_normal] [transition-duration:0.15s,_0.15s] [transition-timing-function:ease,_ease] [transition-delay:0s,_0s] [transition-property:background,_box-shadow] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [box-shadow:0_8px_18px_#075fc71a] px-[18px] py-[11px] border-[1px] border-solid border-[color:rgb(8,_107,_201)] rounded-[8px] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:linear-gradient(135deg,_rgb(5,_104,_196),_rgb(18,_75,_197))] [&:hover:not(:disabled)]:[background-color:initial] [&:hover:not(:disabled)]:[box-shadow:0_10px_24px_#075fc72c] max-[700.01px]:text-[11px] max-[700.01px]:px-[15px] max-[700.01px]:py-[10px] button"
-                  disabled={fileLoading}
-                  onclick={() => view(current)}><Icon name="eye" size={17} />Lihat proposal</button
-                >{#if !isAdmin}<button
+                {#if !isAdmin}<button
                     disabled={app.readOnly || app.loading || app.busy}
                     class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[650] [font-stretch:inherit] text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer [&&]:text-[#075fc7] inline-flex items-center justify-center gap-y-[9px] gap-x-[9px] min-h-[42px] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_255,_255)] [transition-behavior:normal,_normal] [transition-duration:0.15s,_0.15s] [transition-timing-function:ease,_ease] [transition-delay:0s,_0s] [transition-property:background,_box-shadow] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [&&]:[box-shadow:none] px-[18px] py-[11px] border-[1px] border-solid [&&]:border-[color:rgb(185,_214,_244)] rounded-[8px] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(237,_246,_255)] [&:hover:not(:disabled)]:[box-shadow:0_10px_24px_#075fc72c] [&:hover:not(:disabled)]:border-[color:rgb(104,_172,_233)] max-[700.01px]:text-[11px] max-[700.01px]:px-[15px] max-[700.01px]:py-[10px] button secondary"
                     onclick={() => {
@@ -238,6 +213,35 @@
             icon="proposal"
           />{/if}
       </section>
+      {#if selected}
+        <section
+          aria-label="Pratinjau proposal terpilih"
+          class="mt-[24px] rounded-[11px] border border-[#dce7f7] bg-white p-[22px] max-[700px]:p-[16px]"
+        >
+          <div class="mb-[14px] flex flex-wrap items-center justify-between gap-[12px]">
+            <h2 class="text-[15px] font-semibold text-[#0d234c]">
+              Pratinjau PDF &middot; Versi {selected.version}
+            </h2>
+            <label class="text-[11px] text-[#647699]"
+              >Pilih versi
+              <select
+                aria-label="Pilih versi proposal"
+                value={selected.id}
+                disabled={app.busy}
+                onchange={(e) => (selectedId = e.currentTarget.value)}
+                class="ml-[8px] rounded-[7px] border border-[#dce7f7] bg-white px-[10px] py-[8px] text-[#17365f]"
+              >
+                {#each versions as v}<option value={v.id}
+                    >Versi {v.version}{v.id === current?.id ? ' (terbaru)' : ''}</option
+                  >{/each}
+              </select>
+            </label>
+          </div>
+          {#key (app.session?.id || '') + ':' + selected.id}<ProposalDocument
+              proposal={selected}
+            /><ProposalReview proposal={selected} />{/key}
+        </section>
+      {/if}
       <section
         class="[background-image:initial] [background-color:white] min-w-[0] overflow-x-hidden overflow-y-hidden mt-[24px] [box-shadow:0_10px_30px_#1a4d8f08] border-[1px] border-solid border-[color:rgb(220,_231,_247)] rounded-[11px] [&:hover]:border-[color:rgb(210,_226,_245)] panel history-panel"
       >
@@ -279,9 +283,11 @@
                     </div>
                     <button
                       class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[650] [font-stretch:inherit] text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[#0668ce] inline-flex items-center gap-y-[7px] gap-x-[7px] [background-image:none] [background-color:initial] [white-space-collapse:collapse] [text-wrap-mode:nowrap] p-[0px] border-[0px] border-none border-[color:currentcolor] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:text-[#0a3eaa] text-link"
-                      disabled={fileLoading}
-                      aria-label={`Lihat proposal versi ${v.version}`}
-                      onclick={() => view(v)}>Lihat PDF<Icon name="arrow" size={15} /></button
+                      disabled={app.busy}
+                      aria-label={`Pilih versi ${v.version}`}
+                      aria-pressed={selected?.id === v.id}
+                      onclick={() => (selectedId = v.id)}
+                      >Pilih versi<Icon name="arrow" size={15} /></button
                     >
                   </div>
                   <small class="text-[11px] text-[color:var(--muted)] leading-[1.7]"
@@ -328,19 +334,17 @@
         <li>Gunakan dokumen berformat PDF.</li>
         <li>Ukuran file maksimal 10 MiB.</li>
         <li>Tulis ringkasan perubahan yang jelas.</li>
-        <li>Gunakan dokumen simulasi untuk demo.</li>
       </ul>
       <div
         class="flex items-start gap-y-[9px] gap-x-[9px] [background-image:initial] [background-color:rgb(242,_248,_255)] text-[#55759a] text-[10px] leading-[1.8] px-[15px] py-[13px] border-[1px] border-solid border-[color:rgb(219,_234,_251)] rounded-[8px] [&_svg]:mt-[1px] info-note"
       >
         <Icon name="faq" size={17} /><span
-          >Catatan perubahan diisi manual. Gunakan perbandingan versi di bawah untuk meninjau
-          perubahan teks PDF.</span
+          >Pilih versi pada timeline untuk membaca PDF dan tanggapan admin. Hanya satu PDF
+          ditampilkan.</span
         >
       </div>
     </aside>
   </div>{/if}
-{#if !isAdmin || campusId || campuses.some((c) => c.id === campus)}{@render comparison()}{/if}
 {#if upload}<Modal
     title="Unggah versi proposal baru"
     onclose={() => {
@@ -371,15 +375,14 @@
         >
           <Icon name="proposal" size={18} />{file.name} · {size(file.size)}
         </p>{/if}<label
-        >Catatan perubahan<textarea
+        >Catatan versi<textarea
           class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#17365f] max-w-[100%] [resize:vertical] min-h-[85px] px-[12px] py-[11px] border-[1px] border-solid border-[color:rgb(212,_225,_241)] rounded-[7px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(39,_144,_232)] [&::placeholder]:text-[#8ea1bc]"
           readonly={app.readOnly}
           rows="4"
           required
           maxlength="5000"
           bind:value={changes}
-          placeholder="Apa yang ditambahkan, diperbarui, atau dihapus pada versi ini?"
-        ></textarea></label
+          placeholder="Tuliskan keterangan singkat untuk versi ini."></textarea></label
       >
       <p class="leading-[1.8] text-[color:var(--muted)] text-[12px] m-[0px] muted">
         Versi lama tetap tersimpan. File disimpan di PocketBase dan hanya dapat diakses kampus
@@ -398,24 +401,4 @@
         >
       </div>
     </form></Modal
-  >{/if}
-{#if preview}<Modal title={`Proposal versi ${preview.proposal.version}`} onclose={closePreview} wide
-    ><div
-      class="flex items-center justify-between gap-y-[12px] gap-x-[12px] mb-[18px] [&_p]:text-[11px] [&_p]:wrap-anywhere max-[700.01px]:flex-wrap row-between preview-heading"
-    >
-      <p class="leading-[1.8] m-[0px]">{preview.proposal.filename}</p>
-      <a
-        class="[-webkit-tap-highlight-color:transparent] [&&]:text-[#075fc7] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] inline-flex items-center justify-center gap-y-[9px] gap-x-[9px] [&&]:min-h-[33px] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_255,_255)] [&&]:text-[11px] font-[650] [transition-behavior:normal,_normal] [transition-duration:0.15s,_0.15s] [transition-timing-function:ease,_ease] [transition-delay:0s,_0s] [transition-property:background,_box-shadow] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [&&]:[box-shadow:none] [&&]:px-[12px] [&&]:py-[7px] border-[1px] border-solid [&&]:border-[color:rgb(185,_214,_244)] rounded-[8px] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(237,_246,_255)] [&:hover:not(:disabled)]:[box-shadow:0_10px_24px_#075fc72c] [&:hover:not(:disabled)]:border-[color:rgb(104,_172,_233)] max-[700.01px]:[&&]:text-[11px] max-[700.01px]:[&&]:px-[12px] max-[700.01px]:[&&]:py-[7px] button secondary small"
-        href={preview.url}
-        download={preview.proposal.filename}><Icon name="download" size={16} />Unduh PDF</a
-      >
-    </div>
-    <iframe
-      class="w-[100%] h-[60vh] border-[1px] border-solid border-[color:var(--line)] rounded-[8px] pdf-preview"
-      src={preview.url}
-      title={`Pratinjau ${preview.proposal.filename}`}
-    ></iframe>
-    <p class="leading-[1.8] text-[color:var(--muted)] text-[12px] m-[0px] muted">
-      Jika pratinjau tidak didukung browser, gunakan Unduh PDF.
-    </p></Modal
   >{/if}

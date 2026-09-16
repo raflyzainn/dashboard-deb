@@ -12,7 +12,7 @@ function workflowReads(pb: PocketBase, actor: RecordModel, operation: string, bo
     submitDeb: ['indicator_definitions', 'campus_indicators', 'deb_submissions'],
     reviewDeb: ['indicator_definitions', 'campus_indicators', 'deb_submissions', 'indicator_feedback'],
     addFeedback: ['campus_indicators','indicator_definitions'], closeFeedback: ['indicator_feedback', 'campus_indicators','indicator_definitions'],
-    uploadProposal: ['proposal_versions'], ask: [], answer: ['questions', 'question_answers'],
+    uploadProposal: ['proposal_versions'], reviewProposal: ['proposal_versions'], ask: [], answer: ['questions', 'question_answers'],
     reply: ['campuses', 'questions', 'question_answers', 'question_replies'], setLike: ['questions', 'question_likes'],
     promoteFaq: ['questions', 'question_answers', 'faq_entries'], saveFaq: ['faq_entries'], moveFaq: ['faq_entries'], deleteFaq: ['faq_entries'],
     readNotifications: ['notifications'],
@@ -40,6 +40,7 @@ function workflowReads(pb: PocketBase, actor: RecordModel, operation: string, bo
     reads.question_replies = body.replyTo ? { filter: pb.filter('id = {:id}', { id: String(body.replyTo) }) } : null;
   }
   if (operation === 'setLike') reads.question_likes = { filter: pb.filter('question = {:id} && campus = {:campus}', { id: String(body.id || ''), campus: String(actor.campus || '') }) };
+  if (operation === 'reviewProposal') reads.proposal_versions = id;
   if (operation === 'uploadProposal') reads.proposal_versions = { filter: campus, sort: '-version', limit: 1 };
   if (operation === 'submitDeb') {
     reads.campus_indicators = { filter: campus };

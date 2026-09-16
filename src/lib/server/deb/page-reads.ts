@@ -20,7 +20,7 @@ const fields: Record<Resource, string> = {
   indicators: 'id,campus,definition,current,unfilled,note,updated',
   submissions: 'id,campus,period,version,status,snapshot,submittedAt,reviewedAt,reviewedBy,decisionNote,simulated',
   feedback: 'id,campus,indicator,text,requiresRevision,state,created,updated',
-  proposals: 'id,campus,version,filename,size,changes,created,simulated',
+  proposals: 'id,campus,version,filename,size,changes,created,simulated,reviewNote,reviewedAt,reviewedBy,reviewRevision',
   questions: 'id,campus,title,body,categoryIds,replyCount,lastReplyRole,created',
   answers: 'id,question,body,updated', likes: 'id,question,campus',
   faq: 'id,sourceQuestion,question,answer,order', activities: 'id,campus,text,created',

@@ -1,0 +1,31 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { RestStore, StoreRecord } from '../src/lib/server/deb/rest-store';
+import { runWorkflow } from '../src/lib/server/deb/business/workflows';
+
+test('proposal responses are admin-only, version-specific, conflict-safe and idempotent', () => {
+  const admin = { id: 'admin0000000000', role: 'admin', active: true, verified: true, sessionVersion: 'a' };
+  const campus = { id: 'user00000000000', role: 'campus', campus: 'campus000000000', active: true, verified: true, sessionVersion: 'c' };
+  const store = new RestStore(Object.fromEntries(['users','proposal_versions','activities','notifications','workflow_operations'].map(n => [n, []])));
+  store.records.get('users')!.push(...[admin,campus].map(r => new StoreRecord('users', r)));
+  for (const id of ['proposal0000001','proposal0000002']) store.records.get('proposal_versions')!.push(new StoreRecord('proposal_versions', { id, campus: campus.campus, reviewRevision: 0, filename: 'proposal.pdf', uploadedBy: campus.id }));
+  const run = (body: object, actor = admin, key = randomUUID()) => runWorkflow({app:store,auth:actor,local:true,request:{pathValue:()=> 'reviewProposal',header:{get:()=>key}},requestInfo:()=>({body}),json:(_s:number,v:unknown)=>v});
+  const payload = { id:'proposal0000001', note:'Lengkapi jadwal kegiatan.', revision:0 };
+  assert.throws(() => run(payload, campus), /Peran/);
+  assert.throws(() => run({...payload,note:'   '}), /teks|isi|wajib|valid/i);
+  assert.throws(() => run({...payload,note:'x'.repeat(5001)}));
+  const key = randomUUID(); run(payload, admin, key);
+  const saved = store.findRecordById('proposal_versions', payload.id);
+  assert.equal(saved.getString('reviewNote'), payload.note);
+  assert.equal(saved.getString('reviewedBy'), admin.id);
+  assert.ok(saved.getString('reviewedAt'));
+  assert.equal(saved.getInt('reviewRevision'), 1);
+  assert.equal(store.findRecordById('proposal_versions','proposal0000002').getString('reviewNote'), '');
+  run(payload, admin, key);
+  assert.equal(store.records.get('notifications')!.length, 1);
+  assert.equal(store.records.get('notifications')![0].getString('recipientUser'), campus.id);
+  assert.throws(() => run({...payload,note:'Stale write'}), /terbaru|berubah/i);
+  run({...payload,revision:1,note:'Jadwal sudah sesuai.'});
+  assert.equal(saved.getInt('reviewRevision'), 2);
+});
