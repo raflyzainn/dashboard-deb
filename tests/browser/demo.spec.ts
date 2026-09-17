@@ -160,7 +160,7 @@ test('period rollover keeps archived values and copies baseline/target for fresh
   const states = await page.evaluate(
     () =>
       new Promise<any>((resolve, reject) => {
-        const request = indexedDB.open('deb-standalone-demo-v4');
+        const request = indexedDB.open('deb-standalone-demo-v5');
         request.onsuccess = () => {
           const db = request.result;
           const get = db.transaction('state').objectStore('state').get('current');
@@ -302,6 +302,18 @@ test('admin review shows readiness indicators for the selected campus', async ({
   await page.goto('/admin/verifikasi');
   await expect(page.getByRole('region', { name: 'Indikator kesiapan rencana aksi' })).toBeVisible();
   await expect(page.getByText('Kebutuhan intervensi', { exact: true })).toBeVisible();
+});
+
+test('admin sets a target for one campus', async ({ page }) => {
+  await login(page, 'admin-1');
+  await page.goto('/admin/campuses/campus-001');
+  await page.getByRole('button', { name: 'Indikator', exact: true }).click();
+  await page.getByRole('button', { name: 'Lihat Pendapatan total', exact: true }).click();
+  await page.getByLabel('Target kampus', { exact: true }).fill('777');
+  await page.getByRole('button', { name: 'Simpan target kampus', exact: true }).click();
+  await expect(page.getByText('Target kampus tersimpan.', { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByText('777', { exact: true })).toBeVisible();
 });
 
 test('campus can edit readiness indicators and admin sees the saved value', async ({ page }) => {
