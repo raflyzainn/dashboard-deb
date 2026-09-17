@@ -29,7 +29,7 @@ test('static demo: autosave, PDF versions, admin response, persistence and reset
   page.on('pageerror', (e) => errors.push(e.message));
   await login(page, 'campus-001');
   await page.goto('/campus/indicators');
-  const input = page.getByRole('spinbutton').first();
+  const input = page.getByLabel('Nilai aktual Pendapatan total', { exact: true });
   await expect(input).toBeEditable();
   await input.fill('123');
   await input.blur();
@@ -37,7 +37,7 @@ test('static demo: autosave, PDF versions, admin response, persistence and reset
     page.getByRole('status').filter({ hasText: 'Semua perubahan indikator tersimpan.' })
   ).toBeVisible();
   await page.reload();
-  await expect(page.getByRole('spinbutton').first()).toHaveValue('123');
+  await expect(page.getByLabel('Nilai aktual Pendapatan total', { exact: true })).toHaveValue('Rp 123');
   await page.goto('/campus/proposal');
   await expect(page.locator('iframe')).toHaveAttribute('src', /^blob:/);
   await page.getByRole('button', { name: 'Perbarui', exact: true }).click();
@@ -150,14 +150,14 @@ test('period rollover keeps archived values and copies baseline/target for fresh
   await logout(page);
   await login(page, 'campus-001');
   await page.goto('/campus/indicators');
-  await expect(page.getByRole('spinbutton').first()).toHaveValue('');
-  await page.getByRole('spinbutton').first().fill('0');
-  await page.getByRole('spinbutton').first().blur();
+  await expect(page.getByLabel('Nilai aktual Pendapatan total', { exact: true })).toHaveValue('');
+  await page.getByLabel('Nilai aktual Pendapatan total', { exact: true }).fill('0');
+  await page.getByLabel('Nilai aktual Pendapatan total', { exact: true }).blur();
   await expect(
     page.getByRole('status').filter({ hasText: 'Semua perubahan indikator tersimpan.' })
   ).toBeVisible();
   await page.reload();
-  await expect(page.getByRole('spinbutton').first()).toHaveValue('0');
+  await expect(page.getByLabel('Nilai aktual Pendapatan total', { exact: true })).toHaveValue('Rp 0');
   const states = await page.evaluate(
     (database) =>
       new Promise<any>((resolve, reject) => {
@@ -433,4 +433,21 @@ test('one static demo PIC can activate from a simulated email and sign in with i
   await page.getByLabel('Password', { exact: true }).fill('Rahasia12');
   await page.getByRole('button', { name: 'Masuk dengan password', exact: true }).click();
   await expect(page).toHaveURL(/\/campus\/dashboard$/);
+});
+
+test('rupiah inputs format thousands and preserve decimal values after autosave', async ({ page }) => {
+  await login(page, 'campus-001');
+  await page.goto('/campus/indicators');
+  const total = page.getByLabel('Nilai aktual Pendapatan total', { exact: true });
+  const perCapita = page.getByLabel('Nilai aktual Pendapatan per kapita', { exact: true });
+  await total.fill('43159200');
+  await expect(total).toHaveValue('Rp 43.159.200');
+  await expect(page.getByRole('status').filter({ hasText: 'Semua perubahan indikator tersimpan.' })).toBeVisible();
+  await perCapita.fill('663987,6923');
+  await expect(perCapita).toHaveValue('Rp 663.987,6923');
+  await expect(page.getByRole('status').filter({ hasText: 'Semua perubahan indikator tersimpan.' })).toBeVisible();
+  await page.reload();
+  await expect(total).toHaveValue('Rp 43.159.200');
+  await expect(perCapita).toHaveValue('Rp 663.987,6923');
+  await expect(page.getByText('Rp 60.000.000', { exact: false }).first()).toBeVisible();
 });

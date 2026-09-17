@@ -10,6 +10,8 @@
   import Empty from '$lib/components/ui/Empty.svelte';
   import SubmissionStatus from '$lib/components/shared/indicators/SubmissionStatus.svelte';
 
+  const rupiah = (value: number | undefined) => value === undefined ? '' : `Rp ${value.toLocaleString('id-ID', { maximumFractionDigits: 20 })}`;
+  let moneyText = $state<Record<string, string>>({});
   let search = $state('');
   let category = $state('');
   let status = $state('all');
@@ -477,26 +479,38 @@
                       class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:text-[color:var(--ink)] max-w-[100%] [&&]:min-w-[0] [&&]:grow [&&]:shrink [&&]:[flex-basis:0%] [&&]:w-[0] [&&]:[box-shadow:none] [&&]:[outline-color:initial] [&&]:[outline-style:none] [&&]:[outline-width:initial] [&&]:p-[10px] [&&]:m-[0px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[0px] [&:focus]:[outline-color:initial] [&:focus]:[outline-style:none] [&:focus]:[outline-width:initial] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:currentcolor] [&::placeholder]:text-[color:var(--ink)] [&:disabled]:[background-image:initial] [&:disabled]:[background-color:rgb(237,_244,_248)] [&:disabled]:text-[#607d90] [&:disabled]:cursor-not-allowed"
                       id={`actual-${item.id}`}
                       aria-label={`Nilai aktual ${d.name}`}
-                      type="number"
+                      type={d.unit.startsWith('Rp') ? 'text' : 'number'}
+                      inputmode={d.unit.startsWith('Rp') ? 'decimal' : undefined}
                       min="0"
                       step="any"
                       required
                       {disabled}
-                      value={draft ? draft.current : item.unfilled ? undefined : item.current}
+                      value={d.unit.startsWith('Rp') ? moneyText[item.id] ?? rupiah(draft ? draft.current : item.unfilled ? undefined : item.current) : draft ? draft.current : item.unfilled ? undefined : item.current}
                       oninput={(event) => {
-                        const value = event.currentTarget.valueAsNumber;
-                        edit(item).current = Number.isNaN(value) ? undefined : value;
+                        const input = event.currentTarget;
+                        if (d.unit.startsWith('Rp')) {
+                          const raw = input.value.replace(/^Rp\s*/i, '').replace(/\./g, '');
+                          if (!/^\d*(,\d*)?$/.test(raw)) { input.value = moneyText[item.id] ?? rupiah(item.current); return; }
+                          const [whole, fraction] = raw.split(',');
+                          const formatted = raw === '' ? '' : `Rp ${(whole || '0').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}${fraction === undefined ? '' : ',' + fraction}`;
+                          moneyText[item.id] = formatted;
+                          input.value = formatted;
+                          edit(item).current = raw === '' || raw === ',' ? undefined : Number(raw.replace(',', '.'));
+                        } else {
+                          const value = input.valueAsNumber;
+                          edit(item).current = Number.isNaN(value) ? undefined : value;
+                        }
                       }}
                     /><span
                       class="[&&]:flex [&&]:shrink-0 [&&]:items-center [&&]:[background-image:initial] [&&]:[background-color:rgb(234,_246,_255)] [&&]:text-[10px] [&&]:w-[max-content] [&&]:max-w-[60%] [&&]:wrap-anywhere [&&]:px-[9px] [&&]:py-[0px]"
-                      >{d.unit}</span
+                      >{d.unit.startsWith('Rp/') ? d.unit.slice(3) : d.unit}</span
                     >
                   </div>
                   <small
                     class="[&&]:text-[10px] [&&]:text-[color:var(--muted)] [&&]:leading-[1.7] [&&]:block [&&]:mt-[6px] [&&]:wrap-anywhere"
                     >{item.unfilled
                       ? 'Belum diisi'
-                      : `Tersimpan: ${number(item.current)} ${d.unit}`}</small
+                      : `Tersimpan: ${d.unit.startsWith('Rp') ? rupiah(item.current) : number(item.current)} ${d.unit.startsWith('Rp/') ? d.unit.slice(3) : d.unit}`}</small
                   >
                 </div>
                 <div
@@ -509,9 +523,9 @@
                   <div
                     class="[&&]:flex [&&]:items-center [&&]:justify-between [&&]:gap-y-[6px] [&&]:gap-x-[6px] [&&]:min-h-[39px] [&&]:[background-image:initial] [&&]:[background-color:rgb(238,_247,_252)] [&&]:text-[12px] [&&]:px-[10px] [&&]:py-[9px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:var(--line)] [&&]:rounded-[7px] reference-value"
                   >
-                    {hasTarget(item) ? number(item.target) : 'Belum ditetapkan'}
+                    {hasTarget(item) ? d.unit.startsWith('Rp') ? rupiah(item.target) : number(item.target) : 'Belum ditetapkan'}
                     <span class="[&&]:text-[10px] [&&]:text-[color:var(--muted)] [&&]:wrap-anywhere"
-                      >{d.unit}</span
+                      >{d.unit.startsWith('Rp/') ? d.unit.slice(3) : d.unit}</span
                     >
                   </div>
                   <small
