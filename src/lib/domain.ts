@@ -6,10 +6,11 @@ export function progress(indicator: Pick<CampusIndicator, 'current' | 'target'>)
 }
 export function average(values: number[]): number { return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0; }
 export function campusStats(data: Snapshot, campusId: string) {
-  const indicators = data.indicators.filter(i => i.campusId === campusId);
-  const revisions = new Set(data.feedback.filter(f => f.campusId === campusId && f.requiresRevision && f.state !== 'closed').map(f => f.indicatorId)).size;
+  const metrics = data.campusMetrics?.[campusId];
+  const indicators = metrics ? [] : data.indicators.filter(i => i.campusId === campusId);
   const proposals = data.proposals.filter(p => p.campusId === campusId).sort((a, b) => b.version - a.version);
-  return { progress: average(indicators.map(progress)), achieved: indicators.filter(i => i.current >= i.target).length, total: indicators.length, revisions, proposal: proposals[0], proposals };
+  return { ...(metrics ?? { progress: average(indicators.map(progress)), achieved: indicators.filter(i => i.current >= i.target).length, total: indicators.length,
+    revisions: new Set(data.feedback.filter(f => f.campusId === campusId && f.requiresRevision && f.state !== 'closed').map(f => f.indicatorId)).size }), proposal: proposals[0], proposals };
 }
 export const percent = (n: number) => `${Math.round(n)}%`;
 export const number = (n: number) => new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 }).format(n);

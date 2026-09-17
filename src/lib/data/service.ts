@@ -1,315 +1,113 @@
-import Dexie, { type Table } from 'dexie';
-import type { DataService, DemoSession, Snapshot } from '../types';
-import { createSeed, DEMO_CAMPUS, demoNotifications, NOTIFICATION_SEED_VERSION } from './seed';
-import { validateCategories } from '../forum';
-import { demoSubmissions, latestSubmission, changedSinceSubmission } from '../verification';
-import { CAMPUSES, CAMPUS_ROSTER_VERSION } from './campuses';
-import { samplePdf } from './pdf';
+import type { DataService, PreviewAccount } from '../types';
+import type { PageRequest, PageResponse, SessionResponse, NavigationData } from '../page-data';
 
-export const DB_NAME = 'deb-prototype-v1';
-class DemoDatabase extends Dexie {
-  state!: Table<{ id: string; data: Snapshot }, string>;
-  files!: Table<{ id: string; blob: Blob }, string>;
-  constructor(name: string) {
-    super(name);
-    this.version(1).stores({ state: 'id', files: 'id' });
+export const READ_ONLY_MESSAGE = 'Penyimpanan tidak tersedia pada sesi ini.';
+export class DataReadError extends Error {
+  constructor(public status: number, message: string) { super(message); }
+}
+export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...args)) {
+  let key = '';
+  let generation = 0;
+  const pending = new Set<AbortController>();
+  const retries = new Map<string, string>();
+  function selectAccount(next: string) {
+    generation++;
+    pending.forEach(controller => controller.abort());
+    pending.clear(); retries.clear();
+    key = next;
   }
-}
-const now = () => new Date().toISOString();
-const uid = () => crypto.randomUUID();
-function requireRole(actor: DemoSession, role?: 'admin' | 'campus') {
-  if (!actor || !['admin', 'campus'].includes(actor.role) || (role && actor.role !== role)) throw new Error('Anda tidak memiliki akses untuk tindakan ini.');
-  if (actor.role === 'campus' && actor.campusId !== DEMO_CAMPUS) throw new Error('Akun kampus demo tidak valid.');
-}
-function requireCampus(actor: DemoSession, campusId: string) {
-  requireRole(actor);
-  if (actor.role === 'campus' && actor.campusId !== campusId) throw new Error('Data ini milik kampus lain.');
-}
-function content(value: string, label: string, max = 5000) {
-  const text = value.trim();
-  if (!text) throw new Error(`${label} wajib diisi.`);
-  if (text.length > max) throw new Error(`${label} maksimal ${max} karakter.`);
-  return text;
-}
-function activity(data: Snapshot, campusId: string, text: string) {
-  data.activities.unshift({ id: uid(), campusId, text, createdAt: now() });
-  data.activities = data.activities.slice(0, 200);
-}
-function notify(data: Snapshot, campusId: string, recipient: 'campus' | 'admin', title: string, body: string, href: string) {
-  data.notifications.unshift({ id: uid(), campusId, recipient, title, body, href, createdAt: now(), readAt: null });
-}
-function ownsNotification(actor: DemoSession, notice: Snapshot['notifications'][number]) {
-  return notice.recipient === actor.role && (actor.role === 'admin' || notice.campusId === actor.campusId);
-}
-
-export function createMockService(name = DB_NAME): DataService {
-  let database: DemoDatabase | undefined;
-  const db = () => database ??= new DemoDatabase(name);
-  async function ensure() {
-    const database = db();
-    // The read and seed run in the same transaction, including across tabs.
-    await database.transaction('rw', database.state, database.files, async () => {
-      const existing = await database.state.get('main');
-      if (existing) {
-        if (existing.data.campusRosterVersion !== CAMPUS_ROSTER_VERSION) {
-          // Keep stable IDs and all user work; only replace roster metadata and generated examples.
-          const oldCampuses = existing.data.campuses;
-          existing.data.campuses = oldCampuses.map(c => ({ ...c, ...CAMPUSES.find(profile => profile.id === c.id) }));
-          for (const old of oldCampuses) {
-            const updated = existing.data.campuses.find(c => c.id === old.id)!;
-            if (old.name === updated.name) continue;
-            for (const notice of existing.data.notifications ?? []) {
-              if (!notice.simulated) continue;
-              notice.title = notice.title.split(old.name).join(updated.name);
-              notice.body = notice.body.split(old.name).join(updated.name);
-            }
-            for (const proposal of existing.data.proposals.filter(p => p.campusId === old.id && p.simulated)) {
-              const blob = samplePdf(updated.name, proposal.version);
-              proposal.size = blob.size;
-              await database.files.put({ id: proposal.id, blob });
-            }
-          }
-          existing.data.campusRosterVersion = CAMPUS_ROSTER_VERSION;
-          await database.state.put(existing);
-        }
-        if (!existing.data.submissions) {
-          existing.data.submissions = demoSubmissions(existing.data);
-          await database.state.put(existing);
-        }
-        // Upgrade existing browser data without resetting uploads or work history.
-        if (!existing.data.notifications || existing.data.notificationSeedVersion !== NOTIFICATION_SEED_VERSION) {
-          existing.data.notifications ??= [];
-          const ids = new Set(existing.data.notifications.map(n => n.id));
-          existing.data.notifications.push(...demoNotifications().filter(n => !ids.has(n.id)));
-          existing.data.notificationSeedVersion = NOTIFICATION_SEED_VERSION;
-          await database.state.put(existing);
-        }
-        return;
+  async function request<T>(url: string, parse: (response: Response) => Promise<T>, options: RequestInit = {}): Promise<T> {
+    const started = generation;
+    const controller = new AbortController();
+    pending.add(controller);
+    const timer = setTimeout(() => controller.abort(), 30000);
+    try {
+      const response = await fetcher(url, { ...options, headers: { ...options.headers, ...(key || url === '/api/dev/accounts' ? { 'X-DEB-Preview': '1' } : {}), ...(key ? { 'X-DEB-Preview-Account': key } : {}) }, cache: 'no-store', signal: controller.signal });
+      if (started !== generation) throw new DataReadError(409, 'Pilihan akun sudah berubah.');
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new DataReadError(response.status, body.message || 'Pembacaan PocketBase gagal.');
       }
-      const seed = createSeed();
-      await database.files.bulkPut(seed.files);
-      await database.state.put({ id: 'main', data: seed.data });
-    });
-  }
-  async function change<T>(actor: DemoSession, action: (data: Snapshot, database: DemoDatabase) => T | Promise<T>): Promise<T> {
-    requireRole(actor);
-    await ensure();
-    const database = db();
-    return database.transaction('rw', database.state, database.files, async () => {
-      const record = await database.state.get('main');
-      if (!record) throw new Error('Data demo tidak ditemukan. Silakan muat ulang.');
-      const result = await action(record.data, database);
-      await database.state.put(record);
+      const result = await parse(response);
+      if (started !== generation) throw new DataReadError(409, 'Pilihan akun sudah berubah.');
       return result;
-    });
+    } catch (error) {
+      if (error instanceof DataReadError) throw error;
+      throw new DataReadError(503, 'PocketBase tidak dapat dimuat. Periksa koneksi dan coba muat ulang.');
+    } finally { clearTimeout(timer); pending.delete(controller); }
   }
-  return {
-    async submitDeb(actor) {
-      requireRole(actor, 'campus');
-      await change(actor, data => {
-        const previous = latestSubmission(data, actor.campusId!);
-        if (previous?.status === 'pending') throw new Error('Data sedang menunggu verifikasi.');
-        if (previous?.status === 'approved' && !changedSinceSubmission(data, previous)) throw new Error('Data ini sudah terverifikasi. Perbarui data sebelum mengirim kembali.');
-        const indicators = data.indicators.filter(i => i.campusId === actor.campusId);
-        if (!indicators.length || indicators.some(i => !Number.isFinite(i.current) || i.current < 0)) throw new Error('Lengkapi data indikator sebelum mengirim.');
-        const id = uid();
-        data.submissions ??= [];
-        data.submissions.push({ id, campusId: actor.campusId!, version: (previous?.version ?? 0) + 1, status: 'pending', indicators: indicators.map(i => ({ ...i })), submittedAt: now() });
-        activity(data, actor.campusId!, 'Data DEB dikirim untuk verifikasi Admin PF.');
-        notify(data, actor.campusId!, 'admin', 'Pengajuan verifikasi DEB', 'Kampus mengirim data indikator untuk diperiksa.', `/admin/verifikasi?submission=${id}`);
-      });
-    },
-    async reviewDeb(actor, submissionId, decision, note) {
-      requireRole(actor, 'admin');
-      if (decision !== 'approved' && decision !== 'revision') throw new Error('Keputusan tidak valid.');
-      const clean = decision === 'revision' ? content(note, 'Catatan revisi') : note.trim();
-      if (clean.length > 5000) throw new Error('Catatan maksimal 5000 karakter.');
-      await change(actor, data => {
-        const submission = data.submissions?.find(s => s.id === submissionId);
-        if (!submission || submission.status !== 'pending') throw new Error('Pengajuan tidak ditemukan atau sudah diputuskan. Muat ulang data.');
-        if (changedSinceSubmission(data, submission)) throw new Error('Data berubah sejak dikirim. Muat ulang dan periksa kembali.');
-        if (decision === 'approved' && data.feedback.some(f => f.campusId === submission.campusId && f.requiresRevision && f.state !== 'closed')) throw new Error('Selesaikan feedback revisi per indikator sebelum menyetujui.');
-        submission.status = decision;
-        submission.decisionNote = clean;
-        submission.reviewedAt = now(); submission.reviewedBy = actor.name;
-        const title = decision === 'approved' ? 'Data DEB terverifikasi' : 'Revisi data DEB diminta';
-        activity(data, submission.campusId, title);
-        notify(data, submission.campusId, 'campus', title, clean || 'Admin PF telah menyetujui data indikator yang Anda kirim.', '/campus/indicators');
-      });
-    },
-    async load(actor) {
-      requireRole(actor);
-      await ensure();
-      const record = await db().state.get('main');
-      if (!record) throw new Error('Data demo belum tersedia.');
-      const data = record.data;
-      data.notifications = data.notifications.filter(n => ownsNotification(actor, n));
-      if (actor.role === 'campus') {
-        data.submissions = data.submissions?.filter(s => s.campusId === actor.campusId);
-        // Campus names are forum author references; work data is scoped separately.
-        data.indicators = data.indicators.filter(i => i.campusId === actor.campusId);
-        data.proposals = data.proposals.filter(p => p.campusId === actor.campusId);
-        data.feedback = data.feedback.filter(f => f.campusId === actor.campusId);
-        data.activities = data.activities.filter(a => a.campusId === actor.campusId);
-      }
-      return data;
-    },
-    async updateIndicator(actor, id, current, note) {
-      requireRole(actor, 'campus');
-      if (!Number.isFinite(current) || current < 0) throw new Error('Nilai aktual harus berupa angka hingga dan tidak negatif.');
-      if (note.length > 5000) throw new Error('Catatan maksimal 5000 karakter.');
-      await change(actor, data => {
-        const item = data.indicators.find(i => i.id === id);
-        if (!item) throw new Error('Indikator tidak ditemukan.');
-        requireCampus(actor, item.campusId);
-        if (latestSubmission(data, item.campusId)?.status === 'pending') throw new Error('Data sedang diverifikasi. Tunggu keputusan Admin sebelum mengubah indikator.');
-        item.current = current; item.note = note.trim(); item.updatedAt = now();
-        data.feedback.filter(f => f.indicatorId === id && f.requiresRevision && f.state === 'open').forEach(f => { f.state = 'responded'; f.updatedAt = now(); });
-        activity(data, item.campusId, 'Nilai aktual dan catatan indikator diperbarui.');
-        const label = data.definitions.find(d => d.id === item.definitionId)?.name || 'Indikator';
-        notify(data, item.campusId, 'admin', 'Data indikator diperbarui', `${label}: ${current}. ${item.note}`, `/admin/campuses/${item.campusId}`);
-      });
-    },
-    async addFeedback(actor, indicatorId, text, requiresRevision) {
-      requireRole(actor, 'admin');
-      const clean = content(text, 'Feedback');
-      await change(actor, data => {
-        const indicator = data.indicators.find(i => i.id === indicatorId);
-        if (!indicator) throw new Error('Indikator tidak ditemukan.');
-        data.feedback.push({ id: uid(), campusId: indicator.campusId, indicatorId, text: clean, requiresRevision, state: requiresRevision ? 'open' : 'closed', createdAt: now(), updatedAt: now() });
-        activity(data, indicator.campusId, requiresRevision ? 'Admin PF meminta revisi data indikator.' : 'Admin PF menambahkan catatan indikator.');
-        notify(data, indicator.campusId, 'campus', requiresRevision ? 'Permintaan revisi indikator' : 'Catatan baru dari Admin PF', clean, '/campus/indicators');
-      });
-    },
-    async closeFeedback(actor, id) {
-      requireRole(actor, 'admin');
-      await change(actor, data => {
-        const feedback = data.feedback.find(f => f.id === id);
-        if (!feedback) throw new Error('Feedback tidak ditemukan.');
-        if (feedback.state === 'closed') return;
-        feedback.state = 'closed'; feedback.updatedAt = now();
-        activity(data, feedback.campusId, 'Admin PF menandai feedback selesai.');
-        notify(data, feedback.campusId, 'campus', 'Feedback telah diselesaikan', feedback.text, '/campus/indicators');
-      });
-    },
-    async uploadProposal(actor, file, changes) {
-      requireRole(actor, 'campus');
-      const clean = content(changes, 'Catatan perubahan');
-      if (!file.name.toLowerCase().endsWith('.pdf') || (file.type && file.type !== 'application/pdf')) throw new Error('Pilih file dengan format PDF.');
-      if (file.size > 10 * 1024 * 1024) throw new Error('Ukuran PDF maksimal 10 MB.');
-      if (await file.slice(0, 5).text() !== '%PDF-') throw new Error('File tidak memiliki signature PDF yang valid.');
-      // Read/validate before the IndexedDB transaction to avoid auto-commit.
-      await change(actor, async (data, database) => {
-        const versions = data.proposals.filter(p => p.campusId === actor.campusId);
-        const version = Math.max(0, ...versions.map(p => p.version)) + 1;
-        const id = uid();
-        await database.files.add({ id, blob: file });
-        data.proposals.push({ id, campusId: actor.campusId!, version, filename: file.name, size: file.size, createdAt: now(), changes: clean, simulated: false });
-        activity(data, actor.campusId!, `Proposal versi ${version} diajukan.`);
-        notify(data, actor.campusId!, 'admin', `Proposal versi ${version} diajukan`, file.name, `/admin/campuses/${actor.campusId}`);
-      });
-    },
-    async proposalFile(actor, id) {
-      requireRole(actor);
-      await ensure();
-      const record = await db().state.get('main');
-      const proposal = record?.data.proposals.find(p => p.id === id);
-      if (!proposal) throw new Error('Proposal tidak ditemukan.');
-      requireCampus(actor, proposal.campusId);
-      const file = await db().files.get(id);
-      if (!file) throw new Error('File PDF tidak tersedia.');
-      return file.blob;
-    },
-    async ask(actor, title, body, categoryIds = ['umum']) {
-      requireRole(actor, 'campus');
-      const cleanTitle = content(title, 'Judul pertanyaan', 180);
-      const cleanBody = content(body, 'Isi pertanyaan');
-      const categories = validateCategories(categoryIds);
-      return change(actor, data => {
-        const id = uid();
-        data.questions.push({ id, campusId: actor.campusId!, title: cleanTitle, body: cleanBody, categoryIds: categories, createdAt: now() });
-        activity(data, actor.campusId!, 'Pertanyaan baru dibagikan di forum bersama.');
-        notify(data, actor.campusId!, 'admin', 'Pertanyaan baru dari kampus', cleanTitle, `/admin/questions/${id}`);
-        return id;
-      });
-    },
-    async answer(actor, questionId, body) {
-      requireRole(actor, 'admin');
-      const clean = content(body, 'Jawaban');
-      await change(actor, data => {
-        const question = data.questions.find(q => q.id === questionId);
-        if (!question) throw new Error('Pertanyaan tidak ditemukan.');
-        const answer = data.answers.find(a => a.questionId === questionId);
-        if (answer) { answer.body = clean; answer.updatedAt = now(); }
-        else data.answers.push({ id: uid(), questionId, body: clean, updatedAt: now() });
-        notify(data, question.campusId, 'campus', answer ? 'Jawaban Admin PF diperbarui' : 'Pertanyaan Anda telah dijawab', question.title, `/campus/questions/${questionId}`);
-      });
-    },
-    async toggleLike(actor, questionId) {
-      requireRole(actor, 'campus');
-      await change(actor, data => {
-        if (!data.questions.some(q => q.id === questionId)) throw new Error('Pertanyaan tidak ditemukan.');
-        const existing = data.likes.find(l => l.questionId === questionId && l.campusId === actor.campusId);
-        if (existing) data.likes = data.likes.filter(l => l !== existing);
-        else data.likes.push({ id: `${questionId}:${actor.campusId}`, questionId, campusId: actor.campusId! });
-      });
-    },
-    async promoteFaq(actor, questionId) {
-      requireRole(actor, 'admin');
-      await change(actor, data => {
-        if (data.faq.some(f => f.questionId === questionId)) throw new Error('Pertanyaan ini sudah masuk FAQ.');
-        const question = data.questions.find(q => q.id === questionId);
-        const answer = data.answers.find(a => a.questionId === questionId);
-        if (!question || !answer) throw new Error('Jawab pertanyaan sebelum menjadikannya FAQ.');
-        data.faq.push({ id: uid(), questionId, question: question.title, answer: answer.body, order: Math.max(-1, ...data.faq.map(f => f.order)) + 1 });
-      });
-    },
-    async saveFaq(actor, entry) {
-      requireRole(actor, 'admin');
-      const question = content(entry.question, 'Pertanyaan FAQ', 180);
-      const answer = content(entry.answer, 'Jawaban FAQ');
-      await change(actor, data => {
-        if (entry.id) {
-          const faq = data.faq.find(f => f.id === entry.id);
-          if (!faq) throw new Error('FAQ tidak ditemukan.');
-          faq.question = question; faq.answer = answer;
-        } else data.faq.push({ id: uid(), question, answer, order: Math.max(-1, ...data.faq.map(f => f.order)) + 1 });
-      });
-    },
-    async moveFaq(actor, id, direction) {
-      requireRole(actor, 'admin');
-      if (direction !== -1 && direction !== 1) throw new Error('Arah urutan tidak valid.');
-      await change(actor, data => {
-        const ordered = [...data.faq].sort((a, b) => a.order - b.order);
-        const index = ordered.findIndex(f => f.id === id);
-        if (index < 0) throw new Error('FAQ tidak ditemukan.');
-        const other = index + direction;
-        if (other < 0 || other >= ordered.length) return;
-        [ordered[index], ordered[other]] = [ordered[other], ordered[index]];
-        ordered.forEach((f, i) => { f.order = i; });
-      });
-    },
-    async deleteFaq(actor, id) {
-      requireRole(actor, 'admin');
-      await change(actor, data => { data.faq = data.faq.filter(f => f.id !== id); });
-    },
-    async readNotifications(actor, ids) {
-      await change(actor, data => {
-        const owned = data.notifications.filter(n => ownsNotification(actor, n));
-        if (ids && ids.some(id => !owned.some(n => n.id === id))) throw new Error('Notifikasi tidak ditemukan atau bukan milik Anda.');
-        const timestamp = now();
-        owned.filter(n => !ids || ids.includes(n.id)).forEach(n => { n.readAt ??= timestamp; });
-      });
-    },
-    async reset() {
-      const seed = createSeed();
-      const database = db();
-      await database.transaction('rw', database.state, database.files, async () => {
-        await database.files.clear();
-        await database.files.bulkPut(seed.files);
-        await database.state.put({ id: 'main', data: seed.data });
-      });
+  const session = (): Promise<SessionResponse> => request('/api/session', response => response.json());
+  const navigation = (): Promise<NavigationData> => request('/api/navigation', response => response.json());
+  async function page(input: PageRequest): Promise<PageResponse> {
+    if (input.view === 'masters' || input.view === 'guide') return { data: {}, loadedAt: new Date().toISOString() };
+    const params = new URLSearchParams();
+    if (input.period !== undefined) params.set('period', input.period);
+    if (input.campus) params.set('campus', input.campus);
+    if (input.question) params.set('question', input.question);
+    if (input.tab) params.set('tab', input.tab);
+    return request('/api/views/' + input.view + (params.size ? '?' + params : ''), response => response.json());
+  }
+  async function write(url: string, method: string, body: object | FormData = {}): Promise<{ ok: true; id?: string; more?: boolean }> {
+    const started = generation;
+    const serialized = body instanceof FormData ? null : JSON.stringify(body);
+    let fingerprint = method + ':' + url + ':' + serialized;
+    if (body instanceof FormData) {
+      const file = body.get('file') as File;
+      const digest = await crypto.subtle.digest('SHA-256', await file.arrayBuffer());
+      fingerprint += ':' + file.name + ':' + Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('') + ':' + body.get('changes');
+    }
+    if (generation !== started) throw new DataReadError(409, 'Pilihan akun sudah berubah.');
+    const operationKey = retries.get(fingerprint) || crypto.randomUUID();
+    retries.set(fingerprint, operationKey);
+    try {
+      const result = await request(url, response => response.json(), { method, body: serialized ?? body as FormData,
+        headers: { 'Idempotency-Key': operationKey, ...(serialized === null ? {} : { 'Content-Type': 'application/json' }) } });
+      if (generation === started) retries.delete(fingerprint);
+      return result;
+    } catch (error) {
+      if (generation === started && error instanceof DataReadError && error.status < 500) retries.delete(fingerprint);
+      throw error;
+    }
+  }
+  const done = async (value: Promise<unknown>): Promise<void> => { await value; };
+  const idPath = (id: string) => encodeURIComponent(id);
+  const service: DataService = {
+    createPeriod: name => done(write('/api/admin/periods', 'POST', { name })),
+    openPeriod: period => done(write('/api/admin/periods/open', 'POST', { period })),
+    masters: () => request('/api/admin/masters', response => response.json()),
+    masterAudit: (query = '', page = 1) => request('/api/admin/master-audit?' + new URLSearchParams({ q: query, page: String(page) }), response => response.json()),
+    saveCampus: input => done(write('/api/admin/campuses' + (input.id ? '/' + idPath(input.id) : ''), input.id ? 'PATCH' : 'POST', input)),
+    deleteCampus: (id, revision) => done(write('/api/admin/campuses/' + idPath(id), 'DELETE', { revision })),
+    saveDefinition: input => done(write('/api/admin/definitions' + (input.id ? '/' + idPath(input.id) : ''), input.id ? 'PATCH' : 'POST', input)),
+    activateDefinition: (id, revision) => done(write('/api/admin/definitions/' + idPath(id) + '/activate', 'POST', { revision })),
+    deleteDefinition: (id, revision) => done(write('/api/admin/definitions/' + idPath(id), 'DELETE', { revision })),
+    proposalFile: async (id) => request(`/api/proposals/${encodeURIComponent(id)}/file`, response => response.blob()),
+    submitDeb: () => done(write('/api/submissions', 'POST')),
+    reviewDeb: (id, decision, note) => done(write('/api/submissions/' + idPath(id) + '/review', 'POST', { decision, note })),
+    updateIndicator: (id, current, note) => done(write('/api/indicators/' + idPath(id), 'PATCH', { current, note })),
+    addFeedback: (id, text, requiresRevision) => done(write('/api/indicators/' + idPath(id) + '/feedback', 'POST', { text, requiresRevision })),
+    closeFeedback: id => done(write('/api/feedback/' + idPath(id) + '/close', 'POST')),
+    uploadProposal: (file, changes) => { const body = new FormData(); body.set('file', file); body.set('changes', changes); return done(write('/api/proposals', 'POST', body)); },
+    ask: async (title, body, categoryIds) => (await write('/api/questions', 'POST', { title, body, categoryIds })).id!,
+    replies: (id, cursor = {}) => request('/api/questions/' + idPath(id) + '/replies?' + new URLSearchParams(Object.entries(cursor).map(([key, value]) => [key, String(value)])), response => response.json()),
+    reply: (id, body, replyTo) => done(write('/api/questions/' + idPath(id) + '/replies', 'POST', { body, replyTo })),
+    answer: (id, body) => done(write('/api/questions/' + idPath(id) + '/answer', 'PUT', { body })),
+    setLike: (id, liked) => done(write('/api/questions/' + idPath(id) + '/like', liked ? 'PUT' : 'DELETE')),
+    promoteFaq: id => done(write('/api/questions/' + idPath(id) + '/faq', 'POST')),
+    saveFaq: entry => done(write('/api/faq' + (entry.id ? '/' + idPath(entry.id) : ''), entry.id ? 'PATCH' : 'POST', { question: entry.question, answer: entry.answer })),
+    moveFaq: (id, direction) => done(write('/api/faq/' + idPath(id) + '/move', 'POST', { direction })),
+    deleteFaq: id => done(write('/api/faq/' + idPath(id), 'DELETE')),
+    readNotifications: async ids => {
+      const started = generation;
+      let more: boolean | undefined;
+      do {
+        if (started !== generation) throw new DataReadError(409, 'Pilihan akun sudah berubah.');
+        more = (await write('/api/notifications/read', 'POST', { ids })).more;
+      } while (ids === undefined && more);
     }
   };
+  return { ...service, selectAccount, session, navigation, page, async accounts(): Promise<PreviewAccount[]> {
+    return request('/api/dev/accounts', async response => (await response.json()).accounts);
+  } };
 }
-export const dataService = createMockService();
+export const dataService = createHttpService();

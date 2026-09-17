@@ -1,0 +1,145 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { createHttpService, DataReadError } from '../src/lib/data/service';
+import { guardPreview, previewContext, PreviewError } from '../src/lib/server/deb/local-preview';
+import { progress, average, campusStats } from '../src/lib/domain';
+import { createSeed } from '../scripts/fixtures/seed';
+import { questionCategories, matchesQuestion, validateCategories } from '../src/lib/forum';
+import { changedSinceSubmission } from '../src/lib/verification';
+import { mapCampuses, regionSummary } from '../src/lib/map';
+import { readdir, readFile } from 'node:fs/promises';
+import path from 'node:path';
+
+test('mark-all continues batches and retries only the uncertain batch with its existing key', async () => {
+  const keys: string[] = [];
+  const service = createHttpService(async (_url, options) => {
+    keys.push(new Headers(options?.headers).get('Idempotency-Key')!);
+    if (keys.length === 2) throw new Error('Response lost');
+    return Response.json({ ok: true, more: keys.length < 4 });
+  });
+  await assert.rejects(service.readNotifications());
+  await service.readNotifications();
+  assert.equal(keys.length, 4);
+  assert.notEqual(keys[0], keys[1]);
+  assert.equal(keys[1], keys[2]);
+  assert.notEqual(keys[2], keys[3]);
+});
+
+test('HTTP-only service sends preview key, not browser actor, and reads data/PDF', async () => {
+  const requests: { url: string; options?: RequestInit }[] = [];
+  const service = createHttpService(async (url, options) => {
+    requests.push({ url: String(url), options });
+    return String(url).endsWith('/file') ? new Response('%PDF-1.4', { headers: { 'Content-Type': 'application/pdf' } }) : Response.json({ data: { campuses: [] }, session: { role: 'campus' } });
+  });
+  service.selectAccount('campus-002');
+  assert.deepEqual((await service.page({view:'accounts'})).data, { campuses: [] });
+  assert.equal(new Headers(requests[0].options?.headers).get('x-deb-preview-account'), 'campus-002');
+  assert.equal(requests[0].options?.cache, 'no-store');
+  assert.ok(!JSON.stringify(requests).includes('Forged'));
+  assert.ok((await (await service.proposalFile('abc')).text()).startsWith('%PDF'));
+});
+
+test('writes use explicit state and reuse operation key after uncertain transport failure', async () => {
+  const requests: RequestInit[] = [];
+  const service = createHttpService(async (_url, options) => {
+    requests.push(options!);
+    if (requests.length === 1) throw new Error('lost response');
+    return Response.json({ ok: true });
+  });
+  service.selectAccount('campus-001');
+  await assert.rejects(service.setLike('question', true));
+  await service.setLike('question', true);
+  assert.equal(requests[0].method, 'PUT');
+  assert.equal(new Headers(requests[0].headers).get('idempotency-key'), new Headers(requests[1].headers).get('idempotency-key'));
+  await service.setLike('question', false);
+  assert.equal(requests[2].method, 'DELETE');
+  assert.ok(!('reset' in service));
+});
+
+test('account switch during file hashing cannot upload under the new account', async () => {
+  let called = false;
+  let release!: (value: ArrayBuffer) => void;
+  const original = File.prototype.arrayBuffer;
+  File.prototype.arrayBuffer = () => new Promise(resolve => { release = resolve; });
+  try {
+    const service = createHttpService(async () => { called = true; return Response.json({ok:true}); });
+    service.selectAccount('campus-001');
+    const uploading = service.uploadProposal(new File(['%PDF-1.4'], 'qa.pdf'), 'QA');
+    service.selectAccount('campus-002');
+    release(new ArrayBuffer(0));
+    await assert.rejects(uploading, /Pilihan akun sudah berubah/);
+    assert.equal(called, false);
+  } finally { File.prototype.arrayBuffer = original; }
+});
+
+test('network errors and rejected requests never return seed data', async () => {
+  const down = createHttpService(async () => { throw new Error('offline'); });
+  await assert.rejects(down.session(), /PocketBase tidak dapat dimuat/);
+  const forbidden = createHttpService(async () => Response.json({ message: 'Account disabled' }, { status: 403 }));
+  await assert.rejects(forbidden.session(), error => error instanceof DataReadError && error.status === 403);
+});
+
+test('account switch discards a late response even when the transport ignores abort', async () => {
+  let finish!: (response: Response) => void;
+  const service = createHttpService(() => new Promise(resolve => { finish = resolve; }));
+  service.selectAccount('campus-001');
+  const previous = service.session();
+  service.selectAccount('campus-002');
+  finish(Response.json({ data: { private: 'campus A' } }));
+  await assert.rejects(previous, error => error instanceof DataReadError && error.status === 409);
+});
+
+test('local preview guard fails closed outside dev, without flag/header, or across origins/peers', async () => {
+  const request = { dev: true, address: '127.0.0.1', url: new URL('http://127.0.0.1:5179'), headers: new Headers({ 'x-deb-preview': '1' }) };
+  const config = { enabled: 'true', root: process.cwd() };
+  guardPreview(request, config);
+  for (const bad of [{ ...request, dev: false }, { ...request, address: '192.168.1.4' }, { ...request, url: new URL('http://evil.test:5179') },
+    { ...request, headers: new Headers() }, { ...request, headers: new Headers({ 'x-deb-preview': '1', origin: 'https://evil.test' }) },
+    { ...request, headers: new Headers({ 'x-deb-preview': '1', 'sec-fetch-site': 'cross-site' }) }]) assert.throws(() => guardPreview(bad, config), PreviewError);
+  assert.throws(() => guardPreview(request, { ...config, enabled: 'false' }), PreviewError);
+  await assert.rejects(previewContext(request, { ...config, directory: path.resolve('outside-local') }), /Direktori/);
+  await assert.rejects(previewContext(request, { ...config, url: 'https://example.org' }), /konfigurasi/);
+});
+
+test('pure domain, roster, categories and immutable-history comparisons remain valid', () => {
+  const { data } = createSeed();
+  assert.equal(data.campuses.length, 40);
+  assert.equal(data.campuses.filter(c => c.source === 'user').length, 34);
+  assert.equal(data.definitions.length, 30);
+  assert.equal(data.indicators.length, 1200);
+  assert.equal(campusStats(data, data.campuses[0].id).progress, 76);
+  assert.equal(progress({ current: 15, target: 10 }), 100);
+  assert.equal(progress({ current: -1, target: 10 }), 0);
+  assert.equal(average([]), 0);
+  assert.throws(() => validateCategories(['invalid' as never]));
+  assert.deepEqual(questionCategories(data.questions[0]), ['indikator']);
+  assert.ok(matchesQuestion(data.questions[0], data.answers, 'baseline', ['indikator']));
+  const submission = data.submissions![0];
+  assert.equal(changedSinceSubmission(data, submission), false);
+  data.indicators.find(i => i.id === submission.indicators[0].id)!.current++;
+  assert.equal(changedSinceSubmission(data, submission), true);
+});
+
+test('missing/invalid/out-of-map coordinates do not fabricate markers or lose campus totals', () => {
+  const { data } = createSeed();
+  data.locations![0].latitude = null;
+  data.locations![1].longitude = 0;
+  data.locations![2].latitude = Number.NaN;
+  data.locations!.splice(3, 1);
+  assert.equal(mapCampuses(data).length, 36);
+  assert.equal(regionSummary(data).reduce((n, region) => n + region.campuses, 0), 40);
+  const campus = data.campuses[4];
+  const location = data.locations!.find(l => l.campusId === campus.id)!;
+  campus.id = 'actualpbid123456'; location.campusId = campus.id;
+  assert.ok(mapCampuses(data).some(point => point.id === campus.id));
+});
+
+test('application runtime has no mock/Dexie/fixture imports or legacy campus IDs', async () => {
+  async function files(directory: string): Promise<string[]> {
+    return (await Promise.all((await readdir(directory, { withFileTypes: true })).map(entry => entry.isDirectory() ? files(path.join(directory, entry.name)) : [path.join(directory, entry.name)]))).flat();
+  }
+  for (const file of (await files('src')).filter(f => /\.(ts|svelte)$/.test(f))) {
+    const content = await readFile(file, 'utf8');
+    assert.ok(!/createMockService|createSeed|fake-indexeddb|from ['"]dexie|scripts\/fixtures|DEMO_CAMPUS|['"]campus-001['"]/.test(content), file);
+  }
+});

@@ -6,9 +6,15 @@ node_modules/
 build/
 .env
 .env.*
+.dev.vars
+.dev.vars.*
 !.env.example
 test-results/
 playwright-report/
 *.log
 
 .playwright-mcp/
+
+# DEB local PocketBase: binary, database, uploads, generated QA credentials
+.local/
+pb_data/

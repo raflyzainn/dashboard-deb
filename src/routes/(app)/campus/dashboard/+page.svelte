@@ -1,6 +1,6 @@
 <script lang="ts">
-  import Dashboard from '../../_components/Dashboard.svelte';
+  import Dashboard from '$lib/components/shared/dashboard/Dashboard.svelte';
 </script>
 
-<svelte:head><title>Ringkasan · Digitalisasi DEB</title></svelte:head>
+<svelte:head><title>Beranda · Digitalisasi DEB</title></svelte:head>
 <Dashboard />

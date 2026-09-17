@@ -1,19 +1,22 @@
 # Kontrak transisi ke PocketBase
 
-Tahap saat ini sepenuhnya mock. Dokumen ini adalah rancangan transisi; tidak ada PocketBase SDK runtime, endpoint bisnis, autentikasi produksi, migrasi, atau koneksi database yang diaktifkan.
+> **Status aktif P4 lokal (10 September 2026):** master kampus/lokasi dan indikator bersama tersedia. Baseline/target sama untuk seluruh kampus; aktual/catatan tetap per kampus. P1 masih BELUM. Acuan aktif: [POCKETBASE-P4.md](POCKETBASE-P4.md). Uraian P0/P2/P3 atau prototype di bawah dipertahankan sebagai riwayat; pernyataan mock/Dexie/read-only lama bukan kondisi runtime sekarang.
+
+> Update P3 (9 September 2026): seluruh workflow tulis sudah aktif pada frontend 5176 dan PocketBase 8096. P1 autentikasi production tetap ditunda. Bagian yang menyebut Dexie, mock, P2 read-only atau port fixture adalah catatan historis; kontrak aktif ada di [POCKETBASE-P3.md](POCKETBASE-P3.md). Perintah tes standar sekarang memakai instance 5176/8096 tanpa seed/reset.
+
+P2 membaca seluruh data UI dari PocketBase melalui endpoint SvelteKit. Mock/Dexie dan fallback dummy frontend sudah dihapus; seed database dipertahankan, generator hanya berada di tooling/test. P1 autentikasi production ditunda; P3 mutasi belum aktif. Setup: [PocketBase lokal DEB](POCKETBASE-LOCAL.md); kontrak aktif: [P2 pembacaan lokal](POCKETBASE-P2.md). Bagian workflow tulis di bawah masih rancangan tahap berikutnya.
 
 ## Batas lapisan
 
 ```text
-UI → state halaman → DataService → mock Dexie
-                            ↘ adapter PocketBase / SvelteKit API (tahap berikutnya)
+UI → state → adapter HTTP → API SvelteKit → identitas QA lokal → repository user PocketBase
 ```
 
-Kontrak asinkron berada di `src/lib/types.ts`. Operasi saat ini menerima `DemoSession` untuk mensimulasikan pemeriksaan role. Implementasi produksi harus menyelesaikan identitas dari sesi yang terverifikasi; jangan mempercayai role atau campusId yang dikirim klien.
+Kontrak asinkron berada di `src/lib/types.ts`. `AppSession` berasal dari respons bootstrap. Parameter actor pada signature lama tidak digunakan sebagai otorisasi backend; server mengautentikasi key QA dari allowlist privat dan memeriksa identitas record. P1 nantinya mengganti pemilih QA dengan sesi pengguna nyata.
 
-`load()` menyediakan data dashboard dan fitur: daftar kampus/referensi penulis forum, definisi indikator, data kerja sesuai role, forum bersama, FAQ, dan aktivitas. Implementasi mock menyimpan satu snapshot terstruktur serta tabel Blob, menggunakan transaksi read-modify-write Dexie agar pembaruan tidak hilang dan nomor versi tetap unik. Ini bukan model tabel PocketBase yang harus disalin langsung. Backend produksi dapat menggunakan koleksi terpisah dan pagination di balik facade yang sama.
+Bootstrap menyediakan master kampus/indikator, data kerja sesuai scope, forum bersama, FAQ, aktivitas, notifikasi dan lokasi dari seluruh halaman hasil PocketBase. Snapshot hanya disimpan di memori UI. PDF diperoleh melalui endpoint protected-file yang memeriksa akses user, bukan tabel Blob browser.
 
-Operasi mutasi yang dipertahankan: `updateIndicator`, `addFeedback`, `closeFeedback`, `uploadProposal`, `ask`, `answer`, `toggleLike`, `promoteFaq`, `saveFaq`, `moveFaq`, dan `deleteFaq`. `proposalFile` mengembalikan Blob setelah memeriksa akses. `reset` adalah operasi khusus demo dan harus tidak tersedia pada adapter produksi.
+Signature mutasi lama sementara dipertahankan sebagai stub yang selalu menolak read-only, tanpa request jaringan atau callback penyimpanan. Tombol reset dihapus. `proposalFile` tetap mengembalikan Blob setelah pemeriksaan akses. Implementasi workflow mutasi menjadi P3, bukan bagian P2.
 
 ## Pemetaan entitas
 
@@ -47,7 +50,7 @@ ID pada kontrak adalah string opaque; UI tidak mem-parsing ID. ID seed seperti `
 1. Sediakan instance PocketBase khusus DEB dan lingkungan pengujian. Konfirmasi katalog indikator resmi dan kebutuhan akun sebelum memasukkan data nyata.
 2. Tambahkan koleksi, indeks, aturan akses, dan pengujian dengan dua akun kampus terpisah serta Admin.
 3. Implementasikan autentikasi server dan adapter yang memenuhi kontrak. Kredensial superuser harus server-only; jangan gunakan `VITE_*` untuk secret.
-4. Migrasikan pembacaan, kemudian mutasi sederhana, lalu workflow yang membutuhkan transaksi. Pertahankan backend mock untuk demo terisolasi.
+4. Pembacaan P2 sudah PocketBase-only; lanjutkan mutasi sederhana dan workflow transaksional pada P3. Tidak ada backend mock alternatif. Fixture hanya untuk seeder/test.
 5. Jalankan regresi akses, konkurensi versi/like, forum lintas kampus, serta file terproteksi. Deploy frontend dan penerapan schema adalah langkah terpisah yang perlu diverifikasi masing-masing.
 
 Tahap produksi tidak boleh mengaktifkan login pilih role, reset demo, atau seed contoh pada data nyata.

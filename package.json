@@ -10,30 +10,52 @@
     "dev": "vite dev --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
+    "preview:cloudflare": "wrangler pages dev .svelte-kit/cloudflare --ip 127.0.0.1 --port 4177",
     "prepare": "svelte-kit sync",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "format": "prettier --write \"src/**/*.svelte\" src/app.css",
+    "format:check": "prettier --check \"src/**/*.svelte\" src/app.css",
     "test": "tsx --test tests/*.test.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "pb:setup": "tsx scripts/pocketbase/cli.ts setup",
+    "pb:serve": "tsx scripts/pocketbase/cli.ts serve",
+    "pb:preview": "tsx scripts/pocketbase/cli.ts preview",
+    "pb:migrate": "tsx scripts/pocketbase/cli.ts migrate",
+    "pb:seed": "tsx scripts/pocketbase/cli.ts seed",
+    "pb:account": "tsx scripts/pocketbase/cli.ts account",
+    "pb:backup": "tsx scripts/pocketbase/maintenance.ts backup",
+    "test:pb:master-rollback": "tsx --test tests/pocketbase/masters.test.ts",
+    "pb:provision": "tsx scripts/pocketbase/provision-rest.ts",
+    "test:pb": "tsx --test tests/pocketbase/local.test.ts",
+    "test:discussion": "tsx --test --test-concurrency=1 tests/pocketbase/workflows.test.ts tests/pocketbase/discussion-browser.test.ts",
+    "mail:serve": "tsx scripts/pocketbase/mailpit.ts serve",
+    "mail:local": "tsx scripts/pocketbase/mailpit.ts configure",
+    "pb:admin": "tsx scripts/pocketbase/admin.ts",
+    "p1:sandbox": "tsx scripts/pocketbase/p1-sandbox.ts",
+    "test:p1": "tsx --test --test-concurrency=1 tests/pocketbase/p1.test.ts tests/pocketbase/p1-lifecycle.test.ts tests/pocketbase/native-email.test.ts tests/pocketbase/provision.test.ts",
+    "test:e2e:p1": "playwright test --config playwright.p1.config.ts"
   },
   "dependencies": {
     "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
-    "dexie": "^4.3.0",
     "diff": "^9.0.0",
-    "pdfjs-dist": "^6.3.289"
+    "pdfjs-dist": "^6.3.289",
+    "pocketbase": "0.28.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.0",
-    "@sveltejs/adapter-vercel": "^6.3.4",
+    "@sveltejs/adapter-cloudflare": "^7.2.9",
     "@sveltejs/kit": "^2.49.1",
     "@sveltejs/vite-plugin-svelte": "^6.2.1",
     "@tailwindcss/vite": "^4.1.17",
     "@types/node": "^25.0.0",
-    "fake-indexeddb": "^6.2.4",
+    "prettier": "^3.9.6",
+    "prettier-plugin-svelte": "^4.1.1",
     "svelte": "^5.45.6",
     "svelte-check": "^4.3.0",
     "tailwindcss": "^4.1.17",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vite": "^7.2.6"
+    "vite": "^7.2.6",
+    "wrangler": "^4.131.2"
   }
 }

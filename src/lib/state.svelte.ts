@@ -1,77 +1,151 @@
-import type { DemoSession, Role, Snapshot } from './types';
-import { dataService } from './data/service';
-import { DEMO_CAMPUS } from './data/seed';
-import { DEMO_CAMPUS_PROFILE } from './data/campuses';
+import type { AppSession, PreviewAccount, Snapshot } from './types';
+import { dataService, DataReadError, READ_ONLY_MESSAGE } from './data/service';
+import { emptyPageData, pageKey, type PageRequest, type NavigationData } from './page-data';
 
-const SESSION_KEY = 'deb-demo-session';
+const SESSION_KEY = 'deb-pocketbase-preview-account';
 class AppState {
-  session = $state<DemoSession | null>(null);
+  session = $state<AppSession | null>(null);
   data = $state<Snapshot | null>(null);
+  accounts = $state<PreviewAccount[]>([]);
   ready = $state(false);
   loading = $state(false);
+  accountsLoading = $state(false);
   busy = $state(false);
+  readOnly = $state(true);
   error = $state('');
   toast = $state('');
+  loadedAt = $state('');
+  stale = $state(false);
   dialogs = $state(0);
+  navigation = $state<NavigationData>({ pendingCount: 0, revisionCount: 0, unreadCount: 0 });
+  pageId = $state('');
+  private currentPage: PageRequest | null = null;
+  private pageRevision = 0;
+  private navigationRevision = 0;
+  private forumRevision = 0;
   private revision = 0;
-  private timer: ReturnType<typeof setTimeout> | undefined;
+  private initializing = false;
 
   async init() {
-    if (this.ready) return;
-    try {
-      const raw = sessionStorage.getItem(SESSION_KEY);
-      if (raw) {
-        const session: DemoSession = JSON.parse(raw);
-        if (session.role === 'admin' || (session.role === 'campus' && session.campusId === DEMO_CAMPUS)) this.session = session.role === 'campus' ? { ...session, name: DEMO_CAMPUS_PROFILE.name } : session;
-        else sessionStorage.removeItem(SESSION_KEY);
-      }
-    } catch { this.error = 'Sesi demo tidak dapat dibaca. Izinkan penyimpanan browser, lalu coba masuk kembali.'; }
+    if (this.ready || this.initializing) return;
+    this.initializing = true;
+    let key = '';
+    try { key = sessionStorage.getItem(SESSION_KEY) || ''; } catch { /* Selection persistence is optional. */ }
+    const current = await fetch('/api/auth/me').then(r => r.json()).catch(() => ({ session: null }));
+    if (current.session) await this.login('');
+    else if (key) await this.login(key);
+    // QA accounts are loaded only when the user opens the explicit development option.
     this.ready = true;
-    if (this.session) await this.reload();
+    this.initializing = false;
   }
-  async login(role: Role) {
-    this.error = '';
-    const actor: DemoSession = role === 'campus' ? { role, name: DEMO_CAMPUS_PROFILE.name, campusId: DEMO_CAMPUS } : { role, name: 'Admin PF' };
-    this.loading = true;
+  async loadAccounts() {
+    const revision = this.revision;
+    this.accountsLoading = true; this.error = '';
+    try { const accounts = await dataService.accounts(); if (revision === this.revision) this.accounts = accounts; }
+    catch (error) { if (revision === this.revision) { this.accounts = []; this.error = this.message(error); } }
+    finally { this.accountsLoading = false; }
+  }
+  async login(key: string) {
+    const revision = ++this.revision;
+    this.pageRevision++; this.currentPage = null; this.pageId = '';
+    dataService.selectAccount(key);
+    this.readOnly = true; this.session = null; this.data = null; this.loadedAt = ''; this.stale = false; this.dialogs = 0;
+    this.loading = true; this.error = '';
     try {
-      const data = await dataService.load(actor);
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(actor));
-      this.session = actor; this.data = data; this.revision++;
+      const result = await dataService.session();
+      if (revision !== this.revision) return false;
+      this.readOnly = result.capabilities.readOnly; this.session = result.session; this.navigation = result.navigation;
+      try { sessionStorage.setItem(SESSION_KEY, key); } catch { /* Select an account again after refresh. */ }
       return true;
-    } catch (e) { this.error = this.message(e); return false; }
-    finally { this.loading = false; }
+    } catch (error) {
+      if (revision === this.revision) { this.error = this.message(error); try { sessionStorage.removeItem(SESSION_KEY); } catch { /* optional */ } }
+      return false;
+    } finally { if (revision === this.revision) this.loading = false; }
   }
-  logout() {
-    try { sessionStorage.removeItem(SESSION_KEY); }
-    catch (e) { this.error = this.message(e); return false; }
-    this.revision++; this.session = null; this.data = null; this.error = ''; this.toast = '';
+  async logout() {
+    try {
+      const response = await fetch('/api/auth/logout', { method: 'POST' });
+      if (!response.ok) throw new Error('Logout gagal. Coba lagi.');
+    } catch {
+      this.error = 'Belum berhasil keluar. Periksa koneksi dan coba lagi.';
+      return false;
+    }
+    this.revision++; dataService.selectAccount('');
+    this.pageRevision++; this.currentPage = null; this.pageId = ''; this.navigation = { pendingCount: 0, revisionCount: 0, unreadCount: 0 };
+    this.readOnly = true; this.session = null; this.data = null; this.error = ''; this.toast = ''; this.loadedAt = ''; this.stale = false; this.loading = false; this.busy = false; this.dialogs = 0;
+    try { sessionStorage.removeItem(SESSION_KEY); } catch { /* selection only */ }
+
     return true;
   }
+  async openPage(request: PageRequest) {
+    if (!this.session || (this.currentPage && pageKey(this.currentPage) === pageKey(request))) return;
+    const previous = this.currentPage;
+    this.currentPage = request; this.pageId = pageKey(request); this.data = null;
+    this.stale = false; this.toast = '';
+    await Promise.all([this.reload(), previous ? this.refreshNavigation() : Promise.resolve()]);
+  }
   async reload() {
-    if (!this.session) return;
+    if (!this.session || !this.currentPage) return;
     const revision = this.revision;
+    const pageRevision = ++this.pageRevision;
+    const request = this.currentPage;
     this.loading = true; this.error = '';
-    try { const data = await dataService.load(this.session); if (revision === this.revision) this.data = data; }
-    catch (e) { this.error = this.message(e); }
-    finally { this.loading = false; }
+    try {
+      const result = await dataService.page(request);
+      if (revision === this.revision && pageRevision === this.pageRevision) { this.data = { ...emptyPageData(), ...result.data }; this.loadedAt = result.loadedAt; this.stale = false; }
+    } catch (error) {
+      if (revision !== this.revision || pageRevision !== this.pageRevision) return;
+      if (error instanceof DataReadError && [401, 403].includes(error.status)) this.logout();
+      else this.stale = true;
+      this.error = this.message(error);
+    } finally { if (revision === this.revision && pageRevision === this.pageRevision) this.loading = false; }
+  }
+  async refreshNavigation(quiet = false) {
+    const revision = this.revision;
+    const navigationRevision = ++this.navigationRevision;
+    try { const result = await dataService.navigation(); if (revision === this.revision && navigationRevision === this.navigationRevision) this.navigation = result; }
+    catch (error) {
+      if (revision === this.revision && navigationRevision === this.navigationRevision) {
+        if (error instanceof DataReadError && error.status === 401) void this.logout();
+        if (!quiet) this.error = this.message(error);
+      }
+      if (quiet) throw error;
+    }
+  }
+  async refreshForum() {
+    if (!this.session || !this.currentPage || !['questions', 'question-detail'].includes(this.currentPage.view) || this.loading || this.busy) return;
+    const revision = this.revision, pageRevision = this.pageRevision, forumRevision = ++this.forumRevision;
+    try {
+      const result = await dataService.page(this.currentPage);
+      if (revision === this.revision && pageRevision === this.pageRevision && forumRevision === this.forumRevision && !this.busy && this.data) {
+        this.data = { ...this.data, ...result.data }; this.loadedAt = result.loadedAt;
+      }
+    } catch (error) {
+      if (revision === this.revision && error instanceof DataReadError && error.status === 401) void this.logout();
+      throw error;
+    }
   }
   async mutate(action: () => Promise<unknown>, success: string): Promise<boolean> {
-    if (this.busy) return false;
+    if (this.readOnly || !this.session) { this.error = READ_ONLY_MESSAGE; return false; }
+    if (this.busy || this.loading) return false;
+    const revision = this.revision;
     this.busy = true; this.error = ''; this.toast = '';
     try {
       await action();
-      if (this.session) this.data = await dataService.load(this.session);
-      this.toast = success;
-      clearTimeout(this.timer); this.timer = setTimeout(() => { this.toast = ''; }, 4500);
+      if (revision !== this.revision) return false;
+      await this.reload();
+      await this.refreshNavigation();
+      if (revision !== this.revision) return false;
+      this.toast = this.stale ? 'Tersimpan, tetapi data terbaru belum dapat dimuat. Muat ulang data.' : success;
       return true;
-    } catch (e) { this.error = this.message(e); return false; }
-    finally { this.busy = false; }
+    } catch (error) {
+      if (revision === this.revision) {
+        if (error instanceof DataReadError && error.status === 401) this.logout();
+        this.error = this.message(error);
+      }
+      return false;
+    } finally { if (revision === this.revision) this.busy = false; }
   }
-  async reset() {
-    const done = await this.mutate(() => dataService.reset(), 'Data demo dikembalikan ke kondisi awal.');
-    if (done) return this.logout();
-    return false;
-  }
-  private message(e: unknown) { return e instanceof Error ? e.message : 'Penyimpanan gagal. Periksa ruang penyimpanan dan izin browser, lalu coba lagi.'; }
+  private message(error: unknown) { return error instanceof Error ? error.message : 'Pembacaan PocketBase gagal. Coba muat ulang.'; }
 }
 export const app = new AppState();

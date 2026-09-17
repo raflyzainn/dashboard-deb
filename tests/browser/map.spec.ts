@@ -2,7 +2,9 @@ import { test, expect, type Page } from '@playwright/test';
 
 async function login(page: Page, role: 'campus' | 'admin') {
   await page.goto('/login');
-  await page.getByRole('button', { name: role === 'campus' ? 'Masuk sebagai Kampus' : 'Masuk sebagai Admin PF' }).click();
+  if (role !== 'campus') await page.getByRole('button', { name: /Administrator/ }).click();
+  await page.locator(`input[value="${role === 'campus' ? 'campus-001' : 'admin-1'}"]`).check();
+  await page.getByRole('button', { name: 'Buka ruang kerja' }).click();
   await expect(page).toHaveURL(new RegExp(`/${role}/dashboard$`));
 }
 
@@ -48,7 +50,9 @@ test('admin explores the campus map while campus cannot open an admin-only view'
   await expect(page.locator('.map-dot[title="Universitas Hasanuddin"]')).toBeVisible();
   await page.locator('.map-dot[title="Universitas Hasanuddin"]').click();
   await expect(page.locator('.map-card')).toContainText('Universitas Hasanuddin');
-  await expect(page.locator('.map-card').getByRole('link', { name: 'Lihat detail kampus' })).toHaveAttribute('href', '/admin/campuses/campus-028');
+  const bootstrap = await (await page.request.get('/api/bootstrap', { headers: { 'X-DEB-Preview': '1', 'X-DEB-Preview-Account': 'admin-1' } })).json();
+  const unhas = bootstrap.data.campuses.find((campus: { name: string }) => campus.name === 'Universitas Hasanuddin');
+  await expect(page.locator('.map-card').getByRole('link', { name: 'Lihat detail kampus' })).toHaveAttribute('href', '/admin/campuses/' + unhas.id);
   await page.getByRole('button', { name: 'Tutup detail titik' }).click();
   await expect(page.locator('.map-card')).toHaveCount(0);
   await page.getByLabel('Cari kampus di peta').fill('');
@@ -58,7 +62,7 @@ test('admin explores the campus map while campus cannot open an admin-only view'
   await expect(page.getByRole('heading', { name: 'Peta Persebaran Kampus' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   await page.getByRole('button', { name: 'Buka navigasi' }).click();
-  await page.locator('.mobile-drawer').getByRole('button', { name: 'Keluar / ganti peran' }).click();
+  await page.locator('.mobile-drawer').getByRole('button', { name: 'Keluar / ganti akun' }).click();
   await login(page, 'campus');
   await expect(page.locator('.sidebar').getByRole('link', { name: 'Peta Persebaran' })).toHaveCount(0);
   await page.goto('/admin/sebaran');

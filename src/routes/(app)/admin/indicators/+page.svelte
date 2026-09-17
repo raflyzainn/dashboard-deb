@@ -1,2 +1,2 @@
 <svelte:head><title>Review Kampus · Digitalisasi DEB</title></svelte:head>
-<p>Membuka ruang review kampus…</p>
+<p class="leading-[1.8] m-[0px]">Membuka ruang review kampus…</p>

@@ -6,26 +6,6 @@ export interface CampusLocation {
   campusId: string; province: string; island: string; x: number; y: number;
 }
 
-// Approximate city-level longitude and latitude, not operational GPS coordinates.
-const locations: [string, string, number, number][] = [
-  ['DKI Jakarta','Jawa',106.82,-6.18], ['DI Yogyakarta','Jawa',110.37,-7.8], ['Jawa Barat','Jawa',107.61,-6.91], ['Jawa Barat','Jawa',107.64,-6.87],
-  ['Jawa Tengah','Jawa',110.42,-6.99], ['Jawa Timur','Jawa',112.62,-7.95], ['Jawa Timur','Jawa',112.75,-7.25], ['Jawa Timur','Jawa',112.78,-7.28],
-  ['Jawa Barat','Jawa',106.8,-6.6], ['DI Yogyakarta','Jawa',110.39,-7.77], ['Jawa Barat','Jawa',107.3,-6.3], ['DKI Jakarta','Jawa',106.84,-6.15],
-  ['Aceh','Sumatra',95.32,5.55], ['Sumatra Utara','Sumatra',98.67,3.59], ['Sumatra Selatan','Sumatra',104.75,-2.99], ['Lampung','Sumatra',105.26,-5.4],
-  ['Riau','Sumatra',101.45,.51], ['Sumatra Barat','Sumatra',100.35,-.95], ['Aceh','Sumatra',97.14,5.18], ['Sumatra Utara','Sumatra',99.63,.8],
-  ['Riau','Sumatra',101.48,.48], ['Riau','Sumatra',101.18,.85], ['Kalimantan Timur','Kalimantan',117.15,-.5], ['Kalimantan Utara','Kalimantan',117.63,3.3],
-  ['Kalimantan Selatan','Kalimantan',114.59,-3.3], ['Kalimantan Timur','Kalimantan',116.86,-1.24], ['Kalimantan Timur','Kalimantan',117.18,-.47],
-  ['Sulawesi Selatan','Sulawesi',119.43,-5.15], ['Sulawesi Utara','Sulawesi',124.84,1.47], ['Bali','Bali & Nusa Tenggara',115.17,-8.65],
-  ['Nusa Tenggara Barat','Bali & Nusa Tenggara',116.1,-8.58], ['Maluku','Maluku',128.18,-3.7], ['Maluku','Maluku',131.3,-7.18], ['Papua','Papua',140.7,-2.59],
-  ['Banten','Jawa',106.1,-6.12], ['Jawa Tengah','Jawa',110.82,-7.57], ['Jawa Tengah','Jawa',109,-7.7], ['Nusa Tenggara Timur','Bali & Nusa Tenggara',123.6,-10.17],
-  ['Papua Barat','Papua',134.08,-.86], ['Papua Barat Daya','Papua',131.25,-.88]
-];
-
-export const CAMPUS_LOCATIONS: CampusLocation[] = locations.map(([province, island, longitude, latitude], index) => ({
-  campusId: `campus-${String(index + 1).padStart(3, '0')}`, province, island,
-  x: 3 + (longitude - 94.5) / (141.5 - 94.5) * 94,
-  y: 7 + (6.5 - latitude) / (6.5 - (-11.5)) * 90
-}));
 
 export const progressBands: Record<ProgressBand, { label: string; short: string; color: string }> = {
   early: { label: 'Perlu perhatian', short: '< 62%', color: '#94a8c8' },
@@ -42,19 +22,52 @@ export function progressBand(value: number): ProgressBand {
 }
 
 export function mapCampuses(data: Snapshot) {
-  return data.campuses.map((campus: Campus) => {
-    const location = CAMPUS_LOCATIONS.find(point => point.campusId === campus.id)!;
+  return data.campuses.flatMap((campus: Campus) => {
+    const location = data.locations?.find(point => point.campusId === campus.id);
+    if (!location || typeof location.latitude !== 'number' || typeof location.longitude !== 'number' ||
+      !Number.isFinite(location.latitude) || !Number.isFinite(location.longitude) ||
+      location.longitude < 94.5 || location.longitude > 141.5 || location.latitude < -11.5 || location.latitude > 6.5) return [];
     const score = campusStats(data, campus.id).progress;
-    return { ...campus, ...location, score, band: progressBand(score) };
+    return [{ ...campus, ...location, x: (location.longitude - 94.5) / 47 * 100,
+      y: (6.5 - location.latitude) / 18 * 100, score, band: progressBand(score) }];
+  });
+}
+
+/** Separate individual touch targets; x/y remain the real geographic anchors. */
+export function layoutMapPoints<T extends { id: string; x: number; y: number }>(points: T[], width: number, height: number, zoom: number, stageHeight = height) {
+  const placed: { x: number; y: number }[] = [];
+  const w = width * zoom, h = height * zoom;
+  const verticalSpace = Math.max(0, (stageHeight - h) / 2);
+  return [...points].sort((a, b) => a.id.localeCompare(b.id)).map(point => {
+    if (!w || !h) return { ...point, markerX: point.x, markerY: point.y };
+    const origin = { x: point.x * w / 100, y: point.y * h / 100 };
+    const free = (x: number, y: number) => x >= 12 && x <= w - 12 && y >= 12 - verticalSpace && y <= h + verticalSpace - 12 && placed.every(p => Math.hypot(p.x - x, p.y - y) >= 26);
+    let target = { x: Math.max(12, Math.min(w - 12, origin.x)), y: Math.max(12, Math.min(h - 12, origin.y)) };
+    // ponytail: radial scans suit the current campus roster; use a spatial index for thousands of points.
+    search: if (!free(target.x, target.y)) {
+      for (let radius = 13; radius <= Math.hypot(w, h); radius += 13) {
+        const steps = Math.ceil(2 * Math.PI * radius / 13);
+        for (let step = 0; step < steps; step++) {
+          const angle = step * 2 * Math.PI / steps;
+          const x = origin.x + Math.cos(angle) * radius, y = origin.y + Math.sin(angle) * radius;
+          if (free(x, y)) { target = { x, y }; break search; }
+        }
+      }
+    }
+    placed.push(target);
+    return { ...point, markerX: target.x / w * 100, markerY: target.y / h * 100 };
   });
 }
 
 export function regionSummary(data: Snapshot) {
-  const points = mapCampuses(data);
+  const points = data.campuses.map(c => {
+    const location = data.locations?.find(l => l.campusId === c.id);
+    return { island: location?.island || 'Wilayah belum diisi', province: location?.province || '', score: campusStats(data, c.id).progress };
+  });
   return [...new Set(points.map(point => point.island))].map(island => {
     const rows = points.filter(point => point.island === island);
     return {
-      island, campuses: rows.length, provinces: new Set(rows.map(row => row.province)).size,
+      island, campuses: rows.length, provinces: new Set(rows.map(row => row.province).filter(Boolean)).size,
       average: rows.reduce((sum, row) => sum + row.score, 0) / rows.length
     };
   }).sort((a, b) => b.campuses - a.campuses || a.island.localeCompare(b.island));

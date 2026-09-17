@@ -3,8 +3,9 @@ export default defineConfig({
   testDir: './tests/browser',
   fullyParallel: false,
   workers: 1,
-  timeout: 60000,
-  use: { baseURL: 'http://127.0.0.1:5176', channel: 'msedge', headless: true, trace: 'retain-on-failure' },
-  webServer: { command: 'npm run dev', url: 'http://127.0.0.1:5176/login', reuseExistingServer: true, timeout: 60000 },
+  testMatch: ['local-read.spec.ts', 'p4-read.spec.ts', 'map-mobile.spec.ts', 'auth-resend.spec.ts'],
+  timeout: 90000,
+  // Use the user's running environment; never start a fixture or seed/reset data.
+  use: { baseURL: 'http://127.0.0.1:5176', channel: 'chrome', headless: true, trace: 'retain-on-failure' },
   reporter: 'list'
 });
