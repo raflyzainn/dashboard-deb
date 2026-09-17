@@ -160,7 +160,7 @@ test('period rollover keeps archived values and copies baseline/target for fresh
   const states = await page.evaluate(
     () =>
       new Promise<any>((resolve, reject) => {
-        const request = indexedDB.open('deb-standalone-demo-v1');
+        const request = indexedDB.open('deb-standalone-demo-v4');
         request.onsuccess = () => {
           const db = request.result;
           const get = db.transaction('state').objectStore('state').get('current');
@@ -208,14 +208,14 @@ test('forum conversation and account edits persist in the demo', async ({ page }
     page.getByText('Admin dapat membuka periode setelah review selesai.', { exact: true })
   ).toBeVisible();
   await page.goto('/admin/campuses?tab=accounts');
-  await page.getByLabel('Cari kampus, PIC, atau email').fill('Universitas Indonesia');
-  await page.getByRole('button', { name: 'Ubah PIC 1 Universitas Indonesia', exact: true }).click();
+  await page.getByLabel('Cari kampus, PIC, atau email').fill('Universitas Sebelas Maret');
+  await page.getByRole('button', { name: 'Ubah PIC 1 Universitas Sebelas Maret', exact: true }).click();
   await page
-    .getByLabel('Nama PIC 1 Universitas Indonesia', { exact: true })
+    .getByLabel('Nama PIC 1 Universitas Sebelas Maret', { exact: true })
     .fill('PIC Demo Diubah');
   await page.getByRole('button', { name: /Simpan perubahan/ }).click();
   await page.reload();
-  await page.getByLabel('Cari kampus, PIC, atau email').fill('Universitas Indonesia');
+  await page.getByLabel('Cari kampus, PIC, atau email').fill('Universitas Sebelas Maret');
   await expect(page.getByText('PIC Demo Diubah', { exact: true })).toBeVisible();
   await logout(page);
   await login(page, 'campus-001');
@@ -243,41 +243,41 @@ test('admin manages two PIC emails per campus while demo login still lists 40 ca
   await expect(page.locator('input[name="preview-account"]')).toHaveCount(40);
   await login(page, 'admin-1');
   await page.goto('/admin/campuses?tab=accounts');
-  await page.getByLabel('Cari kampus, PIC, atau email').fill('Universitas Indonesia');
-  const group = page.getByRole('region', { name: 'PIC Universitas Indonesia', exact: true });
+  await page.getByLabel('Cari kampus, PIC, atau email').fill('Universitas Sebelas Maret');
+  const group = page.getByRole('region', { name: 'PIC Universitas Sebelas Maret', exact: true });
   await expect(group.getByRole('article')).toHaveCount(2);
   for (const slot of [1, 2]) {
     await group
-      .getByRole('button', { name: `Ubah PIC ${slot} Universitas Indonesia`, exact: true })
+      .getByRole('button', { name: `Ubah PIC ${slot} Universitas Sebelas Maret`, exact: true })
       .click();
     await group
-      .getByLabel(`Nama PIC ${slot} Universitas Indonesia`, { exact: true })
+      .getByLabel(`Nama PIC ${slot} Universitas Sebelas Maret`, { exact: true })
       .fill(`Nama PIC ${slot} Test`);
     await group
-      .getByLabel(`Email PIC ${slot} Universitas Indonesia`, { exact: true })
+      .getByLabel(`Email PIC ${slot} Universitas Sebelas Maret`, { exact: true })
       .fill(`pic${slot}@kampus.example.test`);
   }
   await page.getByRole('button', { name: /Simpan perubahan/ }).click();
   await page.getByRole('button', { name: 'Simpan email demo', exact: true }).click();
   await expect(page.getByText('Data PIC dan email tersimpan.', { exact: true })).toBeVisible();
   await page.reload();
-  await page.getByLabel('Cari kampus, PIC, atau email').fill('Universitas Indonesia');
+  await page.getByLabel('Cari kampus, PIC, atau email').fill('Universitas Sebelas Maret');
   for (const slot of [1, 2]) {
     await expect(group.getByText(`Nama PIC ${slot} Test`, { exact: true })).toBeVisible();
     await expect(group.getByText(`pic${slot}@kampus.example.test`, { exact: true })).toBeVisible();
   }
   await group
-    .getByRole('button', { name: 'Ubah PIC 2 Universitas Indonesia', exact: true })
+    .getByRole('button', { name: 'Ubah PIC 2 Universitas Sebelas Maret', exact: true })
     .click();
   await group
-    .getByLabel('Email PIC 2 Universitas Indonesia', { exact: true })
+    .getByLabel('Email PIC 2 Universitas Sebelas Maret', { exact: true })
     .fill('pic1@kampus.example.test');
   await expect(
     group.getByText('Email sudah digunakan akun PIC lain.', { exact: true })
   ).toBeVisible();
   await expect(page.getByRole('button', { name: /Simpan perubahan/ })).toBeDisabled();
   await group
-    .getByRole('button', { name: 'Batal ubah PIC 2 Universitas Indonesia', exact: true })
+    .getByRole('button', { name: 'Batal ubah PIC 2 Universitas Sebelas Maret', exact: true })
     .click();
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -285,4 +285,48 @@ test('admin manages two PIC emails per campus while demo login still lists 40 ca
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.screenshot({ path: '.qa/two-pic-desktop.png', fullPage: false });
   expect(api).toEqual([]);
+});
+
+test('spreadsheet action plan appears for the matching campus in the admin view', async ({ page }) => {
+  await login(page, 'admin-1');
+  await page.goto('/admin/campuses/campus-001');
+  await expect(page.getByText('Program UNS', { exact: true })).toBeVisible();
+  await expect(page.getByText(/Desa Sobokerto/).first()).toBeVisible();
+  await expect(page.getByText(/PLTS \(3,5 KwP\)/)).toBeVisible();
+  await expect(page.getByText('Pemetaan sosial', { exact: true })).toBeVisible();
+  await expect(page.getByText('Kebutuhan intervensi', { exact: true })).toBeVisible();
+});
+
+test('admin review shows readiness indicators for the selected campus', async ({ page }) => {
+  await login(page, 'admin-1');
+  await page.goto('/admin/verifikasi');
+  await expect(page.getByRole('region', { name: 'Indikator kesiapan rencana aksi' })).toBeVisible();
+  await expect(page.getByText('Kebutuhan intervensi', { exact: true })).toBeVisible();
+});
+
+test('campus can edit readiness indicators and admin sees the saved value', async ({ page }) => {
+  await login(page, 'campus-001');
+  await page.goto('/campus/indicators');
+  await page.getByLabel('Kelembagaan', { exact: true }).fill('BUMDes dan kelompok usaha aktif');
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Semua perubahan tersimpan' })
+  ).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel('Kelembagaan', { exact: true })).toHaveValue(
+    'BUMDes dan kelompok usaha aktif'
+  );
+  await logout(page);
+  await login(page, 'admin-1');
+  await page.goto('/admin/campuses/campus-001');
+  await expect(page.getByText('BUMDes dan kelompok usaha aktif', { exact: true })).toBeVisible();
+});
+
+test('campus dashboard shows its spreadsheet action plan', async ({ page }) => {
+  await login(page, 'campus-001');
+  await expect(page.getByText('RENCANA AKSI DEB', { exact: true })).toBeVisible();
+  await expect(page.getByText(/Desa Sobokerto/).first()).toBeVisible();
+  await page.goto('/campus/indicators');
+  await expect(page.getByText('Indikator kesiapan rencana aksi', { exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

@@ -12,6 +12,7 @@
     (app.data?.campuses || []).map((c) => ({ ...c, ...campusStats(app.data!, c.id) }))
   );
   const own = $derived(campusStats(app.data!, app.session?.campusId || ''));
+  const ownCampus = $derived(app.data?.campuses.find((campus) => campus.id === app.session?.campusId));
   const overall = $derived(average(all.map((c) => c.progress)));
   const submitted = $derived(all.filter((c) => c.proposal).length);
   const needsAction = $derived(all.filter((c) => c.revisions).length);
@@ -158,6 +159,13 @@
       tone="amber"
     />{/if}
 </div>
+{#if !isAdmin && ownCampus?.program}
+  <section class="[background-color:white] min-w-[0] mb-[24px] p-[24px] border border-[#dce7f7] rounded-[11px] [box-shadow:0_10px_30px_#1a4d8f08]">
+    <span class="block text-[10px] tracking-[1.9px] font-[750] text-[#3975b7] mb-[9px]">RENCANA AKSI DEB</span>
+    <h2 class="font-[650] text-[18px] tracking-[-0.45px] text-[color:var(--navy)] m-[0px]">{ownCampus.name}</h2>
+    <p class="text-[12px] text-[#617a9a] leading-[1.8] mt-[12px] m-[0px] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:5] overflow-hidden">{ownCampus.program.description || 'Deskripsi program belum tersedia pada rencana aksi.'}</p>
+  </section>
+{/if}
 <div
   class="grid grid-cols-[minmax(0,_2.6fr)_minmax(240px,_1fr)] gap-y-[22px] gap-x-[22px] mb-[24px] max-[1200.01px]:grid-cols-[1fr] max-[700.01px]:gap-y-[18px] max-[700.01px]:gap-x-[18px] max-[700.01px]:mb-[20px] dashboard-columns"
 >

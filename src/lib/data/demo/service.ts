@@ -2,6 +2,7 @@ import type {
   AppSession,
   DataService,
   MasterDefinition,
+  ProgramProfile,
   Snapshot,
   PreviewAccount
 } from '../../types';
@@ -132,6 +133,34 @@ export function createDemoService() {
       campus: s.data.campuses.find((c) => c.id === user.campusId)
     };
   }
+  const readinessKeys = [
+    'existingEbt',
+    'socialMapping',
+    'conflict',
+    'ikm',
+    'institution',
+    'landPermit',
+    'siteSurvey',
+    'intervention'
+  ] as const;
+  const updateReadiness = (
+    campusId: string,
+    values: Partial<Pick<ProgramProfile, (typeof readinessKeys)[number]>>
+  ) =>
+    run(
+      (s, user) => {
+        own(user, campusId);
+        const campus = find(s.data.campuses, campusId);
+        for (const key of readinessKeys) {
+          const value = values[key];
+          if (value !== undefined && (typeof value !== 'string' || value.length > 5000))
+            throw Error('Isi indikator kesiapan terlalu panjang.');
+        }
+        campus.program = { ...campus.program, ...values };
+      },
+      true,
+      'campus'
+    );
   const service: DataService = {
     masters: () => run((s) => ({ definitions: s.data.definitions }), false, 'admin'),
     masterAudit: (q = '', page = 1) =>
@@ -735,6 +764,7 @@ export function createDemoService() {
   };
   return {
     ...service,
+    updateReadiness,
     selectAccount(key: string) {
       selected = key;
     },
