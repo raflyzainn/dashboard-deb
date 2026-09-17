@@ -14,9 +14,19 @@
   const latest = $derived(latestSubmission(app.data!, app.session!.campusId!));
   const changed = $derived(latest ? changedSinceSubmission(app.data!, latest) : false);
   const pending = $derived(latest?.status === 'pending');
-  const unfilledCount = $derived(
+  const valueUnfilledCount = $derived(
     app.data!.indicators.filter((i) => i.campusId === app.session!.campusId && i.unfilled).length
   );
+  const readinessKeys = [
+    'existingEbt', 'socialMapping', 'conflict', 'ikm', 'institution', 'landPermit', 'siteSurvey',
+    'interventionSummary', 'intervention'
+  ] as const;
+  const readinessUnfilledCount = $derived(
+    readinessKeys.filter(
+      (key) => !String(app.data!.campuses.find((c) => c.id === app.session!.campusId)?.program?.[key] ?? '').trim()
+    ).length
+  );
+  const unfilledCount = $derived(valueUnfilledCount + readinessUnfilledCount);
   const complete = $derived(
     app.data!.definitions.length > 0 &&
       app.data!.indicators.filter((i) => i.campusId === app.session!.campusId).length ===

@@ -1,5 +1,9 @@
 import { createSeed } from './fixtures/seed';
 import type { Snapshot, MasterDefinition, MasterAudit, QuestionReply } from '../../types';
+import {
+  DEMO_ACTIVATION_EMAIL,
+  type DemoActivation
+} from './activation';
 
 export interface DemoAccount {
   id: string;
@@ -18,6 +22,7 @@ export interface DemoState {
   replies: QuestionReply[];
   audit: MasterAudit[];
   accounts: DemoAccount[];
+  activation: DemoActivation;
 }
 export const DEMO_DATABASE = 'deb-standalone-demo-v6';
 export function initialState(): DemoState {
@@ -45,7 +50,8 @@ export function initialState(): DemoState {
     files: Object.fromEntries(seed.files.map((f) => [f.id, f.blob])),
     replies: [],
     audit: [],
-    accounts: seed.data.campuses.flatMap(createCampusAccounts)
+    accounts: seed.data.campuses.flatMap(createCampusAccounts),
+    activation: { email: DEMO_ACTIVATION_EMAIL, password: null }
   };
 }
 export function createCampusAccounts(campus: { id: string; name: string }): DemoAccount[] {
@@ -64,6 +70,10 @@ export function createCampusAccounts(campus: { id: string; name: string }): Demo
 // Upgrade existing browser data in place, preserving PIC 1 edits and all campus work.
 export function upgradeAccounts(state: DemoState): boolean {
   let changed = false;
+  if (!state.activation) {
+    state.activation = { email: DEMO_ACTIVATION_EMAIL, password: null };
+    changed = true;
+  }
   for (const account of state.accounts) {
     if (!account.id) {
       account.id = account.campusId;

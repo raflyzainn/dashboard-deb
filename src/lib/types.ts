@@ -4,6 +4,7 @@ export type Role = 'campus' | 'admin';
 export interface DemoSession { role: Role; name: string; campusId?: string }
 export interface AppSession extends DemoSession { id: string }
 export interface PreviewAccount { key: string; name: string; role: Role }
+export interface DemoActivationStatus { email: string; activated: boolean }
 export interface LocationDto { campusId: string; province: string; island: string; longitude: number | null; latitude: number | null; approximate: boolean }
 export interface Bootstrap { session: AppSession; data: Snapshot; locations: LocationDto[]; capabilities: { readOnly: boolean }; loadedAt: string }
 export interface ProgramProfile {
@@ -48,6 +49,10 @@ export interface Snapshot {
   answers: Answer[]; likes: QuestionLike[]; faq: FaqEntry[]; activities: Activity[]; notifications: Notification[]; notificationSeedVersion?: number;
 }
 export interface DataService {
+  demoActivation(): Promise<DemoActivationStatus>;
+  requestDemoActivation(email: string): Promise<void>;
+  activateDemo(email: string, password: string): Promise<void>;
+  loginDemo(email: string, password: string): Promise<PreviewAccount | null>;
   createPeriod(name: string): Promise<void>;
   openPeriod(period: string): Promise<void>;
   masters(): Promise<MasterData>;

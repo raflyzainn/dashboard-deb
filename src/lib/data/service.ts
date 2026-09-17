@@ -73,6 +73,10 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
   const done = async (value: Promise<unknown>): Promise<void> => { await value; };
   const idPath = (id: string) => encodeURIComponent(id);
   const service: DataService = {
+    demoActivation: () => Promise.reject(new DataReadError(404, 'Aktivasi demo hanya tersedia pada demo mandiri.')),
+    requestDemoActivation: () => Promise.reject(new DataReadError(404, 'Aktivasi demo hanya tersedia pada demo mandiri.')),
+    activateDemo: () => Promise.reject(new DataReadError(404, 'Aktivasi demo hanya tersedia pada demo mandiri.')),
+    loginDemo: () => Promise.reject(new DataReadError(404, 'Aktivasi demo hanya tersedia pada demo mandiri.')),
     createPeriod: name => done(write('/api/admin/periods', 'POST', { name })),
     openPeriod: period => done(write('/api/admin/periods/open', 'POST', { period })),
     masters: () => request('/api/admin/masters', response => response.json()),

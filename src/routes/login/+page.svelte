@@ -8,10 +8,25 @@
   });
   import { goto } from '$app/navigation';
   import { app } from '$lib/state.svelte';
+  import { dataService } from '$lib/data/service';
   import Icon from '$lib/components/ui/Icon.svelte';
   let account = $state('');
   let search = $state('');
   let role = $state<'campus' | 'admin'>('campus');
+  let activationFlow = $state(false);
+  let activationStep = $state<'email' | 'sent' | 'password' | 'login'>('email');
+  let activationEmail = $state('');
+  let password = $state('');
+  let confirmation = $state('');
+  let showPassword = $state(false);
+  let showConfirmation = $state(false);
+  let activationError = $state('');
+  const passwordChecks = $derived([
+    ['Minimal 8 karakter', password.length >= 8],
+    ['Memuat huruf kapital', /[A-Z]/.test(password)],
+    ['Memuat angka', /\d/.test(password)]
+  ]);
+  const passwordValid = $derived(passwordChecks.every(([, valid]) => valid));
   const visibleAccounts = $derived(
     app.accounts.filter(
       (a) =>
@@ -30,6 +45,60 @@
   async function enter() {
     if (account && (await app.login(account)) && app.session)
       goto(`/${app.session.role}/dashboard`);
+  }
+  async function sendActivation() {
+    activationError = '';
+    try {
+      await dataService.requestDemoActivation(activationEmail);
+      activationStep = 'sent';
+    } catch (error) {
+      activationError = error instanceof Error ? error.message : 'Email demo belum sesuai.';
+    }
+  }
+  async function savePassword() {
+    activationError = '';
+    if (!passwordValid) {
+      activationError = 'Password belum memenuhi seluruh ketentuan.';
+      return;
+    }
+    if (password !== confirmation) {
+      activationError = 'Konfirmasi password belum sama.';
+      return;
+    }
+    try {
+      await dataService.activateDemo(activationEmail, password);
+      showPassword = false;
+      showConfirmation = false;
+      password = '';
+      confirmation = '';
+      activationStep = 'login';
+    } catch (error) {
+      activationError = error instanceof Error ? error.message : 'Aktivasi demo belum berhasil.';
+    }
+  }
+  async function enterWithPassword() {
+    activationError = '';
+    try {
+      const demoAccount = await dataService.loginDemo(activationEmail, password);
+      if (!demoAccount) {
+        activationError = 'Email atau password demo belum sesuai.';
+        return;
+      }
+      if ((await app.login(demoAccount.key)) && app.session) goto('/campus/dashboard');
+    } catch (error) {
+      activationError = error instanceof Error ? error.message : 'Login demo belum berhasil.';
+    }
+  }
+  async function openActivation() {
+    showPassword = false;
+    showConfirmation = false;
+    activationFlow = true;
+    const activation = await dataService.demoActivation();
+    activationStep = activation.activated ? 'login' : 'email';
+    activationEmail = activation.email;
+    password = '';
+    confirmation = '';
+    activationError = '';
   }
 </script>
 <svelte:head><title>Demo mandiri · Digitalisasi DEB</title></svelte:head>
@@ -125,8 +194,66 @@
       <p
         class="[&&]:mt-[8px] [&&]:mb-[16px] [&&]:leading-[1.6] text-[13px] text-[#60789b] [&&]:max-w-[none] [&&]:mx-[0px] max-[700.01px]:[&&]:mt-[8px] max-[700.01px]:[&&]:mb-[16px] max-[700.01px]:text-[12px] max-[700.01px]:[&&]:mx-[0px] login-intro"
       >
-        Pilih peran dan akun untuk mencoba aplikasi. Data simulasi disimpan di browser ini.
+        {activationFlow
+          ? 'Aktifkan satu akun PIC contoh. Seluruh proses ini tetap tersimpan di browser.'
+          : 'Pilih peran dan akun untuk mencoba aplikasi. Data simulasi disimpan di browser ini.'}
       </p>
+      {#if activationFlow}
+        <form
+          class="my-4 grid gap-3 [&_label]:grid [&_label]:gap-2 [&_label]:text-[12px] [&_label]:font-[600] [&_input]:w-full [&_input]:rounded-[10px] [&_input]:border [&_input]:border-[#bdd2eb] [&_input]:bg-white [&_input]:px-4 [&_input]:py-3 [&_input]:text-[#12386b]"
+          onsubmit={(event) => {
+            event.preventDefault();
+            if (activationStep === 'email') void sendActivation();
+            else if (activationStep === 'password') void savePassword();
+            else if (activationStep === 'login') void enterWithPassword();
+          }}
+        >
+          {#if activationStep === 'email'}
+            <label for="demo-activation-email">Email PIC demo
+              <input id="demo-activation-email" type="email" bind:value={activationEmail} />
+            </label>
+            <p class="m-0 rounded-lg bg-[#edf5ff] px-3 py-2 text-[12px] leading-5 text-[#2d79ca]">
+              Email dummy: {activationEmail}
+            </p>
+            <button class="inline-flex min-h-[42px] items-center justify-center rounded-[8px] border border-[#086bc9] bg-[linear-gradient(135deg,rgb(8,119,216),rgb(21,89,214))] px-[18px] py-[11px] text-[12px] font-[650] text-white shadow-[0_8px_18px_#075fc71a] transition hover:bg-[linear-gradient(135deg,rgb(5,104,196),rgb(18,75,197))] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[#55a9f2]" type="submit">Kirim tautan aktivasi</button>
+          {:else if activationStep === 'sent'}
+            <div class="rounded-[10px] border border-[#d8e7f8] bg-[#edf5ff] p-4 text-[12px] leading-5 text-[#2d79ca]">
+              <strong class="block text-[#12386b]">Email simulasi terkirim</strong>
+              Tautan aktivasi untuk {activationEmail} siap dibuka pada demo ini.
+            </div>
+            <button class="inline-flex min-h-[42px] items-center justify-center rounded-[8px] border border-[#086bc9] bg-[linear-gradient(135deg,rgb(8,119,216),rgb(21,89,214))] px-[18px] py-[11px] text-[12px] font-[650] text-white shadow-[0_8px_18px_#075fc71a] transition hover:bg-[linear-gradient(135deg,rgb(5,104,196),rgb(18,75,197))] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[#55a9f2]" type="button" onclick={() => (activationStep = 'password')}>Buka tautan aktivasi demo</button>
+          {:else if activationStep === 'password'}
+            <label for="demo-password">Password baru
+              <span class="relative block">
+                <input class="[&&]:pr-[48px]" id="demo-password" type={showPassword ? 'text' : 'password'} minlength="8" autocomplete="new-password" bind:value={password} />
+                <button class="absolute inset-y-0 right-0 flex w-[44px] items-center justify-center rounded-[10px] text-[#4274ad] hover:text-[#0668ce] focus-visible:outline-2 focus-visible:outline-[#55a9f2]" type="button" aria-label={showPassword ? 'Sembunyikan password baru' : 'Tampilkan password baru'} aria-pressed={showPassword} aria-controls="demo-password" onclick={() => (showPassword = !showPassword)}><Icon name={showPassword ? 'eye-off' : 'eye'} size={18} /></button>
+              </span>
+            </label>
+            <label for="demo-password-confirmation">Konfirmasi password
+              <span class="relative block">
+                <input class="[&&]:pr-[48px]" id="demo-password-confirmation" type={showConfirmation ? 'text' : 'password'} minlength="8" autocomplete="new-password" bind:value={confirmation} />
+                <button class="absolute inset-y-0 right-0 flex w-[44px] items-center justify-center rounded-[10px] text-[#4274ad] hover:text-[#0668ce] focus-visible:outline-2 focus-visible:outline-[#55a9f2]" type="button" aria-label={showConfirmation ? 'Sembunyikan konfirmasi password' : 'Tampilkan konfirmasi password'} aria-pressed={showConfirmation} aria-controls="demo-password-confirmation" onclick={() => (showConfirmation = !showConfirmation)}><Icon name={showConfirmation ? 'eye-off' : 'eye'} size={18} /></button>
+              </span>
+            </label>
+            <ul class="m-0 grid list-none gap-1 rounded-[10px] bg-[#edf5ff] px-3 py-2 text-[11px] leading-5 text-[#56789d]">
+              {#each passwordChecks as [label, valid]}
+                <li class:text-green-700={valid} class:font-[650]={valid}>{valid ? '✓' : '○'} {label}</li>
+              {/each}
+            </ul>
+            <button class="inline-flex min-h-[42px] items-center justify-center rounded-[8px] border border-[#086bc9] bg-[linear-gradient(135deg,rgb(8,119,216),rgb(21,89,214))] px-[18px] py-[11px] text-[12px] font-[650] text-white shadow-[0_8px_18px_#075fc71a] transition hover:bg-[linear-gradient(135deg,rgb(5,104,196),rgb(18,75,197))] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[#55a9f2] disabled:cursor-not-allowed disabled:opacity-50" type="submit" disabled={!passwordValid}>Simpan password</button>
+          {:else}
+            <label for="demo-login-email">Email PIC demo
+              <input id="demo-login-email" type="email" bind:value={activationEmail} />
+            </label>
+            <label for="demo-login-password">Password
+              <input id="demo-login-password" type="password" bind:value={password} />
+            </label>
+            <button class="inline-flex min-h-[42px] items-center justify-center rounded-[8px] border border-[#086bc9] bg-[linear-gradient(135deg,rgb(8,119,216),rgb(21,89,214))] px-[18px] py-[11px] text-[12px] font-[650] text-white shadow-[0_8px_18px_#075fc71a] transition hover:bg-[linear-gradient(135deg,rgb(5,104,196),rgb(18,75,197))] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[#55a9f2]" type="submit">Masuk dengan password</button>
+          {/if}
+          {#if activationError}<p class="m-0 text-[12px] leading-5 text-[#ba5145]" role="alert">{activationError}</p>{/if}
+          <button class="inline-flex items-center self-start border-0 bg-transparent p-0 text-[12px] font-[650] text-[#0668ce] hover:text-[#0a3eaa] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[#55a9f2]" type="button" onclick={() => (activationFlow = false)}>Kembali ke pilihan akun</button>
+        </form>
+      {:else}
       <form
         class="[&_label]:flex [&_label]:flex-col [&_label]:gap-y-[9px] [&_label]:gap-x-[9px] [&_label]:text-[12px] [&_label]:font-[600] [&_label]:mb-[18px] [&_input]:w-[100%] [&_textarea]:w-[100%] [&&]:grid [&&]:gap-y-[8px] [&&]:gap-x-[8px] [&&]:mx-[0px] [&&]:my-[16px]"
         onsubmit={(event) => {
@@ -223,6 +350,10 @@
           >{app.loading ? 'Memuat demo...' : 'Buka ruang kerja'}<Icon name="arrow" /></button
         >
       </form>
+        <div class="mt-4">
+          <button class="inline-flex min-h-[42px] items-center justify-center rounded-[8px] border border-[#b9d6f4] bg-white px-[18px] py-[11px] text-[12px] font-[650] text-[#0668ce] hover:border-[#68ace9] hover:bg-[#edf6ff] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[#55a9f2]" type="button" onclick={() => void openActivation()}>Aktivasi akun demo</button>
+        </div>
+      {/if}
       {#if app.accountsLoading}<p class="[&&]:leading-[1.6] m-[0px]" role="status">
           Memuat akun demo...
         </p>{:else if !app.accounts.length}<p class="[&&]:leading-[1.6] m-[0px]">
@@ -232,7 +363,7 @@
           {app.error}
         </p>{/if}
       <button
-        class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[650] [font-stretch:inherit] text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[#0668ce] inline-flex items-center gap-y-[7px] gap-x-[7px] [background-image:none] [background-color:initial] [white-space-collapse:collapse] [text-wrap-mode:nowrap] p-[0px] border-[0px] border-none border-[color:currentcolor] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:text-[#0a3eaa] text-link"
+        class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[650] [font-stretch:inherit] text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[#0668ce] inline-flex items-center gap-y-[7px] gap-x-[7px] [background-image:none] [background-color:initial] [white-space-collapse:collapse] [text-wrap-mode:nowrap] mt-[12px] p-[0px] border-[0px] border-none border-[color:currentcolor] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:text-[#0a3eaa] text-link"
         disabled={app.accountsLoading || app.loading}
         onclick={() => app.loadAccounts()}>Muat ulang daftar akun</button
       >
@@ -241,8 +372,8 @@
       >
         <Icon name="faq" size={18} />
         <p class="[&&]:leading-[1.5] m-[0px]">
-          Data simulasi tersimpan hanya di browser ini. Tidak ada login akun nyata atau pengiriman
-          email.
+          Data simulasi tersimpan hanya di browser ini. Aktivasi akun demo dan email simulasi tidak
+          mengirim email nyata.
         </p>
       </div>
     </div>

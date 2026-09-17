@@ -11,6 +11,7 @@ import { periodsFrom } from '../../periods';
 import { validateCategories } from '../../forum';
 import { changedSinceSubmission } from '../../verification';
 import { transaction, resetDemo, createCampusAccounts, type DemoState } from './store';
+import { activateDemoAccount, canUseDemoPassword } from './activation';
 const now = () => new Date().toISOString();
 const id = () => crypto.randomUUID();
 const text = (value: string, max = 5000) => {
@@ -144,6 +145,10 @@ export function createDemoService() {
     'interventionSummary',
     'intervention'
   ] as const;
+  const readinessIncomplete = (s: DemoState, campusId: string) => {
+    const program = find(s.data.campuses, campusId).program;
+    return readinessKeys.some((key) => !String(program?.[key] ?? '').trim());
+  };
   const updateReadiness = (
     campusId: string,
     values: Partial<Pick<ProgramProfile, (typeof readinessKeys)[number]>>
@@ -172,6 +177,25 @@ export function createDemoService() {
       'admin'
     );
   const service: DataService = {
+    demoActivation: () =>
+      transaction((s) => ({ email: s.activation.email, activated: Boolean(s.activation.password) })),
+    requestDemoActivation: async (email) => {
+      await transaction((s) => {
+        if (s.activation.email !== email.trim().toLowerCase())
+          throw Error('Gunakan email PIC demo yang tercantum pada layar aktivasi.');
+      });
+    },
+    activateDemo: async (email, password) => {
+      await transaction((s) => {
+        s.activation = activateDemoAccount(email, password);
+      }, true);
+    },
+    loginDemo: (email, password) =>
+      transaction((s) => {
+        if (!canUseDemoPassword(s.activation, email, password)) return null;
+        const campus = s.data.campuses[0];
+        return { key: campus.id, name: campus.name, role: 'campus' as const };
+      }),
     masters: () => run((s) => ({ definitions: s.data.definitions }), false, 'admin'),
     masterAudit: (q = '', page = 1) =>
       run(
@@ -445,7 +469,8 @@ export function createDemoService() {
             pending(s, campus) ||
             !rows.length ||
             rows.length !== defs(s).length ||
-            rows.some((i) => i.unfilled)
+            rows.some((i) => i.unfilled) ||
+            readinessIncomplete(s, campus)
           )
             throw Error('Lengkapi indikator atau tunggu review selesai.');
           const prev = submissions(s, campus).sort((a, b) => b.version - a.version)[0];

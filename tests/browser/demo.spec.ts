@@ -344,3 +344,50 @@ test('campus dashboard shows its spreadsheet action plan', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+test('campus indicator fields visibly mark required input', async ({ page }) => {
+  await login(page, 'campus-001');
+  await page.goto('/campus/indicators');
+  await expect(page.getByText('Nilai aktual *', { exact: true })).toHaveCount(3);
+  await expect(page.getByText('Catatan perkembangan *', { exact: true })).toHaveCount(3);
+  const readiness = await page
+    .getByRole('region', { name: 'Indikator kesiapan rencana aksi' })
+    .locator('article')
+    .allTextContents();
+  expect(readiness).toHaveLength(9);
+  expect(readiness.every((value) => value.includes('*'))).toBe(true);
+});
+
+test('submission status counts empty readiness fields', async ({ page }) => {
+  await login(page, 'campus-001');
+  await page.goto('/campus/indicators');
+  await expect(page.getByRole('region', { name: 'Status pengajuan DEB' })).toContainText(
+    'Lengkapi 5 indikator yang belum diisi.'
+  );
+});
+
+test('one static demo PIC can activate from a simulated email and sign in with its password', async ({ page }) => {
+  await page.goto('/login');
+  await page.screenshot({ path: '.qa/demo-login-actions.png', fullPage: false });
+  await page.getByRole('button', { name: 'Aktivasi akun demo', exact: true }).click();
+  await page.getByLabel('Email PIC demo', { exact: true }).fill('pic.demo@deb.test');
+  await page.getByRole('button', { name: 'Kirim tautan aktivasi', exact: true }).click();
+  await expect(page.getByText('Email simulasi terkirim', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Buka tautan aktivasi demo', exact: true }).click();
+  await expect(page.getByRole('list')).toContainText('Minimal 8 karakter');
+  await expect(page.getByRole('list')).toContainText('Memuat huruf kapital');
+  await expect(page.getByRole('list')).toContainText('Memuat angka');
+  await page.screenshot({ path: '.qa/demo-activation-password.png', fullPage: false });
+  await page.getByLabel('Password baru', { exact: true }).fill('Rahasia12');
+  await page.getByLabel('Konfirmasi password', { exact: true }).fill('Rahasia12');
+  for (const [field, label] of [['Password baru', 'password baru'], ['Konfirmasi password', 'konfirmasi password']]) {
+    await page.getByRole('button', { name: `Tampilkan ${label}`, exact: true }).click();
+    await expect(page.getByLabel(field, { exact: true })).toHaveAttribute('type', 'text');
+    await page.getByRole('button', { name: `Sembunyikan ${label}`, exact: true }).click();
+    await expect(page.getByLabel(field, { exact: true })).toHaveAttribute('type', 'password');
+  }
+  await page.getByRole('button', { name: 'Simpan password', exact: true }).click();
+  await page.getByLabel('Password', { exact: true }).fill('Rahasia12');
+  await page.getByRole('button', { name: 'Masuk dengan password', exact: true }).click();
+  await expect(page).toHaveURL(/\/campus\/dashboard$/);
+});

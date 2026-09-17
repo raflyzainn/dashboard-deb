@@ -257,7 +257,7 @@
   <section class="[background-color:white] mb-[18px] p-[20px] border border-[color:var(--line)] rounded-[14px]" aria-label="Indikator kesiapan rencana aksi">
     <h2 class="font-[650] text-[13px] text-[color:var(--ink)] m-[0px]">Indikator kesiapan rencana aksi</h2>
     <p class="text-[10px] text-[color:var(--muted)] leading-[1.8] mt-[6px] mb-[14px]">Lengkapi bukti dan kondisi program. Perubahan disimpan otomatis.</p>
-    <div class="grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[12px] max-[700.01px]:grid-cols-[1fr]">{#each readinessFields as [key, label]}<article class="p-[14px] [background-color:white] border-2 border-[#b9d9f5] rounded-[9px]"><label class="block text-[11px] font-[650] text-[color:var(--ink)]" for={`readiness-${key}`}>{label}</label><textarea id={`readiness-${key}`} aria-label={label} class="block w-full min-h-[76px] resize-y [background-color:rgb(250,_253,_255)] text-[11px] text-[color:var(--ink)] leading-[1.7] mt-[8px] px-[10px] py-[8px] border-2 border-[#9ecbf1] rounded-[7px] focus:border-[#1681df] focus:[box-shadow:0_0_0_3px_#1681df24] focus:outline-none disabled:opacity-60" rows={key === 'conflict' || key === 'intervention' ? 7 : 3} maxlength="5000" value={readinessValue(key)} oninput={(event) => editReadiness(key, event)} disabled={disabled}></textarea></article>{/each}</div>
+    <div class="grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[12px] max-[700.01px]:grid-cols-[1fr]">{#each readinessFields as [key, label]}<article class="p-[14px] [background-color:white] border-2 border-[#b9d9f5] rounded-[9px]"><label class="block text-[11px] font-[650] text-[color:var(--ink)]" for={`readiness-${key}`}>{label}<span class="ml-1 text-[#dc2626]" aria-hidden="true">*</span></label><textarea id={`readiness-${key}`} aria-label={label} class="block w-full min-h-[76px] resize-y [background-color:rgb(250,_253,_255)] text-[11px] text-[color:var(--ink)] leading-[1.7] mt-[8px] px-[10px] py-[8px] border-2 border-[#9ecbf1] rounded-[7px] focus:border-[#1681df] focus:[box-shadow:0_0_0_3px_#1681df24] focus:outline-none disabled:opacity-60" rows={key === 'conflict' || key === 'intervention' ? 7 : 3} maxlength="5000" value={readinessValue(key)} oninput={(event) => editReadiness(key, event)} disabled={disabled}></textarea></article>{/each}</div>
   </section>
 
   {#if latest}<p
@@ -472,7 +472,7 @@
                 >
                   <label
                     class="[&&]:block [&&]:text-[10px] [&&]:text-[color:var(--ink)] [&&]:font-[650] [&&]:mt-[0px] [&&]:mb-[8px] [&&]:mx-[0px]"
-                    for={`actual-${item.id}`}>Nilai aktual</label
+                    for={`actual-${item.id}`}>Nilai aktual <span class="text-[#dc2626]" aria-hidden="true">*</span></label
                   >
                   <div
                     class="[&&]:flex [&&]:items-stretch [&&]:overflow-x-hidden [&&]:overflow-y-hidden [&&]:[background-image:initial] [&&]:[background-color:white] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(201,_229,_248)] [&&]:rounded-[7px] [&:focus-within]:[outline-color:rgb(56,_189,_248)] [&:focus-within]:[outline-style:solid] [&:focus-within]:[outline-width:2px] [&:focus-within]:outline-offset-[2px] unit-input"
@@ -563,7 +563,7 @@
                 >
                   <label
                     class="[&&]:block [&&]:text-[10px] [&&]:text-[color:var(--ink)] [&&]:font-[650] [&&]:mt-[0px] [&&]:mb-[8px] [&&]:mx-[0px]"
-                    for={`note-${item.id}`}>Catatan perkembangan</label
+                    for={`note-${item.id}`}>Catatan perkembangan <span class="text-[#dc2626]" aria-hidden="true">*</span></label
                   ><textarea
                     class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[11px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:[background-image:initial] [&&]:[background-color:white] [&&]:text-[color:var(--ink)] max-w-[100%] [&&]:[resize:vertical] [&&]:min-h-[65px] [&&]:block [&&]:w-[100%] [&&]:px-[10px] [&&]:py-[9px] [&&]:m-[0px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(201,_229,_248)] [&&]:rounded-[7px] [&:focus]:[outline-color:#38bdf8] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(56,_189,_248)] [&::placeholder]:text-[color:var(--ink)] [&:disabled]:[background-image:initial] [&:disabled]:[background-color:rgb(237,_244,_248)] [&:disabled]:text-[#607d90] [&:disabled]:cursor-not-allowed"
                     id={`note-${item.id}`}
