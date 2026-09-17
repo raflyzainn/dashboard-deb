@@ -1,5 +1,6 @@
 import type { ProgramProfile } from '../../../types';
 import { INTERVENTION_SUMMARIES } from './intervention-summaries';
+import { PROGRAM_CONTACTS } from './program-contacts';
 
 export const PROGRAM_PROFILES: Record<string, ProgramProfile> = {
   "UNS": {
@@ -846,4 +847,7 @@ export const PROGRAM_PROFILES: Record<string, ProgramProfile> = {
 
 for (const [acronym, interventionSummary] of Object.entries(INTERVENTION_SUMMARIES)) {
   PROGRAM_PROFILES[acronym].interventionSummary = interventionSummary;
+}
+for (const [acronym, contacts] of Object.entries(PROGRAM_CONTACTS)) {
+  Object.assign(PROGRAM_PROFILES[acronym], contacts);
 }

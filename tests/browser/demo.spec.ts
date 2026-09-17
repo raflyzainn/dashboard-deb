@@ -226,7 +226,7 @@ test('forum conversation and account edits persist in the demo', async ({ page }
     page.getByText('Admin dapat membuka periode setelah review selesai.', { exact: true })
   ).toBeVisible();
   await page
-    .getByPlaceholder('Tuliskan pertanyaan lanjutan atau penjelasan…')
+    .getByPlaceholder(/Tuliskan pertanyaan lanjutan/)
     .fill('Baik, terima kasih admin.');
   await page.getByRole('button', { name: 'Kirim balasan', exact: true }).click();
   await expect(page.getByText('Baik, terima kasih admin.', { exact: true })).toBeVisible();
@@ -323,7 +323,7 @@ test('campus can edit readiness indicators and admin sees the saved value', asyn
   await page.goto('/campus/indicators');
   await page.getByLabel('Kelembagaan', { exact: true }).fill('BUMDes dan kelompok usaha aktif');
   await expect(
-    page.getByRole('status').filter({ hasText: 'Semua perubahan tersimpan' })
+    page.getByRole('status').filter({ hasText: 'Indikator kesiapan tersimpan.' })
   ).toBeVisible();
   await page.reload();
   await expect(page.getByLabel('Kelembagaan', { exact: true })).toHaveValue(
@@ -361,9 +361,52 @@ test('campus indicator fields visibly mark required input', async ({ page }) => 
 test('submission status counts empty readiness fields', async ({ page }) => {
   await login(page, 'campus-001');
   await page.goto('/campus/indicators');
+  await page.getByLabel('Perizinan lahan', { exact: true }).fill('');
+  await page.getByLabel('Site survey', { exact: true }).fill('');
   await expect(page.getByRole('region', { name: 'Status pengajuan DEB' })).toContainText(
-    'Lengkapi 5 indikator yang belum diisi.'
+    'Lengkapi 2 indikator yang belum diisi.'
   );
+});
+
+test('campus and admin can edit source profile fields and save profile changes', async ({ page }) => {
+  await login(page, 'campus-001');
+  await page.goto('/campus/indicators');
+  await expect(page.getByRole('region', { name: 'Pendamping dan kontak program' })).toHaveCount(0);
+  await page.getByRole('link', { name: 'Profil Program', exact: true }).click();
+  await expect(page).toHaveURL(/campus\/profile$/);
+  await page.reload();
+  const contacts = page.getByRole('region', { name: 'Pendamping dan kontak program' });
+  for (const label of ['Mentor', 'Koordinator PFS 12', 'Local hero']) await expect(contacts.getByLabel(label, { exact: true })).toBeEditable();
+  await contacts.getByLabel('Mentor', { exact: true }).fill('Mentor diubah oleh kampus');
+  await expect(contacts.getByLabel('Subholding', { exact: true })).toBeVisible();
+  for (const label of ['Subholding', 'Unit operasi Pertamina terdekat', 'Target kategori kelas', 'Template rencana aksi', 'Desa replikasi', 'Status pada sumber']) {
+    await expect(contacts.getByLabel(label, { exact: true })).toBeEditable();
+    await expect(contacts.getByLabel(label, { exact: true })).not.toHaveValue('');
+  }
+  await contacts.getByLabel('Subholding', { exact: true }).fill('Subholding isian kampus');
+  await contacts.getByRole('button', { name: 'Simpan data program', exact: true }).click();
+  await expect(contacts.getByRole('status')).toHaveText('Perubahan tersimpan.');
+  await page.reload();
+  await expect(contacts.getByLabel('Mentor', { exact: true })).toHaveValue('Mentor diubah oleh kampus');
+  await expect(contacts.getByLabel('Subholding', { exact: true })).toBeVisible();
+  await expect(contacts.getByLabel('Subholding', { exact: true })).toHaveValue('Subholding isian kampus');
+  await contacts.getByLabel('Subholding', { exact: true }).fill('');
+  await contacts.getByRole('button', { name: 'Simpan data program', exact: true }).click();
+  await expect(contacts.getByRole('status')).toHaveText('Perubahan tersimpan.');
+  await page.screenshot({ path: '.qa/excel-editable-campus.png', fullPage: true });
+  await logout(page);
+  await login(page, 'admin-1');
+  await page.goto('/admin/campuses/campus-001');
+  await expect(contacts.getByLabel('Mentor', { exact: true })).toHaveValue('Mentor diubah oleh kampus');
+  await contacts.getByLabel('Local hero', { exact: true }).fill('Local hero diperbarui admin');
+  await contacts.getByRole('button', { name: 'Simpan data program', exact: true }).click();
+  await expect(contacts.getByRole('status')).toHaveText('Perubahan tersimpan.');
+  await page.reload();
+  await expect(contacts.getByLabel('Local hero', { exact: true })).toHaveValue('Local hero diperbarui admin');
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await contacts.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: '.qa/excel-editable-mobile.png', fullPage: false });
 });
 
 test('one static demo PIC can activate from a simulated email and sign in with its password', async ({ page }) => {

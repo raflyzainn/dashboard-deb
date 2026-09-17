@@ -11,6 +11,7 @@
   let drawer: HTMLDialogElement;
   const labels = {
     guide: 'Panduan aplikasi',
+    profile: 'Profil Program',
     'master-indicators': 'Master indikator',
     dashboard: 'Beranda',
     campuses: 'Kampus mitra',
@@ -35,7 +36,7 @@
           'faq',
           'notifications'
         ]
-      : ['dashboard', 'indicators', 'proposal', 'questions', 'faq', 'notifications']
+      : ['dashboard', 'profile', 'indicators', 'proposal', 'questions', 'faq', 'notifications']
   );
   const pendingCount = $derived(app.navigation.pendingCount);
   const prefix = $derived(`/${app.session?.role}`);
@@ -100,7 +101,7 @@
         class:active={section === key}
         aria-current={section === key ? 'page' : undefined}
         onclick={closeDrawer}
-        ><Icon name={key === 'master-indicators' ? 'indicators' : key} /><span
+        ><Icon name={key === 'profile' ? 'campus' : key === 'master-indicators' ? 'indicators' : key} /><span
           >{labels[key as keyof typeof labels]}</span
         >{#if key === 'verifikasi' && pendingCount}<span
             class="ml-[auto] flex items-center justify-center [background-image:initial] [background-color:rgb(244,_219,_168)] text-[#795716] text-[9px] min-w-[20px] h-[20px] rounded-[5px] nav-count"

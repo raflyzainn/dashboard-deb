@@ -19,6 +19,7 @@ export function pageRequest(url: URL): PageRequest {
 function routeRequest(url: URL): PageRequest {
   const [, , section, id] = url.pathname.split('/');
   switch (section) {
+    case 'profile': return { view: 'dashboard' };
     case 'guide': return { view: 'guide' };
     case 'campuses': return id ? { view: 'campus-detail', campus: decodeURIComponent(id), tab: url.searchParams.get('tab') || 'Ringkasan' } : { view: url.searchParams.get('tab') === 'accounts' ? 'accounts' : 'campuses' };
     case 'sebaran': return { view: 'map' };

@@ -5,6 +5,7 @@
   import Icon from '$lib/components/ui/Icon.svelte';
   import Badge from '$lib/components/ui/Badge.svelte';
   import Stat from '$lib/components/ui/Stat.svelte';
+  import ProgramContacts from '$lib/components/shared/ProgramContacts.svelte';
   import CampusTable from './CampusTable.svelte';
   import CampusMaster from './CampusMaster.svelte';
   import Empty from '$lib/components/ui/Empty.svelte';
@@ -147,6 +148,7 @@
           <div class="p-[14px] [background-color:rgb(247,_251,_255)] border border-[#dce9f7] rounded-[9px]"><small class="block text-[10px] text-[#637796]">Penerima manfaat</small><strong class="block text-[12px] text-[color:var(--navy)] mt-[5px]">{campus.program?.beneficiaries || 'Belum tersedia'}</strong></div>
           <div class="p-[14px] [background-color:rgb(247,_251,_255)] border border-[#dce9f7] rounded-[9px]"><small class="block text-[10px] text-[#637796]">Estimasi RAB</small><strong class="block text-[12px] text-[color:var(--navy)] mt-[5px]">{rupiah(campus.program?.budget)}</strong></div>
         </div>
+        <ProgramContacts program={campus.program} campusId={campus.id} readOnly={app.readOnly} />
         <section class="mt-[18px]" aria-label="Indikator kesiapan rencana aksi"><h3 class="text-[12px] font-[650] text-[color:var(--navy)] m-[0px] mb-[10px]">Indikator kesiapan rencana aksi</h3><div class="grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[10px] max-[700.01px]:grid-cols-[1fr]">{#each [['EBT eksisting', campus.program?.existingEbt], ['Pemetaan sosial', campus.program?.socialMapping], ['Potensi konflik', campus.program?.conflict], ['IKM DEB SoBI', campus.program?.ikm], ['Kelembagaan', campus.program?.institution], ['Perizinan lahan', campus.program?.landPermit], ['Site survey', campus.program?.siteSurvey], ['Ringkasan kebutuhan intervensi', campus.program?.interventionSummary], ['Kebutuhan intervensi', campus.program?.intervention]] as [label, value]}<div class="p-[12px] [background-color:rgb(247,_251,_255)] border border-[#dce9f7] rounded-[8px]"><strong class="block text-[10px] text-[color:var(--navy)]">{label}</strong><p class="text-[11px] text-[#617a9a] leading-[1.7] whitespace-pre-line mt-[6px] mb-[0px]">{value || 'Belum diisi'}</p></div>{/each}</div></section>
       </section>
       <section

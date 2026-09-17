@@ -1,5 +1,6 @@
 import type { Campus } from '../../../types';
 import { PROGRAM_PROFILES } from './programs';
+import { completeDemoProgram } from './complete-program';
 
 export const CAMPUS_ROSTER_VERSION = 1;
 export const CAMPUS_REGIONS = [
@@ -42,7 +43,7 @@ export const CAMPUSES: Campus[] = roster.map(([name, acronym, region, city], ind
         .join('')
     : acronym,
   region: CAMPUS_REGIONS[region],
-  program: PROGRAM_PROFILES[acronym],
+  program: completeDemoProgram(PROGRAM_PROFILES[acronym], acronym),
   ...(city ? { city } : {}),
   source: index < 34 ? 'user' : 'document'
 }));

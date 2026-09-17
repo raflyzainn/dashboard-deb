@@ -35,7 +35,7 @@ test('readiness indicators retain the spreadsheet evidence instead of converting
   assert.match(campus.program!.institution!, /Belum/i);
 });
 
-test('keeps spreadsheet gaps explicit and repairs the malformed per-capita formula', () => {
+test('fills source gaps and applies the shared initial targets', () => {
   const data = initialState().data;
   const stai = data.campuses.find((campus) => campus.acronym === 'STAI TUNTAS')!;
   const itb = data.campuses.find((campus) => campus.acronym === 'ITB')!;
@@ -53,7 +53,7 @@ test('keeps spreadsheet gaps explicit and repairs the malformed per-capita formu
   )!;
 
   assert.equal(staiPerCapita.current, 30_000_000 / 9);
-  assert.equal(itbBeneficiaries.unfilled, true);
-  assert.equal(staiIncome.target, 0);
+  assert.equal(itbBeneficiaries.unfilled, false);
+  assert.equal(staiIncome.target, 60000000);
   assert.match(uns.program!.interventionSummary!, /Optimalisasi PLTS/);
 });

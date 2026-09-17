@@ -3,6 +3,7 @@
   import { app } from '$lib/state.svelte';
   import { average, campusStats, date, percent, progress } from '$lib/domain';
   import Stat from '$lib/components/ui/Stat.svelte';
+
   import Progress from '$lib/components/ui/Progress.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
   import Empty from '$lib/components/ui/Empty.svelte';
@@ -164,6 +165,7 @@
     <span class="block text-[10px] tracking-[1.9px] font-[750] text-[#3975b7] mb-[9px]">RENCANA AKSI DEB</span>
     <h2 class="font-[650] text-[18px] tracking-[-0.45px] text-[color:var(--navy)] m-[0px]">{ownCampus.name}</h2>
     <p class="text-[12px] text-[#617a9a] leading-[1.8] mt-[12px] m-[0px] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:5] overflow-hidden">{ownCampus.program.description || 'Deskripsi program belum tersedia pada rencana aksi.'}</p>
+    <a href="/campus/profile" class="mt-4 inline-flex rounded-lg border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700">Lihat dan edit profil program</a>
   </section>
 {/if}
 <div

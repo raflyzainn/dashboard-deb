@@ -219,7 +219,7 @@
                 >{number(i.baseline)}</td
               ><td
                 class="[border-bottom-width:1px] [border-bottom-style:solid] text-[12px] text-[#405e82] px-[20px] py-[15px] border-[color:rgb(232,_239,_248)]"
-                >{hasTarget(i) ? number(i.target) : 'Belum ditetapkan'}</td
+                >{hasTarget(i) ? number(i.target) : 'Belum ditetapkan'}{#if i.targetSimulated}<small class="block text-[10px] text-[#986611]">Target simulasi</small>{/if}</td
               ><td
                 class="[border-bottom-width:1px] [border-bottom-style:solid] text-[12px] text-[#405e82] px-[20px] py-[15px] border-[color:rgb(232,_239,_248)]"
                 ><strong class="font-[650]">{i.unfilled ? 'Belum diisi' : number(i.current)}</strong

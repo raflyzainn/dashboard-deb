@@ -1,4 +1,6 @@
-import { createSeed } from './fixtures/seed';
+import { createSeed, demoNotifications, NOTIFICATION_SEED_VERSION, SHARED_DEMO_TARGETS } from './fixtures/seed';
+import { PROGRAM_PROFILES } from './fixtures/programs';
+import { completeDemoProgram } from './fixtures/complete-program';
 import type { Snapshot, MasterDefinition, MasterAudit, QuestionReply } from '../../types';
 import {
   DEMO_ACTIVATION_EMAIL,
@@ -17,6 +19,7 @@ export interface DemoAccount {
   active: boolean;
 }
 export interface DemoState {
+  sourceProfileVersion?: number;
   data: Omit<Snapshot, 'definitions'> & { definitions: MasterDefinition[] };
   files: Record<string, Blob>;
   replies: QuestionReply[];
@@ -32,7 +35,7 @@ export function initialState(): DemoState {
       ...d,
       code: `D${i + 1}`,
       baseline: 0,
-      target: 0,
+      target: SHARED_DEMO_TARGETS[d.id] || 0,
       revision: 1,
       status: 'active' as const,
       period: '',
@@ -46,6 +49,7 @@ export function initialState(): DemoState {
       .map((i) => ({ ...definitions.find((d) => d.id === i.definitionId)!, ...i }));
   });
   return {
+    sourceProfileVersion: 4,
     data: { ...seed.data, definitions },
     files: Object.fromEntries(seed.files.map((f) => [f.id, f.blob])),
     replies: [],
@@ -70,6 +74,38 @@ export function createCampusAccounts(campus: { id: string; name: string }): Demo
 // Upgrade existing browser data in place, preserving PIC 1 edits and all campus work.
 export function upgradeAccounts(state: DemoState): boolean {
   let changed = false;
+  if (state.sourceProfileVersion !== 4) {
+    const seed = createSeed().data;
+    for (const campus of state.data.campuses) {
+      const source = seed.campuses.find((c) => c.id === campus.id)?.program;
+      if (!source) continue;
+      const program = (campus.program ??= {});
+      const oldExamples = completeDemoProgram(PROGRAM_PROFILES[campus.acronym || ''] || {}, campus.acronym || '', true);
+      for (const [key, value] of Object.entries(source)) {
+        if (key === 'simulatedFields') continue;
+        const previous = (program as Record<string, unknown>)[key];
+        if (previous == null || ['', '-'].includes(String(previous).trim()) || String(previous).startsWith('#') || (program.simulatedFields?.includes(key) && previous === (oldExamples as Record<string, unknown>)[key])) {
+          (program as Record<string, unknown>)[key] = value;
+        }
+      }
+      delete program.simulatedFields;
+    }
+    for (const row of state.data.indicators) {
+      const source = seed.indicators.find((i) => i.id === row.id);
+      if (!source) continue;
+      if (row.updatedAt === '2026-09-08T02:00:00.000Z') Object.assign(row, { current: source.current, baseline: source.baseline, unfilled: source.unfilled, note: source.note });
+      Object.assign(row, { target: source.target, targetSimulated: true });
+    }
+    for (const definition of state.data.definitions) {
+      if (SHARED_DEMO_TARGETS[definition.id] !== undefined) definition.target = SHARED_DEMO_TARGETS[definition.id];
+    }
+    const old = new Map(state.data.notifications.map((n) => [n.id, n]));
+    state.data.notifications = state.data.notifications.filter((n) => !n.id.startsWith('demo-notice-') && !n.id.startsWith('demo-source-'));
+    state.data.notifications.push(...demoNotifications().map((n) => ({ ...n, readAt: old.get(n.id)?.readAt || null })));
+    state.data.notificationSeedVersion = NOTIFICATION_SEED_VERSION;
+    state.sourceProfileVersion = 4;
+    changed = true;
+  }
   if (!state.activation) {
     state.activation = { email: DEMO_ACTIVATION_EMAIL, password: null };
     changed = true;

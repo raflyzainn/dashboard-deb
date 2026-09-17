@@ -191,7 +191,7 @@
       aria-hidden="true"
     ></span>
   {:else}<Icon
-      name={saveFailed || app.stale ? 'alert' : dirtyCount ? 'clock' : 'save'}
+      name={saveFailed || app.stale ? 'alert' : allDirtyCount ? 'clock' : 'save'}
       size={17}
     />{/if}
 {/snippet}
@@ -254,11 +254,7 @@
     </p>
   </section>
 
-  <section class="[background-color:white] mb-[18px] p-[20px] border border-[color:var(--line)] rounded-[14px]" aria-label="Indikator kesiapan rencana aksi">
-    <h2 class="font-[650] text-[13px] text-[color:var(--ink)] m-[0px]">Indikator kesiapan rencana aksi</h2>
-    <p class="text-[10px] text-[color:var(--muted)] leading-[1.8] mt-[6px] mb-[14px]">Lengkapi bukti dan kondisi program. Perubahan disimpan otomatis.</p>
-    <div class="grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[12px] max-[700.01px]:grid-cols-[1fr]">{#each readinessFields as [key, label]}<article class="p-[14px] [background-color:white] border-2 border-[#b9d9f5] rounded-[9px]"><label class="block text-[11px] font-[650] text-[color:var(--ink)]" for={`readiness-${key}`}>{label}<span class="ml-1 text-[#dc2626]" aria-hidden="true">*</span></label><textarea id={`readiness-${key}`} aria-label={label} class="block w-full min-h-[76px] resize-y [background-color:rgb(250,_253,_255)] text-[11px] text-[color:var(--ink)] leading-[1.7] mt-[8px] px-[10px] py-[8px] border-2 border-[#9ecbf1] rounded-[7px] focus:border-[#1681df] focus:[box-shadow:0_0_0_3px_#1681df24] focus:outline-none disabled:opacity-60" rows={key === 'conflict' || key === 'intervention' ? 7 : 3} maxlength="5000" value={readinessValue(key)} oninput={(event) => editReadiness(key, event)} disabled={disabled}></textarea></article>{/each}</div>
-  </section>
+
 
   {#if latest}<p
       class="[&&]:mt-[-4px] [&&]:mb-[16px] leading-[1.8] [&&]:text-[color:var(--muted)] [&&]:text-[11px] [&&]:mx-[0px] submission-history"
@@ -659,10 +655,16 @@
       />
     </div>{/if}
 
+  <section class="[background-color:white] mb-[18px] p-[20px] border border-[color:var(--line)] rounded-[14px]" aria-label="Indikator kesiapan rencana aksi">
+    <h2 class="font-[650] text-[13px] text-[color:var(--ink)] m-[0px]">Indikator kesiapan rencana aksi</h2>
+    <p class="text-[10px] text-[color:var(--muted)] leading-[1.8] mt-[6px] mb-[14px]">Lengkapi bukti dan kondisi program. Perubahan disimpan otomatis.</p>
+    <div class="grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[12px] max-[700.01px]:grid-cols-[1fr]">{#each readinessFields as [key, label]}<article class="p-[14px] [background-color:white] border-2 border-[#b9d9f5] rounded-[9px]"><label class="block text-[11px] font-[650] text-[color:var(--ink)]" for={`readiness-${key}`}>{label}<span class="ml-1 text-[#dc2626]" aria-hidden="true">*</span></label><textarea id={`readiness-${key}`} aria-label={label} class="block w-full min-h-[76px] resize-y [background-color:rgb(250,_253,_255)] text-[11px] text-[color:var(--ink)] leading-[1.7] mt-[8px] px-[10px] py-[8px] border-2 border-[#9ecbf1] rounded-[7px] focus:border-[#1681df] focus:[box-shadow:0_0_0_3px_#1681df24] focus:outline-none disabled:opacity-60" rows={key === 'conflict' || key === 'intervention' ? 7 : 3} maxlength="5000" value={readinessValue(key)} oninput={(event) => editReadiness(key, event)} disabled={disabled}></textarea></article>{/each}</div>
+  </section>
+
   <div
     class="[&&]:sticky [&&]:bottom-[12px] [&&]:z-[12] [&&]:mt-[20px] max-[700.01px]:[&&]:bottom-[8px] indicator-submit"
   >
-    <SubmissionStatus compact blocked={dirtyCount > 0 || !!saving}>
+    <SubmissionStatus compact blocked={allDirtyCount > 0 || !!saving}>
       {#snippet statusIcon()}
         <span
           class="[&&]:flex [&&]:items-center [&&]:gap-y-[6px] [&&]:gap-x-[6px] [&&]:text-[11px] [&&]:text-[#397866] [&&]:justify-center [&&]:w-[28px] [&&]:h-[28px] [&&]:[background-image:initial] [&&]:[background-color:rgb(237,_248,_244)] [&&]:rounded-[50%] [&.save-error]:text-[#b45309] [.status-labels>&]:flex [.status-labels>&]:items-center [.status-labels>&]:gap-y-[8px] [.status-labels>&]:gap-x-[8px] [.summary-heading>&]:text-[11px] [.summary-heading>&]:text-[color:var(--muted)] [.group-heading>&]:text-[11px] [.group-heading>&]:text-[color:var(--muted)] [.summary-metric>&]:text-[11px] [.summary-metric>&]:text-[color:var(--muted)] [.meter>&]:block [.meter>&]:h-[100%] [.meter>&]:[background-image:initial] [.meter>&]:[background-color:rgb(2,_132,_199)] [.meter>&]:rounded-[inherit] [.indicator-summary>.meter>&]:[background-image:initial] [.indicator-summary>.meter>&]:[background-color:rgb(32,_165,_106)] [.meter.achieved>&]:[background-image:initial] [.meter.achieved>&]:[background-color:rgb(32,_165,_106)] [.unit-input>&]:flex [.unit-input>&]:items-center [.unit-input>&]:text-[10px] [.unit-input>&]:w-[max-content] [.unit-input>&]:[background-image:initial] [.unit-input>&]:[background-color:rgb(234,_246,_255)] [.unit-input>&]:shrink-0 [.unit-input>&]:max-w-[60%] [.unit-input>&]:wrap-anywhere [.unit-input>&]:px-[9px] [.unit-input>&]:py-[0px] [.reference-value>&]:text-[10px] [.reference-value>&]:text-[color:var(--muted)] [.reference-value>&]:wrap-anywhere max-[700.01px]:[.card-fields>&:nth-child(3)]:[grid-column-start:1] max-[700.01px]:[.card-fields>&:nth-child(3)]:[grid-column-end:-1] save-status floating-save-icon"

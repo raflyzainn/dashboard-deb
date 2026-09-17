@@ -4,6 +4,11 @@ import { CAMPUSES, CAMPUS_ROSTER_VERSION } from './campuses';
 import { CAMPUS_LOCATIONS } from './locations';
 
 export const DEMO_CAMPUS = 'campus-001';
+export const SHARED_DEMO_TARGETS: Record<string, number> = {
+  'def-income': 60000000,
+  'def-beneficiaries': 30,
+  'def-income-per-capita': 2000000
+};
 const timestamp = '2026-09-08T02:00:00.000Z';
 function demoSubmissions(data: Snapshot): DebSubmission[] {
   return data.campuses.slice(1, 7).map((c) => ({
@@ -18,96 +23,15 @@ function demoSubmissions(data: Snapshot): DebSubmission[] {
       .map((i) => ({ ...data.definitions.find((d) => d.id === i.definitionId)!, ...i }))
   }));
 }
-export const NOTIFICATION_SEED_VERSION = 1;
+export const NOTIFICATION_SEED_VERSION = 2;
 export function demoNotifications(): Notification[] {
-  const samples: Omit<Notification, 'createdAt' | 'readAt' | 'simulated'>[] = [
-    {
-      id: 'demo-notice-campus-1',
-      campusId: DEMO_CAMPUS,
-      recipient: 'campus',
-      title: 'Lengkapi catatan indikator',
-      body: 'Admin PF meminta ringkasan periode evaluasi dan jumlah kelompok aktif. Buka indikator Tim pengelola aktif untuk meninjau feedback.',
-      href: '/campus/indicators'
-    },
-    {
-      id: 'demo-notice-campus-2',
-      campusId: DEMO_CAMPUS,
-      recipient: 'campus',
-      title: 'Proposal versi 3 tersimpan',
-      body: 'Proposal terbaru Universitas Indonesia sudah tersedia. Pilih versi untuk membaca PDF dan tanggapan admin.',
-      href: '/campus/proposal'
-    },
-    {
-      id: 'demo-notice-campus-3',
-      campusId: DEMO_CAMPUS,
-      recipient: 'campus',
-      title: 'Jawaban forum tentang proposal',
-      body: 'Admin PF telah membagikan panduan pembaruan proposal. Versi lama tetap dapat ditinjau setelah unggahan baru.',
-      href: '/campus/questions/question-2'
-    },
-    {
-      id: 'demo-notice-campus-4',
-      campusId: DEMO_CAMPUS,
-      recipient: 'campus',
-      title: 'Panduan perhitungan indikator',
-      body: 'Pelajari cara membaca baseline, target, dan progres simulasi pada jawaban forum bersama.',
-      href: '/campus/questions/question-1'
-    },
-    {
-      id: 'demo-notice-campus-5',
-      campusId: DEMO_CAMPUS,
-      recipient: 'campus',
-      title: 'FAQ proposal tersedia',
-      body: 'Panduan unggah dan revisi proposal telah tersedia di Pusat bantuan.',
-      href: '/campus/faq'
-    },
-    {
-      id: 'demo-notice-admin-1',
-      campusId: DEMO_CAMPUS,
-      recipient: 'admin',
-      title: 'Proposal versi 3 siap ditinjau',
-      body: 'Universitas Indonesia memiliki tiga versi proposal. Buka detail kampus lalu tab Proposal untuk membaca dokumen.',
-      href: `/admin/campuses/${DEMO_CAMPUS}`
-    },
-    {
-      id: 'demo-notice-admin-2',
-      campusId: 'campus-002',
-      recipient: 'admin',
-      title: 'Pembaruan capaian kampus',
-      body: 'Data simulasi Universitas Gadjah Mada tersedia untuk ditinjau. Periksa nilai aktual dan target di detail indikator.',
-      href: '/admin/campuses/campus-002'
-    },
-    {
-      id: 'demo-notice-admin-3',
-      campusId: 'campus-005',
-      recipient: 'admin',
-      title: 'Feedback masih perlu tindak lanjut',
-      body: 'Universitas Diponegoro memiliki permintaan revisi indikator yang belum diselesaikan.',
-      href: '/admin/campuses/campus-005'
-    },
-    {
-      id: 'demo-notice-admin-4',
-      campusId: 'campus-005',
-      recipient: 'admin',
-      title: 'Diskusi kolaborasi antar desa',
-      body: 'Tinjau pertanyaan dokumentasi kegiatan kolaborasi. Jawaban Anda dapat membantu seluruh kampus.',
-      href: '/admin/questions/question-4'
-    },
-    {
-      id: 'demo-notice-admin-5',
-      campusId: 'campus-003',
-      recipient: 'admin',
-      title: 'Panduan proposal telah dibagikan',
-      body: 'Jawaban tentang pembaruan proposal sudah tersedia di forum bersama dan dapat dikurasi melalui FAQ.',
-      href: '/admin/questions/question-2'
-    }
-  ];
-  return samples.map((n, i) => ({
-    ...n,
-    createdAt: `2026-09-0${8 - (i % 5)}T0${3 - (i % 3)}:00:00.000Z`,
-    readAt: i % 5 >= 3 ? timestamp : null,
-    simulated: true
-  }));
+  return CAMPUSES.flatMap((campus) => (['campus', 'admin'] as const).map((recipient) => ({
+    id: `demo-source-${campus.id}-${recipient}`, campusId: campus.id, recipient,
+    title: `Rencana aksi ${campus.name}`,
+    body: `Data rencana aksi ${campus.name} tersedia sesuai Excel. Lengkapi atau perbarui data program dan kontak pendamping melalui halaman kampus. Notifikasi ini dibuat otomatis untuk demo.`,
+    href: recipient === 'admin' ? `/admin/campuses/${campus.id}` : '/campus/dashboard',
+    createdAt: timestamp, readAt: null, simulated: true
+  })));
 }
 const indicators = [
   { id: 'def-income', name: 'Pendapatan total', category: 'Ekonomi', unit: 'Rp/tahun', field: 'income', description: 'Pendapatan total program pada rencana aksi.' },
@@ -140,16 +64,17 @@ export function createSeed(): { data: Snapshot; files: { id: string; blob: Blob 
   const files: { id: string; blob: Blob }[] = [];
   data.definitions = indicators.map(({ id, name, category, unit, description }) => ({ id, name, category, unit, description }));
   for (let c = 0; c < CAMPUSES.length; c++) {
-    const campus = { ...CAMPUSES[c] };
+    const campus = structuredClone(CAMPUSES[c]);
     const id = campus.id;
     data.campuses.push(campus);
     indicators.forEach((def) => {
-      const value = metric(campus.program?.[def.field]);
+      const parsed = metric(campus.program?.[def.field]);
+      const value = parsed ?? (def.field === 'beneficiaries' ? 10 : def.field === 'income' ? 30000000 : 3000000);
       data.indicators.push({
         id: `${id}-${def.id}`,
         campusId: id,
-        definitionId: def.id, baseline: value || 0, target: 0, current: value || 0,
-        unfilled: value === null, note: value === null ? 'Data belum tersedia pada rencana aksi.' : 'Data dari rencana aksi; target belum ditetapkan.',
+        definitionId: def.id, baseline: value || 0, target: SHARED_DEMO_TARGETS[def.id], current: value || 0, targetSimulated: true,
+        unfilled: false, note: parsed === null || campus.program?.simulatedFields?.includes(def.field) ? 'Data awal program, dapat diperbarui.' : 'Data dari rencana aksi Excel.',
         updatedAt: timestamp
       });
     });

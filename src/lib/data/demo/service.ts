@@ -171,11 +171,20 @@ export function createDemoService() {
     run(
       (s) => {
         if (!Number.isFinite(target) || target <= 0) throw Error('Target harus lebih dari nol.');
-        find(s.data.indicators, key).target = target;
+        Object.assign(find(s.data.indicators, key), { target, targetSimulated: false });
       },
       true,
       'admin'
     );
+  const updateProgram = (campusId: string, values: Partial<ProgramProfile>) => run((s, user) => {
+    own(user, campusId);
+    const allowed = ['mentor', 'coordinator', 'localHero', 'subholding', 'operatingUnit', 'actionPlanTemplate', 'replicationVillage', 'sourceStatus', 'description', 'budget', 'currentClass', 'targetClass', 'address', 'mapUrl', 'coordinates', 'province'];
+    const program = (find(s.data.campuses, campusId).program ??= {});
+    for (const [key, value] of Object.entries(values)) {
+      if (!allowed.includes(key) || typeof value !== 'string' || value.length > 10000) throw Error('Isian program tidak valid.');
+    }
+    Object.assign(program, values);
+  }, true);
   const service: DataService = {
     demoActivation: () =>
       transaction((s) => ({ email: s.activation.email, activated: Boolean(s.activation.password) })),
@@ -796,6 +805,7 @@ export function createDemoService() {
   return {
     ...service,
     updateReadiness,
+    updateProgram,
     updateIndicatorTarget,
     selectAccount(key: string) {
       selected = key;

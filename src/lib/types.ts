@@ -8,6 +8,10 @@ export interface DemoActivationStatus { email: string; activated: boolean }
 export interface LocationDto { campusId: string; province: string; island: string; longitude: number | null; latitude: number | null; approximate: boolean }
 export interface Bootstrap { session: AppSession; data: Snapshot; locations: LocationDto[]; capabilities: { readOnly: boolean }; loadedAt: string }
 export interface ProgramProfile {
+  simulatedFields?: string[];
+  mentor?: string | null; coordinator?: string | null; localHero?: string | null;
+  subholding?: string | null; operatingUnit?: string | null; actionPlanTemplate?: string | null;
+  replicationVillage?: string | null; sourceStatus?: string | null;
   income?: number | string | null; beneficiaries?: number | string | null; incomePerCapita?: number | string | null;
   currentClass?: string | null; targetClass?: string | null; existingEbt?: string | null;
     description?: string | null; intervention?: string | null; interventionSummary?: string | null; budget?: number | string | null;
@@ -23,7 +27,7 @@ export interface CampusInput { id?: string; revision?: number; name: string; ini
 export interface MasterAudit { id: string; actor: string; entity: string; entityId: string; operation: string; before: Record<string, unknown> | null; after: Record<string, unknown> | null; created: string }
 export interface MasterData { definitions: MasterDefinition[] }
 export interface MasterAuditPage { items: MasterAudit[]; page: number; totalItems: number; totalPages: number }
-export interface CampusIndicator { unfilled?: boolean; id: string; campusId: string; definitionId: string; baseline: number; target: number; current: number; note: string; updatedAt: string }
+export interface CampusIndicator { targetSimulated?: boolean; unfilled?: boolean; id: string; campusId: string; definitionId: string; baseline: number; target: number; current: number; note: string; updatedAt: string }
 export interface SubmissionIndicator extends CampusIndicator { name: string; category: string; unit: string; description?: string }
 export type VerificationStatus = 'pending' | 'approved' | 'revision';
 export interface DebSubmission { period?: string; id: string; campusId: string; version: number; status: VerificationStatus; indicators: SubmissionIndicator[]; submittedAt: string; reviewedAt?: string; reviewedBy?: string; decisionNote?: string; simulated?: boolean }
