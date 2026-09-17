@@ -13,6 +13,7 @@
     error = $state(''),
     search = $state('');
   let editing = $state<DefinitionInput | null>(null);
+  let targetText = $state('');
   let confirmation = $state<{ record: MasterDefinition; action: 'activate' | 'delete' } | null>(
     null
   );
@@ -81,8 +82,16 @@
           unit: '',
           description: '',
           baseline: 0,
-          target: 1
+        target: 1
         };
+    targetText = formatRupiah(editing.target);
+  }
+  const formatRupiah = (value: number) =>
+    `Rp ${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(value)}`;
+  function editRupiahTarget(event: Event) {
+    if (!editing) return;
+    editing.target = Number((event.currentTarget as HTMLInputElement).value.replace(/\D/g, '')) || 0;
+    targetText = formatRupiah(editing.target);
   }
   async function save() {
     if (!editing) return;
@@ -479,14 +488,20 @@
             bind:value={editing.baseline}
           /></label
         ><label
-          >Target bersama<input
+          >Target default kampus baru{#if editing.unit.includes('Rp')}<input
+            class="font-[inherit] text-[12px] [background-color:white] text-[#17365f] px-[12px] py-[11px] border border-[color:rgb(212,_225,_241)] rounded-[7px] focus:outline-[#7fc1ff]"
+            inputmode="numeric"
+            required
+            value={targetText}
+            oninput={editRupiahTarget}
+          />{:else}<input
             class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#17365f] max-w-[100%] px-[12px] py-[11px] border-[1px] border-solid border-[color:rgb(212,_225,_241)] rounded-[7px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(39,_144,_232)] [&::placeholder]:text-[#8ea1bc]"
             type="number"
             min="0.000000001"
             step="any"
             required
             bind:value={editing.target}
-          /></label
+          />{/if}</label
         >
       </div>
       <label
@@ -497,7 +512,7 @@
           bind:value={editing.description}></textarea></label
       >
       <p class="leading-[1.8] m-[0px]">
-        Baseline dan target ini berlaku sama untuk seluruh kampus.
+        Nilai ini hanya menjadi default saat indikator baru dibuat. Target kampus diatur terpisah oleh admin.
       </p>
       <div
         class="flex flex-wrap items-center gap-y-[8px] gap-x-[8px] max-[600.01px]:[&_.button]:[white-space-collapse:collapse] max-[600.01px]:[&_.button]:[text-wrap-mode:wrap] master-actions"
