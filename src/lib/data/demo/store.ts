@@ -19,7 +19,7 @@ export interface DemoState {
   audit: MasterAudit[];
   accounts: DemoAccount[];
 }
-export const DEMO_DATABASE = 'deb-standalone-demo-v4';
+export const DEMO_DATABASE = 'deb-standalone-demo-v5';
 export function initialState(): DemoState {
   const seed = createSeed();
   const definitions = seed.data.definitions.map((d, i) => {

@@ -161,6 +161,15 @@ export function createDemoService() {
       true,
       'campus'
     );
+  const updateIndicatorTarget = (key: string, target: number) =>
+    run(
+      (s) => {
+        if (!Number.isFinite(target) || target <= 0) throw Error('Target harus lebih dari nol.');
+        find(s.data.indicators, key).target = target;
+      },
+      true,
+      'admin'
+    );
   const service: DataService = {
     masters: () => run((s) => ({ definitions: s.data.definitions }), false, 'admin'),
     masterAudit: (q = '', page = 1) =>
@@ -273,10 +282,6 @@ export function createDemoService() {
           };
           if (old) Object.assign(old, row);
           else s.data.definitions.push(row);
-          for (const i of s.data.indicators.filter((i) => i.definitionId === row.id)) {
-            i.baseline = row.baseline;
-            i.target = row.target;
-          }
           audit(
             s,
             user,
@@ -765,6 +770,7 @@ export function createDemoService() {
   return {
     ...service,
     updateReadiness,
+    updateIndicatorTarget,
     selectAccount(key: string) {
       selected = key;
     },
