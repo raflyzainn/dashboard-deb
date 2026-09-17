@@ -2,11 +2,13 @@
   import type { ProgramProfile } from '$lib/types';
   import { app } from '$lib/state.svelte';
   import { dataService } from '$lib/data/service';
+  import Icon from '$lib/components/ui/Icon.svelte';
   let {
     program,
     campusId,
-    readOnly = false
-  }: { program?: ProgramProfile; campusId: string; readOnly?: boolean } = $props();
+    readOnly = false,
+    floating = false
+  }: { program?: ProgramProfile; campusId: string; readOnly?: boolean; floating?: boolean } = $props();
   const contacts = [
     ['mentor', 'Mentor'],
     ['coordinator', 'Koordinator PFS 12'],
@@ -112,14 +114,39 @@
         {/each}
       </div>
     </section>
-    <div class="mt-[14px] flex flex-wrap items-center gap-[12px]">
+    <div
+      class="mt-[14px] flex flex-wrap items-center gap-[12px]"
+      class:sticky={floating}
+      class:bottom-3={floating}
+      class:z-20={floating}
+      class:rounded-xl={floating}
+      class:border={floating}
+      class:border-blue-100={floating}
+      class:bg-white={floating}
+      class:p-4={floating}
+      class:shadow-xl={floating}
+    >
+      {#if floating}<span
+          class="flex size-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-700"
+          aria-hidden="true"
+        ><Icon name={saving ? 'clock' : 'save'} size={17} /></span
+        ><div class="min-w-0 flex-1">
+          <strong class="block text-[12px] text-[#17365f]">Simpan Profil Program</strong>
+          <span class="text-[11px] text-[#617a9a]"
+            >{saving
+              ? 'Menyimpan perubahan...'
+              : dirty
+                ? 'Ada perubahan yang belum disimpan.'
+                : 'Semua perubahan sudah tersimpan.'}</span
+          >
+        </div>{/if}
       {#if !readOnly}<button
           class="rounded-[8px] bg-[#086bd6] px-[18px] py-[11px] text-[12px] font-[650] text-white hover:bg-[#0758b2] disabled:cursor-not-allowed disabled:opacity-50"
           type="submit"
           disabled={!dirty || saving || app.busy}
           >{saving ? 'Menyimpan...' : 'Simpan data program'}</button
         >{/if}
-      {#if dirty}<span class="text-[11px] text-[#986611]">Ada perubahan belum disimpan.</span>{/if}
+      {#if dirty && !floating}<span class="text-[11px] text-[#986611]">Ada perubahan belum disimpan.</span>{/if}
       {#if message}<span class="text-[11px] text-[#17753c]" role="status">{message}</span>{/if}
     </div>
   </form>

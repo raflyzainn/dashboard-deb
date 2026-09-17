@@ -12,6 +12,11 @@
     </p>
   </header>
   {#if campus}<section class="rounded-xl border border-[#dce7f7] bg-white p-5 shadow-sm sm:p-6">
-      <ProgramContacts program={campus.program} campusId={campus.id} readOnly={app.readOnly} />
+      <ProgramContacts
+        program={campus.program}
+        campusId={campus.id}
+        readOnly={app.readOnly}
+        floating
+      />
     </section>{/if}
 </div>

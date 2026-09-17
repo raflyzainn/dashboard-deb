@@ -10,10 +10,11 @@ async function login(page: Page, account: string) {
   await expect(page).toHaveURL(/dashboard$/);
 }
 async function logout(page: Page) {
-  await page.getByRole('button', { name: 'Keluar / ganti akun', exact: true }).click();
+  await page.locator('summary[aria-label="Buka menu akun"]').click();
+  await page.getByRole('menuitem', { name: 'Keluar', exact: true }).click();
   await expect(page).toHaveURL(/login/);
 }
-test('static demo: autosave, PDF versions, admin response, persistence and reset without backend', async ({
+test('static demo: autosave, PDF versions, admin response and persistence without backend', async ({
   page
 }) => {
   const forbidden: string[] = [],
@@ -37,7 +38,9 @@ test('static demo: autosave, PDF versions, admin response, persistence and reset
     page.getByRole('status').filter({ hasText: 'Semua perubahan indikator tersimpan.' })
   ).toBeVisible();
   await page.reload();
-  await expect(page.getByLabel('Nilai aktual Pendapatan total', { exact: true })).toHaveValue('Rp 123');
+  await expect(page.getByLabel('Nilai aktual Pendapatan total', { exact: true })).toHaveValue(
+    'Rp 123'
+  );
   await page.goto('/campus/proposal');
   await expect(page.locator('iframe')).toHaveAttribute('src', /^blob:/);
   await page.getByRole('button', { name: 'Perbarui', exact: true }).click();
@@ -78,17 +81,29 @@ test('static demo: autosave, PDF versions, admin response, persistence and reset
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: '.qa/demo-campus-mobile.png', fullPage: true });
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.evaluate(() => localStorage.setItem('unrelated-demo-test', 'keep'));
-  await page.getByRole('button', { name: 'Reset data demo', exact: true }).click();
-  await page.getByRole('button', { name: 'Ya, reset demo', exact: true }).click();
-  await expect(page).toHaveURL(/login/);
-  await login(page, 'campus-001');
-  await page.goto('/campus/proposal');
-  await expect(page.locator('iframe')).toHaveAttribute('src', /^blob:/);
-  await expect(page.locator('iframe')).not.toHaveAttribute('title', 'Pratinjau demo-upload.pdf');
-  expect(await page.evaluate(() => localStorage.getItem('unrelated-demo-test'))).toBe('keep');
+  await page.locator('summary[aria-label="Buka menu akun"]').click();
+  await expect(page.getByText('Reset data demo', { exact: true })).toHaveCount(0);
   expect(forbidden).toEqual([]);
   expect(errors).toEqual([]);
+});
+
+test('account menu opens a dedicated settings page for campus and admin', async ({ page }) => {
+  for (const account of ['campus-001', 'admin-1']) {
+    await login(page, account);
+    await page.locator('summary[aria-label="Buka menu akun"]').click();
+    await expect(page.getByRole('menu')).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Pengaturan', exact: true })).toBeVisible();
+    await expect(page.getByText('Reset data demo', { exact: true })).toHaveCount(0);
+    await page.getByRole('menuitem', { name: 'Pengaturan', exact: true }).click();
+    await expect(page).toHaveURL(
+      new RegExp(`/${account.startsWith('admin') ? 'admin' : 'campus'}/settings$`)
+    );
+    await expect(page.getByRole('heading', { name: 'Pengaturan', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Ganti password' }).click();
+    await expect(page.getByRole('dialog')).toContainText('Ganti password');
+    await page.getByRole('button', { name: 'Tutup dialog', exact: true }).click();
+    await logout(page);
+  }
 });
 test('admin and campus routes render on direct navigation without API requests', async ({
   page
@@ -113,9 +128,10 @@ test('admin and campus routes render on direct navigation without API requests',
             'proposal',
             'questions',
             'faq',
+            'settings',
             'notifications'
           ]
-        : ['dashboard', 'indicators', 'proposal', 'questions', 'faq', 'notifications', 'guide'];
+        : ['dashboard', 'indicators', 'proposal', 'questions', 'faq', 'settings', 'notifications', 'guide'];
     for (const route of routes) {
       await page.goto(`/${role}/${route}`);
       await expect(page.locator('main')).toBeVisible();
@@ -157,7 +173,9 @@ test('period rollover keeps archived values and copies baseline/target for fresh
     page.getByRole('status').filter({ hasText: 'Semua perubahan indikator tersimpan.' })
   ).toBeVisible();
   await page.reload();
-  await expect(page.getByLabel('Nilai aktual Pendapatan total', { exact: true })).toHaveValue('Rp 0');
+  await expect(page.getByLabel('Nilai aktual Pendapatan total', { exact: true })).toHaveValue(
+    'Rp 0'
+  );
   const states = await page.evaluate(
     (database) =>
       new Promise<any>((resolve, reject) => {
@@ -211,7 +229,9 @@ test('forum conversation and account edits persist in the demo', async ({ page }
   ).toBeVisible();
   await page.goto('/admin/campuses?tab=accounts');
   await page.getByLabel('Cari kampus, PIC, atau email').fill('Universitas Sebelas Maret');
-  await page.getByRole('button', { name: 'Ubah PIC 1 Universitas Sebelas Maret', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Ubah PIC 1 Universitas Sebelas Maret', exact: true })
+    .click();
   await page
     .getByLabel('Nama PIC 1 Universitas Sebelas Maret', { exact: true })
     .fill('PIC Demo Diubah');
@@ -225,9 +245,7 @@ test('forum conversation and account edits persist in the demo', async ({ page }
   await expect(
     page.getByText('Admin dapat membuka periode setelah review selesai.', { exact: true })
   ).toBeVisible();
-  await page
-    .getByPlaceholder(/Tuliskan pertanyaan lanjutan/)
-    .fill('Baik, terima kasih admin.');
+  await page.getByPlaceholder(/Tuliskan pertanyaan lanjutan/).fill('Baik, terima kasih admin.');
   await page.getByRole('button', { name: 'Kirim balasan', exact: true }).click();
   await expect(page.getByText('Baik, terima kasih admin.', { exact: true })).toBeVisible();
   await page.reload();
@@ -289,7 +307,9 @@ test('admin manages two PIC emails per campus while demo login still lists 40 ca
   expect(api).toEqual([]);
 });
 
-test('spreadsheet action plan appears for the matching campus in the admin view', async ({ page }) => {
+test('spreadsheet action plan appears for the matching campus in the admin view', async ({
+  page
+}) => {
   await login(page, 'admin-1');
   await page.goto('/admin/campuses/campus-001');
   await expect(page.getByText('Program UNS', { exact: true })).toBeVisible();
@@ -368,18 +388,32 @@ test('submission status counts empty readiness fields', async ({ page }) => {
   );
 });
 
-test('campus and admin can edit source profile fields and save profile changes', async ({ page }) => {
+test('campus and admin can edit source profile fields and save profile changes', async ({
+  page
+}) => {
   await login(page, 'campus-001');
   await page.goto('/campus/indicators');
   await expect(page.getByRole('region', { name: 'Pendamping dan kontak program' })).toHaveCount(0);
   await page.getByRole('link', { name: 'Profil Program', exact: true }).click();
   await expect(page).toHaveURL(/campus\/profile$/);
   await page.reload();
+  const floatingSave = page.getByText('Simpan Profil Program', { exact: true });
+  await expect(floatingSave).toBeVisible();
+  const floatingBox = await floatingSave.boundingBox();
+  expect(floatingBox && floatingBox.y < 1000).toBeTruthy();
   const contacts = page.getByRole('region', { name: 'Pendamping dan kontak program' });
-  for (const label of ['Mentor', 'Koordinator PFS 12', 'Local hero']) await expect(contacts.getByLabel(label, { exact: true })).toBeEditable();
+  for (const label of ['Mentor', 'Koordinator PFS 12', 'Local hero'])
+    await expect(contacts.getByLabel(label, { exact: true })).toBeEditable();
   await contacts.getByLabel('Mentor', { exact: true }).fill('Mentor diubah oleh kampus');
   await expect(contacts.getByLabel('Subholding', { exact: true })).toBeVisible();
-  for (const label of ['Subholding', 'Unit operasi Pertamina terdekat', 'Target kategori kelas', 'Template rencana aksi', 'Desa replikasi', 'Status pada sumber']) {
+  for (const label of [
+    'Subholding',
+    'Unit operasi Pertamina terdekat',
+    'Target kategori kelas',
+    'Template rencana aksi',
+    'Desa replikasi',
+    'Status pada sumber'
+  ]) {
     await expect(contacts.getByLabel(label, { exact: true })).toBeEditable();
     await expect(contacts.getByLabel(label, { exact: true })).not.toHaveValue('');
   }
@@ -387,9 +421,13 @@ test('campus and admin can edit source profile fields and save profile changes',
   await contacts.getByRole('button', { name: 'Simpan data program', exact: true }).click();
   await expect(contacts.getByRole('status')).toHaveText('Perubahan tersimpan.');
   await page.reload();
-  await expect(contacts.getByLabel('Mentor', { exact: true })).toHaveValue('Mentor diubah oleh kampus');
+  await expect(contacts.getByLabel('Mentor', { exact: true })).toHaveValue(
+    'Mentor diubah oleh kampus'
+  );
   await expect(contacts.getByLabel('Subholding', { exact: true })).toBeVisible();
-  await expect(contacts.getByLabel('Subholding', { exact: true })).toHaveValue('Subholding isian kampus');
+  await expect(contacts.getByLabel('Subholding', { exact: true })).toHaveValue(
+    'Subholding isian kampus'
+  );
   await contacts.getByLabel('Subholding', { exact: true }).fill('');
   await contacts.getByRole('button', { name: 'Simpan data program', exact: true }).click();
   await expect(contacts.getByRole('status')).toHaveText('Perubahan tersimpan.');
@@ -397,19 +435,25 @@ test('campus and admin can edit source profile fields and save profile changes',
   await logout(page);
   await login(page, 'admin-1');
   await page.goto('/admin/campuses/campus-001');
-  await expect(contacts.getByLabel('Mentor', { exact: true })).toHaveValue('Mentor diubah oleh kampus');
+  await expect(contacts.getByLabel('Mentor', { exact: true })).toHaveValue(
+    'Mentor diubah oleh kampus'
+  );
   await contacts.getByLabel('Local hero', { exact: true }).fill('Local hero diperbarui admin');
   await contacts.getByRole('button', { name: 'Simpan data program', exact: true }).click();
   await expect(contacts.getByRole('status')).toHaveText('Perubahan tersimpan.');
   await page.reload();
-  await expect(contacts.getByLabel('Local hero', { exact: true })).toHaveValue('Local hero diperbarui admin');
+  await expect(contacts.getByLabel('Local hero', { exact: true })).toHaveValue(
+    'Local hero diperbarui admin'
+  );
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await contacts.scrollIntoViewIfNeeded();
   await page.screenshot({ path: '.qa/excel-editable-mobile.png', fullPage: false });
 });
 
-test('one static demo PIC can activate from a simulated email and sign in with its password', async ({ page }) => {
+test('one static demo PIC can activate from a simulated email and sign in with its password', async ({
+  page
+}) => {
   await page.goto('/login');
   await page.screenshot({ path: '.qa/demo-login-actions.png', fullPage: false });
   await page.getByRole('button', { name: 'Aktivasi akun demo', exact: true }).click();
@@ -423,7 +467,10 @@ test('one static demo PIC can activate from a simulated email and sign in with i
   await page.screenshot({ path: '.qa/demo-activation-password.png', fullPage: false });
   await page.getByLabel('Password baru', { exact: true }).fill('Rahasia12');
   await page.getByLabel('Konfirmasi password', { exact: true }).fill('Rahasia12');
-  for (const [field, label] of [['Password baru', 'password baru'], ['Konfirmasi password', 'konfirmasi password']]) {
+  for (const [field, label] of [
+    ['Password baru', 'password baru'],
+    ['Konfirmasi password', 'konfirmasi password']
+  ]) {
     await page.getByRole('button', { name: `Tampilkan ${label}`, exact: true }).click();
     await expect(page.getByLabel(field, { exact: true })).toHaveAttribute('type', 'text');
     await page.getByRole('button', { name: `Sembunyikan ${label}`, exact: true }).click();
@@ -435,17 +482,23 @@ test('one static demo PIC can activate from a simulated email and sign in with i
   await expect(page).toHaveURL(/\/campus\/dashboard$/);
 });
 
-test('rupiah inputs format thousands and preserve decimal values after autosave', async ({ page }) => {
+test('rupiah inputs format thousands and preserve decimal values after autosave', async ({
+  page
+}) => {
   await login(page, 'campus-001');
   await page.goto('/campus/indicators');
   const total = page.getByLabel('Nilai aktual Pendapatan total', { exact: true });
   const perCapita = page.getByLabel('Nilai aktual Pendapatan per kapita', { exact: true });
   await total.fill('43159200');
   await expect(total).toHaveValue('Rp 43.159.200');
-  await expect(page.getByRole('status').filter({ hasText: 'Semua perubahan indikator tersimpan.' })).toBeVisible();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Semua perubahan indikator tersimpan.' })
+  ).toBeVisible();
   await perCapita.fill('663987,6923');
   await expect(perCapita).toHaveValue('Rp 663.987,6923');
-  await expect(page.getByRole('status').filter({ hasText: 'Semua perubahan indikator tersimpan.' })).toBeVisible();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Semua perubahan indikator tersimpan.' })
+  ).toBeVisible();
   await page.reload();
   await expect(total).toHaveValue('Rp 43.159.200');
   await expect(perCapita).toHaveValue('Rp 663.987,6923');
