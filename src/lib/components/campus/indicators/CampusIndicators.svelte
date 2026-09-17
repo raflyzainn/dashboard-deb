@@ -4,7 +4,7 @@
   import { dataService } from '$lib/data/service';
   import { average, progress, number, date, feedbackLabel } from '$lib/domain';
   import { latestSubmission, changedSinceSubmission, verificationLabel } from '$lib/verification';
-  import type { CampusIndicator } from '$lib/types';
+  import type { CampusIndicator, ProgramProfile } from '$lib/types';
   import Icon from '$lib/components/ui/Icon.svelte';
   import Badge from '$lib/components/ui/Badge.svelte';
   import Empty from '$lib/components/ui/Empty.svelte';
@@ -14,6 +14,19 @@
   let category = $state('');
   let status = $state('all');
   let drafts = $state<Record<string, { current: number | undefined; note: string }>>({});
+  const readinessFields = [
+    ['existingEbt', 'EBT eksisting'],
+    ['socialMapping', 'Pemetaan sosial'],
+    ['conflict', 'Potensi konflik'],
+    ['ikm', 'IKM DEB SoBI'],
+    ['institution', 'Kelembagaan'],
+    ['landPermit', 'Perizinan lahan'],
+    ['siteSurvey', 'Site survey'],
+    ['intervention', 'Kebutuhan intervensi']
+  ] as const;
+  type ReadinessKey = (typeof readinessFields)[number][0];
+  let readinessDraft = $state<Partial<Pick<ProgramProfile, ReadinessKey>>>({});
+  let readinessTimer: ReturnType<typeof setTimeout> | undefined;
   let saving = $state('');
   let saveFailed = $state(false);
   const campusId = $derived(app.session!.campusId!);
@@ -33,6 +46,8 @@
   const achieved = $derived(indicators.filter((i) => i.current >= i.target).length);
   const score = $derived(average(indicators.map(progress)));
   const dirtyCount = $derived(indicators.filter(dirty).length);
+  const readinessDirty = $derived(Object.keys(readinessDraft).length > 0);
+  const allDirtyCount = $derived(dirtyCount + Number(readinessDirty));
   const saveLabel = $derived(
     saving
       ? 'Menyimpan…'
@@ -40,7 +55,7 @@
         ? 'Muat ulang untuk memastikan data tersimpan'
         : saveFailed
           ? 'Gagal menyimpan. Coba simpan kembali.'
-          : dirtyCount
+          : allDirtyCount
             ? Object.values(drafts).some(
                 (d) => d.current === undefined || !Number.isFinite(d.current) || d.current < 0
               )
@@ -93,6 +108,36 @@
       note: item.note
     });
   }
+  const readinessValue = (key: ReadinessKey) => readinessDraft[key] ?? campus?.program?.[key] ?? '';
+  function editReadiness(key: ReadinessKey, event: Event) {
+    readinessDraft[key] = (event.currentTarget as HTMLTextAreaElement).value;
+    saveFailed = false;
+    app.toast = '';
+    clearTimeout(readinessTimer);
+    readinessTimer = setTimeout(() => void saveReadiness(), 2000);
+  }
+  async function saveReadiness() {
+    if (disabled || saving || !readinessDirty) return;
+    const values = Object.fromEntries(
+      readinessFields.map(([key]) => [key, readinessValue(key)])
+    ) as Partial<Pick<ProgramProfile, ReadinessKey>>;
+    saving = 'readiness';
+    const saved = await app.mutate(
+      () => dataService.updateReadiness(campusId, values),
+      'Indikator kesiapan tersimpan.'
+    );
+    if (saved && !app.stale) {
+      for (const [key] of readinessFields) {
+        if (readinessDraft[key] === values[key]) delete readinessDraft[key];
+      }
+      readinessDraft = { ...readinessDraft };
+      if (readinessDirty) {
+        clearTimeout(readinessTimer);
+        readinessTimer = setTimeout(() => void saveReadiness(), 2000);
+      }
+    } else saveFailed = true;
+    saving = '';
+  }
 
   // One request at a time: app.mutate reloads the shared page after each write.
   $effect(() => {
@@ -130,7 +175,7 @@
     saving = '';
   }
   beforeNavigate(({ cancel, willUnload }) => {
-    if (!dirtyCount && !saving) return;
+    if (!allDirtyCount && !saving) return;
     if (
       willUnload ||
       !window.confirm('Ada perubahan indikator yang belum disimpan. Tinggalkan halaman?')
@@ -202,10 +247,16 @@
       >
     </div>
     <p class="leading-[1.8] [&&]:text-[color:var(--muted)] [&&]:text-[10px] m-[0px]">
-      {dirtyCount
-        ? `${dirtyCount} indikator memiliki perubahan belum disimpan.`
+      {allDirtyCount
+        ? `${allDirtyCount} indikator memiliki perubahan belum disimpan.`
         : 'Perubahan disimpan otomatis setelah 2 detik tanpa ketikan.'}
     </p>
+  </section>
+
+  <section class="[background-color:white] mb-[18px] p-[20px] border border-[color:var(--line)] rounded-[14px]" aria-label="Indikator kesiapan rencana aksi">
+    <h2 class="font-[650] text-[13px] text-[color:var(--ink)] m-[0px]">Indikator kesiapan rencana aksi</h2>
+    <p class="text-[10px] text-[color:var(--muted)] leading-[1.8] mt-[6px] mb-[14px]">Lengkapi bukti dan kondisi program. Perubahan disimpan otomatis.</p>
+    <div class="grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[12px] max-[700.01px]:grid-cols-[1fr]">{#each readinessFields as [key, label]}<article class="p-[14px] [background-color:white] border-2 border-[#b9d9f5] rounded-[9px]"><label class="block text-[11px] font-[650] text-[color:var(--ink)]" for={`readiness-${key}`}>{label}</label><textarea id={`readiness-${key}`} aria-label={label} class="block w-full min-h-[76px] resize-y [background-color:rgb(250,_253,_255)] text-[11px] text-[color:var(--ink)] leading-[1.7] mt-[8px] px-[10px] py-[8px] border-2 border-[#9ecbf1] rounded-[7px] focus:border-[#1681df] focus:[box-shadow:0_0_0_3px_#1681df24] focus:outline-none disabled:opacity-60" rows={key === 'conflict' || key === 'intervention' ? 7 : 3} maxlength="5000" value={readinessValue(key)} oninput={(event) => editReadiness(key, event)} disabled={disabled}></textarea></article>{/each}</div>
   </section>
 
   {#if latest}<p

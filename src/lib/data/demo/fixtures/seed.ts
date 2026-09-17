@@ -109,39 +109,17 @@ export function demoNotifications(): Notification[] {
     simulated: true
   }));
 }
-const categories = ['Tata kelola', 'Lingkungan', 'Pemberdayaan'];
-const names = [
-  'Pemetaan kebutuhan desa',
-  'Tim pengelola aktif',
-  'Rencana kerja tahunan',
-  'Pertemuan koordinasi',
-  'Kemitraan lokal',
-  'Pelaporan kegiatan',
-  'Dokumentasi program',
-  'Pelatihan pengelola',
-  'Evaluasi berkala',
-  'Partisipasi mahasiswa',
-  'Pengelolaan sampah',
-  'Pemilahan dari sumber',
-  'Pengolahan kompos',
-  'Penanaman pohon',
-  'Konservasi air',
-  'Pemanfaatan energi bersih',
-  'Edukasi lingkungan',
-  'Bank sampah aktif',
-  'Pemantauan kualitas air',
-  'Kebun komunitas',
-  'Pelatihan warga',
-  'Kelompok usaha binaan',
-  'Produk lokal dikembangkan',
-  'Pendampingan UMKM',
-  'Keterlibatan perempuan',
-  'Relawan desa aktif',
-  'Literasi keuangan',
-  'Akses pasar',
-  'Kolaborasi komunitas',
-  'Diseminasi praktik baik'
-];
+const indicators = [
+  { id: 'def-income', name: 'Pendapatan total', category: 'Ekonomi', unit: 'Rp/tahun', field: 'income', description: 'Pendapatan total program pada rencana aksi.' },
+  { id: 'def-beneficiaries', name: 'Penerima manfaat', category: 'Dampak', unit: 'orang', field: 'beneficiaries', description: 'Jumlah penerima manfaat pada rencana aksi.' },
+  { id: 'def-income-per-capita', name: 'Pendapatan per kapita', category: 'Ekonomi', unit: 'Rp/tahun/orang', field: 'incomePerCapita', description: 'Pendapatan per kapita pada rencana aksi.' }
+] as const;
+function metric(value: number | string | null | undefined) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (!value || value.startsWith('#')) return null;
+  const digits = value.replace(/[^\d]/g, '');
+  return digits ? Number(digits) : null;
+}
 
 export function createSeed(): { data: Snapshot; files: { id: string; blob: Blob }[] } {
   const data: Snapshot = {
@@ -158,30 +136,18 @@ export function createSeed(): { data: Snapshot; files: { id: string; blob: Blob 
     notifications: []
   };
   const files: { id: string; blob: Blob }[] = [];
-  data.definitions = names.map((name, i) => ({
-    id: `def-${i + 1}`,
-    name,
-    category: categories[Math.floor(i / 10)],
-    unit: i % 3 === 0 ? 'kegiatan' : i % 3 === 1 ? 'kelompok' : 'peserta',
-    description:
-      'Indikator simulasi untuk mendemonstrasikan pemantauan DEB Putih. Nilai aktual diisi sesuai capaian kegiatan.'
-  }));
+  data.definitions = indicators.map(({ id, name, category, unit, description }) => ({ id, name, category, unit, description }));
   for (let c = 0; c < CAMPUSES.length; c++) {
     const campus = { ...CAMPUSES[c] };
     const id = campus.id;
     data.campuses.push(campus);
-    data.definitions.forEach((def, i) => {
-      const target = [10, 20, 50, 100, 25][i % 5];
+    indicators.forEach((def) => {
+      const value = metric(campus.program?.[def.field]);
       data.indicators.push({
-        id: `${id}-i${i + 1}`,
+        id: `${id}-${def.id}`,
         campusId: id,
-        definitionId: def.id,
-        baseline: Math.floor(target * 0.2),
-        target,
-        current: Math.round(
-          target * (c === 0 ? [1, 0.8, 1.1, 0.6, 0.4][i % 5] : (((c * 7 + i * 3) % 105) + 15) / 100)
-        ),
-        note: '',
+        definitionId: def.id, baseline: value || 0, target: value || 0, current: value || 0,
+        unfilled: value === null, note: value === null ? 'Data belum tersedia pada rencana aksi.' : 'Data dari rencana aksi.',
         updatedAt: timestamp
       });
     });
@@ -189,7 +155,7 @@ export function createSeed(): { data: Snapshot; files: { id: string; blob: Blob 
       data.feedback.push({
         id: `feedback-${c}`,
         campusId: id,
-        indicatorId: `${id}-i2`,
+        indicatorId: `${id}-def-beneficiaries`,
         text: 'Mohon perbarui jumlah kelompok aktif berdasarkan evaluasi terakhir dan tambahkan catatan pelaksanaan.',
         requiresRevision: true,
         state: 'open',

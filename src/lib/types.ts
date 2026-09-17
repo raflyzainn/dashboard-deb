@@ -6,7 +6,15 @@ export interface AppSession extends DemoSession { id: string }
 export interface PreviewAccount { key: string; name: string; role: Role }
 export interface LocationDto { campusId: string; province: string; island: string; longitude: number | null; latitude: number | null; approximate: boolean }
 export interface Bootstrap { session: AppSession; data: Snapshot; locations: LocationDto[]; capabilities: { readOnly: boolean }; loadedAt: string }
-export interface Campus { id: string; name: string; region: string; initials: string; acronym?: string; city?: string; source?: 'user' | 'document' | 'admin'; revision?: number }
+export interface ProgramProfile {
+  income?: number | string | null; beneficiaries?: number | string | null; incomePerCapita?: number | string | null;
+  currentClass?: string | null; targetClass?: string | null; existingEbt?: string | null;
+  description?: string | null; intervention?: string | null; budget?: number | string | null;
+  address?: string | null; mapUrl?: string | null; province?: string | null;
+  coordinates?: string | null; socialMapping?: string | null; conflict?: string | null;
+  ikm?: string | null; institution?: string | null; landPermit?: string | null; siteSurvey?: string | null;
+}
+export interface Campus { id: string; name: string; region: string; initials: string; acronym?: string; city?: string; program?: ProgramProfile; source?: 'user' | 'document' | 'admin'; revision?: number }
 export interface IndicatorDefinition { id: string; name: string; category: string; unit: string; description: string }
 export interface MasterDefinition extends IndicatorDefinition { period?: string; periodState?: PeriodState; code: string; baseline: number; target: number; status: 'draft' | 'active'; revision: number }
 export interface DefinitionInput { period?: string; id?: string; revision?: number; code: string; name: string; category: string; unit: string; description: string; baseline: number; target: number }
