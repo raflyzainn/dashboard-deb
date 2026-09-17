@@ -324,6 +324,13 @@ test('admin review shows readiness indicators for the selected campus', async ({
   await page.goto('/admin/verifikasi');
   await expect(page.getByRole('region', { name: 'Indikator kesiapan rencana aksi' })).toBeVisible();
   await expect(page.getByText('Kebutuhan intervensi', { exact: true })).toBeVisible();
+  const table = page.getByRole('region', { name: 'Tabel indikator untuk ditinjau' });
+  await table.scrollIntoViewIfNeeded();
+  await expect(table.locator('th').first()).toHaveCSS('position', 'sticky');
+  await expect(table.locator('tbody tr').first().locator('td').nth(3)).toHaveCSS('text-align', 'right');
+  await page.screenshot({ path: '.qa/review-table-desktop.png' });
+  await table.getByRole('button', { name: 'Tinjau Pendapatan total', exact: true }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
 });
 
 test('admin sets a target for one campus', async ({ page }) => {

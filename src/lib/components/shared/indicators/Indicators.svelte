@@ -11,7 +11,7 @@
   import Progress from '$lib/components/ui/Progress.svelte';
   import Modal from '$lib/components/ui/Modal.svelte';
   import Empty from '$lib/components/ui/Empty.svelte';
-  let { campusId = '', embedded = false }: { campusId?: string; embedded?: boolean } = $props();
+  let { campusId = '', embedded = false, review = false }: { campusId?: string; embedded?: boolean; review?: boolean } = $props();
   let campus = $state('');
   $effect(() => {
     if (!app.data?.campuses.some((c) => c.id === campus)) campus = app.data?.campuses[0]?.id || '';
@@ -173,7 +173,15 @@
         onclick={() => (category = c)}>{c}</button
       >{/each}
   </div>
-  {#if rows.length}<div class="overflow-x-auto max-w-[100%] relative table-scroll">
+  {#if rows.length}
+    <!-- Keyboard users can focus the scroll region to scroll the table. -->
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+    <div
+      class={`overflow-x-auto max-w-[100%] relative table-scroll ${review ? 'max-h-[60dvh] overflow-y-auto focus-visible:outline-2 focus-visible:outline-[#1681df] [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:shadow-[0_1px_0_#e2ecf8] [&_table]:table-fixed [&_table]:!min-w-[780px] [&_th:first-child]:w-[22%] [&_th:nth-child(2)]:w-[12%] [&_th:nth-child(3)]:w-[12%] [&_th:nth-child(4)]:w-[12%] [&_th:nth-child(5)]:w-[14%] [&_th:nth-child(6)]:w-[16%] [&_th:last-child]:w-[12%] [&_th]:!px-2 [&_td]:!px-2 [&_td]:!min-w-0 [&_td]:tabular-nums [&_td:first-child]:whitespace-normal [&_th:nth-child(2)]:text-right [&_th:nth-child(3)]:text-right [&_th:nth-child(4)]:text-right [&_td:nth-child(2)]:text-right [&_td:nth-child(3)]:text-right [&_td:nth-child(4)]:text-right [&_td:nth-child(6)]:whitespace-normal' : ''}`}
+      tabindex="0"
+      role="region"
+      aria-label={review ? 'Tabel indikator untuk ditinjau' : 'Tabel indikator kampus'}
+    >
       <table
         class="border-collapse w-[100%] text-left [white-space-collapse:collapse] [text-wrap-mode:nowrap]"
       >
@@ -245,9 +253,9 @@
                 ><button
                   class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[650] [font-stretch:inherit] [&&]:text-[11px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer [&&]:text-[#075fc7] inline-flex items-center justify-center gap-y-[9px] gap-x-[9px] [&&]:min-h-[33px] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_255,_255)] [transition-behavior:normal,_normal] [transition-duration:0.15s,_0.15s] [transition-timing-function:ease,_ease] [transition-delay:0s,_0s] [transition-property:background,_box-shadow] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [&&]:[box-shadow:none] [&&]:px-[12px] [&&]:py-[7px] border-[1px] border-solid [&&]:border-[color:rgb(185,_214,_244)] rounded-[8px] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(237,_246,_255)] [&:hover:not(:disabled)]:[box-shadow:0_10px_24px_#075fc72c] [&:hover:not(:disabled)]:border-[color:rgb(104,_172,_233)] max-[700.01px]:[&&]:text-[11px] max-[700.01px]:[&&]:px-[12px] max-[700.01px]:[&&]:py-[7px] button secondary small"
                   disabled={app.loading}
-                  aria-label={`Lihat ${d.name}`}
+                  aria-label={`${review ? 'Tinjau' : 'Lihat'} ${d.name}`}
                   onclick={() => open(i)}
-                  ><Icon name={isAdmin ? 'eye' : 'edit'} size={15} />Lihat</button
+                  ><Icon name={isAdmin ? 'eye' : 'edit'} size={15} />{review ? 'Tinjau' : 'Lihat'}</button
                 ></td
               ></tr
             >{/each}</tbody

@@ -365,7 +365,7 @@
           >
             Buka Tinjau untuk membaca catatan kampus dan memberi feedback per indikator.
           </p>
-          {#key selected.id}<Indicators campusId={selected.campusId} embedded />{/key}
+          {#key selected.id}<Indicators campusId={selected.campusId} embedded review />{/key}
         </div>
         <section
           class="[background-image:initial] [background-color:white] min-w-[0] overflow-x-hidden overflow-y-hidden [box-shadow:0_10px_30px_#1a4d8f08] [&&]:p-[24px] border-[1px] border-solid border-[color:rgb(220,_231,_247)] rounded-[11px] [&:hover]:border-[color:rgb(210,_226,_245)] max-[600.01px]:[&&]:p-[18px] panel comments-panel"
