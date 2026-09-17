@@ -2,7 +2,7 @@
   import { beforeNavigate } from '$app/navigation';
   import { app } from '$lib/state.svelte';
   import { dataService } from '$lib/data/service';
-  import { average, progress, number, date, feedbackLabel } from '$lib/domain';
+  import { average, hasTarget, progress, number, date, feedbackLabel } from '$lib/domain';
   import { latestSubmission, changedSinceSubmission, verificationLabel } from '$lib/verification';
   import type { CampusIndicator, ProgramProfile } from '$lib/types';
   import Icon from '$lib/components/ui/Icon.svelte';
@@ -22,6 +22,7 @@
     ['institution', 'Kelembagaan'],
     ['landPermit', 'Perizinan lahan'],
     ['siteSurvey', 'Site survey'],
+    ['interventionSummary', 'Ringkasan kebutuhan intervensi'],
     ['intervention', 'Kebutuhan intervensi']
   ] as const;
   type ReadinessKey = (typeof readinessFields)[number][0];
@@ -43,7 +44,7 @@
       (!saving && (app.loading || app.busy))
   );
   const categories = $derived([...new Set(app.data!.definitions.map((d) => d.category))]);
-  const achieved = $derived(indicators.filter((i) => i.current >= i.target).length);
+  const achieved = $derived(indicators.filter((i) => hasTarget(i) && i.current >= i.target).length);
   const score = $derived(average(indicators.map(progress)));
   const dirtyCount = $derived(indicators.filter(dirty).length);
   const readinessDirty = $derived(Object.keys(readinessDraft).length > 0);
@@ -83,9 +84,9 @@
           .includes(search.trim().toLocaleLowerCase('id-ID')) &&
         (status === 'all' ||
           (status === 'achieved'
-            ? i.current >= i.target
+            ? hasTarget(i) && i.current >= i.target
             : status === 'progress'
-              ? i.current < i.target
+              ? !hasTarget(i) || i.current < i.target
               : comments(i.id).some((f) => f.requiresRevision && f.state !== 'closed')))
       );
     })
@@ -440,7 +441,7 @@
               <Badge
                 tone={dirty(item) || revising
                   ? 'amber'
-                  : item.current >= item.target
+                  : hasTarget(item) && item.current >= item.target
                     ? 'green'
                     : 'blue'}
                 >{dirty(item)
@@ -449,7 +450,9 @@
                     ? 'Belum diisi'
                     : revising
                       ? 'Perlu tindak lanjut'
-                      : item.current >= item.target
+                      : !hasTarget(item)
+                        ? 'Target belum ditetapkan'
+                        : item.current >= item.target
                         ? 'Tercapai'
                         : 'Dalam proses'}</Badge
               >
@@ -510,14 +513,14 @@
                   <div
                     class="[&&]:flex [&&]:items-center [&&]:justify-between [&&]:gap-y-[6px] [&&]:gap-x-[6px] [&&]:min-h-[39px] [&&]:[background-image:initial] [&&]:[background-color:rgb(238,_247,_252)] [&&]:text-[12px] [&&]:px-[10px] [&&]:py-[9px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:var(--line)] [&&]:rounded-[7px] reference-value"
                   >
-                    {number(item.target)}
+                    {hasTarget(item) ? number(item.target) : 'Belum ditetapkan'}
                     <span class="[&&]:text-[10px] [&&]:text-[color:var(--muted)] [&&]:wrap-anywhere"
                       >{d.unit}</span
                     >
                   </div>
                   <small
                     class="[&&]:text-[10px] [&&]:text-[color:var(--muted)] [&&]:leading-[1.7] [&&]:block [&&]:mt-[6px] [&&]:wrap-anywhere"
-                    >Ditetapkan oleh Admin PF</small
+                    >{hasTarget(item) ? 'Ditetapkan oleh Admin PF' : 'Belum ditetapkan oleh Admin PF'}</small
                   >
                 </div>
                 <div
@@ -537,7 +540,7 @@
                   </div>
                   <div
                     class="[&&]:h-[5px] [&&]:overflow-x-hidden [&&]:overflow-y-hidden [&&]:[background-image:initial] [&&]:[background-color:rgb(225,_242,_252)] [&&]:rounded-[10px] meter"
-                    class:achieved={item.current >= item.target}
+                    class:achieved={hasTarget(item) && item.current >= item.target}
                     role="progressbar"
                     aria-label={`Capaian ${d.name}`}
                     aria-valuenow={Math.round(progress(item))}
@@ -551,7 +554,7 @@
                   </div>
                   <small
                     class="[&&]:text-[10px] [&&]:text-[color:var(--muted)] [&&]:leading-[1.7] [&&]:block [&&]:mt-[6px] [&&]:wrap-anywhere"
-                    >{number(progress(item))}% dari target{#if item.current < item.target}
+                    >{hasTarget(item) ? `${number(progress(item))}% dari target` : 'Target belum ditetapkan'}{#if hasTarget(item) && item.current < item.target}
                       · kurang {number(item.target - item.current)} {d.unit}{/if}</small
                   >
                 </div>

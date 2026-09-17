@@ -41,7 +41,7 @@
   const activeSubmissionId = $derived(selected?.id);
   const gaps = $derived(
     selected?.indicators
-      .filter((i) => i.current < i.target)
+      .filter((i) => i.target > 0 && i.current < i.target)
       .sort((a, b) => progress(a) - progress(b)) ?? []
   );
   const comments = $derived(
@@ -58,6 +58,7 @@
           ['Kelembagaan', campus(selected.campusId).program?.institution],
           ['Perizinan lahan', campus(selected.campusId).program?.landPermit],
           ['Site survey', campus(selected.campusId).program?.siteSurvey],
+          ['Ringkasan kebutuhan intervensi', campus(selected.campusId).program?.interventionSummary],
           ['Kebutuhan intervensi', campus(selected.campusId).program?.intervention]
         ]
       : []
@@ -520,7 +521,7 @@
                         >{number(item.current)}</td
                       ><td
                         class="[border-bottom-width:1px] [border-bottom-style:solid] text-[12px] text-[#405e82] [&&]:min-w-[100px] px-[20px] py-[15px] border-[color:rgb(232,_239,_248)] [&:last-child]:min-w-[220px]"
-                        >{number(item.target)}</td
+                        >{item.target > 0 ? number(item.target) : 'Belum ditetapkan'}</td
                       ><td
                         class="[border-bottom-width:1px] [border-bottom-style:solid] text-[12px] text-[#405e82] [white-space-collapse:preserve] [text-wrap-mode:wrap] wrap-anywhere [&&]:min-w-[100px] px-[20px] py-[15px] border-[color:rgb(232,_239,_248)] [&:last-child]:min-w-[220px] pre-wrap"
                         >{item.note || '—'}</td

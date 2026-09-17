@@ -1,4 +1,5 @@
 import type { ProgramProfile } from '../../../types';
+import { INTERVENTION_SUMMARIES } from './intervention-summaries';
 
 export const PROGRAM_PROFILES: Record<string, ProgramProfile> = {
   "UNS": {
@@ -172,7 +173,7 @@ export const PROGRAM_PROFILES: Record<string, ProgramProfile> = {
   "STAI TUNTAS": {
     "income": 30000000.0,
     "beneficiaries": 9.0,
-    "incomePerCapita": 13.02083333,
+    "incomePerCapita": 3333333.3333333335,
     "currentClass": "Putih (Pendapatan saat ini <Rp20jt/tahun/orang)",
     "targetClass": null,
     "address": "Desa Kepenuhan Hulu, Kabupaten Rokan Hulu, Riau",
@@ -843,4 +844,6 @@ export const PROGRAM_PROFILES: Record<string, ProgramProfile> = {
   }
 };
 
-
+for (const [acronym, interventionSummary] of Object.entries(INTERVENTION_SUMMARIES)) {
+  PROGRAM_PROFILES[acronym].interventionSummary = interventionSummary;
+}

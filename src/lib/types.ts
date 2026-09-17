@@ -9,7 +9,7 @@ export interface Bootstrap { session: AppSession; data: Snapshot; locations: Loc
 export interface ProgramProfile {
   income?: number | string | null; beneficiaries?: number | string | null; incomePerCapita?: number | string | null;
   currentClass?: string | null; targetClass?: string | null; existingEbt?: string | null;
-  description?: string | null; intervention?: string | null; budget?: number | string | null;
+    description?: string | null; intervention?: string | null; interventionSummary?: string | null; budget?: number | string | null;
   address?: string | null; mapUrl?: string | null; province?: string | null;
   coordinates?: string | null; socialMapping?: string | null; conflict?: string | null;
   ikm?: string | null; institution?: string | null; landPermit?: string | null; siteSurvey?: string | null;

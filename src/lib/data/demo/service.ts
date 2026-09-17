@@ -141,6 +141,7 @@ export function createDemoService() {
     'institution',
     'landPermit',
     'siteSurvey',
+    'interventionSummary',
     'intervention'
   ] as const;
   const updateReadiness = (

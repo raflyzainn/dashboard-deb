@@ -2,7 +2,7 @@
   // Shared presentation for the explicit Campus/Admin routes.
   import { app } from '$lib/state.svelte';
   import { dataService } from '$lib/data/service';
-  import { progress, number, date, feedbackLabel } from '$lib/domain';
+  import { hasTarget, progress, number, date, feedbackLabel } from '$lib/domain';
   import type { CampusIndicator } from '$lib/types';
   import SubmissionStatus from './SubmissionStatus.svelte';
   import { latestSubmission } from '$lib/verification';
@@ -47,8 +47,8 @@
             (status === 'revision'
               ? revising
               : status === 'achieved'
-                ? !i.unfilled && i.current >= i.target
-                : i.unfilled || i.current < i.target))
+                ? !i.unfilled && hasTarget(i) && i.current >= i.target
+                : i.unfilled || !hasTarget(i) || i.current < i.target))
         );
       })
   );
@@ -219,7 +219,7 @@
                 >{number(i.baseline)}</td
               ><td
                 class="[border-bottom-width:1px] [border-bottom-style:solid] text-[12px] text-[#405e82] px-[20px] py-[15px] border-[color:rgb(232,_239,_248)]"
-                >{number(i.target)}</td
+                >{hasTarget(i) ? number(i.target) : 'Belum ditetapkan'}</td
               ><td
                 class="[border-bottom-width:1px] [border-bottom-style:solid] text-[12px] text-[#405e82] px-[20px] py-[15px] border-[color:rgb(232,_239,_248)]"
                 ><strong class="font-[650]">{i.unfilled ? 'Belum diisi' : number(i.current)}</strong
@@ -230,10 +230,12 @@
               ><td
                 class="[border-bottom-width:1px] [border-bottom-style:solid] text-[12px] text-[#405e82] px-[20px] py-[15px] border-[color:rgb(232,_239,_248)]"
                 ><div class="flex flex-col items-start gap-y-[5px] gap-x-[5px] badge-stack">
-                  <Badge tone={!i.unfilled && i.current >= i.target ? 'green' : 'neutral'}
+                  <Badge tone={!i.unfilled && hasTarget(i) && i.current >= i.target ? 'green' : 'neutral'}
                     >{i.unfilled
                       ? 'Belum diisi'
-                      : i.current >= i.target
+                      : !hasTarget(i)
+                        ? 'Target belum ditetapkan'
+                        : i.current >= i.target
                         ? 'Tercapai'
                         : 'Dalam proses'}</Badge
                   >{#if revise}<Badge tone="amber">Perlu tindak lanjut</Badge>{/if}
@@ -280,7 +282,7 @@
       </div>
       <div>
         <small class="text-[11px] text-[color:var(--muted)] leading-[1.7]">Target</small><strong
-          class="font-[650]">{selected.target}</strong
+          class="font-[650]">{hasTarget(selected) ? selected.target : 'Belum ditetapkan'}</strong
         >
       </div>
       <div>

@@ -117,7 +117,9 @@ const indicators = [
 function metric(value: number | string | null | undefined) {
   if (typeof value === 'number') return Number.isFinite(value) ? value : null;
   if (!value || value.startsWith('#')) return null;
-  const digits = value.replace(/[^\d]/g, '');
+  const matched = value.trim().match(/^(?:Rp\s*)?([\d.,]+)(?:\s+(?:orang|kepala keluarga))?$/i);
+  if (!matched) return null;
+  const digits = matched[1].replace(/[^\d]/g, '');
   return digits ? Number(digits) : null;
 }
 
@@ -146,8 +148,8 @@ export function createSeed(): { data: Snapshot; files: { id: string; blob: Blob 
       data.indicators.push({
         id: `${id}-${def.id}`,
         campusId: id,
-        definitionId: def.id, baseline: value || 0, target: value || 0, current: value || 0,
-        unfilled: value === null, note: value === null ? 'Data belum tersedia pada rencana aksi.' : 'Data dari rencana aksi.',
+        definitionId: def.id, baseline: value || 0, target: 0, current: value || 0,
+        unfilled: value === null, note: value === null ? 'Data belum tersedia pada rencana aksi.' : 'Data dari rencana aksi; target belum ditetapkan.',
         updatedAt: timestamp
       });
     });

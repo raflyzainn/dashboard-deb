@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { samplePdf } from '../../src/lib/data/demo/fixtures/pdf';
+import { DEMO_DATABASE } from '../../src/lib/data/demo/store';
 async function login(page: Page, account: string) {
   await page.goto('/login');
   if (account.startsWith('admin'))
@@ -158,9 +159,9 @@ test('period rollover keeps archived values and copies baseline/target for fresh
   await page.reload();
   await expect(page.getByRole('spinbutton').first()).toHaveValue('0');
   const states = await page.evaluate(
-    () =>
+    (database) =>
       new Promise<any>((resolve, reject) => {
-        const request = indexedDB.open('deb-standalone-demo-v5');
+        const request = indexedDB.open(database);
         request.onsuccess = () => {
           const db = request.result;
           const get = db.transaction('state').objectStore('state').get('current');
@@ -170,7 +171,8 @@ test('period rollover keeps archived values and copies baseline/target for fresh
           };
           get.onerror = () => reject(get.error);
         };
-      })
+      }),
+    DEMO_DATABASE
   );
   const original = states.definitions.filter((d: any) => d.period === '');
   const next = states.definitions.filter((d: any) => d.period === 'Semester I 2027 Demo');

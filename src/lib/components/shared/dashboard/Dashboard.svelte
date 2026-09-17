@@ -217,7 +217,7 @@
               </div>
               <Progress value={p} label={category} /><small
                 class="text-[11px] text-[color:var(--muted)] leading-[1.7]"
-                >{indicators.filter((i) => i.current >= i.target).length} dari {indicators.length} indikator
+                >{indicators.filter((i) => i.target > 0 && i.current >= i.target).length} dari {indicators.length} indikator
                 tercapai</small
               >
             </div>
