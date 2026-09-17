@@ -121,7 +121,7 @@
       Master indikator
     </h1>
     <p class="leading-[1.8] m-[0px]">
-      Kelola periode penilaian, indikator, baseline, dan target untuk kampus mitra.
+      Kelola periode penilaian dan katalog indikator. Target diatur pada masing-masing kampus.
     </p>
   </div>
   <button
@@ -212,10 +212,10 @@
 <section
   class="[background-image:initial] [background-color:white] min-w-[0] overflow-x-hidden overflow-y-hidden [box-shadow:0_10px_30px_#1a4d8f08] px-[24px] py-[20px] border-[1px] border-solid border-[color:rgb(220,_231,_247)] rounded-[11px] [&:hover]:border-[color:rgb(210,_226,_245)] [&_p]:text-[12px] [&_p]:leading-[1.8] [&_p]:mt-[8px] [&_p]:text-[#536b8b] panel master-intro"
 >
-  <strong class="font-[650]">Aktual dan catatan tetap milik masing-masing kampus.</strong>
+  <strong class="font-[650]">Aktual, baseline, dan target tetap milik masing-masing kampus.</strong>
   <p class="leading-[1.8] m-[0px]">
-    Siapkan indikator sebagai draft, lalu aktifkan untuk seluruh kampus. Baseline dan target di sini
-    masih data simulasi.
+    Siapkan indikator sebagai draft, lalu aktifkan untuk seluruh kampus. Target kampus disesuaikan
+    admin pada detail kampus.
   </p>
   {#if pending}<p
       class="leading-[1.8] [background-image:initial] [background-color:rgb(255,_246,_223)] p-[12px] m-[0px] rounded-[8px] pending-note"

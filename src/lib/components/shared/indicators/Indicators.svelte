@@ -21,6 +21,7 @@
   let status = $state('all');
   let selected = $state<CampusIndicator | null>(null);
   let current = $state<number | undefined>(0);
+  let target = $state<number | undefined>(0);
   let note = $state('');
   let feedback = $state('');
   let revision = $state(true);
@@ -61,6 +62,7 @@
   function open(item: CampusIndicator) {
     selected = item;
     current = item.current;
+    target = item.target;
     note = item.note;
     feedback = '';
     revision = true;
@@ -87,6 +89,19 @@
       )
     )
       feedback = '';
+  }
+  async function saveTarget() {
+    if (target === undefined || target === null || target <= 0) {
+      app.error = 'Target harus lebih dari nol.';
+      return;
+    }
+    if (
+      await app.mutate(
+        () => dataService.updateIndicatorTarget(selected!.id, target!),
+        'Target kampus tersimpan.'
+      )
+    )
+      selected = null;
   }
 </script>
 {#if !embedded}<div
@@ -319,6 +334,13 @@
           >
         </div>
       </div>{/if}
+    {#if isAdmin}<form
+        class="mt-[16px] [&_label]:flex [&_label]:flex-col [&_label]:gap-[9px] [&_label]:text-[12px] [&_label]:font-[600] [&_input]:w-full"
+        onsubmit={(event) => {
+          event.preventDefault();
+          saveTarget();
+        }}
+      ><label>Target kampus<input class="text-[12px] text-[#17365f] px-[12px] py-[11px] border border-[#b9d6f3] rounded-[7px] focus:outline-[#7fc1ff]" type="number" min="0.000000001" step="any" required bind:value={target} /></label><button class="mt-[14px] text-[12px] font-[650] text-white [background-color:#0877d8] px-[16px] py-[10px] rounded-[8px] disabled:opacity-50" disabled={archived || app.readOnly || app.loading || app.busy}>Simpan target kampus</button></form>{/if}
     <div
       class="h-[1px] [background-image:initial] [background-color:var(--line)] mx-[0px] my-[24px] section-divider"
     ></div>
