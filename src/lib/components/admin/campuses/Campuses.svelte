@@ -22,6 +22,10 @@
   const campus = $derived(app.data!.campuses.find((c) => c.id === id));
   const stats = $derived(campusStats(app.data!, id));
   const feedback = $derived(app.data!.feedback.filter((f) => f.campusId === id));
+  const rupiah = (value: number | string | null | undefined) =>
+    typeof value === 'number'
+      ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value)
+      : value || 'Belum tersedia';
 </script>
 {#if !id}<div
     class="flex items-center justify-between gap-y-[20px] gap-x-[20px] mb-[27px] [&_p]:text-[12px] [&_p]:text-[#637796] [&_p]:mt-[8px] max-[900.01px]:[&_h1]:text-[24px] max-[700.01px]:items-start max-[700.01px]:gap-y-[15px] max-[700.01px]:gap-x-[15px] max-[700.01px]:mb-[22px] max-[700.01px]:flex-wrap max-[700.01px]:[&_h1]:text-[23px] max-[700.01px]:[&_p]:text-[12px] max-[700.01px]:[&_p]:leading-[1.9] max-[700.01px]:[&_p]:max-w-[340px] max-[700.01px]:[&_.period]:hidden page-heading"
@@ -129,6 +133,22 @@
           tone="amber"
         />
       </div>
+      <section class="[background-image:initial] [background-color:white] min-w-[0] mb-[24px] p-[28px] border-[1px] border-solid border-[color:rgb(220,_231,_247)] rounded-[11px] panel">
+        <div class="flex items-start justify-between gap-[16px] mb-[18px] max-[700.01px]:flex-col">
+          <div>
+            <span class="block text-[10px] tracking-[1.9px] font-[750] text-[#3975b7] mb-[9px] eyebrow">RENCANA AKSI DEB</span>
+            <h2 class="font-[650] text-[color:var(--navy)] text-[18px] tracking-[-0.45px] m-[0px]">Program {campus.acronym || campus.name}</h2>
+          </div>
+          {#if campus.program?.currentClass}<Badge tone="blue">{campus.program.currentClass.split(' ')[0]}</Badge>{/if}
+        </div>
+        <p class="text-[12px] text-[#617a9a] leading-[1.8] whitespace-pre-line m-[0px]">{campus.program?.description || 'Deskripsi program belum tersedia pada rencana aksi.'}</p>
+        <div class="grid grid-cols-[repeat(3,_minmax(0,_1fr))] gap-[12px] mt-[20px] max-[900.01px]:grid-cols-[repeat(2,_1fr)] max-[700.01px]:grid-cols-[1fr]">
+          <div class="p-[14px] [background-color:rgb(247,_251,_255)] border border-[#dce9f7] rounded-[9px]"><small class="block text-[10px] text-[#637796]">Pendapatan total</small><strong class="block text-[12px] text-[color:var(--navy)] mt-[5px]">{rupiah(campus.program?.income)}</strong></div>
+          <div class="p-[14px] [background-color:rgb(247,_251,_255)] border border-[#dce9f7] rounded-[9px]"><small class="block text-[10px] text-[#637796]">Penerima manfaat</small><strong class="block text-[12px] text-[color:var(--navy)] mt-[5px]">{campus.program?.beneficiaries || 'Belum tersedia'}</strong></div>
+          <div class="p-[14px] [background-color:rgb(247,_251,_255)] border border-[#dce9f7] rounded-[9px]"><small class="block text-[10px] text-[#637796]">Estimasi RAB</small><strong class="block text-[12px] text-[color:var(--navy)] mt-[5px]">{rupiah(campus.program?.budget)}</strong></div>
+        </div>
+        <section class="mt-[18px]" aria-label="Indikator kesiapan rencana aksi"><h3 class="text-[12px] font-[650] text-[color:var(--navy)] m-[0px] mb-[10px]">Indikator kesiapan rencana aksi</h3><div class="grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[10px] max-[700.01px]:grid-cols-[1fr]">{#each [['EBT eksisting', campus.program?.existingEbt], ['Pemetaan sosial', campus.program?.socialMapping], ['Potensi konflik', campus.program?.conflict], ['IKM DEB SoBI', campus.program?.ikm], ['Kelembagaan', campus.program?.institution], ['Perizinan lahan', campus.program?.landPermit], ['Site survey', campus.program?.siteSurvey], ['Kebutuhan intervensi', campus.program?.intervention]] as [label, value]}<div class="p-[12px] [background-color:rgb(247,_251,_255)] border border-[#dce9f7] rounded-[8px]"><strong class="block text-[10px] text-[color:var(--navy)]">{label}</strong><p class="text-[11px] text-[#617a9a] leading-[1.7] whitespace-pre-line mt-[6px] mb-[0px]">{value || 'Belum diisi'}</p></div>{/each}</div></section>
+      </section>
       <section
         class="[background-image:initial] [background-color:white] min-w-[0] overflow-x-hidden overflow-y-hidden [box-shadow:0_10px_30px_#1a4d8f08] p-[28px] border-[1px] border-solid border-[color:rgb(220,_231,_247)] rounded-[11px] [&_p]:text-[12px] [&_p]:text-[#617a9a]! [&_p]:mt-[12px] [&_p]:mb-[24px] [&_p]:mx-[0px] [&:hover]:border-[color:rgb(210,_226,_245)] panel detail-overview"
       >

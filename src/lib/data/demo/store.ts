@@ -19,26 +19,20 @@ export interface DemoState {
   audit: MasterAudit[];
   accounts: DemoAccount[];
 }
-export const DEMO_DATABASE = 'deb-standalone-demo-v1';
+export const DEMO_DATABASE = 'deb-standalone-demo-v4';
 export function initialState(): DemoState {
   const seed = createSeed();
   const definitions = seed.data.definitions.map((d, i) => {
-    const row = seed.data.indicators.find((r) => r.definitionId === d.id)!;
     return {
       ...d,
       code: `D${i + 1}`,
-      baseline: row.baseline,
-      target: row.target,
+      baseline: 0,
+      target: 0,
       revision: 1,
       status: 'active' as const,
       period: '',
       periodState: 'active' as const
     };
-  });
-  seed.data.indicators.forEach((row) => {
-    const d = definitions.find((d) => d.id === row.definitionId)!;
-    row.baseline = d.baseline;
-    row.target = d.target;
   });
   seed.data.submissions?.forEach((s) => {
     s.period = '';

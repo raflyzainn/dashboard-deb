@@ -48,6 +48,20 @@
     selected ? app.data!.feedback.filter((f) => f.campusId === selected.campusId) : []
   );
   const unresolved = $derived(comments.filter((f) => f.requiresRevision && f.state !== 'closed'));
+  const readiness = $derived(
+    selected
+      ? [
+          ['EBT eksisting', campus(selected.campusId).program?.existingEbt],
+          ['Pemetaan sosial', campus(selected.campusId).program?.socialMapping],
+          ['Potensi konflik', campus(selected.campusId).program?.conflict],
+          ['IKM DEB SoBI', campus(selected.campusId).program?.ikm],
+          ['Kelembagaan', campus(selected.campusId).program?.institution],
+          ['Perizinan lahan', campus(selected.campusId).program?.landPermit],
+          ['Site survey', campus(selected.campusId).program?.siteSurvey],
+          ['Kebutuhan intervensi', campus(selected.campusId).program?.intervention]
+        ]
+      : []
+  );
   $effect(() => {
     const id = page.url.searchParams.get('submission');
     const item = submissions.find((s) => s.id === id);
@@ -205,7 +219,7 @@
     </div>
   </section>
   <div
-    class="[&_p]:text-[#607797]! [&&]:min-w-[0] [&&]:grid [&&]:gap-y-[22px] [&&]:gap-x-[22px] review-content"
+    class="[&_p]:text-[#607797]! [&&]:min-w-[0] [&&]:grid [&&]:gap-y-[16px] [&&]:gap-x-[16px] review-content"
   >
     {#if selected}
       <section
@@ -295,6 +309,11 @@
           >Buka profil dan proposal kampus <Icon name="arrow" size={15} /></a
         >
       </section>
+      <section class="[background-color:white] min-w-[0] p-[24px] border border-[color:rgb(220,_231,_247)] rounded-[11px]" aria-label="Indikator kesiapan rencana aksi">
+        <h2 class="font-[650] text-[color:var(--navy)] text-[16px] m-[0px]">Indikator kesiapan rencana aksi</h2>
+        <p class="text-[12px] text-[#61715f] leading-[1.8] mt-[8px] mb-[16px]">Isian kampus untuk ditinjau admin.</p>
+        <div class="grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[10px] max-[700.01px]:grid-cols-[1fr]">{#each readiness as [label, value]}<article class="p-[12px] [background-color:rgb(250,_253,_255)] border border-[#b9d9f5] rounded-[8px]"><strong class="block text-[10px] text-[color:var(--navy)]">{label}</strong><p class="text-[11px] text-[#617a9a] leading-[1.7] whitespace-pre-line mt-[6px] mb-[0px]">{value || 'Belum diisi'}</p></article>{/each}</div>
+      </section>
       <section
         class="[background-image:initial] [background-color:white] min-w-[0] overflow-x-hidden overflow-y-hidden [box-shadow:0_10px_30px_#1a4d8f08] [&&]:p-[24px] border-[1px] border-solid border-[color:rgb(220,_231,_247)] rounded-[11px] [&:hover]:border-[color:rgb(210,_226,_245)] max-[600.01px]:[&&]:p-[18px] panel gap-panel"
       >
@@ -333,7 +352,7 @@
       </section>
       {#if selected.status === 'pending'}
         <div
-          class="[&&]:min-w-[0] [&&_.toolbar]:flex-wrap [&&_.toolbar]:gap-y-[10px] [&&_.toolbar]:gap-x-[10px] [&&_.toolbar]:p-[16px] [&&_.category-tabs]:overflow-x-auto [&&_.category-tabs]:[white-space-collapse:collapse] [&&_.category-tabs]:[text-wrap-mode:nowrap] [&&_.category-tabs]:px-[16px] [&&_.category-tabs]:py-[0px] [&&_.table-scroll_table]:min-w-[760px] review-indicators"
+          class="[background-color:white] min-w-[0] p-[24px] border border-[color:rgb(220,_231,_247)] rounded-[11px] [&&_.toolbar]:flex-wrap [&&_.toolbar]:gap-y-[10px] [&&_.toolbar]:gap-x-[10px] [&&_.toolbar]:p-[16px] [&&_.category-tabs]:overflow-x-auto [&&_.category-tabs]:[white-space-collapse:collapse] [&&_.category-tabs]:[text-wrap-mode:nowrap] [&&_.category-tabs]:px-[16px] [&&_.category-tabs]:py-[0px] [&&_.table-scroll_table]:min-w-[760px] max-[600.01px]:p-[18px] review-indicators"
         >
           <h2
             class="font-[650] text-[color:var(--navy)] [&&]:text-[16px] tracking-[-0.45px] [&&]:leading-[1.5] m-[0px]"
