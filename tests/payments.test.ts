@@ -229,3 +229,24 @@ test('finance can upload documents but cannot review or advance the payment', as
   await assert.rejects(service.reviewPaymentDocument(p.id, p.revision, 'nota', true, ''), /PF/);
   await assert.rejects(service.paymentAction(p.id, p.revision, 'submit-documents', ''), /Admin/);
 });
+
+test('admin and finance exchange feedback tied to the current payment stage', async () => {
+  const state = initialState();
+  const p = state.data.payments![1];
+  let user: AppSession = { id: 'admin-1', name: 'Admin PF', role: 'admin' };
+  const service = createPaymentService(async (action) => action(state, user));
+  await service.addPaymentFeedback(p.id, p.revision, 'Mohon lengkapi nota.');
+  user = { id: 'finance-1', name: 'Keuangan', role: 'finance' };
+  await service.addPaymentFeedback(p.id, p.revision, 'Nota sedang kami siapkan.');
+  assert.deepEqual(
+    p.feedback?.map((item) => [item.actorRole, item.stage, item.body]),
+    [
+      ['admin', 'documents', 'Mohon lengkapi nota.'],
+      ['finance', 'documents', 'Nota sedang kami siapkan.']
+    ]
+  );
+  assert.equal(
+    state.data.notifications.filter((item) => item.title.startsWith('Feedback')).length,
+    2
+  );
+});

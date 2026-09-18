@@ -7,6 +7,7 @@
     DEMO_KPIS,
     DOCUMENT_TYPES,
     DOCUMENT_LABELS,
+    STAGES,
     evaluateKpi,
     type PaymentCase,
     type PaymentAction,
@@ -18,6 +19,7 @@
   let kpis = $state(untrack(() => p.kpis.map((k) => ({ ...k }))));
   let amount = $state(untrack(() => p.amount));
   let note = $state('');
+  let feedback = $state('');
   let documentNotes = $state<Record<string, string>>({});
   let preview = $state(untrack(() => p.proposalId));
   const proposal = $derived(app.data?.proposals.find((v) => v.id === p.proposalId));
@@ -59,6 +61,15 @@
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 10000);
     }, 'PDF diarsipkan dan dikirim ke ruang kerja keuangan demo.');
+  }
+  async function sendFeedback() {
+    if (
+      await app.mutate(
+        () => dataService.addPaymentFeedback(p.id, p.revision, feedback),
+        'Feedback pencairan dikirim.'
+      )
+    )
+      feedback = '';
   }
 </script>
 <PaymentProgress payment={p} showAmount />
@@ -220,6 +231,42 @@
     </section>
   </div>
   <div class="grid min-w-0 gap-5">
+    <section class="panel-block" aria-label="Feedback pencairan">
+      <h2>Feedback Admin PF & Keuangan</h2>
+      <p class="hint">
+        Diskusikan pemeriksaan pada setiap tahap. Tahap saat feedback dikirim akan tersimpan dalam
+        riwayat.
+      </p>
+      {#if p.feedback?.length}<ol class="mt-3 space-y-3">
+          {#each [...p.feedback].reverse() as item}<li
+              class="rounded-lg border border-slate-200 bg-slate-50 p-3"
+            >
+              <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <strong>{item.actorName}</strong><span class="text-slate-600"
+                  >{STAGES[item.stage]} · {date(item.createdAt)}</span
+                >
+              </div>
+              <p class="mt-2 whitespace-pre-wrap break-words text-sm text-slate-700">{item.body}</p>
+            </li>{/each}
+        </ol>{:else}<p class="hint">Belum ada feedback pada pengajuan ini.</p>{/if}
+      <form
+        class="mt-4"
+        onsubmit={(event) => {
+          event.preventDefault();
+          void sendFeedback();
+        }}
+      >
+        <label
+          >Feedback tahap {STAGES[p.stage]}<textarea
+            aria-label="Feedback pencairan"
+            rows="3"
+            maxlength="3000"
+            required
+            bind:value={feedback}></textarea></label
+        >
+        <button class="primary mt-3" disabled={busy || !feedback.trim()}>Kirim feedback</button>
+      </form>
+    </section>
     <section class="panel-block" aria-label="Pratinjau berkas pencairan">
       <div class="mb-3 flex items-center justify-between gap-2">
         <h2>Berkas yang diperiksa</h2>
@@ -286,20 +333,23 @@
       {#if p.stage === 'ready' && role === 'admin'}<button
           class="primary mt-4"
           disabled={busy}
-          onclick={exportPackage}>Ekspor PDF & kirim ke keuangan</button
+          onclick={exportPackage}>Ekspor PDF & kirim ke Keuangan</button
         >
         <p class="hint">
-          Proposal, hasil KPI, empat dokumen, dan persetujuan digabung menjadi satu PDF. Salinan
-          tetap tersedia di arsip.
+          Data tahap 1–4, proposal, hasil KPI, empat dokumen, persetujuan, dan feedback digabung
+          menjadi satu PDF. Salinan dikirim dan disimpan di arsip Keuangan.
         </p>{/if}
     </section>
     <section class="panel-block" aria-label="Arsip pencairan">
-      <h2>Arsip keuangan</h2>
-      {#if p.archives.length}{#each p.archives as a}<button
-            class="mt-3 block break-all text-left text-sm text-blue-700 underline"
-            onclick={() => (preview = a.id)}>{a.filename}</button
+      <h2>Paket PDF & arsip Keuangan</h2>
+      <p class="hint">Paket gabungan dapat diperiksa dan diunduh langsung oleh Keuangan.</p>
+      {#if p.archives.length}{#each p.archives as a}<article
+            class="mt-3 rounded-lg border border-slate-200 p-3"
           >
-          <p class="hint">{a.createdBy} · {date(a.createdAt)}</p>{/each}{:else}<p class="hint">
+            <strong class="break-all text-sm text-slate-800">{a.filename}</strong>
+            <p class="hint">{a.createdBy} · {date(a.createdAt)}</p>
+            <PaymentFile paymentId={p.id} fileId={a.id} filename={a.filename} />
+          </article>{/each}{:else}<p class="hint">
           Paket tersedia setelah seluruh pihak menyetujui dan PDF dikirim.
         </p>{/if}
     </section>

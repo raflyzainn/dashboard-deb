@@ -1,5 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from 'pdf-lib';
-import { DEMO_KPIS, DOCUMENT_LABELS, type PaymentCase } from './payments';
+import { DEMO_KPIS, DOCUMENT_LABELS, STAGES, type PaymentCase } from './payments';
 import type { ProposalVersion } from './types';
 
 export function wrapPdfText(value: string, font: PDFFont, size: number, width = 500) {
@@ -92,6 +92,9 @@ export async function buildPaymentPdf(input: {
   line('Persetujuan', true);
   for (const a of p.approvals)
     line(`${a.role}: ${a.actorName} (${a.actorId}) / ${a.at}. ${a.note}`);
+  line('Feedback Admin PF dan Keuangan', true);
+  for (const f of p.feedback || [])
+    line(`${f.createdAt} - ${f.actorName} [${STAGES[f.stage]}]: ${f.body}`);
   line('Riwayat proses', true);
   for (const h of p.history) line(`${h.at} - ${h.actor}: ${h.action}. ${h.note}`);
   line(

@@ -59,7 +59,10 @@ Dijalankan melalui tool browser Playwright, tanpa runner tes terminal:
 - Tampilan mobile 390 ? 844 tidak mengalami overflow horizontal.
 - Empat dokumen pembayaran tampil langsung sebagai pratinjau PDF pada kartu masing-masing, memiliki tautan unduh, tanpa error maupun overflow horizontal pada halaman Admin.
 - Pada tahap Kelengkapan dokumen, akun Keuangan menampilkan empat input unggah dan berhasil mengunggah Nota PDF hingga status Menunggu pemeriksaan; kontrol validasi dan perubahan tahap Admin tidak tampil.
+- Admin PF dan Keuangan memiliki percakapan feedback pencairan dua arah; setiap pesan menyimpan tahap, pelaku, waktu, isi, dan notifikasi untuk peran penerima.
+- Paket PDF gabungan yang dikirim Admin tampil langsung pada Arsip Keuangan dengan pratinjau dan tautan unduh.
 - [Screenshot kampus mobile terbaru](../.qa/payment-campus-tracking-final.png).
 - [Screenshot dokumen pembayaran langsung](../.qa/payment-documents-inline.png).
+- [Screenshot feedback dan arsip pada Keuangan](../.qa/payment-finance-feedback-archive.png).
 
 Saat QA pertama, kampus 003 tidak memiliki versi proposal lain yang dapat diajukan; skenario diperbaiki menggunakan kampus 002 yang mempunyai versi tersedia. Tes regresi terminal yang disimpan memakai skenario yang sama, tetapi belum dieksekusi sesuai instruksi terbaru pengguna.

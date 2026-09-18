@@ -298,6 +298,37 @@ export function createPaymentService(transact: Run) {
           `${DOCUMENT_LABELS[kind]}: ${accepted ? 'valid' : 'perlu revisi'}.`
         );
       }, true),
+    addPaymentFeedback: (id: string, revision: number, body: string) =>
+      run((s, user) => {
+        const p = get(s, id);
+        requirePayment(p, user, revision);
+        const text = body.trim();
+        if (!['admin', 'finance'].includes(user.role))
+          throw Error('Feedback pencairan hanya tersedia untuk Admin PF dan Keuangan.');
+        if (!text || text.length > 3000) throw Error('Feedback wajib diisi, maksimal 3000 karakter.');
+        (p.feedback ??= []).push({
+          id: crypto.randomUUID(),
+          stage: p.stage,
+          actorId: user.id,
+          actorName: user.name,
+          actorRole: user.role as 'admin' | 'finance',
+          body: text,
+          createdAt: new Date().toISOString()
+        });
+        recordPayment(p, user, 'Feedback pencairan', `${STAGES[p.stage]}: ${text}`);
+        const recipient = user.role === 'admin' ? 'finance' : 'admin';
+        s.data.notifications.unshift({
+          id: crypto.randomUUID(),
+          campusId: p.campusId,
+          recipient,
+          title: `Feedback ${STAGES[p.stage]} dari ${user.name}.`,
+          body: text,
+          href: `/${recipient}/payments?campus=${encodeURIComponent(p.campusId)}&payment=${encodeURIComponent(p.id)}`,
+          createdAt: new Date().toISOString(),
+          readAt: null,
+          simulated: true
+        });
+      }, true),
     paymentFile: (id: string, fileId: string) =>
       run((s, user) => {
         const p = get(s, id);

@@ -46,6 +46,8 @@ Ketentuan fitur terbaru:
 9. Dokumen pembayaran: kuitansi, invoice, berita acara, dan nota. Paket arsip menggabungkan ringkasan dengan proposal dan empat lampiran PDF.
 10. Keempat PDF dokumen pembayaran ditampilkan langsung pada kartu dokumennya; tautan unduh tetap tersedia sebagai cadangan browser.
 11. Panduan kampus memiliki kartu Pencairan yang mengarah langsung ke halaman pemantauan delapan tahap.
+12. Admin PF dan Keuangan dapat saling mengirim feedback yang tersimpan sesuai tahap pencairan. Setelah persetujuan lengkap, Admin mengekspor satu PDF gabungan berisi data proses, proposal, KPI, empat dokumen, persetujuan, feedback, dan riwayat; paket langsung tersedia sebagai arsip yang dapat dilihat dan diunduh Keuangan.
+13. Dashboard Keuangan merangkum nominal, antrean prioritas, dan distribusi tahap. Detail serta berkas pengajuan tetap dibuka melalui halaman Pencairan.
 
 Pembatasan perubahan harus ada di layanan data, bukan hanya menyembunyikan tombol. Namun otorisasi demo browser tetap bukan pengamanan server produksi.
 

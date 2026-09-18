@@ -47,6 +47,15 @@ export interface Approval {
   at: string;
   note: string;
 }
+export interface PaymentFeedback {
+  id: string;
+  stage: PaymentStage;
+  actorId: string;
+  actorName: string;
+  actorRole: 'admin' | 'finance';
+  body: string;
+  createdAt: string;
+}
 export interface PaymentCase {
   id: string;
   campusId: string;
@@ -57,6 +66,7 @@ export interface PaymentCase {
   kpis: KpiEvidence[];
   documents: PaymentDocument[];
   approvals: Approval[];
+  feedback?: PaymentFeedback[];
   assessedAt?: string;
   assessedBy?: string;
   assessmentNote?: string;
@@ -83,6 +93,7 @@ export function newPayment(
     kpis: DEMO_KPIS.map((k) => ({ id: k.id, target: 0, page: 1, evidence: '' })),
     documents: [],
     approvals: [],
+    feedback: [],
     history: [],
     archives: []
   };
