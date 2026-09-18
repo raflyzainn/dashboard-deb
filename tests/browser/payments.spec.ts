@@ -3,6 +3,18 @@ import { readFile } from 'node:fs/promises';
 import { PDFDocument } from 'pdf-lib';
 import { samplePdf } from '../../src/lib/data/demo/fixtures/pdf';
 
+test('finance dashboard summarizes the payment workload', async ({ page }) => {
+  await login(page, 'finance-1');
+
+  await expect(page.getByRole('heading', { name: 'Dashboard keuangan', exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Ringkasan pencairan' })).toContainText(
+    'Total pengajuan'
+  );
+  await expect(page.getByRole('region', { name: 'Prioritas keuangan' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Distribusi tahap pencairan' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Buka detail pencairan' }).first()).toBeVisible();
+});
+
 test('broken proposals are rejected and notifications open an older payment instead of the latest', async ({
   page
 }) => {
