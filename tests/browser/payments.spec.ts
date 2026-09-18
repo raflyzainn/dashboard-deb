@@ -197,10 +197,12 @@ test('campus accounts only track payment; admin completes all stages and archive
   await stage(page, 'Sudah dicairkan');
   await page.getByLabel('Cari kampus pencairan').fill('Universitas Pertamina');
   await expect(page.getByLabel('Kampus pencairan').locator('option')).toHaveCount(1);
-  await page.getByLabel('Filter tahap pencairan').selectOption('documents');
-  await expect(page.getByLabel('Kampus pencairan')).toHaveValue('campus-026');
-  await page.getByLabel('Filter tahap pencairan').selectOption('');
-  await page.getByLabel('Cari kampus pencairan').fill('');
+  await page.getByLabel('Filter tahap pencairan').selectOption('sent');
+  await expect(page.getByText('Tidak ada kampus pada filter ini')).toBeVisible();
+  await expect(page.getByLabel('Kampus pencairan')).toHaveCount(0);
+  await expect(page.getByText('Buka proposal untuk mengunggah PDF')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Reset filter' }).click();
+  await expect(page.getByLabel('Kampus pencairan')).toBeVisible();
   await expect(page.getByLabel('Catatan tindakan pencairan')).toHaveCount(0);
   await expect(
     page.getByRole('button', {
