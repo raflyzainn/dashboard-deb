@@ -260,9 +260,9 @@ test('admin manages Mentor and SoBI emails while login exposes only Universitas 
     if (r.url().includes('/api/')) api.push(r.url());
   });
   await page.goto('/login');
-  await expect(page.locator('input[name="preview-account"]')).toHaveCount(2);
-  await expect(page.getByText('Universitas Pertamina · Mentor · Mentor Demo', { exact: true })).toBeVisible();
-  await expect(page.getByText('Universitas Pertamina · SoBI · SoBI Demo', { exact: true })).toBeVisible();
+  await expect(page.locator('#account-search')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Masuk sebagai Mentor Universitas Pertamina' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Masuk sebagai SoBI Universitas Pertamina' })).toBeVisible();
   await login(page, 'admin-1');
   await page.goto('/admin/campuses?tab=accounts');
   await page.getByLabel('Cari kampus, PIC, atau email').fill('Universitas Sebelas Maret');
