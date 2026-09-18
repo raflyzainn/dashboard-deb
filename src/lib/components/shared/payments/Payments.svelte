@@ -7,6 +7,8 @@
   import PaymentDetail from './PaymentDetail.svelte';
   let campus = $state('');
   let selectedId = $state('');
+  let campusQuery = $state('');
+  let stageFilter = $state('');
   $effect(() => {
     campus = page.url.searchParams.get('campus') || '';
     selectedId = page.url.searchParams.get('payment') || '';
@@ -14,10 +16,23 @@
   let proposalId = $state('');
   let amount = $state(50000000);
   const isCampus = $derived(app.session?.role === 'campus');
+  const filteredCampuses = $derived(
+    (app.data?.campuses || []).filter(
+      (item) =>
+        (!campusQuery.trim() ||
+          item.name
+            .toLocaleLowerCase('id')
+            .includes(campusQuery.trim().toLocaleLowerCase('id'))) &&
+        (!stageFilter ||
+          (app.data?.payments || []).some(
+            (payment) => payment.campusId === item.id && payment.stage === stageFilter
+          ))
+    )
+  );
   const activeCampus = $derived(
     isCampus
       ? app.session?.campusId
-      : campus || page.url.searchParams.get('campus') || app.data?.campuses[0]?.id
+      : campus || page.url.searchParams.get('campus') || filteredCampuses[0]?.id
   );
   const cases = $derived((app.data?.payments || []).filter((p) => p.campusId === activeCampus));
   const selected = $derived(
@@ -28,6 +43,13 @@
       .filter((p) => p.campusId === activeCampus && !cases.some((c) => c.proposalId === p.id))
       .sort((a, b) => b.version - a.version)
   );
+  $effect(() => {
+    if (!isCampus && campus && !filteredCampuses.some((item) => item.id === campus)) {
+      campus = filteredCampuses[0]?.id || '';
+      selectedId = '';
+      proposalId = '';
+    }
+  });
   async function create() {
     const id = available.find((p) => p.id === proposalId)?.id || available[0]?.id;
     if (!id) return;
@@ -60,6 +82,25 @@
     class="mb-5 grid gap-4 rounded-xl border border-slate-200 bg-white p-5 sm:grid-cols-2"
     aria-label="Pilih pengajuan pencairan"
   >
+    <label class="grid gap-2 text-sm font-semibold"
+      >Cari kampus<input
+        aria-label="Cari kampus pencairan"
+        type="search"
+        placeholder="Ketik nama kampus..."
+        bind:value={campusQuery}
+        class="min-w-0 w-full rounded-lg border border-slate-300 p-3 font-normal"
+      /></label
+    >
+    <label class="grid gap-2 text-sm font-semibold"
+      >Tahap pencairan<select
+        aria-label="Filter tahap pencairan"
+        bind:value={stageFilter}
+        class="min-w-0 w-full rounded-lg border border-slate-300 p-3 font-normal"
+      >
+        <option value="">Semua tahap</option>
+        {#each Object.entries(STAGES) as [key, label]}<option value={key}>{label}</option>{/each}
+      </select></label
+    >
     {#if !isCampus}<label class="grid gap-2 text-sm font-semibold"
         >Kampus
         <select
@@ -72,7 +113,8 @@
           }}
           class="min-w-0 w-full rounded-lg border border-slate-300 p-3"
         >
-          {#each app.data?.campuses || [] as c}<option value={c.id}>{c.name}</option>{/each}
+          {#each filteredCampuses as c}<option value={c.id}>{c.name}</option>{/each}
+          {#if !filteredCampuses.length}<option value="">Tidak ada kampus</option>{/if}
         </select></label
       >{/if}
     <label class="grid gap-2 text-sm font-semibold"

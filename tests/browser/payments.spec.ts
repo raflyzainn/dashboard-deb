@@ -195,6 +195,12 @@ test('campus accounts only track payment; admin completes all stages and archive
   await login(page, 'finance-1');
   await page.goto('/finance/payments');
   await stage(page, 'Sudah dicairkan');
+  await page.getByLabel('Cari kampus pencairan').fill('Universitas Pertamina');
+  await expect(page.getByLabel('Kampus pencairan').locator('option')).toHaveCount(1);
+  await page.getByLabel('Filter tahap pencairan').selectOption('documents');
+  await expect(page.getByLabel('Kampus pencairan')).toHaveValue('campus-026');
+  await page.getByLabel('Filter tahap pencairan').selectOption('');
+  await page.getByLabel('Cari kampus pencairan').fill('');
   await expect(page.getByLabel('Catatan tindakan pencairan')).toHaveCount(0);
   await expect(
     page.getByRole('button', {
