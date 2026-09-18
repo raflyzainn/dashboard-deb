@@ -31,7 +31,7 @@ Kode HTTP, modul `src/lib/server/`, skrip PocketBase, dan dokumentasi migrasi ba
 | Admin PF | Mengelola dan mereview data kampus; satu-satunya peran yang mengubah pencairan. |
 | Keuangan | Membaca data pencairan, berkas/arsip yang tersedia, serta notifikasi. Tidak mengubah pencairan. |
 
-Data awal memiliki 40 kampus dengan dua identitas per kampus, sehingga ada 80 akun kampus. Contoh identitas satu kampus: `campus-001` dan `campus-001-pic2`. Keduanya memiliki cakupan kampus yang sama, tetapi identitas pelakunya berbeda.
+Data awal memiliki 40 kampus dengan dua identitas internal per kampus. Pemilih login demo hanya menampilkan Mentor dan SoBI Universitas Pertamina. Keduanya memiliki cakupan kampus yang sama, tetapi identitas pelakunya berbeda.
 
 Ketentuan fitur terbaru:
 

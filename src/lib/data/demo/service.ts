@@ -834,12 +834,14 @@ export function createDemoService() {
     navigation: () => run((s, user) => navigation(s, user), false, undefined, true),
     accounts: () =>
       transaction(
-        (s) =>
-          [
-            ...s.accounts.filter(a => a.active).map(a => ({ key: a.id, name: `${s.data.campuses.find(c => c.id === a.campusId)?.name || a.campus} · ${a.slot === 1 ? 'Mentor' : 'SoBI'} · ${a.name}`, role: 'campus' as const })),
+        (s) => {
+          const campusId = s.data.campuses.find((campus) => campus.name === 'Universitas Pertamina')?.id;
+          return [
+            ...s.accounts.filter(a => a.active && a.campusId === campusId).map(a => ({ key: a.id, name: `${a.campus} · ${a.slot === 1 ? 'Mentor' : 'SoBI'} · ${a.name}`, role: 'campus' as const })),
             { key: 'admin-1', name: 'Admin PF Demo', role: 'admin' as const },
             { key: 'finance-1', name: 'Keuangan Demo', role: 'finance' as const }
-          ] satisfies PreviewAccount[]
+          ] satisfies PreviewAccount[];
+        }
       ),
     page: (request: PageRequest) =>
       run((s, user) => {

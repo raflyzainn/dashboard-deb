@@ -252,7 +252,7 @@ test('forum conversation and account edits persist in the demo', async ({ page }
   await expect(page.getByText('Baik, terima kasih admin.', { exact: true })).toBeVisible();
   expect(api).toEqual([]);
 });
-test('admin manages Mentor and SoBI emails for 40 campuses with 80 distinct demo logins', async ({
+test('admin manages Mentor and SoBI emails while login exposes only Universitas Pertamina', async ({
   page
 }) => {
   const api: string[] = [];
@@ -260,8 +260,9 @@ test('admin manages Mentor and SoBI emails for 40 campuses with 80 distinct demo
     if (r.url().includes('/api/')) api.push(r.url());
   });
   await page.goto('/login');
-  await expect(page.locator('input[name="preview-account"]')).toHaveCount(80);
-  await expect(page.locator('input[name="preview-account"][value$="-pic2"]')).toHaveCount(40);
+  await expect(page.locator('input[name="preview-account"]')).toHaveCount(2);
+  await expect(page.getByText('Universitas Pertamina · Mentor · Mentor Demo', { exact: true })).toBeVisible();
+  await expect(page.getByText('Universitas Pertamina · SoBI · SoBI Demo', { exact: true })).toBeVisible();
   await login(page, 'admin-1');
   await page.goto('/admin/campuses?tab=accounts');
   await page.getByLabel('Cari kampus, PIC, atau email').fill('Universitas Sebelas Maret');
