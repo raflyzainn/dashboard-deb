@@ -12,6 +12,7 @@ import { validateCategories } from '../../forum';
 import { changedSinceSubmission } from '../../verification';
 import { transaction, resetDemo, createCampusAccounts, type DemoState } from './store';
 import { activateDemoAccount, canUseDemoPassword } from './activation';
+import { createPaymentService } from './payments';
 const now = () => new Date().toISOString();
 const id = () => crypto.randomUUID();
 const text = (value: string, max = 5000) => {
@@ -69,19 +70,23 @@ export function createDemoService() {
   function actor(s: DemoState): AppSession {
     if (selected === 'admin-1' || selected === 'admin-2')
       return { id: selected, name: 'Admin PF Demo', role: 'admin' };
-    const campus = s.data.campuses.find((c) => c.id === selected);
-    if (!campus) throw Error('Pilih akun demo terlebih dahulu.');
-    return { id: selected, name: campus.name, role: 'campus', campusId: campus.id };
+    if (selected === 'finance-1') return { id: selected, name: 'Keuangan Demo', role: 'finance' };
+    const account = s.accounts.find(a => a.id === selected && a.active);
+    const campus = s.data.campuses.find((c) => c.id === account?.campusId);
+    if (!campus || !account) throw Error('Pilih akun demo aktif terlebih dahulu.');
+    return { id: selected, name: `${account.name} · ${campus.name}`, role: 'campus', campusId: campus.id, campusRole: account.slot === 1 ? 'mentor' : 'sobi' };
   }
   function run<T>(
     action: (s: DemoState, actor: AppSession) => T,
     write = false,
-    role?: 'admin' | 'campus'
+    role?: 'admin' | 'campus',
+    allowFinance = false
   ): Promise<T> {
     const key = selected;
     return transaction((s) => {
       if (selected !== key) throw Error('Pilihan akun telah berubah.');
       const user = actor(s);
+      if (user.role === 'finance' && !allowFinance) throw Error('Keuangan hanya dapat mengakses pencairan dan notifikasi.');
       if (role && user.role !== role) throw Error('Peran demo tidak diizinkan.');
       return action(s, user);
     }, write);
@@ -128,7 +133,7 @@ export function createDemoService() {
       unreadCount: s.data.notifications.filter(
         (n) =>
           n.recipient === user.role &&
-          (user.role === 'admin' || n.campusId === user.campusId) &&
+          (user.role !== 'campus' || n.campusId === user.campusId) &&
           !n.readAt
       ).length,
       campus: s.data.campuses.find((c) => c.id === user.campusId)
@@ -203,6 +208,7 @@ export function createDemoService() {
       transaction((s) => {
         if (!canUseDemoPassword(s.activation, email, password)) return null;
         const campus = s.data.campuses[0];
+        if (!s.accounts.some(a => a.id === campus.id && a.active)) throw Error('Akun demo tidak aktif.');
         return { key: campus.id, name: campus.name, role: 'campus' as const };
       }),
     masters: () => run((s) => ({ definitions: s.data.definitions }), false, 'admin'),
@@ -584,6 +590,8 @@ export function createDemoService() {
         new TextDecoder().decode(await file.slice(0, 5).arrayBuffer()) !== '%PDF-'
       )
         throw Error('Pilih PDF valid maksimal 10 MiB.');
+      const { validatePdf } = await import('../../payment-pdf');
+      await validatePdf(file);
       if (selected !== account) throw Error('Pilihan akun telah berubah.');
       if (changes.length > 5000) throw Error('Catatan terlalu panjang.');
       await run(
@@ -796,14 +804,21 @@ export function createDemoService() {
           .filter(
             (n) =>
               n.recipient === user.role &&
-              (user.role === 'admin' || n.campusId === user.campusId) &&
+              (user.role !== 'campus' || n.campusId === user.campusId) &&
               (!keys || keys.includes(n.id))
           )
           .forEach((n) => (n.readAt = now()));
-      }, true)
+      }, true, undefined, true)
   };
   return {
     ...service,
+    ...createPaymentService((action, write) => run(action, write, undefined, true)),
+    commentProposal: (proposalId: string, body: string) => run((s, user) => {
+      const p = find(s.data.proposals, proposalId); own(user, p.campusId);
+      (s.data.proposalComments ??= []).push({ id: id(), proposalId, campusId: p.campusId, actorId: user.id, authorName: user.name, body: text(body, 3000), createdAt: now() });
+      const recipient = user.role === 'admin' ? 'campus' : 'admin';
+      notify(s, p.campusId, recipient, 'Komentar baru pada proposal.', `/${recipient}/proposal?version=${p.id}&campus=${p.campusId}`);
+    }, true),
     updateReadiness,
     updateProgram,
     updateIndicatorTarget,
@@ -815,18 +830,20 @@ export function createDemoService() {
         session: user,
         capabilities: { readOnly: false },
         navigation: navigation(s, user)
-      })),
-    navigation: () => run((s, user) => navigation(s, user)),
+      }), false, undefined, true),
+    navigation: () => run((s, user) => navigation(s, user), false, undefined, true),
     accounts: () =>
       transaction(
         (s) =>
           [
-            ...s.data.campuses.map((c) => ({ key: c.id, name: c.name, role: 'campus' as const })),
-            { key: 'admin-1', name: 'Admin PF Demo', role: 'admin' as const }
+            ...s.accounts.filter(a => a.active).map(a => ({ key: a.id, name: `${s.data.campuses.find(c => c.id === a.campusId)?.name || a.campus} · ${a.slot === 1 ? 'Mentor' : 'SoBI'} · ${a.name}`, role: 'campus' as const })),
+            { key: 'admin-1', name: 'Admin PF Demo', role: 'admin' as const },
+            { key: 'finance-1', name: 'Keuangan Demo', role: 'finance' as const }
           ] satisfies PreviewAccount[]
       ),
     page: (request: PageRequest) =>
       run((s, user) => {
+        if (user.role === 'finance' && !['payments', 'notifications', 'dashboard'].includes(request.view)) throw Error('Halaman ini tidak tersedia untuk keuangan.');
         if (request.campus) own(user, request.campus);
         const period = request.period ?? activePeriod(s);
         const periods = periodsFrom(s.data.definitions);
@@ -850,13 +867,18 @@ export function createDemoService() {
           data.indicators.some((i) => i.id === f.indicatorId)
         );
         data.proposals = s.data.proposals.filter((p) => !campus || p.campusId === campus);
+        data.payments = (s.data.payments || []).filter(p => !campus || p.campusId === campus);
+        data.proposalComments = (s.data.proposalComments || []).filter(p => !campus || p.campusId === campus);
         data.activities = s.data.activities.filter((a) => !campus || a.campusId === campus);
         data.notifications = s.data.notifications.filter(
           (n) =>
-            n.recipient === user.role && (user.role === 'admin' || n.campusId === user.campusId)
+            n.recipient === user.role && (user.role !== 'campus' || n.campusId === user.campusId)
         );
+        if (user.role === 'finance') {
+          data.indicators = []; data.submissions = []; data.feedback = []; data.questions = []; data.answers = []; data.likes = []; data.proposalComments = []; data.activities = []; data.definitions = [];
+        }
         return { data, loadedAt: now() };
-      }),
+      }, false, undefined, true),
     reset: resetDemo,
     accountsAdmin: (
       path: string,

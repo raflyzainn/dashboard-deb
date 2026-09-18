@@ -135,7 +135,12 @@
                 onclick={(event) => {
                   event.preventDefault();
                   if (!app.busy) open(notice);
-                }}>Lihat detail<Icon name="arrow" size={14} /></a
+                }}
+                >{notice.href.includes('/payments') ||
+                notice.href.includes('proposal') ||
+                notice.href.includes('tab=Proposal')
+                  ? 'Periksa berkas'
+                  : 'Lihat detail'}<Icon name="arrow" size={14} /></a
               >{#if !notice.readAt}<button
                   class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[650] [font-stretch:inherit] [&&&]:text-[11px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[#0668ce] inline-flex items-center gap-y-[7px] gap-x-[7px] [background-image:none] [background-color:initial] [white-space-collapse:collapse] [text-wrap-mode:nowrap] p-[0px] border-[0px] border-none border-[color:currentcolor] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:text-[#0a3eaa] text-link"
                   disabled={app.readOnly || app.loading || app.busy}

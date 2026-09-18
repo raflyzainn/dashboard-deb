@@ -2,6 +2,10 @@
 
 Branch `production` menggunakan UI terbaru dari development dan perubahan proposal terkini, dengan data simulasi di **IndexedDB browser**. Aplikasi berjalan sebagai situs statis tanpa PocketBase, API aplikasi, login nyata, atau layanan email.
 
+## Panduan Codex
+
+Mulai setiap chat dengan membaca [AGENTS.md](AGENTS.md), [panduan proyek](docs/PANDUAN-CODEX.md), dan seluruh dokumentasi `docs/`. Jangan push atau membuat PR/MR sebelum diminta. Tes melalui terminal ditunda; QA menggunakan tool browser Playwright.
+
 ## Menjalankan
 
 Gunakan Node.js 22.x.
@@ -17,11 +21,13 @@ Data awal mencakup 40 kampus, 30 indikator, proposal PDF contoh, pengajuan, foru
 
 Isian indikator, periode, versi PDF, tanggapan admin, forum, dan perubahan lainnya bertahan setelah reload pada browser dan origin yang sama. Ganti akun melalui sidebar untuk mencoba alur kampus/admin dengan data yang sama. **Reset data demo** mengembalikan contoh awal setelah konfirmasi.
 
-Halaman admin Akun kampus menampilkan dua PIC per kampus, masing-masing dengan nama dan email yang dapat diedit. Login dummy tetap satu pilihan per kampus (40 pilihan awal). Penyimpanan versi lama ditingkatkan otomatis dengan mempertahankan PIC pertama dan seluruh data kampus.
+Halaman admin Akun kampus menampilkan dua PIC per kampus, masing-masing dengan nama dan email yang dapat diedit. Login demo memiliki dua identitas per kampus: Mentor dan SoBI (80 pilihan akun kampus). Penyimpanan versi lama ditingkatkan otomatis dengan mempertahankan PIC pertama dan seluruh data kampus.
 
 Data tidak tersinkron antarperangkat atau pengunjung. Menghapus penyimpanan situs juga menghapus perubahan demo. Pemilih peran bukan autentikasi; jangan gunakan demo untuk data pribadi atau dokumen operasional.
 
 ## Build dan pengujian
+
+**Untuk Codex:** perintah di bawah hanya referensi. Sesuai [AGENTS.md](AGENTS.md), jangan menjalankan tes/pemeriksaan terminal sebelum pengguna meminta; lakukan QA melalui tool browser Playwright. Jangan memakai Playwright CLI sebagai pengganti tool browser.
 
 ```sh
 npm run check

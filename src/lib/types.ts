@@ -1,7 +1,7 @@
 import type { Period, PeriodState } from './periods';
 import type { ForumCategoryId } from './forum';
-export type Role = 'campus' | 'admin';
-export interface DemoSession { role: Role; name: string; campusId?: string }
+export type Role = 'campus' | 'admin' | 'finance';
+export interface DemoSession { role: Role; name: string; campusId?: string; campusRole?: 'mentor' | 'sobi' }
 export interface AppSession extends DemoSession { id: string }
 export interface PreviewAccount { key: string; name: string; role: Role }
 export interface DemoActivationStatus { email: string; activated: boolean }
@@ -43,6 +43,8 @@ export interface FaqEntry { id: string; questionId?: string; question: string; a
 export interface Activity { id: string; campusId: string; text: string; createdAt: string }
 export interface Notification { id: string; campusId: string; recipient: Role; title: string; body: string; href: string; createdAt: string; readAt: string | null; simulated?: boolean }
 export interface Snapshot {
+  payments?: import('./payments').PaymentCase[];
+  proposalComments?: ProposalComment[];
   period?: Period; periods?: Period[];
   campusMetrics?: Record<string, { progress: number; achieved: number; total: number; revisions: number }>;
   locations?: LocationDto[];
@@ -52,6 +54,7 @@ export interface Snapshot {
   feedback: Feedback[]; proposals: ProposalVersion[]; questions: Question[];
   answers: Answer[]; likes: QuestionLike[]; faq: FaqEntry[]; activities: Activity[]; notifications: Notification[]; notificationSeedVersion?: number;
 }
+export interface ProposalComment { id: string; proposalId: string; campusId: string; actorId: string; authorName: string; body: string; createdAt: string }
 export interface DataService {
   demoActivation(): Promise<DemoActivationStatus>;
   requestDemoActivation(email: string): Promise<void>;

@@ -12,7 +12,7 @@
   import Icon from '$lib/components/ui/Icon.svelte';
   let account = $state('');
   let search = $state('');
-  let role = $state<'campus' | 'admin'>('campus');
+  let role = $state<'campus' | 'admin' | 'finance'>('campus');
   let activationFlow = $state(false);
   let activationStep = $state<'email' | 'sent' | 'password' | 'login'>('email');
   let activationEmail = $state('');
@@ -209,149 +209,228 @@
           }}
         >
           {#if activationStep === 'email'}
-            <label for="demo-activation-email">Email PIC demo
+            <label for="demo-activation-email"
+              >Email PIC demo
               <input id="demo-activation-email" type="email" bind:value={activationEmail} />
             </label>
             <p class="m-0 rounded-lg bg-[#edf5ff] px-3 py-2 text-[12px] leading-5 text-[#2d79ca]">
               Email dummy: {activationEmail}
             </p>
-            <button class="inline-flex min-h-[42px] items-center justify-center rounded-[8px] border border-[#086bc9] bg-[linear-gradient(135deg,rgb(8,119,216),rgb(21,89,214))] px-[18px] py-[11px] text-[12px] font-[650] text-white shadow-[0_8px_18px_#075fc71a] transition hover:bg-[linear-gradient(135deg,rgb(5,104,196),rgb(18,75,197))] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[#55a9f2]" type="submit">Kirim tautan aktivasi</button>
+            <button
+              class="inline-flex min-h-[42px] items-center justify-center rounded-[8px] border border-[#086bc9] bg-[linear-gradient(135deg,rgb(8,119,216),rgb(21,89,214))] px-[18px] py-[11px] text-[12px] font-[650] text-white shadow-[0_8px_18px_#075fc71a] transition hover:bg-[linear-gradient(135deg,rgb(5,104,196),rgb(18,75,197))] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[#55a9f2]"
+              type="submit">Kirim tautan aktivasi</button
+            >
           {:else if activationStep === 'sent'}
-            <div class="rounded-[10px] border border-[#d8e7f8] bg-[#edf5ff] p-4 text-[12px] leading-5 text-[#2d79ca]">
+            <div
+              class="rounded-[10px] border border-[#d8e7f8] bg-[#edf5ff] p-4 text-[12px] leading-5 text-[#2d79ca]"
+            >
               <strong class="block text-[#12386b]">Email simulasi terkirim</strong>
               Tautan aktivasi untuk {activationEmail} siap dibuka pada demo ini.
             </div>
-            <button class="inline-flex min-h-[42px] items-center justify-center rounded-[8px] border border-[#086bc9] bg-[linear-gradient(135deg,rgb(8,119,216),rgb(21,89,214))] px-[18px] py-[11px] text-[12px] font-[650] text-white shadow-[0_8px_18px_#075fc71a] transition hover:bg-[linear-gradient(135deg,rgb(5,104,196),rgb(18,75,197))] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[#55a9f2]" type="button" onclick={() => (activationStep = 'password')}>Buka tautan aktivasi demo</button>
+            <button
+              class="inline-flex min-h-[42px] items-center justify-center rounded-[8px] border border-[#086bc9] bg-[linear-gradient(135deg,rgb(8,119,216),rgb(21,89,214))] px-[18px] py-[11px] text-[12px] font-[650] text-white shadow-[0_8px_18px_#075fc71a] transition hover:bg-[linear-gradient(135deg,rgb(5,104,196),rgb(18,75,197))] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[#55a9f2]"
+              type="button"
+              onclick={() => (activationStep = 'password')}>Buka tautan aktivasi demo</button
+            >
           {:else if activationStep === 'password'}
-            <label for="demo-password">Password baru
+            <label for="demo-password"
+              >Password baru
               <span class="relative block">
-                <input class="[&&]:pr-[48px]" id="demo-password" type={showPassword ? 'text' : 'password'} minlength="8" autocomplete="new-password" bind:value={password} />
-                <button class="absolute inset-y-0 right-0 flex w-[44px] items-center justify-center rounded-[10px] text-[#4274ad] hover:text-[#0668ce] focus-visible:outline-2 focus-visible:outline-[#55a9f2]" type="button" aria-label={showPassword ? 'Sembunyikan password baru' : 'Tampilkan password baru'} aria-pressed={showPassword} aria-controls="demo-password" onclick={() => (showPassword = !showPassword)}><Icon name={showPassword ? 'eye-off' : 'eye'} size={18} /></button>
+                <input
+                  class="[&&]:pr-[48px]"
+                  id="demo-password"
+                  type={showPassword ? 'text' : 'password'}
+                  minlength="8"
+                  autocomplete="new-password"
+                  bind:value={password}
+                />
+                <button
+                  class="absolute inset-y-0 right-0 flex w-[44px] items-center justify-center rounded-[10px] text-[#4274ad] hover:text-[#0668ce] focus-visible:outline-2 focus-visible:outline-[#55a9f2]"
+                  type="button"
+                  aria-label={showPassword
+                    ? 'Sembunyikan password baru'
+                    : 'Tampilkan password baru'}
+                  aria-pressed={showPassword}
+                  aria-controls="demo-password"
+                  onclick={() => (showPassword = !showPassword)}
+                  ><Icon name={showPassword ? 'eye-off' : 'eye'} size={18} /></button
+                >
               </span>
             </label>
-            <label for="demo-password-confirmation">Konfirmasi password
+            <label for="demo-password-confirmation"
+              >Konfirmasi password
               <span class="relative block">
-                <input class="[&&]:pr-[48px]" id="demo-password-confirmation" type={showConfirmation ? 'text' : 'password'} minlength="8" autocomplete="new-password" bind:value={confirmation} />
-                <button class="absolute inset-y-0 right-0 flex w-[44px] items-center justify-center rounded-[10px] text-[#4274ad] hover:text-[#0668ce] focus-visible:outline-2 focus-visible:outline-[#55a9f2]" type="button" aria-label={showConfirmation ? 'Sembunyikan konfirmasi password' : 'Tampilkan konfirmasi password'} aria-pressed={showConfirmation} aria-controls="demo-password-confirmation" onclick={() => (showConfirmation = !showConfirmation)}><Icon name={showConfirmation ? 'eye-off' : 'eye'} size={18} /></button>
+                <input
+                  class="[&&]:pr-[48px]"
+                  id="demo-password-confirmation"
+                  type={showConfirmation ? 'text' : 'password'}
+                  minlength="8"
+                  autocomplete="new-password"
+                  bind:value={confirmation}
+                />
+                <button
+                  class="absolute inset-y-0 right-0 flex w-[44px] items-center justify-center rounded-[10px] text-[#4274ad] hover:text-[#0668ce] focus-visible:outline-2 focus-visible:outline-[#55a9f2]"
+                  type="button"
+                  aria-label={showConfirmation
+                    ? 'Sembunyikan konfirmasi password'
+                    : 'Tampilkan konfirmasi password'}
+                  aria-pressed={showConfirmation}
+                  aria-controls="demo-password-confirmation"
+                  onclick={() => (showConfirmation = !showConfirmation)}
+                  ><Icon name={showConfirmation ? 'eye-off' : 'eye'} size={18} /></button
+                >
               </span>
             </label>
-            <ul class="m-0 grid list-none gap-1 rounded-[10px] bg-[#edf5ff] px-3 py-2 text-[11px] leading-5 text-[#56789d]">
+            <ul
+              class="m-0 grid list-none gap-1 rounded-[10px] bg-[#edf5ff] px-3 py-2 text-[11px] leading-5 text-[#56789d]"
+            >
               {#each passwordChecks as [label, valid]}
-                <li class:text-green-700={valid} class:font-[650]={valid}>{valid ? '✓' : '○'} {label}</li>
+                <li class:text-green-700={valid} class:font-[650]={valid}>
+                  {valid ? '✓' : '○'}
+                  {label}
+                </li>
               {/each}
             </ul>
-            <button class="inline-flex min-h-[42px] items-center justify-center rounded-[8px] border border-[#086bc9] bg-[linear-gradient(135deg,rgb(8,119,216),rgb(21,89,214))] px-[18px] py-[11px] text-[12px] font-[650] text-white shadow-[0_8px_18px_#075fc71a] transition hover:bg-[linear-gradient(135deg,rgb(5,104,196),rgb(18,75,197))] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[#55a9f2] disabled:cursor-not-allowed disabled:opacity-50" type="submit" disabled={!passwordValid}>Simpan password</button>
+            <button
+              class="inline-flex min-h-[42px] items-center justify-center rounded-[8px] border border-[#086bc9] bg-[linear-gradient(135deg,rgb(8,119,216),rgb(21,89,214))] px-[18px] py-[11px] text-[12px] font-[650] text-white shadow-[0_8px_18px_#075fc71a] transition hover:bg-[linear-gradient(135deg,rgb(5,104,196),rgb(18,75,197))] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[#55a9f2] disabled:cursor-not-allowed disabled:opacity-50"
+              type="submit"
+              disabled={!passwordValid}>Simpan password</button
+            >
           {:else}
-            <label for="demo-login-email">Email PIC demo
+            <label for="demo-login-email"
+              >Email PIC demo
               <input id="demo-login-email" type="email" bind:value={activationEmail} />
             </label>
-            <label for="demo-login-password">Password
+            <label for="demo-login-password"
+              >Password
               <input id="demo-login-password" type="password" bind:value={password} />
             </label>
-            <button class="inline-flex min-h-[42px] items-center justify-center rounded-[8px] border border-[#086bc9] bg-[linear-gradient(135deg,rgb(8,119,216),rgb(21,89,214))] px-[18px] py-[11px] text-[12px] font-[650] text-white shadow-[0_8px_18px_#075fc71a] transition hover:bg-[linear-gradient(135deg,rgb(5,104,196),rgb(18,75,197))] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[#55a9f2]" type="submit">Masuk dengan password</button>
+            <button
+              class="inline-flex min-h-[42px] items-center justify-center rounded-[8px] border border-[#086bc9] bg-[linear-gradient(135deg,rgb(8,119,216),rgb(21,89,214))] px-[18px] py-[11px] text-[12px] font-[650] text-white shadow-[0_8px_18px_#075fc71a] transition hover:bg-[linear-gradient(135deg,rgb(5,104,196),rgb(18,75,197))] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[#55a9f2]"
+              type="submit">Masuk dengan password</button
+            >
           {/if}
-          {#if activationError}<p class="m-0 text-[12px] leading-5 text-[#ba5145]" role="alert">{activationError}</p>{/if}
-          <button class="inline-flex items-center self-start border-0 bg-transparent p-0 text-[12px] font-[650] text-[#0668ce] hover:text-[#0a3eaa] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[#55a9f2]" type="button" onclick={() => (activationFlow = false)}>Kembali ke pilihan akun</button>
+          {#if activationError}<p class="m-0 text-[12px] leading-5 text-[#ba5145]" role="alert">
+              {activationError}
+            </p>{/if}
+          <button
+            class="inline-flex items-center self-start border-0 bg-transparent p-0 text-[12px] font-[650] text-[#0668ce] hover:text-[#0a3eaa] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[#55a9f2]"
+            type="button"
+            onclick={() => (activationFlow = false)}>Kembali ke pilihan akun</button
+          >
         </form>
       {:else}
-      <form
-        class="[&_label]:flex [&_label]:flex-col [&_label]:gap-y-[9px] [&_label]:gap-x-[9px] [&_label]:text-[12px] [&_label]:font-[600] [&_label]:mb-[18px] [&_input]:w-[100%] [&_textarea]:w-[100%] [&&]:grid [&&]:gap-y-[8px] [&&]:gap-x-[8px] [&&]:mx-[0px] [&&]:my-[16px]"
-        onsubmit={(event) => {
-          event.preventDefault();
-          enter();
-        }}
-      >
-        <div
-          class="[&&]:flex [&&]:[background-image:initial] [&&]:[background-color:rgb(237,_244,_255)] [&&]:gap-y-[4px] [&&]:gap-x-[4px] [&&]:p-[4px] [&&]:rounded-[12px] account-tabs"
-          role="group"
-          aria-label="Jenis akun"
+        <form
+          class="[&_label]:flex [&_label]:flex-col [&_label]:gap-y-[9px] [&_label]:gap-x-[9px] [&_label]:text-[12px] [&_label]:font-[600] [&_label]:mb-[18px] [&_input]:w-[100%] [&_textarea]:w-[100%] [&&]:grid [&&]:gap-y-[8px] [&&]:gap-x-[8px] [&&]:mx-[0px] [&&]:my-[16px]"
+          onsubmit={(event) => {
+            event.preventDefault();
+            enter();
+          }}
         >
-          {#each ['campus', 'admin'] as kind}<button
-              class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [&&]:font-[650] [font-stretch:inherit] [font-size:inherit] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer [&&]:text-[#526887] [&&]:grow [&&]:shrink [&&]:[flex-basis:0%] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:px-[8px] [&&]:py-[11px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[9px] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&.active]:text-[#075bc7] [&.active]:[background-image:initial] [&.active]:[background-color:white] [&.active]:[box-shadow:0_2px_6px_#194b8a14]"
-              type="button"
-              class:active={role === kind}
-              aria-pressed={role === kind}
-              disabled={app.loading}
-              onclick={() => {
-                role = kind as 'campus' | 'admin';
-                search = '';
-                account = app.accounts.find((a) => a.role === role)?.key || '';
-              }}
-              >{kind === 'campus' ? 'Kampus mitra' : 'Administrator'}<span
-                class="[&&]:ml-[7px] [&&]:text-[11px] [&&]:opacity-[0.7]"
-                >{app.accounts.filter((a) => a.role === kind).length}</span
-              ></button
-            >{/each}
-        </div>
-        <label class="[&&]:font-[650] [&&]:text-[#12386b] [&&]:mb-[0]" for="account-search"
-          >{role === 'campus' ? 'Cari kampus' : 'Cari administrator'}</label
-        >
-        <input
-          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&&&&&&&&&&]:[background-image:initial] [&&&&&&&&&&&]:[background-color:white] [&&&&&&&&&&&]:text-[#12386b] max-w-[100%] [&&&&&&&&&&&]:w-[100%] [&&&&&&&&&&&]:px-[15px] [&&&&&&&&&&&]:py-[13px] [&&&&&&&&&&&]:border-[1px] [&&&&&&&&&&&]:border-solid [&&&&&&&&&&&]:border-[color:rgb(189,_210,_235)] [&&&&&&&&&&&]:rounded-[10px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(189,_210,_235)] [&::placeholder]:text-[#12386b]"
-          id="account-search"
-          type="search"
-          bind:value={search}
-          placeholder={role === 'campus' ? 'Ketik nama kampus...' : 'Ketik nama administrator...'}
-          disabled={app.accountsLoading || app.loading}
-        />
-        <div
-          class="[&&]:max-h-[clamp(110px,_calc(100dvh_-_560px),_220px)] [&&]:overflow-y-auto [&&]:grid [&&]:gap-y-[8px] [&&]:gap-x-[8px] [&&]:[overscroll-behavior-x:contain] [&&]:[overscroll-behavior-y:contain] [&&]:[align-content:start] [&&]:p-[3px] max-[700.01px]:[&&]:max-h-[180px] account-list"
-          role="group"
-          aria-label="Akun preview"
-          aria-busy={app.accountsLoading}
-        >
-          {#each visibleAccounts as a}
-            <label
-              class="[&&]:font-[650] [&&]:text-[#12386b] [&&]:flex [&&]:items-center [&&]:gap-y-[11px] [&&]:gap-x-[11px] [&&]:cursor-pointer [&&]:[background-image:initial] [&&]:[background-color:white] [&&]:flex-row [&&]:text-left [&&]:p-[10px] [&&]:m-[0px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(224,_233,_245)] [&&]:rounded-[12px] [&:hover]:[background-image:initial] [&:hover]:[background-color:rgb(245,_249,_255)] [&.selected]:[background-image:initial] [&.selected]:[background-color:rgb(237,_245,_255)] [&.selected]:border-[color:rgb(22,_115,_222)] [&:focus-within]:[outline-color:rgb(22,_115,_222)] [&:focus-within]:[outline-style:solid] [&:focus-within]:[outline-width:2px] [&:focus-within]:outline-offset-[1px] account-card"
-              class:selected={account === a.key}
-            >
-              <input
-                class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#17365f] max-w-[100%] [&&]:[accent-color:#0969d7] [&&]:shrink-0 [&&]:w-[16px] [&&]:h-[16px] [&&]:p-[0px] [&&]:m-[0px] border-[1px] border-solid border-[color:rgb(212,_225,_241)] rounded-[7px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(39,_144,_232)] [&::placeholder]:text-[#8ea1bc]"
-                type="radio"
-                name="preview-account"
-                value={a.key}
-                bind:group={account}
-                disabled={app.accountsLoading || app.loading}
-              />
-              <span
-                class="[&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:w-[38px] [&&]:h-[38px] [&&]:shrink-0 [&&]:[background-image:initial] [&&]:[background-color:rgb(223,_238,_255)] [&&]:text-[#1262bd] [&&]:text-[12px] [&&]:rounded-[10px] account-avatar"
-                aria-hidden="true"
-                >{a.name
-                  .split(' ')
-                  .slice(0, 2)
-                  .map((word) => word[0])
-                  .join('')}</span
+          <div
+            class="[&&]:flex [&&]:[background-image:initial] [&&]:[background-color:rgb(237,_244,_255)] [&&]:gap-y-[4px] [&&]:gap-x-[4px] [&&]:p-[4px] [&&]:rounded-[12px] account-tabs"
+            role="group"
+            aria-label="Jenis akun"
+          >
+            {#each ['campus', 'admin', 'finance'] as kind}<button
+                class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [&&]:font-[650] [font-stretch:inherit] [font-size:inherit] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer [&&]:text-[#526887] [&&]:grow [&&]:shrink [&&]:[flex-basis:0%] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:px-[8px] [&&]:py-[11px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[9px] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&.active]:text-[#075bc7] [&.active]:[background-image:initial] [&.active]:[background-color:white] [&.active]:[box-shadow:0_2px_6px_#194b8a14]"
+                type="button"
+                class:active={role === kind}
+                aria-pressed={role === kind}
+                disabled={app.loading}
+                onclick={() => {
+                  role = kind as 'campus' | 'admin' | 'finance';
+                  search = '';
+                  account = app.accounts.find((a) => a.role === role)?.key || '';
+                }}
+                >{kind === 'campus'
+                  ? 'Kampus mitra'
+                  : kind === 'admin'
+                    ? 'Administrator'
+                    : 'Keuangan'}<span class="[&&]:ml-[7px] [&&]:text-[11px] [&&]:opacity-[0.7]"
+                  >{app.accounts.filter((a) => a.role === kind).length}</span
+                ></button
+              >{/each}
+          </div>
+          <label class="[&&]:font-[650] [&&]:text-[#12386b] [&&]:mb-[0]" for="account-search"
+            >{role === 'campus' ? 'Cari kampus' : 'Cari akun staf'}</label
+          >
+          <input
+            class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&&&&&&&&&&]:[background-image:initial] [&&&&&&&&&&&]:[background-color:white] [&&&&&&&&&&&]:text-[#12386b] max-w-[100%] [&&&&&&&&&&&]:w-[100%] [&&&&&&&&&&&]:px-[15px] [&&&&&&&&&&&]:py-[13px] [&&&&&&&&&&&]:border-[1px] [&&&&&&&&&&&]:border-solid [&&&&&&&&&&&]:border-[color:rgb(189,_210,_235)] [&&&&&&&&&&&]:rounded-[10px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(189,_210,_235)] [&::placeholder]:text-[#12386b]"
+            id="account-search"
+            type="search"
+            bind:value={search}
+            placeholder={role === 'campus'
+              ? 'Ketik kampus, Mentor, atau SoBI...'
+              : 'Ketik nama akun...'}
+            disabled={app.accountsLoading || app.loading}
+          />
+          <div
+            class="[&&]:max-h-[clamp(110px,_calc(100dvh_-_560px),_220px)] [&&]:overflow-y-auto [&&]:grid [&&]:gap-y-[8px] [&&]:gap-x-[8px] [&&]:[overscroll-behavior-x:contain] [&&]:[overscroll-behavior-y:contain] [&&]:[align-content:start] [&&]:p-[3px] max-[700.01px]:[&&]:max-h-[180px] account-list"
+            role="group"
+            aria-label="Akun preview"
+            aria-busy={app.accountsLoading}
+          >
+            {#each visibleAccounts as a}
+              <label
+                class="[&&]:font-[650] [&&]:text-[#12386b] [&&]:flex [&&]:items-center [&&]:gap-y-[11px] [&&]:gap-x-[11px] [&&]:cursor-pointer [&&]:[background-image:initial] [&&]:[background-color:white] [&&]:flex-row [&&]:text-left [&&]:p-[10px] [&&]:m-[0px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(224,_233,_245)] [&&]:rounded-[12px] [&:hover]:[background-image:initial] [&:hover]:[background-color:rgb(245,_249,_255)] [&.selected]:[background-image:initial] [&.selected]:[background-color:rgb(237,_245,_255)] [&.selected]:border-[color:rgb(22,_115,_222)] [&:focus-within]:[outline-color:rgb(22,_115,_222)] [&:focus-within]:[outline-style:solid] [&:focus-within]:[outline-width:2px] [&:focus-within]:outline-offset-[1px] account-card"
+                class:selected={account === a.key}
               >
-              <span
-                class="[&&]:grid [&&]:gap-y-[5px] [&&]:gap-x-[5px] [&&]:min-w-[0] account-detail"
-                ><strong class="font-[650] [&&]:text-[13px] [&&]:leading-[1.5]">{a.name}</strong
-                ><small class="[&&]:text-[11px] [&&]:text-[#73839b] leading-[1.7] [&&]:font-[400]"
-                  >{a.role === 'campus' ? 'Ruang kerja kampus' : 'Pemantauan seluruh kampus'}</small
-                ></span
-              >
-            </label>
-          {:else}{#if !app.accountsLoading}<p
-                class="[&&]:leading-[1.6] [&&]:text-[12px] [&&]:text-[#61738f] [&&]:m-[0px] no-results"
-              >
-                {search
-                  ? 'Tidak ditemukan. Coba nama kampus atau kata kunci lain.'
-                  : 'Belum ada akun yang tersedia.'}
-              </p>{/if}{/each}
-        </div>
-        <p
-          class="[&&]:leading-[1.6] [&&]:text-[12px] [&&]:text-[#61738f] [&&]:[background-image:initial] [&&]:[background-color:rgb(246,_249,_253)] [&&]:px-[12px] [&&]:py-[9px] [&&]:m-[0px] [&&]:rounded-[8px] selection-summary"
-          role="status"
-        >
-          {selected ? `Pilihan: ${selected.name}` : 'Pilih akun untuk melanjutkan.'}
-        </p>
-        <button
-          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[650] [font-stretch:inherit] text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[white] inline-flex items-center [&&]:justify-center gap-y-[9px] gap-x-[9px] min-h-[42px] [background-image:linear-gradient(135deg,_rgb(8,_119,_216),_rgb(21,_89,_214))] [background-color:initial] [transition-behavior:normal,_normal] [transition-duration:0.15s,_0.15s] [transition-timing-function:ease,_ease] [transition-delay:0s,_0s] [transition-property:background,_box-shadow] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [box-shadow:0_8px_18px_#075fc71a] px-[18px] py-[11px] border-[1px] border-solid border-[color:rgb(8,_107,_201)] rounded-[8px] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:linear-gradient(135deg,_rgb(5,_104,_196),_rgb(18,_75,_197))] [&:hover:not(:disabled)]:[background-color:initial] [&:hover:not(:disabled)]:[box-shadow:0_10px_24px_#075fc72c] max-[700.01px]:text-[11px] max-[700.01px]:px-[15px] max-[700.01px]:py-[10px] button"
-          disabled={!account || app.accountsLoading || app.loading}
-          >{app.loading ? 'Memuat demo...' : 'Buka ruang kerja'}<Icon name="arrow" /></button
-        >
-      </form>
+                <input
+                  class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#17365f] max-w-[100%] [&&]:[accent-color:#0969d7] [&&]:shrink-0 [&&]:w-[16px] [&&]:h-[16px] [&&]:p-[0px] [&&]:m-[0px] border-[1px] border-solid border-[color:rgb(212,_225,_241)] rounded-[7px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(39,_144,_232)] [&::placeholder]:text-[#8ea1bc]"
+                  type="radio"
+                  name="preview-account"
+                  value={a.key}
+                  bind:group={account}
+                  disabled={app.accountsLoading || app.loading}
+                />
+                <span
+                  class="[&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:w-[38px] [&&]:h-[38px] [&&]:shrink-0 [&&]:[background-image:initial] [&&]:[background-color:rgb(223,_238,_255)] [&&]:text-[#1262bd] [&&]:text-[12px] [&&]:rounded-[10px] account-avatar"
+                  aria-hidden="true"
+                  >{a.name
+                    .split(' ')
+                    .slice(0, 2)
+                    .map((word) => word[0])
+                    .join('')}</span
+                >
+                <span
+                  class="[&&]:grid [&&]:gap-y-[5px] [&&]:gap-x-[5px] [&&]:min-w-[0] account-detail"
+                  ><strong class="font-[650] [&&]:text-[13px] [&&]:leading-[1.5]">{a.name}</strong
+                  ><small class="[&&]:text-[11px] [&&]:text-[#73839b] leading-[1.7] [&&]:font-[400]"
+                    >{a.role === 'campus'
+                      ? 'Ruang kerja kampus bersama'
+                      : a.role === 'finance'
+                        ? 'Persetujuan dan arsip pencairan'
+                        : 'Pemantauan seluruh kampus'}</small
+                  ></span
+                >
+              </label>
+            {:else}{#if !app.accountsLoading}<p
+                  class="[&&]:leading-[1.6] [&&]:text-[12px] [&&]:text-[#61738f] [&&]:m-[0px] no-results"
+                >
+                  {search
+                    ? 'Tidak ditemukan. Coba nama kampus atau kata kunci lain.'
+                    : 'Belum ada akun yang tersedia.'}
+                </p>{/if}{/each}
+          </div>
+          <p
+            class="[&&]:leading-[1.6] [&&]:text-[12px] [&&]:text-[#61738f] [&&]:[background-image:initial] [&&]:[background-color:rgb(246,_249,_253)] [&&]:px-[12px] [&&]:py-[9px] [&&]:m-[0px] [&&]:rounded-[8px] selection-summary"
+            role="status"
+          >
+            {selected ? `Pilihan: ${selected.name}` : 'Pilih akun untuk melanjutkan.'}
+          </p>
+          <button
+            class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[650] [font-stretch:inherit] text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[white] inline-flex items-center [&&]:justify-center gap-y-[9px] gap-x-[9px] min-h-[42px] [background-image:linear-gradient(135deg,_rgb(8,_119,_216),_rgb(21,_89,_214))] [background-color:initial] [transition-behavior:normal,_normal] [transition-duration:0.15s,_0.15s] [transition-timing-function:ease,_ease] [transition-delay:0s,_0s] [transition-property:background,_box-shadow] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [box-shadow:0_8px_18px_#075fc71a] px-[18px] py-[11px] border-[1px] border-solid border-[color:rgb(8,_107,_201)] rounded-[8px] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:linear-gradient(135deg,_rgb(5,_104,_196),_rgb(18,_75,_197))] [&:hover:not(:disabled)]:[background-color:initial] [&:hover:not(:disabled)]:[box-shadow:0_10px_24px_#075fc72c] max-[700.01px]:text-[11px] max-[700.01px]:px-[15px] max-[700.01px]:py-[10px] button"
+            disabled={!account || app.accountsLoading || app.loading}
+            >{app.loading ? 'Memuat demo...' : 'Buka ruang kerja'}<Icon name="arrow" /></button
+          >
+        </form>
         <div class="mt-4">
-          <button class="inline-flex min-h-[42px] items-center justify-center rounded-[8px] border border-[#b9d6f4] bg-white px-[18px] py-[11px] text-[12px] font-[650] text-[#0668ce] hover:border-[#68ace9] hover:bg-[#edf6ff] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[#55a9f2]" type="button" onclick={() => void openActivation()}>Aktivasi akun demo</button>
+          <button
+            class="inline-flex min-h-[42px] items-center justify-center rounded-[8px] border border-[#b9d6f4] bg-white px-[18px] py-[11px] text-[12px] font-[650] text-[#0668ce] hover:border-[#68ace9] hover:bg-[#edf6ff] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[#55a9f2]"
+            type="button"
+            onclick={() => void openActivation()}>Aktivasi akun demo</button
+          >
         </div>
       {/if}
       {#if app.accountsLoading}<p class="[&&]:leading-[1.6] m-[0px]" role="status">

@@ -225,7 +225,7 @@
         Daftar akun kampus
       </h2>
       <p class="[&&]:mt-[7px] mb-[0px] leading-[1.8] [&&]:text-[12px] [&&]:text-[#7185a0] mx-[0px]">
-        Dua PIC dengan nama dan email masing-masing untuk setiap kampus mitra.
+        Dua akun, Mentor dan SoBI, dengan nama dan email masing-masing untuk setiap kampus mitra.
       </p>
     </div>
     <button
@@ -324,7 +324,7 @@
               >
                 <strong
                   class="font-[650] [&&]:text-[12px] [&&]:leading-[1.7] max-[750.01px]:[&&]:text-[13px] min-[751px]:[.account-row:not(.editing)_.campus-details>&]:[align-self:end]"
-                  >PIC {account.slot}</strong
+                  >{account.slot === 1 ? 'Mentor' : 'SoBI'} · PIC {account.slot}</strong
                 >
                 <div class="pic-field">
                   {#if isEditing(account)}<label

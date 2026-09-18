@@ -8,7 +8,12 @@
     campusId,
     readOnly = false,
     floating = false
-  }: { program?: ProgramProfile; campusId: string; readOnly?: boolean; floating?: boolean } = $props();
+  }: {
+    program?: ProgramProfile;
+    campusId: string;
+    readOnly?: boolean;
+    floating?: boolean;
+  } = $props();
   const contacts = [
     ['mentor', 'Mentor'],
     ['coordinator', 'Koordinator PFS 12'],
@@ -102,6 +107,9 @@
         {#each details as [key, label]}
           <label class="block min-w-0">
             <span class="font-[650]">{label}</span>
+            {#if key === 'description'}<span class="mt-1 block text-[11px] text-slate-500"
+                >Tulis satu poin per baris; akan ditampilkan sebagai daftar.</span
+              >{/if}
             <textarea
               aria-label={label}
               class="mt-[6px] block w-full resize-y rounded-[7px] border border-[#9ecbf1] bg-white p-[10px] text-[12px] leading-[1.8] text-[#244568] focus:border-[#1681df] focus:outline-2 focus:outline-[#b9d9f5] disabled:bg-[#f7fbff]"
@@ -128,9 +136,9 @@
     >
       {#if floating}<span
           class="flex size-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-700"
-          aria-hidden="true"
-        ><Icon name={saving ? 'clock' : 'save'} size={17} /></span
-        ><div class="min-w-0 flex-1">
+          aria-hidden="true"><Icon name={saving ? 'clock' : 'save'} size={17} /></span
+        >
+        <div class="min-w-0 flex-1">
           <strong class="block text-[12px] text-[#17365f]">Simpan Profil Program</strong>
           <span class="text-[11px] text-[#617a9a]"
             >{saving
@@ -146,7 +154,9 @@
           disabled={!dirty || saving || app.busy}
           >{saving ? 'Menyimpan...' : 'Simpan data program'}</button
         >{/if}
-      {#if dirty && !floating}<span class="text-[11px] text-[#986611]">Ada perubahan belum disimpan.</span>{/if}
+      {#if dirty && !floating}<span class="text-[11px] text-[#986611]"
+          >Ada perubahan belum disimpan.</span
+        >{/if}
       {#if message}<span class="text-[11px] text-[#17753c]" role="status">{message}</span>{/if}
     </div>
   </form>

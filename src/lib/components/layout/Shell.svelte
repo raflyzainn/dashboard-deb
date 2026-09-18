@@ -19,24 +19,37 @@
     verifikasi: 'Review Kampus',
     indicators: 'Indikator DEB',
     proposal: 'Proposal',
+    payments: 'Pencairan',
     questions: 'Forum Q&A',
     faq: 'Pusat bantuan',
     notifications: 'Notifikasi'
   };
   const menus = $derived(
-    app.session?.role === 'admin'
-      ? [
-          'dashboard',
-          'verifikasi',
-          'campuses',
-          'master-indicators',
-          'sebaran',
-          'proposal',
-          'questions',
-          'faq',
-          'notifications'
-        ]
-      : ['dashboard', 'profile', 'indicators', 'proposal', 'questions', 'faq', 'notifications']
+    app.session?.role === 'finance'
+      ? ['dashboard', 'payments', 'notifications']
+      : app.session?.role === 'admin'
+        ? [
+            'dashboard',
+            'verifikasi',
+            'campuses',
+            'master-indicators',
+            'sebaran',
+            'proposal',
+            'payments',
+            'questions',
+            'faq',
+            'notifications'
+          ]
+        : [
+            'dashboard',
+            'profile',
+            'indicators',
+            'proposal',
+            'payments',
+            'questions',
+            'faq',
+            'notifications'
+          ]
   );
   const pendingCount = $derived(app.navigation.pendingCount);
   const prefix = $derived(`/${app.session?.role}`);
@@ -70,7 +83,11 @@
     ><span
       >DEB<span
         class="block text-[7px] tracking-[1.5px] font-[650] mt-[8px] text-[#788975] max-[900.01px]:text-[6px] brand-sub"
-        >{app.session?.role === 'admin' ? 'ADMIN PROGRAM' : 'KAMPUS MITRA'}</span
+        >{app.session?.role === 'admin'
+          ? 'ADMIN PROGRAM'
+          : app.session?.role === 'finance'
+            ? 'KEUANGAN'
+            : 'KAMPUS MITRA'}</span
       ></span
     ></a
   >
@@ -120,8 +137,8 @@
       class="sidebar-action flex w-full items-center border-0 text-left"
       type="button"
       onclick={logout}
-      disabled={app.busy}
-    ><Icon name="logout" size={18} /><span>Keluar</span></button>
+      disabled={app.busy}><Icon name="logout" size={18} /><span>Keluar</span></button
+    >
   </div>
 {/snippet}
 
@@ -189,12 +206,22 @@
           <span
             class="flex size-[34px] items-center justify-center rounded-full border-2 border-white bg-[#e6f1ff] text-[11px] font-bold text-[#075fc7] shadow-[0_0_0_1px_#c6ddf5]"
           >
-            {app.session?.role === 'admin' ? 'PF' : campusProfile?.initials}
+            {app.session?.role === 'admin'
+              ? 'PF'
+              : app.session?.role === 'finance'
+                ? 'KEU'
+                : campusProfile?.initials}
           </span>
           <span class="max-[700px]:hidden">
             <strong class="block text-[10px] leading-4">{app.session?.name}</strong>
             <small class="block text-[9px] text-[#617a9a]"
-              >{app.session?.role === 'admin' ? 'Administrator' : 'Kampus mitra'}</small
+              >{app.session?.role === 'admin'
+                ? 'Administrator'
+                : app.session?.role === 'finance'
+                  ? 'Keuangan'
+                  : app.session?.campusRole === 'mentor'
+                    ? 'Mentor kampus'
+                    : 'SoBI kampus'}</small
             >
           </span>
           <Icon name={accountMenu ? 'up' : 'down'} size={14} />
@@ -211,41 +238,41 @@
                 : campusProfile?.name}</span
             >
           </div>
-          <nav class="p-2" aria-label="Menu akun">
-            <a
-              class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm hover:bg-blue-50"
-              href={app.session?.role === 'admin'
-                ? '/admin/campuses?tab=accounts'
-                : '/campus/profile'}
-              onclick={() => (accountMenu = false)}
-              role="menuitem"
-              ><span
-                class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600"
-                ><Icon name="campus" size={18} /></span
-              ><span>{app.session?.role === 'admin' ? 'Kelola akun kampus' : 'Lihat Profil'}</span
-              ></a
-            >
-            <a
-              class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm hover:bg-blue-50"
-              href={`${prefix}/settings`}
-              onclick={() => (accountMenu = false)}
-              role="menuitem"
-              ><span
-                class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600"
-                ><Icon name="settings" size={18} /></span
-              ><span>Pengaturan</span></a
-            >
-            <a
-              class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm hover:bg-blue-50"
-              href={app.session?.role === 'admin' ? '/admin/faq' : '/campus/guide'}
-              onclick={() => (accountMenu = false)}
-              role="menuitem"
-              ><span
-                class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600"
-                ><Icon name="faq" size={18} /></span
-              ><span>Panduan Aplikasi</span></a
-            >
-          </nav>
+          {#if app.session?.role !== 'finance'}<nav class="p-2" aria-label="Menu akun">
+              <a
+                class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm hover:bg-blue-50"
+                href={app.session?.role === 'admin'
+                  ? '/admin/campuses?tab=accounts'
+                  : '/campus/profile'}
+                onclick={() => (accountMenu = false)}
+                role="menuitem"
+                ><span
+                  class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600"
+                  ><Icon name="campus" size={18} /></span
+                ><span>{app.session?.role === 'admin' ? 'Kelola akun kampus' : 'Lihat Profil'}</span
+                ></a
+              >
+              <a
+                class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm hover:bg-blue-50"
+                href={`${prefix}/settings`}
+                onclick={() => (accountMenu = false)}
+                role="menuitem"
+                ><span
+                  class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600"
+                  ><Icon name="settings" size={18} /></span
+                ><span>Pengaturan</span></a
+              >
+              <a
+                class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm hover:bg-blue-50"
+                href={app.session?.role === 'admin' ? '/admin/faq' : '/campus/guide'}
+                onclick={() => (accountMenu = false)}
+                role="menuitem"
+                ><span
+                  class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600"
+                  ><Icon name="faq" size={18} /></span
+                ><span>Panduan Aplikasi</span></a
+              >
+            </nav>{/if}
           <div class="border-t border-[#edf2f8] p-2">
             <button
               class="flex w-full items-center gap-3 rounded-lg bg-transparent px-3 py-3 text-left text-sm text-red-600 hover:bg-red-50"

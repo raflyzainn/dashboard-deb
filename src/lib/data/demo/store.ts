@@ -1,6 +1,7 @@
 import { createSeed, demoNotifications, NOTIFICATION_SEED_VERSION, SHARED_DEMO_TARGETS } from './fixtures/seed';
 import { PROGRAM_PROFILES } from './fixtures/programs';
 import { completeDemoProgram } from './fixtures/complete-program';
+import { seedPayments } from './payments';
 import type { Snapshot, MasterDefinition, MasterAudit, QuestionReply } from '../../types';
 import {
   DEMO_ACTIVATION_EMAIL,
@@ -48,7 +49,7 @@ export function initialState(): DemoState {
       .filter((i) => i.campusId === s.campusId)
       .map((i) => ({ ...definitions.find((d) => d.id === i.definitionId)!, ...i }));
   });
-  return {
+  const state: DemoState = {
     sourceProfileVersion: 4,
     data: { ...seed.data, definitions },
     files: Object.fromEntries(seed.files.map((f) => [f.id, f.blob])),
@@ -57,6 +58,8 @@ export function initialState(): DemoState {
     accounts: seed.data.campuses.flatMap(createCampusAccounts),
     activation: { email: DEMO_ACTIVATION_EMAIL, password: null }
   };
+  seedPayments(state);
+  return state;
 }
 export function createCampusAccounts(campus: { id: string; name: string }): DemoAccount[] {
   return ([1, 2] as const).map((slot) => ({
@@ -64,7 +67,7 @@ export function createCampusAccounts(campus: { id: string; name: string }): Demo
     slot,
     campusId: campus.id,
     campus: campus.name,
-    name: `PIC ${slot} Demo`,
+    name: slot === 1 ? 'Mentor Demo' : 'SoBI Demo',
     email: `${campus.id}.pic${slot}@example.test`,
     revision: 1,
     status: 'Aktif',
@@ -73,7 +76,7 @@ export function createCampusAccounts(campus: { id: string; name: string }): Demo
 }
 // Upgrade existing browser data in place, preserving PIC 1 edits and all campus work.
 export function upgradeAccounts(state: DemoState): boolean {
-  let changed = false;
+  let changed = seedPayments(state);
   if (state.sourceProfileVersion !== 4) {
     const seed = createSeed().data;
     for (const campus of state.data.campuses) {
@@ -114,6 +117,10 @@ export function upgradeAccounts(state: DemoState): boolean {
     if (!account.id) {
       account.id = account.campusId;
       account.slot = 1;
+      changed = true;
+    }
+    if (/^PIC [12] Demo$/.test(account.name)) {
+      account.name = account.slot === 1 ? 'Mentor Demo' : 'SoBI Demo';
       changed = true;
     }
   }

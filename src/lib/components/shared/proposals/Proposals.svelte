@@ -12,6 +12,13 @@
   import ProposalReview from './ProposalReview.svelte';
   let { campusId = '', embedded = false }: { campusId?: string; embedded?: boolean } = $props();
   let campus = $state('');
+  const linkedCampus = $derived(
+    page.url.searchParams.get('campus') ||
+      app.data?.proposals.find((p) => p.id === page.url.searchParams.get('version'))?.campusId
+  );
+  $effect(() => {
+    if (linkedCampus) campus = linkedCampus;
+  });
   $effect(() => {
     if (!app.data?.campuses.some((c) => c.id === campus)) campus = app.data?.campuses[0]?.id || '';
   });
