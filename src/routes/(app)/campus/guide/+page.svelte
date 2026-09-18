@@ -26,6 +26,14 @@
       action: 'Kelola proposal'
     },
     {
+      icon: 'payments',
+      title: 'Pencairan',
+      description:
+        'Pantau delapan tahap pencairan proposal. Mentor dan SoBI dapat melihat progres setiap tahap.',
+      href: 'payments',
+      action: 'Lihat pencairan'
+    },
+    {
       icon: 'questions',
       title: 'Forum Q&A',
       description: 'Ajukan pertanyaan dan berdiskusi bersama admin serta kampus mitra lainnya.',

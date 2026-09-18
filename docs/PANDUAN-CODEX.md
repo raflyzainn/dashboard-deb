@@ -45,6 +45,7 @@ Ketentuan fitur terbaru:
 8. Pemeriksaan KPI menggunakan target dan bukti terstruktur dengan ambang contoh. Belum memakai KPI resmi Holding atau membaca substansi PDF secara otomatis.
 9. Dokumen pembayaran: kuitansi, invoice, berita acara, dan nota. Paket arsip menggabungkan ringkasan dengan proposal dan empat lampiran PDF.
 10. Keempat PDF dokumen pembayaran ditampilkan langsung pada kartu dokumennya; tautan unduh tetap tersedia sebagai cadangan browser.
+11. Panduan kampus memiliki kartu Pencairan yang mengarah langsung ke halaman pemantauan delapan tahap.
 
 Pembatasan perubahan harus ada di layanan data, bukan hanya menyembunyikan tombol. Namun otorisasi demo browser tetap bukan pengamanan server produksi.
 
