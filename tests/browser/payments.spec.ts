@@ -10,9 +10,15 @@ test('finance dashboard summarizes the payment workload', async ({ page }) => {
   await expect(page.getByRole('region', { name: 'Ringkasan pencairan' })).toContainText(
     'Total pengajuan'
   );
-  await expect(page.getByRole('region', { name: 'Prioritas keuangan' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Daftar pencairan kampus' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Distribusi tahap pencairan' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Buka detail pencairan' }).first()).toBeVisible();
+  await page.getByLabel('Cari kampus').fill('Universitas Pertamina');
+  await expect(page.getByRole('region', { name: 'Daftar pencairan kampus' })).toContainText(
+    'Universitas Pertamina'
+  );
+  await page.getByLabel('Tahap').selectOption('ready');
+  await expect(page.getByText('Kampus tidak ditemukan')).toBeVisible();
 });
 
 test('broken proposals are rejected and notifications open an older payment instead of the latest', async ({

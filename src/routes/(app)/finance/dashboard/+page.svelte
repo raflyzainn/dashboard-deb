@@ -6,17 +6,24 @@
   import { STAGES, type PaymentStage } from '$lib/payments';
 
   const stages = Object.entries(STAGES) as [PaymentStage, string][];
+  let query = $state('');
+  let stageFilter = $state<PaymentStage | ''>('');
   const payments = $derived(app.data?.payments || []);
   const total = $derived(payments.reduce((sum, payment) => sum + payment.amount, 0));
   const paid = $derived(
     payments.filter((payment) => payment.stage === 'paid').reduce((sum, payment) => sum + payment.amount, 0)
   );
-  const priorityStages: PaymentStage[] = ['sent', 'ready', 'finance'];
-  const priorities = $derived(
+  const filteredPayments = $derived(
     payments
-      .filter((payment) => priorityStages.includes(payment.stage))
-      .sort((a, b) => priorityStages.indexOf(a.stage) - priorityStages.indexOf(b.stage))
-      .slice(0, 6)
+      .filter(
+        (payment) =>
+          (!query.trim() ||
+            campusName(payment.campusId)
+              .toLocaleLowerCase('id')
+              .includes(query.trim().toLocaleLowerCase('id'))) &&
+          (!stageFilter || payment.stage === stageFilter)
+      )
+      .sort((a, b) => campusName(a.campusId).localeCompare(campusName(b.campusId), 'id'))
   );
   const rupiah = (value: number) => `Rp ${value.toLocaleString('id-ID')}`;
   const count = (stage: PaymentStage) => payments.filter((payment) => payment.stage === stage).length;
@@ -62,17 +69,38 @@
 </section>
 
 <div class="grid items-start gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.6fr)]">
-  <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white" aria-label="Prioritas keuangan">
-    <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+  <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white" aria-label="Daftar pencairan kampus">
+    <div class="border-b border-slate-100 px-5 py-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h2 class="font-semibold text-[#0d234c]">Prioritas keuangan</h2>
-        <p class="mt-1 text-xs text-slate-500">Pengajuan terdekat dengan proses pencairan.</p>
+        <h2 class="font-semibold text-[#0d234c]">Tahap pencairan kampus</h2>
+        <p class="mt-1 text-xs text-slate-500">Cari kampus dan lihat posisi pengajuannya.</p>
       </div>
-      <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">{priorities.length} antrean</span>
+      <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">{filteredPayments.length} hasil</span>
+      </div>
+      <div class="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px]">
+        <label class="grid gap-1.5 text-xs font-semibold text-slate-700"
+          >Cari kampus<input
+            class="min-w-0 rounded-lg border border-slate-300 px-3 py-2.5 font-normal"
+            type="search"
+            placeholder="Ketik nama kampus..."
+            bind:value={query}
+          /></label
+        >
+        <label class="grid gap-1.5 text-xs font-semibold text-slate-700"
+          >Tahap<select
+            class="min-w-0 rounded-lg border border-slate-300 px-3 py-2.5 font-normal"
+            bind:value={stageFilter}
+          >
+            <option value="">Semua tahap</option>
+            {#each stages as [key, label]}<option value={key}>{label}</option>{/each}
+          </select></label
+        >
+      </div>
     </div>
-    {#if priorities.length}
+    {#if filteredPayments.length}
       <div class="divide-y divide-slate-100">
-        {#each priorities as payment}
+        {#each filteredPayments as payment}
           <article class="grid gap-3 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
             <div class="min-w-0">
               <h3 class="truncate text-sm font-semibold text-[#0d234c]">{campusName(payment.campusId)}</h3>
@@ -88,7 +116,7 @@
         {/each}
       </div>
     {:else}
-      <Empty title="Tidak ada antrean prioritas" description="Pengajuan siap kirim atau sedang diproses akan tampil di sini." icon="check" />
+      <Empty title="Kampus tidak ditemukan" description="Ubah kata pencarian atau pilih tahap lain." icon="search" />
     {/if}
   </section>
 

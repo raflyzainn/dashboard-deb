@@ -61,6 +61,7 @@ Dijalankan melalui tool browser Playwright, tanpa runner tes terminal:
 - Pada tahap Kelengkapan dokumen, akun Keuangan menampilkan empat input unggah dan berhasil mengunggah Nota PDF hingga status Menunggu pemeriksaan; kontrol validasi dan perubahan tahap Admin tidak tampil.
 - Admin PF dan Keuangan memiliki percakapan feedback pencairan dua arah; setiap pesan menyimpan tahap, pelaku, waktu, isi, dan notifikasi untuk peran penerima.
 - Paket PDF gabungan yang dikirim Admin tampil langsung pada Arsip Keuangan dengan pratinjau dan tautan unduh.
+- Dashboard Keuangan dapat mencari nama kampus dan memfilter seluruh pengajuan berdasarkan delapan tahap; kombinasi tanpa hasil menampilkan kondisi kosong dan tetap responsif pada lebar 390 px.
 - [Screenshot kampus mobile terbaru](../.qa/payment-campus-tracking-final.png).
 - [Screenshot dokumen pembayaran langsung](../.qa/payment-documents-inline.png).
 - [Screenshot feedback dan arsip pada Keuangan](../.qa/payment-finance-feedback-archive.png).
