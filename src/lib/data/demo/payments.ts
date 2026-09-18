@@ -155,11 +155,7 @@ export function createPaymentService(transact: Run) {
   const admin = (user: AppSession) => {
     if (user.role !== 'admin') throw Error('Hanya Admin PF yang dapat mengubah pencairan.');
   };
-  const run: Run = (action, write) =>
-    transact((s, user) => {
-      if (write) admin(user);
-      return action(s, user);
-    }, write);
+  const run: Run = (action, write) => transact(action, write);
   const get = (s: DemoState, id: string) => {
     const p = s.data.payments?.find((p) => p.id === id);
     if (!p) throw Error('Pengajuan pencairan tidak ditemukan.');
@@ -231,7 +227,8 @@ export function createPaymentService(transact: Run) {
     uploadPaymentDocument: async (id: string, revision: number, kind: DocumentKind, file: File) => {
       // Parse before opening IndexedDB's synchronous transaction.
       const actorId = await run((_s, user) => {
-        admin(user);
+        if (!['admin', 'finance'].includes(user.role))
+          throw Error('Unggah dokumen hanya tersedia untuk Admin PF dan Keuangan.');
         return user.id;
       });
       if (
@@ -246,8 +243,12 @@ export function createPaymentService(transact: Run) {
       return run((s, user) => {
         const p = get(s, id);
         requirePayment(p, user, revision);
-        if (user.id !== actorId || user.role !== 'admin' || p.stage !== 'documents')
-          throw Error('Unggah hanya tersedia untuk Admin PF pada tahap dokumen.');
+        if (
+          user.id !== actorId ||
+          !['admin', 'finance'].includes(user.role) ||
+          p.stage !== 'documents'
+        )
+          throw Error('Unggah hanya tersedia untuk Admin PF dan Keuangan pada tahap dokumen.');
         const old = p.documents.find((d) => d.kind === kind);
         const fileId = crypto.randomUUID();
         if (old) delete s.files[old.fileId];

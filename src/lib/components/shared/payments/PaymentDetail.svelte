@@ -157,12 +157,13 @@
                 : 'Belum diunggah'}</span
             >
           </div>
-          {#if d}<button
-              class="mt-2 break-all text-left text-xs text-blue-700 underline"
-              onclick={() => (preview = d.fileId)}>Periksa berkas {DOCUMENT_LABELS[kind]}</button
-            >
-            <p class="hint break-all">{d.filename}{d.note ? ` · ${d.note}` : ''}</p>{/if}
-          {#if role === 'admin' && p.stage === 'documents'}<label class="mt-2"
+          {#if d}
+            <p class="hint break-all">{d.filename}{d.note ? ` · ${d.note}` : ''}</p>
+            <div class="mt-3">
+              <PaymentFile paymentId={p.id} fileId={d.fileId} filename={d.filename} />
+            </div>
+          {/if}
+          {#if ['admin', 'finance'].includes(role || '') && p.stage === 'documents'}<label class="mt-2"
               >{d ? 'Ganti' : 'Unggah'}
               {DOCUMENT_LABELS[kind]}<input
                 type="file"

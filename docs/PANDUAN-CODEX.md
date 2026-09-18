@@ -29,7 +29,7 @@ Kode HTTP, modul `src/lib/server/`, skrip PocketBase, dan dokumentasi migrasi ba
 | Mentor | Data kampus sendiri; dapat memperbarui profil, indikator sesuai aturan review, proposal, dan komentar. Pencairan hanya melihat kartu alur. |
 | SoBI | Akun berbeda pada kampus yang sama; berbagi data kampus dengan Mentor. Pencairan hanya melihat kartu alur. |
 | Admin PF | Mengelola dan mereview data kampus; satu-satunya peran yang mengubah pencairan. |
-| Keuangan | Membaca data pencairan, berkas/arsip yang tersedia, serta notifikasi. Tidak mengubah pencairan. |
+| Keuangan | Membaca data pencairan, mengunggah/mengganti dokumen pada tahap kelengkapan, serta melihat berkas, arsip, dan notifikasi. |
 
 Data awal memiliki 40 kampus dengan dua identitas internal per kampus. Pemilih login demo hanya menampilkan Mentor dan SoBI Universitas Pertamina. Keduanya memiliki cakupan kampus yang sama, tetapi identitas pelakunya berbeda.
 
@@ -39,11 +39,12 @@ Ketentuan fitur terbaru:
 2. Peta persebaran **tetap ditampilkan**.
 3. Proposal menggunakan riwayat versi, satu pratinjau PDF, tanggapan, dan komentar per versi. Tidak memakai perbandingan berdampingan.
 4. Halaman pencairan Mentor dan SoBI hanya menampilkan kartu alur status tanpa nominal, formulir, pratinjau berkas, maupun tombol perubahan.
-5. Admin PF membuat pengajuan, mengisi nominal/bukti KPI, mengunggah dan memeriksa dokumen, mencatat persetujuan, mengekspor paket, dan mencatat pencairan.
+5. Admin PF membuat pengajuan, mengisi nominal/bukti KPI, mengunggah dan memeriksa dokumen, mencatat persetujuan, mengekspor paket, dan mencatat pencairan. Keuangan juga dapat mengunggah atau mengganti dokumen pada tahap kelengkapan, tetapi validasi dan perubahan tahap tetap milik Admin PF.
 6. Tahap tetap berurutan: penilaian KPI → kelengkapan dokumen → approval PF → approval kampus → approval keuangan → siap dikirim → diproses keuangan → sudah dicairkan.
 7. Persetujuan kampus/keuangan dicatat oleh admin. Simpan identitas admin sebagai pelaku sebenarnya; jangan mengaku pihak lain yang login atau melakukan tindakan.
 8. Pemeriksaan KPI menggunakan target dan bukti terstruktur dengan ambang contoh. Belum memakai KPI resmi Holding atau membaca substansi PDF secara otomatis.
 9. Dokumen pembayaran: kuitansi, invoice, berita acara, dan nota. Paket arsip menggabungkan ringkasan dengan proposal dan empat lampiran PDF.
+10. Keempat PDF dokumen pembayaran ditampilkan langsung pada kartu dokumennya; tautan unduh tetap tersedia sebagai cadangan browser.
 
 Pembatasan perubahan harus ada di layanan data, bukan hanya menyembunyikan tombol. Namun otorisasi demo browser tetap bukan pengamanan server produksi.
 

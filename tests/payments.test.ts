@@ -185,11 +185,10 @@ test('revision invalidates approvals and document validation while keeping the a
   assert.throws(() => newPayment('p', 'c', 'v', -1), /nominal/i);
 });
 
-test('only admin can mutate payments, including both campus accounts and finance', async () => {
+test('campus accounts cannot mutate payments', async () => {
   for (const user of [
     { id: 'campus-001', name: 'Mentor', role: 'campus', campusId: 'campus-001' },
-    { id: 'campus-001-pic2', name: 'SoBI', role: 'campus', campusId: 'campus-001' },
-    { id: 'finance-1', name: 'Keuangan', role: 'finance' }
+    { id: 'campus-001-pic2', name: 'SoBI', role: 'campus', campusId: 'campus-001' }
   ] as AppSession[]) {
     const state = initialState();
     const p = state.data.payments![0];
@@ -210,4 +209,23 @@ test('only admin can mutate payments, including both campus accounts and finance
     await assert.rejects(service.exportPayment(p.id, p.revision), /admin/i);
     assert.equal(JSON.stringify(state.data), before);
   }
+});
+
+test('finance can upload documents but cannot review or advance the payment', async () => {
+  const state = initialState();
+  const p = state.data.payments![1];
+  const service = createPaymentService(async (action) =>
+    action(state, { id: 'finance-1', name: 'Keuangan', role: 'finance' })
+  );
+  const { samplePdf } = await import('../src/lib/data/demo/fixtures/pdf');
+  await service.uploadPaymentDocument(
+    p.id,
+    p.revision,
+    'nota',
+    new File([samplePdf('Nota', 1)], 'nota-keuangan.pdf', { type: 'application/pdf' })
+  );
+  assert.equal(p.documents.find((d) => d.kind === 'nota')?.filename, 'nota-keuangan.pdf');
+  assert.equal(p.history.at(-1)?.actor, 'Keuangan');
+  await assert.rejects(service.reviewPaymentDocument(p.id, p.revision, 'nota', true, ''), /PF/);
+  await assert.rejects(service.paymentAction(p.id, p.revision, 'submit-documents', ''), /Admin/);
 });
