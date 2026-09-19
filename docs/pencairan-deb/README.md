@@ -49,3 +49,5 @@ Aturan ini dibuat karena pengguna tidak suka hasil yang dibangun dari pikiran se
 | Lampiran | Satu PDF per kampus berisi semua dokumen Termin 1 yang sudah Sesuai |
 | Slot dokumen | Satu jenis dokumen untuk satu kampus pada satu termin, memiliki banyak versi berkas |
 | Profil DEB | Data kampus dan program: alamat, lokasi, kontak, penandatangan. Diisi admin, kampus hanya melihat |
+
+- `09-bukti-rab.md`: bukti RAB 100%, 70%, 30% per kampus dari berkas asli (pemeriksaan 20 September 2026) dan apa yang diubah di sistem karenanya.

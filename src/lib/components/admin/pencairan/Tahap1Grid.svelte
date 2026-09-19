@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { dataService } from '$lib/data/service';
+  import { onChange } from '$lib/realtime.svelte';
   import { KINDS, KIND_SHORT, ITEM_STATE_LABEL, type Kind } from '$lib/pencairan';
   import type { DirectoryRow } from './kartu-types';
   import Icon from '$lib/components/ui/Icon.svelte';
@@ -13,7 +14,12 @@
   let error = $state('');
   let search = $state('');
   let filter = $state<'semua' | 'admin' | 'kampus' | 'lengkap' | 'dibayar'>('semua');
-  $effect(() => { untrack(() => { dataService.api.get<{ rows: DirectoryRow[] }>('/api/pencairan').then(r => (rows = r.rows)).catch(e => (error = e instanceof Error ? e.message : 'Dashboard belum dapat dimuat.')); }); });
+  async function load() {
+    try { rows = (await dataService.api.get<{ rows: DirectoryRow[] }>('/api/pencairan')).rows; }
+    catch (e) { error = e instanceof Error ? e.message : 'Dashboard belum dapat dimuat.'; }
+  }
+  $effect(() => { untrack(() => { void load(); }); });
+  $effect(() => onChange(() => void load(), { delay: 1000 }));
 
   const filters = $derived.by(() => {
     const all = rows || [];

@@ -1,5 +1,6 @@
 <script lang="ts">
   /** The three entries of menu Pencairan: the dashboard overview, the Tahap 1 checklist per campus, Tahap 2 for the remainder. */
+  import { live } from '$lib/realtime.svelte';
   let { active }: { active: 'dashboard' | 'tahap-1' | 'tahap-2' } = $props();
   const tabs = [
     { key: 'dashboard', href: '/admin/pencairan', label: 'Dashboard', hint: 'Semua kampus' },
@@ -17,4 +18,8 @@
       <span class="text-xs {here ? 'text-blue-100' : 'text-slate-500'}">{tab.hint}</span>
     </a>
   {/each}
+  <span class="ml-auto flex shrink-0 items-center gap-2 self-center pl-2 text-xs text-slate-600" role="status" title={live.connected ? 'Pembaruan langsung aktif: layar diperbarui saat ada perubahan.' : 'Pembaruan langsung belum aktif. Muat ulang halaman untuk data terbaru.'}>
+    {#if live.flash}<span class="hidden truncate sm:inline">{live.flash}</span>{/if}
+    <span class="inline-flex items-center gap-1.5 whitespace-nowrap font-semibold {live.connected ? 'text-green-800' : 'text-slate-500'}"><span class="h-2 w-2 rounded-full {live.connected ? 'bg-green-600' : 'bg-slate-300'}"></span>{live.connected ? 'Langsung' : 'Tidak langsung'}</span>
+  </span>
 </nav>

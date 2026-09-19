@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { dataService } from '$lib/data/service';
+  import { onChange } from '$lib/realtime.svelte';
   import { formatSen } from '$lib/pencairan';
   import Empty from '$lib/components/ui/Empty.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
@@ -28,6 +29,7 @@
     finally { loading = false; }
   }
   $effect(() => { untrack(() => { void load(); }); });
+  $effect(() => onChange(() => void load(), { delay: 1000 }));
 </script>
 
 <div class="grid gap-5">

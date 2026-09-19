@@ -3,6 +3,7 @@
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { dataService } from '$lib/data/service';
+  import { onChange } from '$lib/realtime.svelte';
   import { KINDS, KIND_LABEL, KIND_SHORT, KIND_FILE, LOOK_AT, FIELDS, DECISION_LABEL, RAIL_WORD, ITEM_STATE_LABEL, RAB_SHARE, isRabKind, formatSen, parseSen, type Kind, type ItemState } from '$lib/pencairan';
   import type { KartuData, Version, Check } from './kartu-types';
   import Icon from '$lib/components/ui/Icon.svelte';
@@ -108,6 +109,12 @@
   /** A surat kuasa counted as not needed because the account holder signs the PKS has no decision to take back. */
   const computedOnly = $derived(state === 'tidak_perlu' && doc?.status !== 'tidak_perlu');
   const canDecide = $derived(admin && data !== null && (kind === 'sk' || isRab || Boolean(version)));
+  /** What the campus file really contains, marked after checking the file itself (decision 47). */
+  const bukti = $derived.by(() => {
+    const p = data?.disbursement.properties || {};
+    const mark = (k: string) => (p[k] === 'ada' ? 'ada' : p[k] === 'tidak' ? 'tidak' : '');
+    return { r100: mark('buktiRab100'), r70: mark('buktiRab70'), r30: mark('buktiRab30'), note: typeof p.buktiRabCatatan === 'string' ? p.buktiRabCatatan : '' };
+  });
 
   function say(message: string) { notice = message; if (noticeTimer) clearTimeout(noticeTimer); if (message) noticeTimer = setTimeout(() => (notice = ''), 4000); }
   function apply(next: KartuData, message = '') { data = next; error = ''; refresh++; if (message) say(message); }
@@ -116,6 +123,7 @@
     catch (e) { error = e instanceof Error ? e.message : 'Layar belum dapat dimuat.'; }
   }
   $effect(() => { untrack(() => { void load(); }); });
+  $effect(() => onChange(() => void load(), { campus: campusId }));
   $effect(() => {
     void selected;
     untrack(() => { selectedVersionId = ''; bankNameSeen = ''; editing = false; showLook = false; rabTab = 'digital'; });
@@ -320,7 +328,19 @@
                 <div class="flex h-full items-center justify-center text-sm text-slate-600">Berkas SK belum dimuat.</div>
               {/if}
             {:else if isRab && rabTab === 'digital'}
-              <div class="h-full overflow-auto p-3"><RabTable {campusId} compact {refresh} share={RAB_SHARE[kind as keyof typeof RAB_SHARE]} /></div>
+              <div class="h-full overflow-auto p-3">
+                {#if bukti.r100 || bukti.r70 || bukti.r30}
+                  <div class="mb-3 rounded-xl border border-slate-200/70 bg-slate-50 px-3 py-2">
+                    <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px]"><span class="font-bold uppercase tracking-[0.05em] text-slate-500">Bukti di berkas kampus</span>
+                      {#each [['RAB 100%', bukti.r100], ['RAB 70%', bukti.r70], ['RAB 30%', bukti.r30]] as [label, mark]}
+                        <span class="rounded-full px-2 py-0.5 font-semibold {mark === 'ada' ? 'bg-green-100 text-green-900' : mark === 'tidak' ? 'bg-slate-200 text-slate-600' : 'bg-white text-slate-400'}">{label} {mark === 'ada' ? 'ada' : mark === 'tidak' ? 'tidak ada' : 'belum diperiksa'}</span>
+                      {/each}
+                    </p>
+                    {#if bukti.note}<p class="mt-1 text-[13px] leading-relaxed text-slate-700">{bukti.note}</p>{/if}
+                  </div>
+                {/if}
+                <RabTable {campusId} compact {refresh} share={RAB_SHARE[kind as keyof typeof RAB_SHARE]} />
+              </div>
             {:else if version}
               <FileViewer src={fileUrl} mime={version.mime} name={version.originalName} height={docHeight} />
             {:else}

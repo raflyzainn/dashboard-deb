@@ -473,7 +473,7 @@ export async function updateDisbursement(pb: PocketBase, actor: AuditActor & { i
     if (patch.requestedSen !== Number(disbursement.requestedSen || 0)) { data.clauseChecked = false; data.clauseCheckedBy = ''; data.clauseCheckedAt = ''; }
   }
   if (patch.properties) {
-    const allowed = ['nomorPksPf', 'nomorPksKampus', 'tanggalPerjanjian', 'nomorSuratPermohonan', 'tanggalSuratPermohonan', 'nomorInvois', 'tanggalInvois', 'nomorKuitansi', 'tanggalKuitansi', 'penandatanganNama', 'penandatanganJabatan', 'tempatTandaTangan', 'kampusDihubungiPada', 'kampusDihubungiCatatan'];
+    const allowed = ['nomorPksPf', 'nomorPksKampus', 'tanggalPerjanjian', 'nomorSuratPermohonan', 'tanggalSuratPermohonan', 'nomorInvois', 'tanggalInvois', 'nomorKuitansi', 'tanggalKuitansi', 'penandatanganNama', 'penandatanganJabatan', 'tempatTandaTangan', 'kampusDihubungiPada', 'kampusDihubungiCatatan', 'buktiRab100', 'buktiRab70', 'buktiRab30', 'buktiRabCatatan'];
     const current = (disbursement.properties || {}) as Record<string, unknown>;
     const next = { ...current };
     for (const [key, value] of Object.entries(patch.properties)) {

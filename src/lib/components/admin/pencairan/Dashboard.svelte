@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { dataService } from '$lib/data/service';
+  import { onChange } from '$lib/realtime.svelte';
   import { KINDS, KIND_SHORT, ITEM_STATE_LABEL, CAMPUS_STATE_LABEL, formatSen, joinNames, type Kind } from '$lib/pencairan';
   import type { DirectoryRow } from './kartu-types';
   import Icon from '$lib/components/ui/Icon.svelte';
@@ -17,7 +18,12 @@
   let year = $state<'semua' | 'kedua' | 'ketiga'>('semua');
   let sort = $state<'keadaan' | 'nama'>('keadaan');
 
-  $effect(() => { untrack(() => { dataService.api.get<{ rows: DirectoryRow[] }>('/api/pencairan').then(r => (rows = r.rows)).catch(e => (error = e instanceof Error ? e.message : 'Dashboard belum dapat dimuat.')); }); });
+  async function load() {
+    try { rows = (await dataService.api.get<{ rows: DirectoryRow[] }>('/api/pencairan')).rows; }
+    catch (e) { error = e instanceof Error ? e.message : 'Dashboard belum dapat dimuat.'; }
+  }
+  $effect(() => { untrack(() => { void load(); }); });
+  $effect(() => onChange(() => void load(), { delay: 1000 }));
 
   const pill: Record<string, string> = { belum_ada: 'bg-slate-100 text-slate-600', menunggu_kampus: 'bg-amber-100 text-amber-900', menunggu_admin: 'bg-blue-100 text-[#015a9a]', lengkap: 'bg-green-100 text-green-800', siap_dibayar: 'bg-green-100 text-green-800', dibayar: 'bg-green-600 text-white' };
   const filters = $derived.by(() => {

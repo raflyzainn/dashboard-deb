@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { dataService } from '$lib/data/service';
+  import { onChange } from '$lib/realtime.svelte';
   import { KINDS, KIND_LABEL, KIND_SHORT, ITEM_STATE_LABEL, type Kind, type ItemState } from '$lib/pencairan';
   import type { KartuData, Doc, Version, Review, Check } from './kartu-types';
   import Icon from '$lib/components/ui/Icon.svelte';
@@ -70,6 +71,7 @@
     catch (e) { error = e instanceof Error ? e.message : 'Halaman belum dapat dimuat.'; }
   }
   $effect(() => { untrack(() => { void load(); }); });
+  $effect(() => onChange(() => void load(), { campus: campusId }));
   async function copy() {
     try { await navigator.clipboard.writeText(summary); copied = true; setTimeout(() => (copied = false), 3000); } catch { error = 'Salin tidak berhasil. Pilih teks lalu salin.'; }
   }

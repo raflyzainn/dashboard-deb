@@ -7,6 +7,7 @@
   import { app } from '$lib/state.svelte';
   import Shell from '$lib/components/layout/Shell.svelte';
   import Empty from '$lib/components/ui/Empty.svelte';
+  import { startRealtime } from '$lib/realtime.svelte';
   let { children } = $props();
   const routeRole = $derived(page.url.pathname.split('/')[1]);
   const authorized = $derived(app.ready && app.session && routeRole === app.session.role);
@@ -17,6 +18,8 @@
     const stopNavigation = pollVisible(() => app.refreshNavigation(true), 15000);
     return stopNavigation;
   });
+  // Admins get the live change feed: their screens reload when someone else changes data.
+  $effect(() => { if (authorized && app.session?.role === 'admin') startRealtime(app.session.id); });
   $effect(() => {
     if (!authorized || !['questions', 'question-detail'].includes(request.view)) return;
     return pollVisible(() => app.refreshForum(), 5000);

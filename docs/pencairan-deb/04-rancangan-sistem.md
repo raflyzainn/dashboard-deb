@@ -134,6 +134,8 @@ Semua jumlah disimpan sebagai bilangan bulat sen. 70% dihitung sebagai `nilai_ru
 
 ## Keamanan dan privasi
 
+- **Pembaruan langsung (keputusan 46):** browser admin membuka satu sambungan SSE ke PocketBase untuk koleksi `audit` dengan token impersonasi 2 jam yang dicetak server; hanya `audit` yang bisa dibaca dengan token itu, data tetap lewat server aplikasi.
+
 Surat kuasa dan buku rekening adalah berkas terlindungi; tidak ada ekstraksi otomatis; nomor rekening disamarkan di luar layar Rekening; tidak ada data pribadi di log, audit ringkas, atau nama kunci objek.
 
 ## Tambahan versi 9 (19 September 2026)

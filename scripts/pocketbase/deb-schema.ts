@@ -35,6 +35,8 @@ export const IDS = {
 };
 
 /** The eight check columns of the review sheet, in the sheet's order. */
+/** Who may list and view the audit collection with their own token: active admins, for the live change feed in the browser (decision 46). */
+export const AUDIT_READ_RULE = '@request.auth.id != "" && @request.auth.active = true && (@request.auth.role = "admin" || @request.auth.role = "super_admin" || @request.auth.superAdmin = true)';
 export const DOCUMENT_KINDS = ['sk', 'pks', 'rab_penuh', 'rab', 'rab_tahap2', 'permohonan', 'kuitansi', 'invois', 'laporan', 'rekening', 'surat_kuasa'];
 export const VERIFICATION_KINDS = ['pks', 'permohonan', 'invois', 'kuitansi', 'rab', 'lampiran'];
 export const DOCUMENT_STATUS = ['belum_ada', 'menunggu_review', 'perlu_konfirmasi', 'perlu_revisi', 'sesuai', 'tidak_perlu'];
@@ -48,8 +50,8 @@ export const CAMPUS_EXTRA: Field[] = [
 ];
 
 export function debCollections(campusesId: string) {
-  const base = (name: string, id: string, fields: Field[], indexes: string[] = []) => ({
-    id, name, type: 'base', system: false, listRule: null, viewRule: null, createRule: null, updateRule: null, deleteRule: null,
+  const base = (name: string, id: string, fields: Field[], indexes: string[] = [], rules: { listRule?: string | null; viewRule?: string | null } = {}) => ({
+    id, name, type: 'base', system: false, listRule: null, viewRule: null, createRule: null, updateRule: null, deleteRule: null, ...rules,
     fields: [ID_FIELD, ...fields, created(), updated()], indexes
   });
   return [
@@ -116,7 +118,7 @@ export function debCollections(campusesId: string) {
     base('audit', IDS.audit, [
       rel('actor', IDS.users), text('actorName', 200), text('actorEmail', 254), text('action', 500, { required: true }), text('context', 160, { required: true }),
       text('collection', 80), text('record', 40), rel('campus', campusesId), json('before', 100000), json('after', 100000), text('note', 2000)
-    ], ['CREATE INDEX idx_audit_context ON audit (context, created)', 'CREATE INDEX idx_audit_campus ON audit (campus, created)']),
+    ], ['CREATE INDEX idx_audit_context ON audit (context, created)', 'CREATE INDEX idx_audit_campus ON audit (campus, created)'], { listRule: AUDIT_READ_RULE, viewRule: AUDIT_READ_RULE }),
     base('lpj_entries', IDS.lpj_entries, [
       rel('disbursement', IDS.disbursements, { required: true }), rel('rabLine', IDS.rab_lines), date('date'), text('reference', 120), text('payee', 200), num('amountSen'),
       text('memo', 1000), text('r2Key', 400), text('originalName', 300), sel('status', ['menunggu_review', 'perlu_revisi', 'sesuai']), rel('createdBy', IDS.users)

@@ -20,6 +20,9 @@
   const all = $derived(version?.lines || []);
   const lines = $derived(share === 'penuh' ? all : all.filter(l => shareSen(l, share) > 0));
   const allItems = $derived(all.filter(l => l.level === MAX_LEVEL).length);
+  /** A version loaded from a RAB 70% sheet alone carries the same figure on every line for 100% and 70%; its 100% page must say so instead of showing them. */
+  const onlyTerm1 = $derived(Boolean(version) && all.some(l => l.level === 1) && all.filter(l => l.level === 1).every(l => l.amountSen === l.term1Sen && !(l.term2Sen || 0)));
+  const fullVersion = $derived((data?.versions || []).filter(v => v.totalSen > v.term1Sen).map(v => v.number).pop() || 0);
   const items = $derived(lines.filter(l => l.level === MAX_LEVEL).length);
   const total = $derived(lines.filter(l => l.level === 1).reduce((sum, l) => sum + shareSen(l, share), 0));
   /** What this page is measured against: RAB 100% the SK, RAB 70% the limit, RAB 30% what the SK leaves after Tahap 1. */
@@ -58,6 +61,14 @@
   </div>
 {:else}
   <div class="grid min-w-0 gap-2" data-rab-table>
+    {#if share === 'penuh' && onlyTerm1}
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
+        <span class="font-semibold text-slate-900">RAB 100% · versi {version.number}</span>
+        <Badge tone={RAB_STATUS_TONE[version.status]}>{STATUS_SHORT[version.status]}</Badge>
+        <a href={editorUrl} class="{link} ml-auto"><Icon name="edit" size={13} />Ubah baris</a>
+      </div>
+      <p class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13.5px] leading-relaxed text-amber-900">Versi {version.number} hanya memuat lembar RAB 70%; angkanya tidak ditampilkan sebagai RAB 100%.{fullVersion ? ` Lembar RAB 100% ada di versi ${fullVersion}, pilih di halaman RAB.` : ' Lembar RAB 100% belum ada di RAB terkelola.'}</p>
+    {:else}
     <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
       <span class="font-semibold text-slate-900">{SHARE_LABEL[share]} · versi {version.number}</span>
       <Badge tone={RAB_STATUS_TONE[version.status]}>{STATUS_SHORT[version.status]}</Badge>
@@ -106,5 +117,6 @@
         </tfoot>
       </table>
     </div>
+    {/if}
   </div>
 {/if}
