@@ -1,10 +1,12 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { dataService } from '$lib/data/service';
-  import { KINDS, KIND_SHORT, ITEM_STATE_LABEL, CAMPUS_STATE_LABEL, formatSen, joinNames, type Kind, type ItemState } from '$lib/pencairan';
+  import { KINDS, KIND_SHORT, ITEM_STATE_LABEL, CAMPUS_STATE_LABEL, formatSen, joinNames, type Kind } from '$lib/pencairan';
   import type { DirectoryRow } from './kartu-types';
   import Icon from '$lib/components/ui/Icon.svelte';
   import PencairanNav from './PencairanNav.svelte';
+  import StatusMarker from './StatusMarker.svelte';
+  import StatusLegend from './StatusLegend.svelte';
 
   /** Dashboard Pencairan: the overview of every funded campus, with the same grid as the review sheet. Picking a campus opens its Tahap 1 checklist. */
   let rows = $state<DirectoryRow[] | null>(null);
@@ -16,7 +18,6 @@
 
   $effect(() => { untrack(() => { dataService.api.get<{ rows: DirectoryRow[] }>('/api/pencairan').then(r => (rows = r.rows)).catch(e => (error = e instanceof Error ? e.message : 'Dashboard belum dapat dimuat.')); }); });
 
-  const cell: Record<ItemState, string> = { sesuai: 'bg-green-600', tidak_perlu: 'bg-green-200', perlu_konfirmasi: 'bg-[#0066B2]', menunggu_review: 'bg-sky-400', perlu_revisi: 'bg-amber-500', belum_ada: 'bg-slate-100 ring-1 ring-inset ring-slate-300' };
   const pill: Record<string, string> = { belum_ada: 'bg-slate-100 text-slate-600', menunggu_kampus: 'bg-amber-100 text-amber-900', menunggu_admin: 'bg-blue-100 text-[#015a9a]', lengkap: 'bg-green-100 text-green-800', siap_dibayar: 'bg-green-100 text-green-800', dibayar: 'bg-green-600 text-white' };
   const filters = $derived.by(() => {
     const all = rows || [];
@@ -61,7 +62,7 @@
 <div class="grid gap-5 [&>*]:min-w-0">
   <div class="grid gap-2">
     <h1 class="text-2xl font-bold text-slate-900">Pencairan</h1>
-    <p class="text-sm text-slate-500">Sembilan butir per kampus, seperti di lembar review. Klik nama kampus untuk membuka daftar periksa Tahap 1, klik sel untuk membuka butirnya.</p>
+    <p class="text-sm text-slate-500">{KINDS.length} butir per kampus, seperti di lembar review. Klik nama kampus untuk membuka daftar periksa Tahap 1, klik sel untuk membuka butirnya.</p>
     <PencairanNav active="dashboard" />
   </div>
 
@@ -96,15 +97,11 @@
           <button type="button" class="rounded-full border px-3 py-1 text-xs font-semibold transition {filter === key ? 'border-[#0066B2] bg-[#0066B2] text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}" onclick={() => (filter = key)}>{label} <span class="tabular-nums opacity-80">{count}</span></button>
         {/each}
       </div>
-      <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
-        {#each ['sesuai', 'tidak_perlu', 'perlu_konfirmasi', 'menunggu_review', 'perlu_revisi', 'belum_ada'] as s}
-          <span class="inline-flex items-center gap-1.5"><i class="inline-block size-3 rounded-[3px] {cell[s as ItemState]}"></i>{ITEM_STATE_LABEL[s as ItemState]}</span>
-        {/each}
-      </div>
+      <StatusLegend />
     </div>
 
     <div class="overflow-x-auto rounded-xl border border-slate-200/70 bg-white">
-      <table class="w-full min-w-[900px] text-sm">
+      <table aria-label="Status pencairan per kampus" class="w-full min-w-[900px] text-sm">
         <thead><tr class="bg-slate-50 text-[11px] uppercase tracking-[0.05em] text-slate-500">
           <th class="px-3 py-2.5 text-left font-bold">Kampus</th>
           {#each KINDS as k}<th class="px-1 py-2.5 text-center font-bold" title={KIND_SHORT[k]}>{KIND_SHORT[k]}</th>{/each}
@@ -118,7 +115,7 @@
               <td class="px-3 py-2"><a href={`/admin/pencairan/${r.campus.id}${first ? `?butir=${first}` : ''}`} class="font-semibold text-slate-900 hover:text-[#0066B2] hover:underline">{r.campus.name}</a><span class="block text-[11px] text-slate-400">{r.campus.programYear === 'kedua' ? 'Tahun Kedua' : 'Tahun Ketiga'} · batas {formatSen(r.limitSen)}</span></td>
               {#each KINDS as k}
                 {@const s = r.assessment.items[k]}
-                <td class="px-1 py-2 text-center"><a href={`/admin/pencairan/${r.campus.id}?butir=${k}`} class="inline-block h-5 w-6 rounded-md {cell[s]} transition hover:scale-110" title={`${KIND_SHORT[k]}: ${ITEM_STATE_LABEL[s]}`} aria-label={`${KIND_SHORT[k]}: ${ITEM_STATE_LABEL[s]}`}></a></td>
+                <td class="px-1 py-2 text-center"><a href={`/admin/pencairan/${r.campus.id}?butir=${k}`} class="inline-flex size-8 items-center justify-center rounded-lg hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900" title={`${r.campus.name} · ${KIND_SHORT[k]}: ${ITEM_STATE_LABEL[s]}`} aria-label={`${r.campus.name} · ${KIND_SHORT[k]}: ${ITEM_STATE_LABEL[s]}`}><StatusMarker state={s} /></a></td>
               {/each}
               <td class="px-3 py-2 tabular-nums text-slate-700">{r.assessment.done} dari {r.assessment.total}</td>
               <td class="px-3 py-2"><span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold {pill[r.assessment.state]}" title={CAMPUS_STATE_LABEL[r.assessment.state]}>{r.assessment.waiting}</span>{#if r.assessment.revisi > 0}<a href={`/admin/pencairan/${r.campus.id}/revisi`} class="ml-1.5 whitespace-nowrap text-[11.5px] font-semibold text-amber-800 hover:underline" title="Ringkasan revisi">Ringkasan revisi</a>{/if}</td>

@@ -1,10 +1,12 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { dataService } from '$lib/data/service';
-  import { KINDS, KIND_SHORT, ITEM_STATE_LABEL, type Kind, type ItemState } from '$lib/pencairan';
+  import { KINDS, KIND_SHORT, ITEM_STATE_LABEL, type Kind } from '$lib/pencairan';
   import type { DirectoryRow } from './kartu-types';
   import Icon from '$lib/components/ui/Icon.svelte';
   import PencairanNav from './PencairanNav.svelte';
+  import StatusMarker from './StatusMarker.svelte';
+  import StatusLegend from './StatusLegend.svelte';
 
   /** Tahap 1: pick a campus. One row per campus, one cell per item; a row opens the checklist screen on its first unfinished item, a cell opens that item. */
   let rows = $state<DirectoryRow[] | null>(null);
@@ -13,7 +15,6 @@
   let filter = $state<'semua' | 'admin' | 'kampus' | 'lengkap' | 'dibayar'>('semua');
   $effect(() => { untrack(() => { dataService.api.get<{ rows: DirectoryRow[] }>('/api/pencairan').then(r => (rows = r.rows)).catch(e => (error = e instanceof Error ? e.message : 'Dashboard belum dapat dimuat.')); }); });
 
-  const cell: Record<ItemState, string> = { sesuai: 'bg-green-600', tidak_perlu: 'bg-green-200', perlu_konfirmasi: 'bg-[#0066B2]', menunggu_review: 'bg-sky-400', perlu_revisi: 'bg-amber-500', belum_ada: 'bg-slate-100 ring-1 ring-inset ring-slate-300' };
   const filters = $derived.by(() => {
     const all = rows || [];
     return [['semua', 'Semua', all.length], ['admin', 'Menunggu admin', all.filter(r => r.assessment.adminWait > 0).length], ['kampus', 'Menunggu kampus', all.filter(r => r.assessment.campusWait > 0).length], ['lengkap', 'Lengkap', all.filter(r => r.assessment.lengkap).length], ['dibayar', 'Dibayar', all.filter(r => r.assessment.state === 'dibayar').length]] as const;
@@ -50,12 +51,13 @@
   {:else if !rows}
     <p class="text-sm text-slate-500">Memuat…</p>
   {:else}
+    <StatusLegend />
     <div class="overflow-x-auto rounded-2xl border border-slate-200/70 bg-white shadow-[0_10px_30px_#0b254508]">
-      <table class="w-full min-w-[820px] text-sm">
+      <table aria-label="Status pencairan Tahap 1 per kampus" class="w-full min-w-[820px] text-sm">
         <thead><tr class="bg-slate-50 text-[11px] uppercase tracking-[0.05em] text-slate-500">
           <th class="px-3 py-2.5 text-left font-bold">Kampus</th>
           {#each KINDS as k}<th class="px-1 py-2.5 text-center font-bold">{KIND_SHORT[k]}</th>{/each}
-          <th class="px-3 py-2.5 text-right font-bold"></th>
+          <th class="px-3 py-2.5 text-right font-bold">Keadaan</th>
         </tr></thead>
         <tbody>
           {#each visible as r (r.campus.id)}
@@ -64,7 +66,7 @@
               <td class="px-3 py-2"><a href={`/admin/pencairan/${r.campus.id}${first ? `?butir=${first}` : ''}`} class="font-semibold text-slate-900 hover:text-[#0066B2] hover:underline">{r.campus.name}</a></td>
               {#each KINDS as k}
                 {@const s = r.assessment.items[k]}
-                <td class="px-1 py-2 text-center"><a href={`/admin/pencairan/${r.campus.id}?butir=${k}`} class="inline-block h-5 w-6 rounded-md {cell[s]} transition hover:scale-110" title={`${KIND_SHORT[k]}: ${ITEM_STATE_LABEL[s]}`} aria-label={`${KIND_SHORT[k]}: ${ITEM_STATE_LABEL[s]}`}></a></td>
+                <td class="px-1 py-2 text-center"><a href={`/admin/pencairan/${r.campus.id}?butir=${k}`} class="inline-flex size-8 items-center justify-center rounded-lg hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900" title={`${r.campus.name} · ${KIND_SHORT[k]}: ${ITEM_STATE_LABEL[s]}`} aria-label={`${r.campus.name} · ${KIND_SHORT[k]}: ${ITEM_STATE_LABEL[s]}`}><StatusMarker state={s} /></a></td>
               {/each}
               <td class="px-3 py-2 text-right tabular-nums text-slate-600">{r.assessment.state === 'dibayar' ? 'Dibayar' : `${r.assessment.done} dari ${r.assessment.total}`}</td>
             </tr>
