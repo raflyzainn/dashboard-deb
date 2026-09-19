@@ -1,11 +1,11 @@
 /**
- * Writes the downloadable RAB template, static/templat/RAB_DEB_Tahap_1.xlsx, from the same builder the app uses for exports.
- * Run from the repo root: npx tsx scripts/templat/rab-template.ts
+ * Writes the downloadable RAB template, static/templat/RAB_DEB.xlsx, from the same builder the app uses for exports:
+ * Petunjuk, RAB 100%, RAB 70%, RAB 30%. Run from the repo root: npx tsx scripts/templat/rab-template.ts
  */
 import ExcelJS from 'exceljs';
-import { buildRabWorkbook, EXAMPLE_ROWS } from '../../src/lib/rab-excel';
+import { buildRabWorkbook, exampleRows } from '../../src/lib/rab-excel';
 
-const OUT = 'static/templat/RAB_DEB_Tahap_1.xlsx';
-const wb = buildRabWorkbook(ExcelJS, { tahap1: EXAMPLE_ROWS });
+const OUT = 'static/templat/RAB_DEB.xlsx';
+const wb = buildRabWorkbook(ExcelJS, { penuh: exampleRows('penuh'), tahap1: exampleRows('tahap1'), tahap2: exampleRows('tahap2') });
 await wb.xlsx.writeFile(OUT);
-console.log('written', OUT, 'example rows', EXAMPLE_ROWS.length);
+console.log('written', OUT, 'rows', exampleRows('penuh').length, exampleRows('tahap1').length, exampleRows('tahap2').length);

@@ -3,7 +3,7 @@
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { dataService } from '$lib/data/service';
-  import { KINDS, KIND_LABEL, KIND_SHORT, KIND_FILE, LOOK_AT, FIELDS, DECISION_LABEL, RAIL_WORD, ITEM_STATE_LABEL, formatSen, parseSen, type Kind, type ItemState } from '$lib/pencairan';
+  import { KINDS, KIND_LABEL, KIND_SHORT, KIND_FILE, LOOK_AT, FIELDS, DECISION_LABEL, RAIL_WORD, ITEM_STATE_LABEL, RAB_SHARE, isRabKind, formatSen, parseSen, type Kind, type ItemState } from '$lib/pencairan';
   import type { KartuData, Version, Check } from './kartu-types';
   import Icon from '$lib/components/ui/Icon.svelte';
   import CampusLogo from '$lib/components/ui/CampusLogo.svelte';
@@ -72,10 +72,14 @@
   const isItem = $derived((KINDS as readonly string[]).includes(selected));
   const kind = $derived<Kind>(isItem ? (selected as Kind) : 'sk');
   const doc = $derived(data?.documents.find(d => d.kind === kind) || null);
+  /** The three RAB items share one workbook and one typed total, kept on the RAB 70% slot. */
+  const isRab = $derived(isRabKind(kind));
+  const fileKind = $derived<Kind>(isRab ? 'rab' : kind);
+  const fileDoc = $derived(isRab ? data?.documents.find(d => d.kind === 'rab') || null : doc);
   const state = $derived<ItemState>(data ? data.readiness.items[kind] : 'belum_ada');
-  const version = $derived<Version | null>(doc ? doc.versions.find(v => v.id === selectedVersionId) || doc.versions.find(v => v.id === doc.currentVersionId) || doc.versions[doc.versions.length - 1] || null : null);
-  const isCurrent = $derived(Boolean(version && doc && version.id === doc.currentVersionId));
-  const fileUrl = $derived(version ? `/api/pencairan/${campusId}/documents/${kind}/versions/${version.id}` : '');
+  const version = $derived<Version | null>(fileDoc ? fileDoc.versions.find(v => v.id === selectedVersionId) || fileDoc.versions.find(v => v.id === fileDoc.currentVersionId) || fileDoc.versions[fileDoc.versions.length - 1] || null : null);
+  const isCurrent = $derived(Boolean(version && fileDoc && version.id === fileDoc.currentVersionId));
+  const fileUrl = $derived(version ? `/api/pencairan/${campusId}/documents/${fileKind}/versions/${version.id}` : '');
   const spec = $derived(FIELDS[kind]);
   const chips = $derived.by(() => {
     if (!data) return [] as Check[];
@@ -103,7 +107,7 @@
   const decisionLabel = $derived(state === 'perlu_revisi' ? DECISION_LABEL[kind].bad : state === 'tidak_perlu' ? 'Tanpa surat kuasa' : DECISION_LABEL[kind].ok);
   /** A surat kuasa counted as not needed because the account holder signs the PKS has no decision to take back. */
   const computedOnly = $derived(state === 'tidak_perlu' && doc?.status !== 'tidak_perlu');
-  const canDecide = $derived(admin && data !== null && (kind === 'sk' || kind === 'rab' || Boolean(version)));
+  const canDecide = $derived(admin && data !== null && (kind === 'sk' || isRab || Boolean(version)));
 
   function say(message: string) { notice = message; if (noticeTimer) clearTimeout(noticeTimer); if (message) noticeTimer = setTimeout(() => (notice = ''), 4000); }
   function apply(next: KartuData, message = '') { data = next; error = ''; refresh++; if (message) say(message); }
@@ -198,10 +202,11 @@
     if (!data || busy) return;
     busy = true; error = '';
     try {
-      const overview = await dataService.api.get<{ campus: { code: string; name: string }; version: { number: number; lines: { level: number; code: string; title: string; unit: string; volume: number; amountSen: number; term1Sen: number }[] } | null }>(`/api/pencairan/${campusId}/rab`);
+      const overview = await dataService.api.get<{ campus: { code: string; name: string }; version: { number: number; lines: { level: number; code: string; title: string; unit: string; volume: number; amountSen: number; term1Sen: number; term2Sen: number }[] } | null }>(`/api/pencairan/${campusId}/rab`);
       if (!overview.version) throw new Error('Belum ada RAB terkelola untuk diekspor.');
       const { downloadRabWorkbook, linesToRows } = await import('$lib/rab-excel');
-      await downloadRabWorkbook(`RAB_${overview.campus.code.replace(/\s+/g, '')}_Tahap1_v${overview.version.number}.xlsx`, { title: `RAB · ${overview.campus.name}`, tahap1: linesToRows(overview.version.lines) });
+      const lines = overview.version.lines;
+      await downloadRabWorkbook(`RAB_${overview.campus.code.replace(/\s+/g, '')}_v${overview.version.number}.xlsx`, { title: `RAB · ${overview.campus.name}`, penuh: linesToRows(lines, 'penuh'), tahap1: linesToRows(lines, 'tahap1'), tahap2: linesToRows(lines, 'tahap2') });
       say(`Versi ${overview.version.number} diekspor.`);
     } catch (e) { error = e instanceof Error ? e.message : 'Ekspor belum berhasil.'; }
     finally { busy = false; }
@@ -225,7 +230,7 @@
     if (!file || !canUpload) return;
     const body = new FormData();
     body.set('file', file); body.set('note', '');
-    const ok = await run(async () => { const next = await dataService.api.post<KartuData>(`/api/pencairan/${campusId}/documents/${kind}/versions`, body); selectedVersionId = ''; return next; }, admin ? `Versi baru tersimpan.` : 'Berkas terkirim.');
+    const ok = await run(async () => { const next = await dataService.api.post<KartuData>(`/api/pencairan/${campusId}/documents/${fileKind}/versions`, body); selectedVersionId = ''; return next; }, admin ? `Versi baru tersimpan.` : 'Berkas terkirim.');
     if (ok && fileInput) fileInput.value = '';
   }
 </script>
@@ -272,20 +277,20 @@
           {#if isItem && kind === 'sk'}
             <span class="rounded-full bg-[#0066B2] px-2.5 py-0.5 text-[11.5px] font-semibold text-white">{data.summary.skNumber}{data.summary.skDate ? ` · ${time.format(new Date(data.summary.skDate))} ${new Date(data.summary.skDate).getFullYear()}` : ''}</span>
             {#if data.summary.skFile}<a class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300" href="/api/pencairan/sk" target="_blank" rel="noopener">Buka SK lengkap</a>{/if}
-          {:else if isItem && kind === 'rab'}
+          {:else if isItem && isRab}
             <button type="button" class="rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold {rabTab === 'digital' ? 'bg-[#0066B2] text-white' : 'border border-slate-200 bg-white text-slate-600'}" onclick={() => (rabTab = 'digital')}>RAB terkelola</button>
-            <button type="button" class="rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold {rabTab === 'asli' ? 'bg-[#0066B2] text-white' : 'border border-slate-200 bg-white text-slate-600'}" onclick={() => (rabTab = 'asli')}>Berkas asli{doc?.versions.length ? '' : ' (belum ada)'}</button>
+            <button type="button" class="rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold {rabTab === 'asli' ? 'bg-[#0066B2] text-white' : 'border border-slate-200 bg-white text-slate-600'}" onclick={() => (rabTab = 'asli')}>Berkas asli{fileDoc?.versions.length ? '' : ' (belum ada)'}</button>
             {#if admin}
-              <label class="cursor-pointer rounded-full border border-dashed border-slate-300 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-[#0066B2] hover:border-[#0066B2]" title="Excel lima kolom: No, Uraian, Satuan, Volume, Jumlah. Menjadi versi RAB berikutnya.">Impor Excel<input type="file" class="sr-only" accept=".xlsx,.xlsm,.xls" onchange={(e) => importRab((e.currentTarget as HTMLInputElement).files?.[0] || null)} /></label>
+              <label class="cursor-pointer rounded-full border border-dashed border-slate-300 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-[#0066B2] hover:border-[#0066B2]" title="Excel tiga lembar dari templat: RAB 100%, RAB 70%, RAB 30%. Menjadi versi RAB berikutnya.">Impor Excel<input type="file" class="sr-only" accept=".xlsx,.xlsm,.xls" onchange={(e) => importRab((e.currentTarget as HTMLInputElement).files?.[0] || null)} /></label>
               <button type="button" class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300 disabled:opacity-50" disabled={busy} onclick={exportRab}>Ekspor Excel</button>
-              <a class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300" href="/templat/RAB_DEB_Tahap_1.xlsx" download>Templat</a>
+              <a class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300" href="/templat/RAB_DEB.xlsx" download>Templat</a>
             {/if}
           {:else if isItem && doc}
             {#each doc.versions as v}
               <button type="button" class="rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold {version?.id === v.id ? 'bg-[#0066B2] text-white' : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300'}" onclick={() => (selectedVersionId = v.id)}>Versi {v.number} · {time.format(new Date(v.created))}{v.signed ? ' · ttd' : v.origin === 'generated' ? ' · sistem' : ''}</button>
             {/each}
           {/if}
-          {#if isItem && kind !== 'sk' && canUpload && (kind !== 'rab' || rabTab === 'asli')}
+          {#if isItem && kind !== 'sk' && canUpload && (!isRab || rabTab === 'asli')}
             <label class="cursor-pointer rounded-full border border-dashed border-slate-300 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-[#0066B2] hover:border-[#0066B2]">+ versi baru<input type="file" class="sr-only" bind:this={fileInput} accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.doc,.xlsx,.xls" onchange={(e) => upload((e.currentTarget as HTMLInputElement).files?.[0] || null)} /></label>
           {/if}
           <span class="ml-auto hidden xl:inline">Nilai SK <b class="tabular-nums text-slate-800">{formatSen(data.summary.amountSen)}</b> · Batas <b class="tabular-nums text-slate-800">{formatSen(data.summary.limitSen)}</b> · Diajukan <b class="tabular-nums text-slate-800">{data.summary.requestedSen ? formatSen(data.summary.requestedSen) : 'belum'}</b></span>
@@ -314,8 +319,8 @@
               {:else}
                 <div class="flex h-full items-center justify-center text-sm text-slate-600">Berkas SK belum dimuat.</div>
               {/if}
-            {:else if kind === 'rab' && rabTab === 'digital'}
-              <div class="h-full overflow-auto p-3"><RabTable {campusId} compact {refresh} /></div>
+            {:else if isRab && rabTab === 'digital'}
+              <div class="h-full overflow-auto p-3"><RabTable {campusId} compact {refresh} share={RAB_SHARE[kind as keyof typeof RAB_SHARE]} /></div>
             {:else if version}
               <FileViewer src={fileUrl} mime={version.mime} name={version.originalName} height={docHeight} />
             {:else}

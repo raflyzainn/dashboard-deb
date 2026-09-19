@@ -84,7 +84,7 @@ export async function directory(pb: PocketBase): Promise<DirectoryRow[]> {
     const summary = { amountSen, limitSen: limitSen(amountSen), requestedSen, term2Percent: requestedSen ? percentOf(remainderSen(amountSen, requestedSen), amountSen) : 30 };
     const bank = disbursement ? bankChecks.find(b => b.disbursement === disbursement.id) : null;
     const rabVersion = disbursement?.rabVersion ? rabVersions.find(r => r.id === disbursement.rabVersion) : null;
-    const rab = rabVersion ? { id: rabVersion.id, number: Number(rabVersion.number), status: rabVersion.status, totalSen: Number(rabVersion.totalSen || 0), term1Sen: Number(rabVersion.term1Sen || 0) } : null;
+    const rab = rabVersion ? { id: rabVersion.id, number: Number(rabVersion.number), status: rabVersion.status, totalSen: Number(rabVersion.totalSen || 0), term1Sen: Number(rabVersion.term1Sen || 0), term2Sen: Number(rabVersion.term2Sen || 0) } : null;
     const lampiranCount = disbursement ? attachments.filter(a => a.disbursement === disbursement.id).length : 0;
     const { checks: list, suratKuasaRequired } = checks(docs, summary, { campus, bankResult: String(bank?.bankResult || 'belum'), rab });
     const assessment = assess(statuses, { suratKuasaRequired, redChecks: list.filter(c => c.level === 'bad').length, paidAt: String(disbursement?.paidAt || ''), originalsAll: docs.filter(d => d.generated).every(d => d.originalReceived), lampiranCount });
@@ -124,7 +124,7 @@ export async function workspace(pb: PocketBase, campusId: string) {
   const attachments = await pb.collection('attachments').getFullList({ filter: pb.filter('disbursement = {:d}', { d: disbursement.id }), fields: 'id', ...opts });
   // The managed RAB is the source of the Tahap 1 amount once its 70% total is approved; the uploaded RAB file stays the campus evidence.
   const rabVersion = disbursement.rabVersion ? await pb.collection('rab_versions').getOne(disbursement.rabVersion, opts).catch(() => null) : null;
-  const rab = rabVersion ? { id: rabVersion.id, number: Number(rabVersion.number), status: rabVersion.status, totalSen: Number(rabVersion.totalSen || 0), term1Sen: Number(rabVersion.term1Sen || 0) } : null;
+  const rab = rabVersion ? { id: rabVersion.id, number: Number(rabVersion.number), status: rabVersion.status, totalSen: Number(rabVersion.totalSen || 0), term1Sen: Number(rabVersion.term1Sen || 0), term2Sen: Number(rabVersion.term2Sen || 0) } : null;
   const docs: DocumentInfo[] = KINDS.map(kind => {
     const d = documents.find(x => x.kind === kind)!;
     const currentReviews = reviews.filter(r => r.version === d.currentVersion);
@@ -179,7 +179,7 @@ const lettersOnly = (text: string) => text.toLowerCase().replace(/[^a-z]/g, '');
 /** The name before the first comma: "Nama, Jabatan" typed from the PKS becomes "Nama". */
 const nameOnly = (text: string) => text.split(/[,;]/)[0].trim();
 
-export interface CheckContext { campus: CampusInfo; bankResult: string; rab: { term1Sen: number; totalSen: number; number: number; status?: string } | null }
+export interface CheckContext { campus: CampusInfo; bankResult: string; rab: { term1Sen: number; term2Sen?: number; totalSen: number; number: number; status?: string } | null }
 /**
  * Automatic checks: the machine counts, the person decides. Every check names the item it belongs to so the card and the panel can show it in place.
  * Also answers whether a surat kuasa is required (account holder differs from the PKS signatory), or null when the names are not typed yet.
@@ -198,6 +198,16 @@ export function checks(docs: DocumentInfo[], summary: { amountSen: number; limit
     if (requested < summary.limitSen) out.push({ kind: 'rab', level: 'warn', text: `Di bawah batas: selisih ${formatSen(summary.limitSen - requested)} menjadi sisa Tahap 2, sehingga Tahap 2 ${formatPercent(summary.term2Percent)} dari Nilai SK, bukan 30% seperti di PKS. Periksa pasal Bantuan Dana.` });
   } else {
     out.push({ kind: 'rab', level: 'info', text: 'RAB 70% belum disetujui di RAB terkelola. Nominal Tahap 1 ditetapkan saat disetujui.' });
+  }
+  // RAB 100% and RAB 30%: the same approved managed RAB, read against the SK and against each other.
+  if (ctx.rab) {
+    const t = ctx.rab.totalSen, t1 = ctx.rab.term1Sen, t2 = ctx.rab.term2Sen || 0;
+    out.push(t === summary.amountSen ? { kind: 'rab_penuh', level: 'ok', text: `RAB 100% ${formatSen(t)} sama dengan Nilai SK.` } : { kind: 'rab_penuh', level: 'warn', text: `RAB 100% ${formatSen(t)} berbeda dari Nilai SK ${formatSen(summary.amountSen)}.` });
+    if (!t2) out.push({ kind: 'rab_tahap2', level: 'info', text: 'RAB 30% belum diisi di RAB terkelola.' });
+    else out.push(t1 + t2 === t ? { kind: 'rab_tahap2', level: 'ok', text: `RAB 70% + RAB 30% sama dengan RAB 100% ${formatSen(t)}.` } : { kind: 'rab_tahap2', level: 'warn', text: `RAB 70% + RAB 30% ${formatSen(t1 + t2)} berbeda dari RAB 100% ${formatSen(t)}.` });
+  } else {
+    out.push({ kind: 'rab_penuh', level: 'info', text: 'RAB terkelola belum disetujui. Lihat lembar RAB 100% di atas.' });
+    out.push({ kind: 'rab_tahap2', level: 'info', text: 'RAB terkelola belum disetujui. Lihat lembar RAB 30% di atas.' });
   }
   // The Tahap 1 total typed from the campus file: the reviewer's own reading. It must agree with the managed RAB, and it stands in when the managed RAB has no Tahap 1 column yet.
   const fileTerm1 = money('rab', 'termin1Sen');
@@ -340,7 +350,7 @@ export async function reviewDocument(pb: PocketBase, actor: AuditActor, campusId
   // "Tanpa surat kuasa" is a decision only the surat kuasa item can take: the campus goes without one.
   if (decision === 'tidak_perlu' && kind !== 'surat_kuasa') throw new PreviewError(400, 'Hanya surat kuasa yang bisa ditandai tanpa berkas.');
   // The SK has no upload and the RAB's document is the managed RAB; every other item needs a file before it can be Sesuai.
-  if (kind !== 'sk' && kind !== 'rab' && !doc.currentVersion && decision === 'sesuai') throw new PreviewError(400, 'Unggah berkas dulu sebelum menandai Sesuai.');
+  if (kind !== 'sk' && kind !== 'rab' && kind !== 'rab_penuh' && kind !== 'rab_tahap2' && !doc.currentVersion && decision === 'sesuai') throw new PreviewError(400, 'Unggah berkas dulu sebelum menandai Sesuai.');
   if (decision === 'perlu_revisi' && !note.trim()) throw new PreviewError(400, kind === 'sk' ? 'Tulis nilai yang tercetak di SK agar super admin bisa memperbaikinya.' : 'Tulis catatan revisi agar kampus tahu yang harus diperbaiki.');
   if (doc.currentVersion) await pb.collection('reviews').create({ version: doc.currentVersion, decision, note, actor: actor.id || '', actorName: actor.name || 'Sistem', imported: Boolean(options.imported) }, opts);
   const before = doc.status;

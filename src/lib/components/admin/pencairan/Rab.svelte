@@ -14,8 +14,8 @@
    * its total is checked against Batas Tahap 1 and, once approved, becomes the nominal of Tahap 1. The full RAB is only a comparison.
    */
   /** One editable line. Money and volume are kept as typed text and converted when saving. */
-  interface Row { key: string; parentKey: string; title: string; calculation: string; volume: string; unit: string; unitPrice: string; amount: string; term1: string; catatan: string }
-  interface Preview { rows: number; kind: string; totalSen: number; term1Sen: number; problems: { row: number; text: string }[]; problemCount: number; fileName: string }
+  interface Row { key: string; parentKey: string; title: string; calculation: string; volume: string; unit: string; unitPrice: string; amount: string; term1: string; term2: string; catatan: string }
+  interface Preview { rows: number; kind: string; totalSen: number; term1Sen: number; term2Sen?: number; problems: { row: number; text: string }[]; problemCount: number; fileName: string }
 
   let { campusId }: { campusId: string } = $props();
   let data = $state<RabOverview | null>(null);
@@ -34,7 +34,7 @@
   const version = $derived(data?.version || null);
   const editable = $derived(version?.status === 'draf');
   const rowMap = $derived(new Map(rows.map(r => [r.key, r])));
-  const soft = (r: Row): LineInput => ({ key: r.key, parentKey: r.parentKey, title: r.title, calculation: r.calculation, volume: parseVolume(r.volume) ?? 0, unit: r.unit, unitPriceSen: parseSen(r.unitPrice) ?? 0, amountSen: parseSen(r.amount) ?? 0, term1Sen: parseSen(r.term1) ?? 0, flags: r.catatan ? { catatan: r.catatan } : {} });
+  const soft = (r: Row): LineInput => ({ key: r.key, parentKey: r.parentKey, title: r.title, calculation: r.calculation, volume: parseVolume(r.volume) ?? 0, unit: r.unit, unitPriceSen: parseSen(r.unitPrice) ?? 0, amountSen: parseSen(r.amount) ?? 0, term1Sen: parseSen(r.term1) ?? 0, term2Sen: parseSen(r.term2) ?? 0, flags: r.catatan ? { catatan: r.catatan } : {} });
   const live = $derived.by((): Arranged[] => { try { return arrange(rows.map(soft)); } catch { return []; } });
   const totals = $derived(totalsOf(live));
   const checks = $derived<RabCheck[]>(data ? (editable && dirty ? rabChecks(live, data.summary.amountSen, data.summary.limitSen) : data.checks) : []);
@@ -45,7 +45,7 @@
 
   const money = (sen: number) => (sen ? formatSen(sen, false) : '');
   function toRows(lines: RabLine[]): Row[] {
-    return lines.map(l => ({ key: l.id, parentKey: l.parentId, title: l.title, calculation: l.calculation, volume: l.level === MAX_LEVEL && l.volume ? formatVolume(l.volume) : '', unit: l.unit, unitPrice: money(l.unitPriceSen), amount: money(l.amountSen), term1: money(l.term1Sen), catatan: typeof l.flags?.catatan === 'string' ? l.flags.catatan : '' }));
+    return lines.map(l => ({ key: l.id, parentKey: l.parentId, title: l.title, calculation: l.calculation, volume: l.level === MAX_LEVEL && l.volume ? formatVolume(l.volume) : '', unit: l.unit, unitPrice: money(l.unitPriceSen), amount: money(l.amountSen), term1: money(l.term1Sen), term2: money(l.term2Sen), catatan: typeof l.flags?.catatan === 'string' ? l.flags.catatan : '' }));
   }
   function toInputs(): LineInput[] {
     const codeOf = new Map(live.map(n => [n.key, n.code]));
@@ -54,7 +54,7 @@
       const sen = (text: string, label: string) => { const value = parseSen(text); if (text.trim() && value === null) throw new Error(`${label} pada baris ${code} harus berupa jumlah rupiah, misalnya 1.250.000.`); return value ?? 0; };
       const volume = parseVolume(r.volume);
       if (r.volume.trim() && volume === null) throw new Error(`Volume pada baris ${code} harus berupa angka, misalnya 30 atau 0,5.`);
-      return { key: r.key, parentKey: r.parentKey, title: r.title.trim(), calculation: r.calculation.trim(), volume: volume ?? 0, unit: r.unit.trim(), unitPriceSen: sen(r.unitPrice, 'Harga satuan'), amountSen: sen(r.amount, 'Jumlah'), term1Sen: sen(r.term1, 'RAB 70%'), flags: r.catatan ? { catatan: r.catatan } : {} };
+      return { key: r.key, parentKey: r.parentKey, title: r.title.trim(), calculation: r.calculation.trim(), volume: volume ?? 0, unit: r.unit.trim(), unitPriceSen: sen(r.unitPrice, 'Harga satuan'), amountSen: sen(r.amount, 'Jumlah'), term1Sen: sen(r.term1, 'RAB 70%'), term2Sen: sen(r.term2, 'RAB 30%'), flags: r.catatan ? { catatan: r.catatan } : {} };
     });
   }
   function fail(e: unknown, fallback: string) { error = e instanceof Error ? e.message : fallback; }
@@ -98,7 +98,7 @@
     while (end < live.length && live[end].level > live[start].level) end++;
     return { start, end };
   }
-  const blank = (parentKey: string): Row => ({ key: `n${Date.now().toString(36)}${++seq}`, parentKey, title: '', calculation: '', volume: '', unit: '', unitPrice: '', amount: '', term1: '', catatan: '' });
+  const blank = (parentKey: string): Row => ({ key: `n${Date.now().toString(36)}${++seq}`, parentKey, title: '', calculation: '', volume: '', unit: '', unitPrice: '', amount: '', term1: '', term2: '', catatan: '' });
   function addChild(parentKey: string) {
     const r = range(parentKey);
     if (!r) return;
@@ -156,7 +156,7 @@
     } catch (e) { fail(e, 'Berkas belum dapat diunduh.'); }
     finally { busy = false; }
   }
-  const template = () => download('/templat/RAB_DEB_Tahap_1.xlsx', 'RAB_DEB_Tahap_1.xlsx');
+  const template = () => download('/templat/RAB_DEB.xlsx', 'RAB_DEB.xlsx');
   async function chooseFile(file: File | null) {
     importFile = file; preview = null;
     if (!file) return;
@@ -194,7 +194,7 @@
     <a href="/admin/pencairan/{campusId}" class="inline-flex w-fit items-center gap-1 text-sm font-semibold text-[#0066B2] hover:underline"><Icon name="back" size={14} />Kembali ke kartu</a>
     <header class="flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 class="text-2xl font-bold text-slate-900">RAB 70% (Tahap 1)</h1>
+        <h1 class="text-2xl font-bold text-slate-900">RAB terkelola: 100%, 70% dan 30%</h1>
         <p class="mt-1 text-sm text-slate-600">{data.campus.name} · Kode {data.campus.code} · Dasar SK {data.summary.skNumber}</p>
       </div>
       {#if version}<Badge tone={RAB_STATUS_TONE[version.status]}>{RAB_STATUS_LABEL[version.status]}</Badge>{/if}
@@ -210,7 +210,8 @@
         </strong>
       </span>
       <span class="grid">Sisa Tahap 2 <strong class="tabular-nums text-slate-900">{formatSen(term2Sen)} <span class="text-xs font-medium text-slate-500">{formatPercent(percentOf(term2Sen, data.summary.amountSen))} dari Nilai SK</span></strong></span>
-      <span class="grid text-slate-600 sm:col-span-2 lg:col-span-4">RAB penuh <span class="tabular-nums font-semibold text-slate-700">{formatSen(totals.totalSen)} <span class="text-xs font-medium text-slate-500">hanya pembanding, tidak menentukan nominal Tahap 1</span></span></span>
+      <span class="grid text-slate-600 sm:col-span-2">RAB 100% <span class="tabular-nums font-semibold text-slate-700">{formatSen(totals.totalSen)} <span class="text-xs font-medium text-slate-500">{totals.totalSen === data.summary.amountSen ? 'sama dengan Nilai SK' : 'berbeda dari Nilai SK'}</span></span></span>
+      <span class="grid text-slate-600 sm:col-span-2">RAB 30% <span class="tabular-nums font-semibold text-slate-700">{formatSen(totals.term2Sen)} <span class="text-xs font-medium text-slate-500">{totals.term1Sen + totals.term2Sen === totals.totalSen ? '70% + 30% sama dengan RAB 100%' : '70% + 30% berbeda dari RAB 100%'}</span></span></span>
     </section>
 
     {#if !data.versions.length}
@@ -255,7 +256,7 @@
     {#if preview}
       <section class="grid gap-2 rounded-xl border border-blue-200 bg-blue-50/60 p-4 text-sm text-slate-800" aria-label="Pratinjau impor">
         <p class="font-semibold text-slate-900">Pratinjau impor: {preview.fileName}</p>
-        <p>{preview.rows} baris uraian terbaca ({preview.kind === 'total' ? 'RAB penuh' : 'RAB 70% saja'}). RAB penuh {formatSen(preview.totalSen)}, RAB 70% {formatSen(preview.term1Sen)}. Belum ada yang disimpan.</p>
+        <p>{preview.rows} baris uraian terbaca ({preview.kind === 'tiga_lembar' ? 'tiga lembar' : preview.kind === 'total' ? 'RAB 100% saja' : 'RAB 70% saja'}). RAB 100% {formatSen(preview.totalSen)}, RAB 70% {formatSen(preview.term1Sen)}, RAB 30% {formatSen(preview.term2Sen || 0)}. Belum ada yang disimpan.</p>
         {#if preview.problemCount}
           <p class="font-semibold text-amber-900">{preview.problemCount} baris perlu diperiksa:</p>
           <ul class="max-h-40 list-disc overflow-y-auto pl-5 text-xs text-slate-700">{#each preview.problems as p}<li>{p.row ? `Baris ${p.row}: ` : ''}{p.text}</li>{/each}</ul>
@@ -279,11 +280,11 @@
 
     {#if version}
       <div class="relative min-w-0 overflow-x-auto rounded-xl border border-slate-200/70 bg-white shadow-[0_10px_30px_#0b254508]">
-        <table class="w-full min-w-[1040px] border-collapse text-sm">
+        <table class="w-full min-w-[1180px] border-collapse text-sm">
           <thead class="bg-slate-50 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">
             <tr>
               <th class="px-2 py-2 w-20">Kode</th><th class="px-2 py-2">Uraian</th><th class="px-2 py-2 w-40">Perhitungan</th><th class="px-2 py-2 w-20 text-right">Volume</th><th class="px-2 py-2 w-20">Satuan</th>
-              <th class="px-2 py-2 w-32 text-right">Harga satuan</th><th class="px-2 py-2 w-32 text-right">Jumlah</th><th class="px-2 py-2 w-32 text-right">RAB 70%</th>{#if editable}<th class="px-2 py-2 w-24" aria-label="Aksi"></th>{/if}
+              <th class="px-2 py-2 w-32 text-right">Harga satuan</th><th class="px-2 py-2 w-32 text-right">Jumlah</th><th class="px-2 py-2 w-32 text-right">RAB 70%</th><th class="px-2 py-2 w-32 text-right">RAB 30%</th>{#if editable}<th class="px-2 py-2 w-24" aria-label="Aksi"></th>{/if}
             </tr>
           </thead>
           <tbody>
@@ -292,6 +293,7 @@
               {@const item = node.level === MAX_LEVEL}
               {@const mismatch = item && productSen(node.volume, node.unitPriceSen) !== node.amountSen}
               {@const over = item && node.term1Sen > node.amountSen}
+              {@const split = item && (node.term2Sen || 0) > 0 && node.term1Sen + (node.term2Sen || 0) !== node.amountSen}
               {#if row}
                 <tr class="border-t border-slate-100 align-top {rowClass[node.level]}">
                   <td class="px-2 py-1.5 whitespace-nowrap tabular-nums text-slate-600">{node.code}</td>
@@ -312,10 +314,12 @@
                     <td class="px-2 py-1.5 text-right tabular-nums">{#if editable}<input class={numeric} value={row.unitPrice} inputmode="numeric" oninput={(e) => set(node.key, 'unitPrice', e.currentTarget.value)} aria-label={`Harga satuan ${node.code}`} />{:else}{money(node.unitPriceSen)}{/if}</td>
                     <td class="px-2 py-1.5 text-right tabular-nums">{#if editable}<input class="{numeric} {mismatch ? 'border-amber-400 bg-amber-50' : ''}" value={row.amount} inputmode="numeric" title={mismatch ? 'Berbeda dari volume kali harga satuan' : ''} oninput={(e) => set(node.key, 'amount', e.currentTarget.value)} aria-label={`Jumlah ${node.code}`} />{:else}<span class={mismatch ? 'rounded bg-amber-50 px-1 text-amber-900' : ''} title={mismatch ? 'Berbeda dari volume kali harga satuan' : ''}>{money(node.amountSen)}</span>{/if}</td>
                     <td class="px-2 py-1.5 text-right tabular-nums">{#if editable}<input class="{numeric} {over ? 'border-amber-400 bg-amber-50' : ''}" value={row.term1} inputmode="numeric" title={over ? 'Melebihi jumlah baris' : ''} oninput={(e) => set(node.key, 'term1', e.currentTarget.value)} aria-label={`RAB 70% ${node.code}`} />{:else}<span class={over ? 'rounded bg-amber-50 px-1 text-amber-900' : ''} title={over ? 'Melebihi jumlah baris' : ''}>{money(node.term1Sen)}</span>{/if}</td>
+                    <td class="px-2 py-1.5 text-right tabular-nums">{#if editable}<input class="{numeric} {split ? 'border-amber-400 bg-amber-50' : ''}" value={row.term2} inputmode="numeric" title={split ? '70% + 30% berbeda dari jumlah baris' : ''} oninput={(e) => set(node.key, 'term2', e.currentTarget.value)} aria-label={`RAB 30% ${node.code}`} />{:else}<span class={split ? 'rounded bg-amber-50 px-1 text-amber-900' : ''} title={split ? '70% + 30% berbeda dari jumlah baris' : ''}>{money(node.term2Sen || 0)}</span>{/if}</td>
                   {:else}
                     <td colspan="4" class="px-2 py-1.5"></td>
                     <td class="px-2 py-1.5 text-right tabular-nums">{money(node.sumSen)}</td>
                     <td class="px-2 py-1.5 text-right tabular-nums">{money(node.sumTerm1Sen)}</td>
+                    <td class="px-2 py-1.5 text-right tabular-nums">{money(node.sumTerm2Sen)}</td>
                   {/if}
                   {#if editable}
                     <td class="px-1 py-1 whitespace-nowrap text-right">
@@ -327,7 +331,7 @@
               {/if}
             {/each}
             {#if !live.length}
-              <tr><td colspan={editable ? 9 : 8} class="px-4 py-8 text-center text-sm text-slate-500">{editable ? 'Belum ada baris. Tekan Tambah kelompok untuk memulai, atau impor dari Excel.' : 'Versi ini tidak punya baris.'}</td></tr>
+              <tr><td colspan={editable ? 10 : 9} class="px-4 py-8 text-center text-sm text-slate-500">{editable ? 'Belum ada baris. Tekan Tambah kelompok untuk memulai, atau impor dari Excel.' : 'Versi ini tidak punya baris.'}</td></tr>
             {/if}
           </tbody>
           <tfoot class="border-t-2 border-slate-200 bg-slate-50 font-bold text-slate-900">
@@ -335,6 +339,7 @@
               <td class="px-2 py-2" colspan="6">Total · {items} uraian</td>
               <td class="px-2 py-2 text-right tabular-nums">{formatSen(totals.totalSen, false)}</td>
               <td class="px-2 py-2 text-right tabular-nums {standing === 'lebih' ? 'text-red-800' : ''}">{formatSen(totals.term1Sen, false)}</td>
+              <td class="px-2 py-2 text-right tabular-nums">{formatSen(totals.term2Sen, false)}</td>
               {#if editable}<td></td>{/if}
             </tr>
           </tfoot>
@@ -344,7 +349,7 @@
         <div class="flex flex-wrap items-center gap-2">
           <Button size="sm" variant="secondary" icon="plus" onclick={addRoot}>Tambah kelompok</Button>
           <Button size="sm" onclick={save} loading={busy} disabled={!dirty} icon="save">Simpan</Button>
-          <span class="text-xs text-slate-500">Jumlah terisi otomatis dari volume kali harga satuan dan boleh diubah. Kolom RAB 70% adalah bagian baris yang diajukan di Tahap 1. Uang dalam rupiah, sen dipisah koma.</span>
+          <span class="text-xs text-slate-500">Jumlah terisi otomatis dari volume kali harga satuan dan boleh diubah. Kolom RAB 70% adalah bagian baris untuk Tahap 1 dan RAB 30% bagian untuk Tahap 2; keduanya berjumlah sama dengan Jumlah. Uang dalam rupiah, sen dipisah koma.</span>
         </div>
       {/if}
     {/if}

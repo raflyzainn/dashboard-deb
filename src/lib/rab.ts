@@ -16,18 +16,18 @@ export const RAB_SOURCE_LABEL: Record<RabSource, string> = { manual: 'Diketik di
 /** One line as the browser sends it: the key links children to parents, the level follows from the tree. */
 export interface LineInput {
   key: string; parentKey: string; title: string; calculation: string; volume: number; unit: string;
-  unitPriceSen: number; amountSen: number; term1Sen: number; flags?: Record<string, unknown>;
+  unitPriceSen: number; amountSen: number; term1Sen: number; term2Sen?: number; flags?: Record<string, unknown>;
 }
 /** One stored line. */
 export interface RabLine {
   id: string; parentId: string; level: number; order: number; code: string; title: string; calculation: string; volume: number; unit: string;
-  unitPriceSen: number; amountSen: number; term1Sen: number; flags: Record<string, unknown>;
+  unitPriceSen: number; amountSen: number; term1Sen: number; term2Sen: number; flags: Record<string, unknown>;
 }
 /** A line after arrangement: position, code and rolled up sums are known. */
-export interface Arranged extends LineInput { level: number; order: number; code: string; hasChildren: boolean; sumSen: number; sumTerm1Sen: number }
+export interface Arranged extends LineInput { level: number; order: number; code: string; hasChildren: boolean; sumSen: number; sumTerm1Sen: number; sumTerm2Sen: number }
 export interface RabCheck { level: 'ok' | 'warn' | 'bad' | 'info'; text: string }
 export interface RabVersionInfo {
-  id: string; number: number; status: RabStatus; totalSen: number; term1Sen: number; source: RabSource; sourceFile: string; note: string;
+  id: string; number: number; status: RabStatus; totalSen: number; term1Sen: number; term2Sen: number; source: RabSource; sourceFile: string; note: string;
   approvedByName: string; approvedAt: string; created: string; updated: string; active: boolean;
 }
 export interface RabOverview {
@@ -85,42 +85,60 @@ export function arrange(input: LineInput[]): Arranged[] {
   const out: Arranged[] = [];
   const visit = (parentKey: string, level: number, parentCode: string) => {
     const list = children.get(parentKey) || [];
-    let sum = 0, sumTerm1 = 0;
+    let sum = 0, sumTerm1 = 0, sumTerm2 = 0;
     list.forEach((line, i) => {
       if (level > MAX_LEVEL) throw new Error('Pohon RAB paling dalam empat tingkat.');
-      const node: Arranged = { ...line, level, order: i + 1, code: codeFor(level, i, parentCode), hasChildren: (children.get(line.key) || []).length > 0, sumSen: 0, sumTerm1Sen: 0 };
+      const node: Arranged = { ...line, level, order: i + 1, code: codeFor(level, i, parentCode), hasChildren: (children.get(line.key) || []).length > 0, sumSen: 0, sumTerm1Sen: 0, sumTerm2Sen: 0 };
       out.push(node);
       const below = visit(line.key, level + 1, node.code);
-      if (node.hasChildren) { node.sumSen = below.sum; node.sumTerm1Sen = below.term1; }
-      else if (level === MAX_LEVEL) { node.sumSen = line.amountSen; node.sumTerm1Sen = line.term1Sen; }
-      sum += node.sumSen; sumTerm1 += node.sumTerm1Sen;
+      if (node.hasChildren) { node.sumSen = below.sum; node.sumTerm1Sen = below.term1; node.sumTerm2Sen = below.term2; }
+      else if (level === MAX_LEVEL) { node.sumSen = line.amountSen; node.sumTerm1Sen = line.term1Sen; node.sumTerm2Sen = line.term2Sen || 0; }
+      sum += node.sumSen; sumTerm1 += node.sumTerm1Sen; sumTerm2 += node.sumTerm2Sen;
     });
-    return { sum, term1: sumTerm1 };
+    return { sum, term1: sumTerm1, term2: sumTerm2 };
   };
   visit('', 1, '');
   if (out.length !== input.length) throw new Error('Struktur baris tidak valid.');
   return out;
 }
-export const totalsOf = (nodes: Arranged[]) => nodes.filter(n => n.level === 1).reduce((acc, n) => ({ totalSen: acc.totalSen + n.sumSen, term1Sen: acc.term1Sen + n.sumTerm1Sen }), { totalSen: 0, term1Sen: 0 });
+export const totalsOf = (nodes: Arranged[]) => nodes.filter(n => n.level === 1).reduce((acc, n) => ({ totalSen: acc.totalSen + n.sumSen, term1Sen: acc.term1Sen + n.sumTerm1Sen, term2Sen: acc.term2Sen + n.sumTerm2Sen }), { totalSen: 0, term1Sen: 0, term2Sen: 0 });
+
+/** The three pages of the RAB item: the full budget and its Tahap 1 and Tahap 2 parts. */
+export type RabShare = 'penuh' | 'tahap1' | 'tahap2';
+export const SHARE_LABEL: Record<RabShare, string> = { penuh: 'RAB 100%', tahap1: 'RAB 70%', tahap2: 'RAB 30%' };
+export const shareSen = (line: { amountSen: number; term1Sen: number; term2Sen?: number }, share: RabShare) => (share === 'penuh' ? line.amountSen : share === 'tahap1' ? line.term1Sen : line.term2Sen || 0);
 
 const listCodes = (codes: string[]) => (codes.length > 6 ? codes.slice(0, 6).join(', ') + ` dan ${codes.length - 6} baris lain` : codes.join(', '));
 
 /**
- * The automatic checks of one version for Tahap 1. The machine computes, the admin decides.
- * The only blocking check is the RAB 70% total against Batas Tahap 1 (exact 70% of the SK). The full RAB is a comparison, never a block.
+ * The automatic checks of one version. The machine computes, the admin decides.
+ * The only blocking check is the RAB 70% total against Batas Tahap 1 (exact 70% of the SK). RAB 100% against the SK and RAB 70% plus RAB 30%
+ * against RAB 100% are shown as findings, never as blocks.
  */
 export function rabChecks(nodes: Arranged[], amountSen: number, limitSen: number, storedParents?: Map<string, number>): RabCheck[] {
   const out: RabCheck[] = [];
   if (!nodes.length) return [{ level: 'info', text: 'Belum ada baris. Tambah kelompok pertama atau impor dari Excel.' }];
-  const { totalSen, term1Sen } = totalsOf(nodes);
-  if (!term1Sen) out.push({ level: 'warn', text: 'RAB 70% (Tahap 1) belum diisi. Isi kolom RAB 70% pada baris yang diajukan di Tahap 1.' });
+  const { totalSen, term1Sen, term2Sen } = totalsOf(nodes);
+  if (!term1Sen) out.push({ level: 'warn', text: 'RAB 70% belum diisi. Isi lembar RAB 70% pada baris yang diajukan di Tahap 1.' });
   else if (term1Sen > limitSen) out.push({ level: 'bad', text: `RAB 70% ${formatSen(term1Sen)} melebihi Batas Tahap 1 ${formatSen(limitSen)}. Kurangi ${formatSen(term1Sen - limitSen)}.` });
   else out.push({ level: 'ok', text: `RAB 70% ${formatSen(term1Sen)} tidak melebihi Batas Tahap 1 ${formatSen(limitSen)}.` });
   if (term1Sen && term1Sen < limitSen) out.push({ level: 'info', text: `Di bawah batas: selisih ${formatSen(limitSen - term1Sen)} menjadi sisa Tahap 2.` });
-  out.push({ level: 'info', text: `RAB penuh ${formatSen(totalSen)}, Nilai SK ${formatSen(amountSen)}. RAB penuh hanya pembanding.` });
+  // Only the RAB 70% sheet was filled (older files): the 100% and 30% pages are still empty, say so once instead of comparing.
+  const onlyTerm1 = !term2Sen && totalSen === term1Sen;
+  if (onlyTerm1) out.push({ level: 'info', text: 'Hanya RAB 70% yang terisi. RAB 100% dan RAB 30% belum diisi; unduh templat tiga lembar.' });
+  else if (!totalSen) out.push({ level: 'warn', text: 'RAB 100% belum diisi.' });
+  else if (totalSen === amountSen) out.push({ level: 'ok', text: `RAB 100% sama dengan Nilai SK ${formatSen(amountSen)}.` });
+  else out.push({ level: 'warn', text: `RAB 100% ${formatSen(totalSen)} berbeda dari Nilai SK ${formatSen(amountSen)} (selisih ${formatSen(Math.abs(amountSen - totalSen))}).` });
+  if (!onlyTerm1) {
+    if (!term2Sen) out.push({ level: 'info', text: 'RAB 30% belum diisi.' });
+    else if (term1Sen + term2Sen === totalSen) out.push({ level: 'ok', text: `RAB 70% + RAB 30% sama dengan RAB 100% ${formatSen(totalSen)}.` });
+    else out.push({ level: 'warn', text: `RAB 70% + RAB 30% ${formatSen(term1Sen + term2Sen)} berbeda dari RAB 100% ${formatSen(totalSen)}.` });
+  }
   const items = nodes.filter(n => n.level === MAX_LEVEL);
   const overTerm1 = items.filter(n => n.term1Sen > n.amountSen).map(n => n.code);
   if (overTerm1.length) out.push({ level: 'warn', text: `RAB 70% melebihi jumlah baris pada ${listCodes(overTerm1)}. Periksa barisnya.` });
+  const split = items.filter(n => (n.term2Sen || 0) && n.term1Sen + (n.term2Sen || 0) !== n.amountSen).map(n => n.code);
+  if (split.length) out.push({ level: 'warn', text: `RAB 70% + RAB 30% tidak sama dengan jumlah baris pada ${listCodes(split)}. Periksa barisnya.` });
   const product = items.filter(n => productSen(n.volume, n.unitPriceSen) !== n.amountSen).map(n => n.code);
   if (product.length) out.push({ level: 'warn', text: `Volume kali harga satuan tidak sama dengan jumlah pada ${listCodes(product)}. Periksa angkanya.` });
   else if (items.length) out.push({ level: 'ok', text: 'Volume kali harga satuan sama dengan jumlah pada semua baris.' });

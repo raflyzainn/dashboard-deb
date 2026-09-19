@@ -29,13 +29,13 @@ async function getVersion(pb: PocketBase, campusId: string, versionId: string) {
 }
 function mapVersion(v: RecordModel, active: string, nameOf: Map<string, string>): RabVersionInfo {
   return {
-    id: v.id, number: Number(v.number), status: v.status as RabStatus, totalSen: Number(v.totalSen || 0), term1Sen: Number(v.term1Sen || 0), source: (v.source || 'manual') as RabSource,
+    id: v.id, number: Number(v.number), status: v.status as RabStatus, totalSen: Number(v.totalSen || 0), term1Sen: Number(v.term1Sen || 0), term2Sen: Number(v.term2Sen || 0), source: (v.source || 'manual') as RabSource,
     sourceFile: v.sourceFile || '', note: v.note || '', approvedByName: nameOf.get(v.approvedBy) || '', approvedAt: v.approvedAt || '', created: v.created, updated: v.updated, active: v.id === active
   };
 }
 const mapLine = (r: RecordModel): RabLine => ({
   id: r.id, parentId: r.parent || '', level: Number(r.level), order: Number(r.order || 0), code: r.code || '', title: r.title || '', calculation: r.calculation || '', volume: Number(r.volume || 0), unit: r.unit || '',
-  unitPriceSen: Number(r.unitPriceSen || 0), amountSen: Number(r.amountSen || 0), term1Sen: Number(r.term1Sen || 0), flags: (r.flags && typeof r.flags === 'object' ? r.flags : {}) as Record<string, unknown>
+  unitPriceSen: Number(r.unitPriceSen || 0), amountSen: Number(r.amountSen || 0), term1Sen: Number(r.term1Sen || 0), term2Sen: Number(r.term2Sen || 0), flags: (r.flags && typeof r.flags === 'object' ? r.flags : {}) as Record<string, unknown>
 });
 
 export async function listVersions(pb: PocketBase, campusId: string, activeId = '') {
@@ -60,7 +60,7 @@ export async function versionLines(pb: PocketBase, versionId: string): Promise<R
   for (const line of rows) if (!out.includes(line)) out.push(line);
   return out;
 }
-const toInput = (lines: RabLine[]): LineInput[] => lines.map(l => ({ key: l.id, parentKey: l.parentId, title: l.title, calculation: l.calculation, volume: l.volume, unit: l.unit, unitPriceSen: l.unitPriceSen, amountSen: l.amountSen, term1Sen: l.term1Sen, flags: l.flags }));
+const toInput = (lines: RabLine[]): LineInput[] => lines.map(l => ({ key: l.id, parentKey: l.parentId, title: l.title, calculation: l.calculation, volume: l.volume, unit: l.unit, unitPriceSen: l.unitPriceSen, amountSen: l.amountSen, term1Sen: l.term1Sen, term2Sen: l.term2Sen, flags: l.flags }));
 
 /** Checks of stored lines against Batas Tahap 1 and the SK. Parent sums are recomputed and compared with what is stored. */
 export function checksFor(lines: RabLine[], amountSen: number): RabCheck[] {
@@ -100,7 +100,7 @@ export function validateLines(input: unknown): LineInput[] {
     if (!Number.isFinite(volume) || volume < 0 || volume > 1e9) throw new PreviewError(400, `Volume baris ${i + 1} harus berupa angka.`);
     const flags: Record<string, unknown> = {};
     if (r.flags && typeof r.flags === 'object') { const note = (r.flags as Record<string, unknown>).catatan; if (typeof note === 'string' && note.trim()) flags.catatan = note.trim().slice(0, 500); }
-    return { key, parentKey, title: text(r.title, 500, 'Uraian'), calculation: text(r.calculation, 200, 'Perhitungan'), volume, unit: text(r.unit, 60, 'Satuan'), unitPriceSen: sen(r.unitPriceSen, 'Harga satuan'), amountSen: sen(r.amountSen, 'Jumlah'), term1Sen: sen(r.term1Sen, 'RAB 70%'), flags };
+    return { key, parentKey, title: text(r.title, 500, 'Uraian'), calculation: text(r.calculation, 200, 'Perhitungan'), volume, unit: text(r.unit, 60, 'Satuan'), unitPriceSen: sen(r.unitPriceSen, 'Harga satuan'), amountSen: sen(r.amountSen, 'Jumlah'), term1Sen: sen(r.term1Sen, 'RAB 70%'), term2Sen: sen(r.term2Sen, 'RAB 30%'), flags };
   });
 }
 
@@ -134,7 +134,7 @@ async function writeLines(pb: PocketBase, versionId: string, input: LineInput[])
     ops.push({ type: 'create', collection: 'rab_lines', data: {
       id: ids.get(n.key), version: versionId, parent: n.parentKey ? ids.get(n.parentKey) : '', level: n.level, order: n.order, code: n.code, title: n.title, calculation: n.calculation,
       volume: n.level === MAX_LEVEL ? n.volume : 0, unit: n.level === MAX_LEVEL ? n.unit : '', unitPriceSen: n.level === MAX_LEVEL ? n.unitPriceSen : 0,
-      amountSen: n.sumSen, term1Sen: n.sumTerm1Sen, flags: n.flags && Object.keys(n.flags).length ? n.flags : null
+      amountSen: n.sumSen, term1Sen: n.sumTerm1Sen, term2Sen: n.sumTerm2Sen, flags: n.flags && Object.keys(n.flags).length ? n.flags : null
     } });
   }
   await runOps(pb, ops);
@@ -164,10 +164,10 @@ export async function createVersion(pb: PocketBase, actor: AuditActor, campusId:
   let from: RecordModel | null = null;
   if (options.fromVersionId) { from = await getVersion(pb, campusId, options.fromVersionId); lines = toInput(await versionLines(pb, from.id)); }
   const version = await pb.collection('rab_versions').create({
-    campus: campusId, disbursement: disbursement.id, number, status: 'draf', totalSen: 0, term1Sen: 0, source: options.source || 'manual', sourceFile: (options.sourceFile || '').slice(0, 300),
+    campus: campusId, disbursement: disbursement.id, number, status: 'draf', totalSen: 0, term1Sen: 0, term2Sen: 0, source: options.source || 'manual', sourceFile: (options.sourceFile || '').slice(0, 300),
     note: (options.note || (from ? `Salinan dari versi ${from.number}.` : '')).slice(0, 2000)
   }, opts);
-  const totals = lines.length ? await writeLines(pb, version.id, lines) : { totalSen: 0, term1Sen: 0, count: 0, items: 0 };
+  const totals = lines.length ? await writeLines(pb, version.id, lines) : { totalSen: 0, term1Sen: 0, term2Sen: 0, count: 0, items: 0 };
   await writeAudit(pb, { actor, action: `membuat RAB versi ${number}`, context: context(campusId), collection: 'rab_versions', record: version.id, campus: campusId, after: { sumber: options.source || 'manual', dariVersi: from ? from.number : null, baris: totals.items, total: formatSen(totals.totalSen), termin1: formatSen(totals.term1Sen) } });
   return { id: version.id, number, ...totals };
 }
@@ -193,18 +193,18 @@ export async function approveVersion(pb: PocketBase, actor: AuditActor & { id: s
   if (version.status !== 'menunggu') throw new PreviewError(400, 'Ajukan versi ini dulu sebelum disetujui.');
   const lines = await versionLines(pb, versionId);
   const nodes = arrange(toInput(lines));
-  const { totalSen, term1Sen } = totalsOf(nodes);
+  const { totalSen, term1Sen, term2Sen } = totalsOf(nodes);
   const amountSen = Number(award.amountSen), limit = limitSen(amountSen);
-  if (!term1Sen) throw new PreviewError(400, 'RAB 70% (Tahap 1) belum diisi. Isi kolom RAB 70% dulu.');
+  if (!term1Sen) throw new PreviewError(400, 'RAB 70% belum diisi. Isi lembar RAB 70% dulu.');
   if (term1Sen > limit) throw new PreviewError(400, `RAB 70% ${formatSen(term1Sen)} melebihi Batas Tahap 1 ${formatSen(limit)}. Kurangi ${formatSen(term1Sen - limit)}.`);
   const now = new Date().toISOString();
-  await pb.collection('rab_versions').update(versionId, { status: 'disetujui', totalSen, term1Sen, approvedBy: actor.id, approvedAt: now }, opts);
+  await pb.collection('rab_versions').update(versionId, { status: 'disetujui', totalSen, term1Sen, term2Sen, approvedBy: actor.id, approvedAt: now }, opts);
   const { disbursement } = await ensureDisbursement(pb, campusId);
   const patch: Parameters<typeof updateDisbursement>[3] = { requestedSen: term1Sen };
   if (Number(disbursement.stage || 1) < 4) patch.stage = 4;
   await updateDisbursement(pb, actor, campusId, patch);
   await pb.collection('disbursements').update(disbursement.id, { rabVersion: versionId }, opts);
-  const after: Record<string, unknown> = { status: 'disetujui', nominalTahap1: formatSen(term1Sen), batasTahap1: formatSen(limit), rabPenuh: formatSen(totalSen) };
+  const after: Record<string, unknown> = { status: 'disetujui', nominalTahap1: formatSen(term1Sen), batasTahap1: formatSen(limit), rab100: formatSen(totalSen), rab30: formatSen(term2Sen) };
   if (term1Sen < limit) after.sisaTahap2 = formatSen(limit - term1Sen);
   await writeAudit(pb, { actor, action: `menyetujui RAB 70% versi ${version.number}`, context: context(campusId), collection: 'rab_versions', record: versionId, campus: campusId, before: { status: 'menunggu' }, after });
 }
@@ -283,7 +283,7 @@ async function typedTerm1(pb: PocketBase, campusId: string): Promise<number | nu
 /* Excel import and export */
 
 export interface ImportProblem { row: number; text: string }
-export interface ImportResult { lines: LineInput[]; rows: number; kind: 'total' | 'termin_1'; totalSen: number; term1Sen: number; problems: ImportProblem[] }
+export interface ImportResult { lines: LineInput[]; rows: number; kind: 'total' | 'termin_1' | 'tiga_lembar'; totalSen: number; term1Sen: number; term2Sen?: number; problems: ImportProblem[] }
 
 /** Builds the tree from rows of the old extraction workbook (kelompok, kegiatan, sub_kegiatan, uraian, ...). Used by scripts/pencairan/load-rab.ts only. */
 export function buildImportLegacy(rows: Record<string, unknown>[], campusCode: string): ImportResult {
@@ -371,7 +371,7 @@ function simpleColumns(headers: string[]): Record<string, string> | null {
 const cleanCode = (value: unknown) => String(value ?? '').trim().replace(/\s+/g, '').replace(/\.+$/, '');
 
 /** Builds the tree from rows of the simple template. Items land on the fourth level; missing headings are padded with empty ones. */
-export function buildSimpleImport(rows: Record<string, unknown>[], columns: Record<string, string>): ImportResult {
+export function buildSimpleImport(rows: Record<string, unknown>[], columns: Record<string, string>, shares?: { term1: string; term2: string }): ImportResult {
   const problems: ImportProblem[] = [];
   const lines: LineInput[] = [];
   const groups = new Map<string, { key: string; level: number }>();
@@ -382,7 +382,7 @@ export function buildSimpleImport(rows: Record<string, unknown>[], columns: Reco
     if (sen === null || sen < 0 || sen > MAX_SEN) { problems.push({ row, text: 'Jumlah bukan angka rupiah.' }); return null; }
     return sen;
   };
-  const heading = (key: string, parentKey: string, title: string) => lines.push({ key, parentKey, title: title.slice(0, 500), calculation: '', volume: 0, unit: '', unitPriceSen: 0, amountSen: 0, term1Sen: 0 });
+  const heading = (key: string, parentKey: string, title: string) => lines.push({ key, parentKey, title: title.slice(0, 500), calculation: '', volume: 0, unit: '', unitPriceSen: 0, amountSen: 0, term1Sen: 0, term2Sen: 0 });
   /** The heading for a code, created (empty) when the file has no row for it. Never deeper than the third level. */
   const group = (code: string): { key: string; level: number } => {
     const found = groups.get(code);
@@ -418,11 +418,13 @@ export function buildSimpleImport(rows: Record<string, unknown>[], columns: Reco
     const volumeRaw = columns.volume ? r[columns.volume] : null;
     const volume = volumeRaw === null || volumeRaw === undefined || volumeRaw === '' ? null : parseVolume(volumeRaw as string | number);
     const unit = String(columns.satuan ? r[columns.satuan] ?? '' : '').trim().slice(0, 60);
-    if (!code && !title && amount === null) return;
+    const t1 = shares ? money(r[shares.term1], rowNo) : null;
+    const t2 = shares ? money(r[shares.term2], rowNo) : null;
+    if (!code && !title && amount === null && t1 === null && t2 === null) return;
     // A total line someone added by hand is not an item; the app sums the items itself.
     if (!code && /^(sub ?total|total|jumlah|grand total)\b/i.test(title)) return;
     if (!title) problems.push({ row: rowNo, text: 'Uraian kosong.' });
-    const isItem = amount !== null || volume !== null || Boolean(unit);
+    const isItem = amount !== null || volume !== null || Boolean(unit) || t1 !== null || t2 !== null;
     if (!isItem) {
       const parts = code ? code.split('.') : [];
       const parent = parts.length > 1 ? group(parts.slice(0, -1).join('.')) : null;
@@ -443,29 +445,84 @@ export function buildSimpleImport(rows: Record<string, unknown>[], columns: Reco
     const parent = deepen(base, parentCode || 'root');
     if (volume === null && volumeRaw !== null && volumeRaw !== undefined && volumeRaw !== '') problems.push({ row: rowNo, text: 'Volume bukan angka.' });
     const vol = volume ?? 1;
-    const amountSen = amount ?? 0;
-    lines.push({ key: `i${++seq}`, parentKey: parent.key, title: title.slice(0, 500), calculation: '', volume: vol, unit, unitPriceSen: vol > 0 ? Math.round(amountSen / vol) : amountSen, amountSen, term1Sen: amountSen });
+    // Three sheets: Jumlah is the RAB 100% of the line, the parts come from the RAB 70% and RAB 30% sheets. One sheet: the whole line is Tahap 1.
+    const amountSen = amount ?? (shares ? (t1 ?? 0) + (t2 ?? 0) : 0);
+    lines.push({ key: `i${++seq}`, parentKey: parent.key, title: title.slice(0, 500), calculation: '', volume: vol, unit, unitPriceSen: vol > 0 ? Math.round(amountSen / vol) : amountSen, amountSen, term1Sen: shares ? (t1 ?? 0) : amountSen, term2Sen: shares ? (t2 ?? 0) : 0, flags: code ? { no: code } : undefined });
     items++;
   });
   if (!items) throw new PreviewError(400, 'Tidak ada baris barang di berkas ini. Isi Uraian dan Jumlah pada tiap baris barang.');
   const totals = totalsOf(arrange(lines));
-  return { lines, rows: items, kind: 'termin_1', ...totals, problems };
+  return { lines, rows: items, kind: shares ? 'tiga_lembar' : 'termin_1', ...totals, problems };
 }
 
-/** Reads the RAB sheet of an uploaded workbook: the simple template, or the old extraction layout when its columns are present. */
+const sheetRows = (sheet: XLSX.WorkSheet) => {
+  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: null, raw: true });
+  const headers = rows.length ? Object.keys(rows[0]) : ((XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1 })[0] as unknown[]) || []).map(String);
+  return { rows, headers };
+};
+const normTitle = (value: unknown) => String(value ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+const isBlank = (value: unknown) => value === null || value === undefined || value === '';
+
+/**
+ * Reads an uploaded workbook. The three sheet template (RAB 100%, RAB 70%, RAB 30%) is merged line by line on the No column
+ * (the Uraian when a row has no No): Jumlah of RAB 100% is the line, the two other sheets give its Tahap 1 and Tahap 2 parts.
+ * A file with only the RAB 70% sheet (older template) or the old extraction layout still reads as before.
+ */
 export function parseWorkbook(bytes: ArrayBuffer | Uint8Array, campusCode: string): ImportResult {
   let book: XLSX.WorkBook;
   try { book = XLSX.read(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes), { type: 'array', cellDates: false }); }
   catch { throw new PreviewError(400, 'Berkas tidak terbaca. Unggah berkas Excel (.xlsx) dari templat.'); }
-  // The managed RAB is the Tahap 1 RAB: its sheet first, then an older single sheet file, then whatever comes first.
-  const sheet = book.Sheets['RAB Tahap 1'] || book.Sheets['RAB'] || book.Sheets[book.SheetNames.find(n => n !== 'Petunjuk' && n !== 'RAB Tahap 2') || book.SheetNames[0]];
-  if (!sheet) throw new PreviewError(400, 'Lembar RAB Tahap 1 tidak ditemukan. Gunakan templat yang disediakan.');
-  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: null, raw: true });
-  const headers = rows.length ? Object.keys(rows[0]) : ((XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1 })[0] as unknown[]) || []).map(String);
-  if (headers.includes('kelompok') && headers.includes('kegiatan')) return buildImportLegacy(rows, campusCode);
-  const columns = simpleColumns(headers);
-  if (!columns) throw new PreviewError(400, 'Kolom Uraian dan Jumlah tidak ditemukan. Unduh templat: No, Uraian, Satuan, Volume, Jumlah.');
-  return buildSimpleImport(rows, columns);
+  const find = (test: RegExp) => book.SheetNames.find(n => test.test(n.toLowerCase().replace(/\s+/g, ' ')));
+  const nameFull = find(/rab 100|100 ?%|penuh|rab total/), nameT1 = find(/rab 70|70 ?%|tahap 1|termin 1/), nameT2 = find(/rab 30|30 ?%|tahap 2|termin 2/);
+  if (!nameFull && !nameT1) {
+    const legacy = book.Sheets['RAB'] || book.Sheets[book.SheetNames.find(n => n !== 'Petunjuk' && n !== nameT2) || book.SheetNames[0]];
+    if (!legacy) throw new PreviewError(400, 'Lembar RAB tidak ditemukan. Gunakan templat yang disediakan.');
+    const { rows, headers } = sheetRows(legacy);
+    if (headers.includes('kelompok') && headers.includes('kegiatan')) return buildImportLegacy(rows, campusCode);
+    const columns = simpleColumns(headers);
+    if (!columns) throw new PreviewError(400, 'Kolom Uraian dan Jumlah tidak ditemukan. Unduh templat: No, Uraian, Satuan, Volume, Jumlah.');
+    return buildSimpleImport(rows, columns);
+  }
+  const base = sheetRows(book.Sheets[(nameFull || nameT1)!]);
+  const columns = simpleColumns(base.headers);
+  if (!columns) throw new PreviewError(400, `Kolom Uraian dan Jumlah tidak ditemukan di lembar ${nameFull || nameT1}. Unduh templat: No, Uraian, Satuan, Volume, Jumlah.`);
+  if (!nameFull && !nameT2) return buildSimpleImport(base.rows, columns);
+  const keyOf = (r: Record<string, unknown>, cols: Record<string, string>) => cleanCode(r[cols.no ?? '']) || normTitle(r[cols.uraian]);
+  const lookup = (name: string | undefined, label: string) => {
+    if (!name) return null;
+    const { rows, headers } = sheetRows(book.Sheets[name]);
+    const cols = simpleColumns(headers);
+    if (!cols) throw new PreviewError(400, `Kolom Uraian dan Jumlah tidak ditemukan di lembar ${label}.`);
+    const map = new Map<string, Record<string, unknown>>();
+    for (const r of rows) { const k = keyOf(r, cols); if (k && !map.has(k)) map.set(k, r); }
+    return { rows, cols, map };
+  };
+  const t1 = nameFull ? lookup(nameT1, 'RAB 70%') : null;
+  const t2 = lookup(nameT2, 'RAB 30%');
+  const T1 = '__rab70', T2 = '__rab30';
+  const merged: Record<string, unknown>[] = base.rows.map(r => {
+    const k = keyOf(r, columns);
+    return { ...r, [T1]: nameFull ? (t1?.map.get(k)?.[t1.cols.jumlah] ?? null) : r[columns.jumlah], [T2]: t2?.map.get(k)?.[t2.cols.jumlah] ?? null };
+  });
+  // Items that appear only on the RAB 70% or RAB 30% sheet are kept and reported; they have no RAB 100% line to compare with.
+  const extra: ImportProblem[] = [];
+  const seen = new Set(base.rows.map(r => keyOf(r, columns)));
+  for (const [label, sheet] of [['RAB 70%', nameFull ? t1 : null], ['RAB 30%', t2]] as const) {
+    if (!sheet) continue;
+    sheet.rows.forEach((r, i) => {
+      const k = keyOf(r, sheet.cols);
+      if (!k || seen.has(k) || isBlank(r[sheet.cols.jumlah])) return;
+      seen.add(k);
+      const row: Record<string, unknown> = { [columns.no ?? 'No']: r[sheet.cols.no ?? ''] ?? null, [columns.uraian]: r[sheet.cols.uraian] ?? '', [columns.jumlah]: null, [T1]: null, [T2]: null };
+      if (columns.satuan) row[columns.satuan] = sheet.cols.satuan ? r[sheet.cols.satuan] : null;
+      if (columns.volume) row[columns.volume] = sheet.cols.volume ? r[sheet.cols.volume] : null;
+      row[label === 'RAB 70%' ? T1 : T2] = r[sheet.cols.jumlah];
+      merged.push(row);
+      extra.push({ row: i + 2, text: `Baris ${k} ada di lembar ${label} tetapi tidak ada di lembar RAB 100%.` });
+    });
+  }
+  const result = buildSimpleImport(merged, columns, { term1: T1, term2: T2 });
+  return { ...result, problems: [...extra, ...result.problems] };
 }
 
 const SIMPLE_WIDTHS = [12, 52, 10, 10, 16];

@@ -75,7 +75,7 @@ Skema dibuat oleh `scripts/pocketbase/provision-deb.ts` (idempoten, hanya menamb
 | `reviews` | `version`, `decision`, `note`, `actor`, `actorName`, `imported` | Catatan lembar review dimuat dengan `imported = true` |
 | `bank_checks` | `disbursement`, bank, cabang, `accountNumber`, `holderNames`, `attorneyNames`, `namesMatch`, `overrideReason`, `bankResult`, `bankNameSeen`, `evidenceKey`, `checkedBy` | Nomor rekening disamarkan di luar layar Rekening |
 | `pks_templates` | `campus` (kosong berarti standar), `version`, `r2Key`, `differences`, `reason`, `active` | Perbedaan pasal dihitung saat diunggah |
-| `rab_versions`, `rab_lines` | Versi RAB (`status` draf, menunggu, disetujui, `totalSen`, `term1Sen`, `source`) dan baris empat tingkat (`parent`, `level`, `code`, `volume`, `unitPriceSen`, `amountSen`, `term1Sen`) | Versi disetujui dibekukan |
+| `rab_versions`, `rab_lines` | Versi RAB (`status` draf, menunggu, disetujui, `totalSen`, `term1Sen`, `term2Sen`, `source`) dan baris empat tingkat (`parent`, `level`, `code`, `volume`, `unitPriceSen`, `amountSen` = RAB 100%, `term1Sen` = RAB 70%, `term2Sen` = RAB 30%, sejak keputusan 42) | Versi disetujui dibekukan |
 | `attachments` | `disbursement`, `number`, `r2Key`, `composition` | PDF gabungan per kampus |
 | `audit` | `actor`, `actorName`, `actorEmail`, `action`, `context`, `collection`, `record`, `campus`, `before`, `after`, `note` | Hanya bisa ditambah. Ditampilkan di bawah tiap halaman lewat `RiwayatPerubahan.svelte` |
 | `lpj_entries` | Satu entri per invois | Dibuat untuk nanti |

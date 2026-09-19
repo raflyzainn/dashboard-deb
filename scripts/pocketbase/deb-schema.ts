@@ -35,7 +35,7 @@ export const IDS = {
 };
 
 /** The eight check columns of the review sheet, in the sheet's order. */
-export const DOCUMENT_KINDS = ['sk', 'pks', 'rab', 'permohonan', 'kuitansi', 'invois', 'laporan', 'rekening', 'surat_kuasa'];
+export const DOCUMENT_KINDS = ['sk', 'pks', 'rab_penuh', 'rab', 'rab_tahap2', 'permohonan', 'kuitansi', 'invois', 'laporan', 'rekening', 'surat_kuasa'];
 export const VERIFICATION_KINDS = ['pks', 'permohonan', 'invois', 'kuitansi', 'rab', 'lampiran'];
 export const DOCUMENT_STATUS = ['belum_ada', 'menunggu_review', 'perlu_konfirmasi', 'perlu_revisi', 'sesuai', 'tidak_perlu'];
 
@@ -93,11 +93,11 @@ export function debCollections(campusesId: string) {
     ]),
     base('rab_versions', IDS.rab_versions, [
       rel('campus', campusesId, { required: true }), rel('disbursement', IDS.disbursements), num('number', { required: true }), sel('status', ['draf', 'menunggu', 'disetujui'], { required: true }),
-      num('totalSen'), num('term1Sen'), rel('approvedBy', IDS.users), date('approvedAt'), sel('source', ['manual', 'import', 'extraction']), text('note', 2000), text('sourceFile', 300)
+      num('totalSen'), num('term1Sen'), num('term2Sen'), rel('approvedBy', IDS.users), date('approvedAt'), sel('source', ['manual', 'import', 'extraction']), text('note', 2000), text('sourceFile', 300)
     ], ['CREATE UNIQUE INDEX idx_rab_versions_number ON rab_versions (campus, number)']),
     base('rab_lines', IDS.rab_lines, [
       rel('version', IDS.rab_versions, { required: true }), rel('parent', IDS.rab_lines), num('level', { required: true }), num('order'), text('code', 40), text('title', 500),
-      text('calculation', 200), num('volume', { onlyInt: false }), text('unit', 60), num('unitPriceSen'), num('amountSen'), num('term1Sen'), json('flags', 4000)
+      text('calculation', 200), num('volume', { onlyInt: false }), text('unit', 60), num('unitPriceSen'), num('amountSen'), num('term1Sen'), num('term2Sen'), json('flags', 4000)
     ]),
     base('attachments', IDS.attachments, [
       rel('disbursement', IDS.disbursements, { required: true }), num('number', { required: true }), text('r2Key', 400), num('size'), json('composition', 20000), rel('createdBy', IDS.users), text('createdByName', 120),

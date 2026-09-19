@@ -62,7 +62,7 @@
 <div class="grid gap-5 [&>*]:min-w-0">
   <div class="grid gap-2">
     <h1 class="text-2xl font-bold text-slate-900">Pencairan</h1>
-    <p class="text-sm text-slate-500">{KINDS.length} butir per kampus, seperti di lembar review. Klik nama kampus untuk membuka daftar periksa Tahap 1, klik sel untuk membuka butirnya.</p>
+    <p class="text-sm text-slate-500">{KINDS.length} butir per kampus, seperti di lembar review, dengan RAB dalam tiga butir. Klik nama kampus untuk membuka daftar periksa Tahap 1, klik sel untuk membuka butirnya.</p>
     <PencairanNav active="dashboard" />
   </div>
 
