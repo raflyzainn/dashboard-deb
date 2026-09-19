@@ -218,6 +218,7 @@
       {#if admin}<a href="/admin/pencairan/tahap-1" class="inline-flex items-center gap-1 text-sm font-semibold text-[#0066B2] hover:underline"><Icon name="back" size={14} />Tahap 1</a>{/if}
       <CampusLogo code={data.campus.code} initials={data.campus.initials} size={36} /><h1 class="text-xl font-bold text-slate-900">{data.campus.name}</h1>
       <span class="text-xs text-slate-500">Tahun {data.summary.programYear === 'kedua' ? 'Kedua' : 'Ketiga'}</span>
+      {#if admin && data.readiness.revisi > 0}<a href={`/admin/pencairan/${campusId}/revisi`} class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-900 hover:bg-amber-200">Ringkasan revisi · {data.readiness.revisi}</a>{/if}
       {#if notice}<span class="rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-semibold text-green-800" role="status">{notice}</span>{/if}
       {#if error}<span class="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-800" role="alert">{error}</span>{/if}
     </div>

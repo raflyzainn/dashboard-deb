@@ -121,7 +121,7 @@
                 <td class="px-1 py-2 text-center"><a href={`/admin/pencairan/${r.campus.id}?butir=${k}`} class="inline-block h-5 w-6 rounded-md {cell[s]} transition hover:scale-110" title={`${KIND_SHORT[k]}: ${ITEM_STATE_LABEL[s]}`} aria-label={`${KIND_SHORT[k]}: ${ITEM_STATE_LABEL[s]}`}></a></td>
               {/each}
               <td class="px-3 py-2 tabular-nums text-slate-700">{r.assessment.done} dari {r.assessment.total}</td>
-              <td class="px-3 py-2"><span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold {pill[r.assessment.state]}" title={CAMPUS_STATE_LABEL[r.assessment.state]}>{r.assessment.waiting}</span></td>
+              <td class="px-3 py-2"><span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold {pill[r.assessment.state]}" title={CAMPUS_STATE_LABEL[r.assessment.state]}>{r.assessment.waiting}</span>{#if r.assessment.revisi > 0}<a href={`/admin/pencairan/${r.campus.id}/revisi`} class="ml-1.5 whitespace-nowrap text-[11.5px] font-semibold text-amber-800 hover:underline" title="Ringkasan revisi">Ringkasan revisi</a>{/if}</td>
             </tr>
           {/each}
           {#if !visible.length}<tr><td colspan={KINDS.length + 3} class="px-3 py-8 text-center text-sm text-slate-500">Tidak ada kampus yang cocok. Ubah saringan atau kata pencarian.</td></tr>{/if}
