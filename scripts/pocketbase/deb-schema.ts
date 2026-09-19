@@ -30,7 +30,8 @@ export const IDS = {
   attachments: 'pbc_deb_attachm',
   audit: 'pbc_deb_auditlg',
   lpj_entries: 'pbc_deb_lpjentr',
-  verifications: 'pbc_deb_verific'
+  verifications: 'pbc_deb_verific',
+  notes: 'pbc_deb_notes00'
 };
 
 /** The eight check columns of the review sheet, in the sheet's order. */
@@ -102,6 +103,11 @@ export function debCollections(campusesId: string) {
       rel('disbursement', IDS.disbursements, { required: true }), num('number', { required: true }), text('r2Key', 400), num('size'), json('composition', 20000), rel('createdBy', IDS.users), text('createdByName', 120),
       text('sha256', 64), text('verification', 40), num('pages')
     ]),
+    // The conversation on one item between Pertamina Foundation and the campus; internal notes never reach the campus.
+    base('notes', IDS.notes, [
+      rel('document', IDS.documents, { required: true }), rel('campus', campusesId, { required: true }), text('body', 4000, { required: true }), bool('internal'),
+      rel('author', IDS.users), text('authorName', 120), sel('authorRole', ['admin', 'super_admin', 'campus'])
+    ], ['CREATE INDEX idx_notes_document ON notes (document, created)']),
     base('verifications', IDS.verifications, [
       text('code', 40, { required: true }), rel('campus', campusesId, { required: true }), num('term', { required: true }), sel('kind', VERIFICATION_KINDS, { required: true }),
       rel('documentVersion', IDS.document_versions), rel('attachment', IDS.attachments), text('sha256', 64), num('amountSen'), text('label', 200),

@@ -79,6 +79,7 @@ Skema dibuat oleh `scripts/pocketbase/provision-deb.ts` (idempoten, hanya menamb
 | `attachments` | `disbursement`, `number`, `r2Key`, `composition` | PDF gabungan per kampus |
 | `audit` | `actor`, `actorName`, `actorEmail`, `action`, `context`, `collection`, `record`, `campus`, `before`, `after`, `note` | Hanya bisa ditambah. Ditampilkan di bawah tiap halaman lewat `RiwayatPerubahan.svelte` |
 | `lpj_entries` | Satu entri per invois | Dibuat untuk nanti |
+| `notes` | `document`, `campus`, `body` (paling panjang 4000 huruf), `internal`, `author`, `authorName`, `authorRole` (`admin`, `super_admin`, `campus`) | Percakapan per butir (keputusan 38). Catatan internal tidak pernah dikirim ke akun kampus |
 
 Nilai status slot: `belum_ada`, `menunggu_review`, `perlu_konfirmasi`, `perlu_revisi`, `sesuai`.
 

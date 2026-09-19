@@ -4,7 +4,8 @@ import type { Kind, Status, Assessment } from '$lib/pencairan';
 export interface Review { id: string; decision: string; note: string; actorName: string; created: string; imported: boolean }
 export interface DocScan { termin2Hits: string[]; highlight: number; words: number; scannedAt: string }
 export interface Version { id: string; number: number; originalName: string; size: number; mime: string; origin: string; uploadedByName: string; created: string; note: string; signed: boolean; scan: DocScan | null; fields: Record<string, unknown>; fieldsByName: string; fieldsAt: string; fieldsCheckedByName: string; fieldsCheckedAt: string; fieldsSamePerson: boolean; reviews: Review[] }
-export interface Doc { id: string; kind: Kind; status: Status; signedReceived: boolean; signedReceivedAt: string; signedReceivedByName: string; originalReceived: boolean; originalReceivedAt: string; originalReceivedByName: string; currentVersionId: string; versions: Version[]; generated: boolean; decidedByName: string; decidedAt: string }
+export interface Note { id: string; body: string; internal: boolean; authorName: string; authorRole: string; created: string }
+export interface Doc { id: string; kind: Kind; status: Status; signedReceived: boolean; signedReceivedAt: string; signedReceivedByName: string; originalReceived: boolean; originalReceivedAt: string; originalReceivedByName: string; currentVersionId: string; versions: Version[]; generated: boolean; decidedByName: string; decidedAt: string; notes: Note[] }
 export interface Check { kind: Kind | 'umum'; level: 'ok' | 'warn' | 'bad' | 'info'; text: string }
 export interface KartuData {
   campus: { id: string; name: string; code: string; programYear: string; fillMode: string; signatoryName: string };

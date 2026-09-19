@@ -57,159 +57,131 @@ ul.clean{margin:0;padding-left:18px;display:grid;gap:6px;max-width:78ch} ul.clea
 .new{font-size:10.5px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;background:var(--accent);color:var(--accent-ink);border-radius:5px;padding:1px 6px;vertical-align:middle;margin-left:6px}
 footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);display:grid;gap:6px}
 </style><style>
-.app{display:grid;grid-template-columns:224px minmax(0,1fr);background:var(--surface)} @media (max-width:820px){.app{grid-template-columns:1fr}}
-.rail{border-right:1px solid var(--line);background:var(--surface-2);padding:10px;display:grid;gap:3px;align-content:start} @media (max-width:820px){.rail{border-right:0;border-bottom:1px solid var(--line);grid-auto-flow:column;grid-auto-columns:max-content;overflow-x:auto}}
-.row{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:9px;font-size:13px;color:var(--text)} .row.on{background:var(--surface);box-shadow:0 4px 12px rgba(11,37,69,.08);font-weight:700;color:var(--ink)} .row i{width:9px;height:9px;border-radius:50%;flex:none} .row small{margin-left:auto;font-size:11px;color:var(--faint)} .row.dim{opacity:.55}
-.rail hr{border:0;border-top:1px solid var(--line);margin:5px 0} .rail .lbl{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);padding:2px 10px}
-.d-s{background:var(--ok)} .d-k{background:var(--accent)} .d-m{background:#38bdf8} .d-r{background:var(--warn)} .d-x{background:var(--none-soft);outline:1px solid var(--line-2)}
-.main{display:grid;grid-template-rows:auto minmax(0,1fr) auto;min-height:420px}
-.bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted)} .bar b{color:var(--ink);font-size:15px} .bar .chip{border:1px solid var(--line-2);border-radius:999px;padding:2px 9px;font-size:11.5px;color:var(--muted);background:var(--surface)} .bar .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
-.doc{background:#e5e9f0;padding:14px;display:grid;place-items:start center;overflow:hidden;min-height:250px}
-.act{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--line);background:var(--surface)}
-.in{display:grid;gap:2px;font-size:10.5px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.05em} .in span{font:inherit;font-size:13px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink);border:1px solid var(--line-2);border-radius:8px;padding:6px 10px;min-width:120px;background:var(--surface)} .in span.w{min-width:200px}
-.res{font-size:12px;font-weight:650;padding:5px 9px;border-radius:8px} .res.ok{background:var(--ok-soft);color:var(--ok)} .res.bad{background:var(--bad-soft);color:var(--bad)} .res.warn{background:var(--warn-soft);color:var(--warn)} .res.info{background:var(--accent-soft);color:var(--accent-deep)}
-.right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
-.sheet{width:100%;max-width:640px;background:#fff;border-radius:6px;box-shadow:0 2px 10px rgba(0,0,0,.15);overflow:hidden} .sheet table{min-width:0;font-size:12px} .sheet th{font-size:10.5px} .sheet td{padding:7px 10px}
-.panel{width:100%;max-width:520px;background:#fff;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.12);padding:16px;display:grid;gap:10px;font-size:13.5px} .panel h4{font-size:15px}
-.chips{display:flex;flex-wrap:wrap;gap:6px} .chips span{font-size:11.5px;padding:3px 9px;border-radius:999px;background:var(--surface);border:1px solid var(--line-2);color:var(--muted)} .chips span.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent} .chips span.bad{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.rules td:nth-child(2),.rules td:nth-child(3){font-family:var(--mono);font-size:11.5px;white-space:normal;word-break:break-word}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:12px} @media (max-width:720px){.split{grid-template-columns:1fr}}
+.box{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:14px 16px} .box h3{margin-bottom:6px}
+.box ul{margin:0;padding-left:18px;display:grid;gap:4px;font-size:13.5px}
+.flow{display:grid;gap:8px} .flow div{border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:13.5px;background:var(--surface)} .flow b{color:var(--ink)}
 .note{font-size:13px;color:var(--muted);max-width:78ch}
-.gridm{overflow-x:auto} .gridm table{min-width:700px} .gridm td,.gridm th{padding:7px 8px} .cell{width:20px;height:16px;border-radius:5px;display:inline-block;vertical-align:middle}
-.tiny{font-size:12px;color:var(--faint)}
+.rules table{min-width:820px}
 </style>
 
 <div class="wrap">
 <header class="top">
-  <span class="eyebrow">DEB Sobat Bumi 2025/2026 · Version 11 · every document screen, one flow</span>
-  <h1>Every item, one screen, one bar</h1>
-  <p class="lede">The campus screen from version 10, drawn once per item and once per closing step, and every list now starts with the SK, so every action bar and every button is decided before code. Same rule everywhere: the document is the page, the values to type sit under it, the decision is one click. Numbers are Institut Pertanian Bogor's; findings are taken from real campus files.</p>
+  <span class="eyebrow">DEB Sobat Bumi 2025/2026 · Version 12 · row level security, the PF Series way</span>
+  <h1>The browser reads PocketBase directly, PocketBase decides row by row</h1>
+  <p class="lede">Your choice: option 2. Every read that the screens need goes from the browser straight to PocketBase with the person's own token, and PocketBase API rules decide which rows that person may see. The server keeps only what rules cannot do: money rules, uploads and private files, decisions with audit and notification, generated letters with QR, the lampiran, payment, sign in. This page is the rule table and the endpoint split to confirm before anything is changed.</p>
 </header>
 </div>
-<nav class="toc"><div class="wrap"><a href="#sk">SK</a><a href="#pks">PKS</a><a href="#rab">RAB 70%</a><a href="#permohonan">Permohonan</a><a href="#kuitansi">Kuitansi</a><a href="#invois">Invois</a><a href="#laporan">Format laporan</a><a href="#rekening">Rekening</a><a href="#kuasa">Surat kuasa</a><a href="#ttd">Tanda tangan</a><a href="#lampiran">Lampiran</a><a href="#bayar">Pembayaran</a><a href="#dash">Dashboard</a><a href="#kampus">Campus view</a><a href="#aturan">Rules</a></div></nav>
-<div class="wrap" id="screens"></div>
-
+<nav class="toc"><div class="wrap"><a href="#model">Model</a><a href="#rules">Rule table</a><a href="#split">Browser vs server</a><a href="#token">Token flow</a><a href="#risk">Risks</a><a href="#plan">Plan</a><a href="#tanya">Questions</a></div></nav>
 <div class="wrap">
-<section id="dash">
-  <div class="sec-head"><span class="eyebrow">13 · Dashboard</span><h2>The grid, one filter row</h2></div>
-  <div class="mock"><div class="mock-bar"><span class="dots"><i></i><i></i><i></i></span>Pencairan</div>
-    <div class="mock-body" style="gap:10px">
-      <div class="tabs"><span class="tab" aria-selected="true">Semua 23</span><span class="tab">Menunggu admin 15</span><span class="tab">Menunggu kampus 23</span><span class="tab">Lengkap 0</span><span class="tab">Dibayar 0</span><span class="tab">Tahap 2</span><span class="pill p-none" style="margin-left:auto">Cari kampus</span></div>
-      <div class="gridm"><table>
-        <thead><tr><th>Kampus</th><th>SK</th><th>PKS</th><th>RAB</th><th>Permohonan</th><th>Kuitansi</th><th>Invois</th><th>Laporan</th><th>Rekening</th><th>Kuasa</th><th></th></tr></thead>
-        <tbody>
-          <tr><td>Institut Pertanian Bogor</td><td><i class="cell d-s"></i></td><td><i class="cell d-s"></i></td><td><i class="cell d-s"></i></td><td><i class="cell d-s"></i></td><td><i class="cell d-s"></i></td><td><i class="cell d-s"></i></td><td><i class="cell d-x"></i></td><td><i class="cell d-s"></i></td><td><i class="cell d-k"></i></td><td class="r">7 dari 9</td></tr>
-          <tr><td>Universitas Mulawarman</td><td><i class="cell d-s"></i></td><td><i class="cell d-s"></i></td><td><i class="cell d-s"></i></td><td><i class="cell d-s"></i></td><td><i class="cell d-s"></i></td><td><i class="cell d-s"></i></td><td><i class="cell d-x"></i></td><td><i class="cell d-s"></i></td><td><i class="cell d-k"></i></td><td class="r">7 dari 9</td></tr>
-          <tr><td>Politeknik Negeri Kupang</td><td><i class="cell d-s"></i></td><td><i class="cell d-r"></i></td><td><i class="cell d-r"></i></td><td><i class="cell d-r"></i></td><td><i class="cell d-r"></i></td><td><i class="cell d-r"></i></td><td><i class="cell d-x"></i></td><td><i class="cell d-r"></i></td><td><i class="cell d-x"></i></td><td class="r">1 dari 9</td></tr>
-          <tr><td>Universitas Brawijaya</td><td><i class="cell d-s"></i></td><td><i class="cell d-x"></i></td><td><i class="cell d-x"></i></td><td><i class="cell d-x"></i></td><td><i class="cell d-x"></i></td><td><i class="cell d-x"></i></td><td><i class="cell d-x"></i></td><td><i class="cell d-x"></i></td><td><i class="cell d-x"></i></td><td class="r">1 dari 9</td></tr>
-        </tbody>
-      </table></div>
-    </div>
+
+<section id="model">
+  <div class="sec-head"><span class="eyebrow">1 · Model</span><h2>Two walls instead of one</h2></div>
+  <div class="split">
+    <div class="box"><h3>Today</h3><ul><li>All collections closed (null rules).</li><li>Browser talks only to our server; the server checks role and campus in code, then reads and writes with one superuser token.</li><li>One wall: a bug in an endpoint check can expose another campus.</li></ul></div>
+    <div class="box"><h3>Version 12</h3><ul><li>Every collection gets list and view rules by role and campus (table below). Create, update and delete stay closed to the browser.</li><li>The browser reads with the person's PocketBase token (PF Series `createUserPB` on the client side); PocketBase enforces the rules on every row.</li><li>The server keeps the writes that carry business rules, and still uses the superuser token for those. Two walls: code plus rules.</li><li>Realtime becomes available: a reviewer sees another reviewer's decision without reloading.</li></ul></div>
   </div>
-  <p class="note">A row opens the campus screen on its first unfinished item; a cell opens that item. Colours: green Sesuai, blue Perlu konfirmasi, light blue Menunggu, amber Perlu revisi, grey Belum ada; a hover names it. Tahap 2 is a tab with the same grid for the remainder, empty until Tahap 1 is paid.</p>
 </section>
 
-<section id="kampus">
-  <div class="sec-head"><span class="eyebrow">14 · Campus view</span><h2>Same screen, read only, upload where a file is needed</h2></div>
-  <div class="mock"><div class="mock-bar"><span class="dots"><i></i><i></i><i></i></span>Pencairan · tampilan kampus · Politeknik Negeri Kupang</div>
-    <div class="app">
-      <aside class="rail"><span class="lbl">Butir</span>
-        <div class="row"><i class="d-s"></i>SK<small>Lihat</small></div><div class="row"><i class="d-r"></i>PKS<small>Perbaiki</small></div><div class="row"><i class="d-r"></i>RAB 70%<small>Perbaiki</small></div><div class="row"><i class="d-r"></i>Permohonan<small>Perbaiki</small></div><div class="row on"><i class="d-r"></i>Kuitansi<small>Perbaiki</small></div><div class="row"><i class="d-r"></i>Invois<small>Perbaiki</small></div><div class="row"><i class="d-x"></i>Format laporan<small>Kirim</small></div><div class="row"><i class="d-r"></i>Rekening<small>Perbaiki</small></div><div class="row"><i class="d-x"></i>Surat kuasa<small>Kirim</small></div>
-      </aside>
-      <div class="main">
-        <div class="bar"><b>Kuitansi</b><span class="chip on">Versi 1 · 12 Sep</span><span class="res warn">Perlu diperbaiki</span></div>
-        <div class="doc"><div class="paper" style="width:min(520px,100%);min-height:160px"><b>KUITANSI</b><div class="ln" style="width:50%"></div><div>Jumlah: Rp52.000.000</div><div>Terbilang: Lima Puluh Dua Juta Lima Ratus Ribu</div><div class="ln" style="width:60%"></div></div></div>
-        <div class="act"><span style="font-size:13.5px;color:var(--text)">Catatan pemeriksa: gunakan nominal Rp52.499.300 dan terbilangnya; kirim halaman Termin 1 saja.</span><span class="right"><span class="btn pri">Unggah berkas perbaikan</span></span></div>
-      </div>
-    </div>
-  </div>
-  <p class="note">The campus sees the note in the checker's words and one button. No typed values, no automatic results, no other campuses. Switched on after the 23 are handled by admins.</p>
+<section id="rules">
+  <div class="sec-head"><span class="eyebrow">2 · Rule table</span><h2>List and view rules per collection</h2><p>Role names as stored on users: <span class="num">admin</span>, <span class="num">super_admin</span>, <span class="num">campus</span> (with users.campus set), <span class="num">baru</span> (nothing). "Staff" below means <span class="num">@request.auth.role = "admin" || @request.auth.role = "super_admin"</span>. Create, update and delete rules stay null everywhere: writes go through the server.</p></div>
+  <div class="tablewrap rules"><table>
+    <thead><tr><th>Collection</th><th>Staff may read</th><th>Campus account may read</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>campuses</td><td>all rows</td><td>id = @request.auth.campus</td><td>Profil DEB of its own campus only.</td></tr>
+      <tr><td>sk_awards</td><td>all rows</td><td>campus = @request.auth.campus</td><td>Nilai SK, page and line of Lampiran I.</td></tr>
+      <tr><td>program_settings</td><td>all rows</td><td>all rows</td><td>No secrets: signatory names of PF, dates, labels.</td></tr>
+      <tr><td>disbursements</td><td>all rows</td><td>campus = @request.auth.campus</td><td>Nominal, payment fields, properties of the letters.</td></tr>
+      <tr><td>documents</td><td>all rows</td><td>disbursement.campus = @request.auth.campus</td><td>Status per item, receipt flags.</td></tr>
+      <tr><td>document_versions</td><td>all rows</td><td>document.disbursement.campus = @request.auth.campus</td><td>Typed fields include the account number; the campus sees its own. Files are not in the record, only the storage key, and the key alone opens nothing.</td></tr>
+      <tr><td>reviews</td><td>all rows</td><td>version.document.disbursement.campus = @request.auth.campus && (decision = "perlu_revisi" || decision = "sesuai")</td><td>The campus never sees perlu_konfirmasi or internal notes.</td></tr>
+      <tr><td>bank_checks</td><td>all rows</td><td>disbursement.campus = @request.auth.campus</td><td>Its own account, the bank result and the name seen.</td></tr>
+      <tr><td>pks_templates</td><td>all rows</td><td>campus = @request.auth.campus</td><td></td></tr>
+      <tr><td>rab_versions</td><td>all rows</td><td>campus = @request.auth.campus</td><td></td></tr>
+      <tr><td>rab_lines</td><td>all rows</td><td>version.campus = @request.auth.campus</td><td>The RAB table on the item screen reads these directly.</td></tr>
+      <tr><td>attachments</td><td>all rows</td><td>disbursement.campus = @request.auth.campus</td><td>Metadata only; the PDF streams through the server.</td></tr>
+      <tr><td>audit</td><td>all rows</td><td>none</td><td>Riwayat is for staff.</td></tr>
+      <tr><td>lpj_entries</td><td>all rows</td><td>disbursement.campus = @request.auth.campus</td><td></td></tr>
+      <tr><td>verifications</td><td>all rows</td><td>campus = @request.auth.campus</td><td>The public page keeps its server endpoint: no rule opens the whole list to anonymous visitors.</td></tr>
+      <tr><td>notifications</td><td>recipientUser = @request.auth.id</td><td>recipientUser = @request.auth.id</td><td>Own notifications only, for everyone.</td></tr>
+      <tr><td>users</td><td>all rows</td><td>id = @request.auth.id</td><td>Pengguna page for staff; a campus sees itself.</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">The existing collections of the older modules (proposals, indicators, forum, faq) keep the rules they have; they already accept the super_admin role after provisioning.</p>
 </section>
 
-<section id="aturan">
-  <div class="sec-head"><span class="eyebrow">15 · Rules of the screen</span><h2>What is the same on every item</h2></div>
+<section id="split">
+  <div class="sec-head"><span class="eyebrow">3 · Browser versus server</span><h2>What moves, what stays</h2></div>
+  <div class="split">
+    <div class="box"><h3>Browser reads PocketBase directly</h3><ul>
+      <li><b>Dashboard and Tahap 1 grid:</b> documents, current versions, bank checks, attachments, approved RAB versions of all funded campuses; the assessment and the automatic checks are computed in the browser with the same pure functions (they move from server code to the shared library).</li>
+      <li><b>Checklist screen:</b> the campus, its SK award, disbursement, documents with versions, reviews, bank check, RAB version, attachments count; the item panel shows the same data.</li>
+      <li><b>RAB table:</b> rab_versions and rab_lines.</li>
+      <li><b>Riwayat sheet:</b> audit rows by context (staff).</li>
+      <li><b>Notifications, Pengguna list, Tahap 2 list, campus view.</b></li>
+      <li><b>Realtime:</b> subscribe to documents and reviews of the open campus; the list on the left updates when a colleague decides.</li>
+    </ul></div>
+    <div class="box"><h3>Server endpoints that stay (superuser token)</h3><ul>
+      <li><b>Sign in:</b> password login, Microsoft callback, session cookie, logout, and now also handing the PocketBase token to the browser.</li>
+      <li><b>Uploads and files:</b> new versions to R2, streaming a version, the SK scan, the bank check evidence, lampiran PDFs.</li>
+      <li><b>Decisions:</b> Sesuai, Perlu revisi, Tanpa surat kuasa, SK confirmation, bank result, RAB keputusan: they write reviews, audit rows and notifications together.</li>
+      <li><b>Typed fields</b> (validation, masking of account numbers in audit), disbursement properties, receipt flags.</li>
+      <li><b>RAB import and approval, generated letters with QR, lampiran build, payment, users admin, program settings.</b></li>
+      <li><b>Public:</b> verification by code, health.</li>
+    </ul></div>
+  </div>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Server GET today</th><th>Version 12</th></tr></thead>
+    <tbody>
+      <tr><td>GET /api/pencairan (directory)</td><td>removed; browser reads and assesses</td></tr>
+      <tr><td>GET /api/pencairan/[campus] (workspace)</td><td>removed; browser reads; write endpoints keep returning the fresh state as they do now, or the browser re reads</td></tr>
+      <tr><td>GET /api/pencairan/[campus]/rab (overview)</td><td>removed; browser reads rab_versions and rab_lines</td></tr>
+      <tr><td>GET /api/audit</td><td>removed; browser reads audit</td></tr>
+      <tr><td>GET /api/users</td><td>removed; browser reads users</td></tr>
+      <tr><td>GET file streams, lampiran, SK, bukti</td><td>stay</td></tr>
+      <tr><td>GET /api/verifikasi/[code], /api/health</td><td>stay, public</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="token">
+  <div class="sec-head"><span class="eyebrow">4 · Token flow</span><h2>How the browser gets and keeps its token</h2></div>
+  <div class="flow">
+    <div><b>1 · Sign in stays on the server.</b> Password login and the Microsoft callback already receive a PocketBase user token; they set the session cookie and now also return the token to the page. The browser saves it in the SDK's auth store (local storage), as PF Series does.</div>
+    <div><b>2 · Reads go straight to PocketBase</b> at deb-api.pertaminafoundation.org with that token. PocketBase applies the rule table. Cross origin is allowed by PocketBase's default settings; rate limits count per real visitor (trusted proxy header is already set).</div>
+    <div><b>3 · Refresh.</b> The browser calls authRefresh every 20 minutes and on tab focus; the server session cookie keeps its own 8 hour life. Logout clears both.</div>
+    <div><b>4 · Role changes.</b> A campus account moved to another campus, or a role removed, takes effect on the next refresh or reload, since the token carries only the id and PocketBase evaluates rules against the current record.</div>
+  </div>
+</section>
+
+<section id="risk">
+  <div class="sec-head"><span class="eyebrow">5 · Risks and what limits them</span><h2>Honest list</h2></div>
   <ul class="clean">
-    <li><b>Top bar:</b> item name, version chips (click to open an old version, "+ versi baru" to upload), campus numbers on the right (Nilai SK, Batas, Diajukan, n dari 8), a "Riwayat" chip that opens a side sheet.</li>
-    <li><b>Middle:</b> the file, full width. Word and Excel drawn in the page, scans as image or PDF.</li>
-    <li><b>Bottom bar:</b> the values to type for this item (saved as you leave the field, per version), at most one or two result chips (green ✓, red !), a "n catatan" chip, and the decision buttons. Nothing else.</li>
-    <li><b>Decision:</b> the green button is always the "right" answer for that item; the grey one is "wrong" and opens one text box for the note to the campus. A wrong decision sets Perlu revisi; the row turns amber; the campus is told.</li>
-    <li><b>After a decision</b> the next unfinished item opens by itself. Keyboard: Enter for the green button, Esc back to the dashboard.</li>
-    <li><b>SK first:</b> every campus list, Tahap 1 and Tahap 2, starts with the SK row, the source of every amount. Tahap 2 shows the same SK line plus Dibayar Tahap 1 and Sisa.</li>
-    <li><b>Closing rows</b> (Tanda tangan, Lampiran, Pembayaran) sit under the eight items and turn active when all eight are done.</li>
-    <li><b>Phone:</b> the list becomes a strip of chips above the document, the bar stays at the bottom, inputs stack.</li>
+    <li><b>Token in browser storage.</b> A script injection could read it. Mitigation: no third party scripts, a content security policy on the site, tokens short (PocketBase users tokens default to 7 days; set 1 day) with refresh.</li>
+    <li><b>Rules drift from code.</b> The rule table lives in the schema script and is applied by provisioning, next to the role list; a test signs in as a campus account and asserts it cannot list another campus.</li>
+    <li><b>Typed account numbers are readable by the campus itself.</b> Its own numbers, as on its own bank book. Staff see all, as today.</li>
+    <li><b>PocketBase must stay reachable from campus networks.</b> Same host that serves the site's API today, behind Cloudflare.</li>
+    <li><b>More requests per screen.</b> The dashboard makes five list calls instead of one; with 23 campuses that is small. Realtime replaces polling.</li>
   </ul>
-  <p class="note">Say yes and I build exactly these fourteen screens; say what to change on any bar and I redraw that one.</p>
 </section>
-<footer><span>Left out on purpose: personal names, full account numbers. Illustrations are marked in each caption.</span><span>Version 11, 19 September 2026.</span></footer>
-</div>
 
-<script>
-const RAIL = [['sk','SK','s','Sesuai'],['pks','PKS','s','Sesuai'],['rab','RAB 70%','s','Sesuai'],['permohonan','Permohonan','s','Sesuai'],['kuitansi','Kuitansi','s','Sesuai'],['invois','Invois','s','Sesuai'],['laporan','Format laporan','x','Belum'],['rekening','Rekening','s','Sesuai'],['kuasa','Surat kuasa','k','Periksa']];
-const CLOSE = [['ttd','Tanda tangan'],['lampiran','Lampiran'],['bayar','Pembayaran']];
-const NUM = 'Nilai SK Rp71.609.350 · Batas Rp50.126.545 · Diajukan Rp50.110.400';
-const paper = (title, lines) => `<div class="paper" style="width:min(560px,100%);min-height:170px"><b>${title}</b>${lines.map(l => l === '' ? '<div class="ln" style="width:60%"></div>' : `<div>${l}</div>`).join('')}</div>`;
-const inp = (label, value, wide) => `<label class="in">${label}<span${wide ? ' class="w"' : ''}>${value}</span></label>`;
-const SCREENS = [
-  { key: 'sk', n: 1, title: 'SK penetapan penerima', top: '<span class="chip on">Kpts-150/06A0000/2026-S1A · 2 Juni 2026</span><span class="chip">Buka SK lengkap</span>',
-    doc: paper('LAMPIRAN I · DAFTAR PENERIMA BANTUAN DANA', ['', 'No 20 · Universitas Mulawarman · Tahun Kedua · Rp71.237.320', '<span class="hl">No 21 · Institut Pertanian Bogor · Tahun Kedua · Rp71.609.350</span>', 'No 22 · Institut Teknologi Sumatera · Tahun Kedua · Rp74.932.000', '']),
-    bar: inp('Nilai SK', '71.609.350') + inp('Batas Tahap 1 (70%)', '50.126.545') + inp('Tahun program', 'Kedua') + '<span class="res ok">✓ Dimuat dari SK</span><span class="right"><span class="btn">Nilai berbeda</span><span class="btn ok">Nilai sesuai dengan SK</span></span>',
-    note: 'The first row of every campus, in Tahap 1 and in Tahap 2: the one SK file for all 23 campuses, opened on Lampiran I with this campus\'s line highlighted, so every later number can be checked against the source in one click. The amount was loaded from the SK; the green button confirms it once per campus (the sheet had two SK amounts typed wrong: Kupang, Airlangga). "Nilai berbeda" flags it for a super admin to correct.' },
-  { key: 'pks', n: 2, title: 'Draft PKS', state: {}, top: '<span class="chip on">Versi 1 · 15 Sep</span><span class="chip">+ versi baru</span>',
-    doc: paper('PERJANJIAN KERJA SAMA', ['', 'Pasal 4 Bantuan Dana: <span class="hl">Rp71.609.350</span>', 'Pihak Kedua: <span class="hl">Nama pejabat, Jabatan</span>', '', '']),
-    bar: inp('Nilai bantuan', '71.609.350') + inp('Penandatangan pihak kedua', 'Nama, jabatan', true) + '<span class="res ok">✓ Sama dengan SK</span><span class="res warn">! 5 sorotan kuning</span><span class="chip">1 catatan</span><span class="right"><span class="btn">Perlu revisi</span><span class="btn ok">Sesuai</span></span>',
-    note: 'Two values typed from the PKS: the amount and the signatory (the signatory is what the rekening and the surat kuasa are compared against later). Results: amount against SK, highlight left in the file, and "berbeda dari templat: n pasal" when the campus changed the standard text.' },
-  { key: 'rab', n: 3, title: 'RAB dan rencana realisasi 70%', top: '<span class="chip on">Berkas kampus · 15 Sep</span><span class="chip">RAB terkelola v1</span>',
-    doc: `<div class="sheet"><table><thead><tr><th>Kode</th><th>Uraian</th><th class="r">Jumlah</th><th class="r">RAB 70%</th></tr></thead><tbody><tr><td>1</td><td>Peralatan PLTS</td><td class="r">28.500.000</td><td class="r">28.500.000</td></tr><tr><td>2</td><td>Instalasi dan material</td><td class="r">14.100.000</td><td class="r">14.100.000</td></tr><tr><td>3</td><td>Pelatihan dan pendampingan</td><td class="r">7.510.400</td><td class="r">7.510.400</td></tr><tr><td colspan="2"><b>Total RAB 70%</b></td><td class="r">…</td><td class="r"><b>50.110.400</b></td></tr></tbody></table></div>`,
-    bar: '<span class="res ok">✓ RAB 70% Rp50.110.400 tidak melebihi batas Rp50.126.545</span><span class="res info">Sisa Tahap 2 Rp21.498.950</span><span class="chip">Buka RAB terkelola</span><span class="right"><span class="btn">Perlu revisi</span><span class="btn ok">Sesuai: jadikan nominal Tahap 1</span></span>',
-    note: 'Nothing to type: the lines live in the managed RAB (opened from the chip when a line must be edited). The green button approves the RAB 70% total as the Tahap 1 amount; it is disabled with a red chip when the total is above the limit. Table lines above are an illustration of the layout, not IPB\'s real lines.' },
-  { key: 'permohonan', n: 4, title: 'Permohonan pencairan dana', top: '<span class="chip on">Versi 1 · 15 Sep</span><span class="chip">+ versi baru</span>',
-    doc: paper('SURAT PERMOHONAN PENCAIRAN DANA', ['Nomor: <span class="hl">…/…/2026</span> · Tanggal: <span class="hl">15 September 2026</span>', '', 'sebesar <span class="hl">Rp50.110.400</span> (Termin 1, 70%)', '', '']),
-    bar: inp('Nomor surat', '…/…/2026') + inp('Tanggal', '2026-09-15') + inp('Nominal', '50.110.400') + '<span class="res ok">✓ Sama dengan Diajukan</span><span class="res ok">✓ Hanya halaman Termin 1</span><span class="right"><span class="btn">Perlu revisi</span><span class="btn ok">Sesuai</span></span>',
-    note: 'Three values. Results: nominal equals Diajukan to the sen; a Termin 2 page left in the Word file shows as a red chip (47 of 88 campus Word files still have one).' },
-  { key: 'kuitansi', n: 5, title: 'Kuitansi penerimaan dana', top: '<span class="chip on">Versi 1 · 12 Sep</span><span class="chip">+ versi baru</span>',
-    doc: paper('KUITANSI', ['Nomor: 001 · Tanggal: 15 September 2026', 'Jumlah Uang: <span class="hl">Rp52.000.000</span>', 'Terbilang: <span class="hl">Lima Puluh Dua Juta Lima Ratus Ribu</span>', '', '']),
-    bar: inp('Nomor', '001') + inp('Tanggal', '2026-09-15') + inp('Nominal', '52.000.000') + inp('Terbilang', 'Lima Puluh Dua Juta Lima Ratus Ribu', true) + '<span class="res bad">! Terbilang tidak cocok</span><span class="chip">2 catatan</span><span class="right"><span class="btn">Perlu revisi</span><span class="btn ok">Sesuai</span></span>',
-    note: 'Four values. Results: nominal equals Diajukan, terbilang generated from the figure and compared. The values shown are Kupang\'s real file (the finding the reviewer wrote by hand), placed on this screen as the example.' },
-  { key: 'invois', n: 6, title: 'Invoice penerimaan dana', top: '<span class="chip on">Versi 1 · 15 Sep</span><span class="chip">+ versi baru</span>',
-    doc: paper('INVOICE', ['Nomor: INV-001 · Tanggal: 15 September 2026', 'Jumlah: <span class="hl">Rp50.110.400</span>', 'Bank: <span class="hl">Nama bank</span> · Rekening: <span class="hl">•••• 374</span> a.n. <span class="hl">Nama pemilik</span>', '', '']),
-    bar: inp('Nomor', 'INV-001') + inp('Tanggal', '2026-09-15') + inp('Nominal', '50.110.400') + inp('Rekening di invois', '•••• 374') + '<span class="res ok">✓ Sama dengan Diajukan</span><span class="res ok">✓ Rekening sama dengan buku rekening</span><span class="right"><span class="btn">Perlu revisi</span><span class="btn ok">Sesuai</span></span>',
-    note: 'Four values. The account number typed here is compared with the buku rekening item; a difference is a red chip.' },
-  { key: 'laporan', n: 7, title: 'Format laporan DEB Termin 1', top: '<span class="chip">+ unggah berkas</span>',
-    doc: '<div class="panel" style="text-align:center;color:var(--muted)">Belum ada berkas.<br><span class="tiny">Unggah dengan tombol di atas.</span></div>',
-    bar: '<span class="res info">Isi butir ini menunggu keputusan (pertanyaan 1). Sementara: berkas ada atau belum.</span><span class="right"><span class="btn off">Perlu revisi</span><span class="btn ok off">Sesuai</span></span>',
-    note: 'No values. Buttons wake up once a file exists.' },
-  { key: 'rekening', n: 8, title: 'Buku rekening', top: '<span class="chip on">Versi 1 · 15 Sep</span><span class="chip">+ versi baru</span>',
-    doc: `<div class="sheet"><table><tbody><tr><td>Account</td><td>•••• 374 / <span class="hl">Nama pemilik rekening</span> (IDR)</td></tr><tr><td>Period</td><td>01 Jan 2026 sampai 31 Jan 2026</td></tr></tbody></table></div>`,
-    bar: inp('Bank', 'Nama bank') + inp('Nomor rekening', '•••• 374') + inp('Pemilik rekening', 'Nama di buku', true) + '<span class="res ok">✓ Sama dengan invois</span><span class="res warn">Surat kuasa wajib: pemilik bukan penandatangan PKS</span><span class="right"><span class="btn">Nama berbeda di bank</span><span class="btn ok">Nama sesuai di bank</span></span>',
-    note: 'Three values. The decision is the bank check itself: the green button records "nama sesuai di bank" and marks the item Sesuai in one click; the grey one records "berbeda", asks for the name seen, and marks Perlu revisi. The second chip tells whether a surat kuasa is required, from the holder against the PKS signatory.' },
-  { key: 'kuasa', n: 9, title: 'Surat kuasa', top: '<span class="chip on">Versi 1 · 16 Sep</span><span class="chip">+ versi baru</span>',
-    doc: paper('SURAT KUASA', ['Pemberi kuasa: <span class="hl">Nama pejabat, Jabatan</span>', 'Penerima kuasa: <span class="hl">Nama pemilik rekening</span>', '', 'bermeterai, bertanda tangan', '']),
-    bar: inp('Pemberi kuasa', 'Nama pejabat, Jabatan', true) + inp('Penerima kuasa', 'Nama pemilik rekening', true) + '<span class="res ok">✓ Penerima = pemilik rekening</span><span class="res ok">✓ Pemberi = penandatangan PKS</span><span class="right"><span class="btn">Nama berbeda</span><span class="btn ok">Nama cocok</span></span>',
-    note: 'Two values, both compared automatically (titles and case ignored). When the rekening says a surat kuasa is not required, this row reads "Tidak diperlukan" and counts as done; the bar then only offers "Tetap periksa".' },
-  { key: 'ttd', n: 10, title: 'Tanda tangan basah', closing: true, top: '<span class="chip">Data surat</span><span class="chip">Templat PKS: standar</span>',
-    doc: `<div class="sheet"><table><thead><tr><th>Dokumen</th><th>Dokumen final</th><th>Pindaian bertanda tangan</th><th>Asli</th></tr></thead><tbody>
-      <tr><td>PKS</td><td><span class="chip">Pratinjau</span> <span class="chip">Unduh</span> <span class="tiny">DEB-IPB-T1-PKS-…</span></td><td><span class="chip">v3 · 18 Sep</span> <span class="chip">Bandingkan</span></td><td>✓ 19 Sep</td></tr>
-      <tr><td>Permohonan</td><td><span class="chip">Pratinjau</span> <span class="chip">Unduh</span></td><td><span class="chip">Unggah pindaian</span></td><td>○</td></tr>
-      <tr><td>Invois</td><td><span class="chip">Pratinjau</span> <span class="chip">Unduh</span></td><td><span class="chip">Unggah pindaian</span></td><td>○</td></tr>
-      <tr><td>Kuitansi</td><td><span class="chip">Pratinjau</span> <span class="chip">Unduh</span></td><td><span class="chip">Unggah pindaian</span></td><td>○</td></tr></tbody></table></div>`,
-    bar: '<span class="res info">1 dari 4 asli diterima</span><span class="right"><span class="btn ok">Asli diterima: tandai baris yang dipilih</span></span>',
-    note: 'One table instead of a page: for each of the four letters, preview and download the final (Word, QR and issuer line on every page, verification code shown), upload the signed scan, compare it beside the final, tick "asli diterima". "Data surat" (letter numbers, dates, place, PKS template) is a chip that opens a small sheet. Illustration: no campus has a signed scan yet.' },
-  { key: 'lampiran', n: 11, title: 'Lampiran', closing: true, top: '<span class="chips"><span class="ok">Permohonan</span><span class="ok">Invois</span><span class="ok">Kuitansi</span><span class="ok">RAB 70%</span><span class="ok">Rekening</span><span class="bad">Surat kuasa, PKS</span></span>',
-    doc: '<div class="panel"><h4>Pratinjau lampiran · 14 halaman</h4><div class="ln" style="width:70%"></div><div class="ln"></div><div class="ln" style="width:80%"></div><div class="tiny">Setiap halaman: QR, "Dokumen diterbitkan sistem MonevDEB", deb.pertaminafoundation.org/verifikasi/DEB-CONTOH-T1-XXX-0000, Halaman n dari 14</div></div>',
-    bar: '<span class="res warn">! Surat kuasa dan PKS bertanda tangan belum ada</span><span class="right"><span class="btn">Lihat pratinjau</span><span class="btn ok off">Simpan lampiran</span></span>',
-    note: 'The six sources are chips on top (green ready, amber missing with the reason on hover). The preview is the real merged PDF. "Simpan" mints the code, stores the file, records the SHA-256; saved files appear as chips "Lampiran 1 · 19 Sep · DEB-IPB-T1-LMP-…" next to the sources.' },
-  { key: 'bayar', n: 12, title: 'Pembayaran', closing: true, top: '',
-    doc: '<div class="panel"><h4>Transfer Tahap 1</h4><div>Diajukan <b>Rp50.110.400</b></div><div class="tiny">Jumlah yang dibayar harus sama dengan yang diajukan.</div></div>',
-    bar: inp('Tanggal bayar', '2026-09-20') + inp('Jumlah', '50.110.400') + inp('Referensi transfer', 'Nomor referensi', true) + '<span class="right"><span class="btn ok">Catat pembayaran</span></span>',
-    note: 'Three values, one button. After it the top bar reads "Dibayar 20 Sep · referensi …", the dashboard counts the campus as Dibayar, and Tahap 2 opens once the LPJ is in. Illustration: no campus is paid.' }
-];
-const host = document.getElementById('screens');
-for (const s of SCREENS) {
-  const rail = RAIL.map(([k, name, st, word]) => `<div class="row${k === s.key ? ' on' : ''}"><i class="d-${st}"></i>${name}<small>${word}</small></div>`).join('')
-    + '<hr><span class="lbl">Sebelum dibayar</span>' + CLOSE.map(([k, name]) => `<div class="row${k === s.key ? ' on' : s.closing ? '' : ' dim'}"><i class="d-x"></i>${name}</div>`).join('');
-  host.insertAdjacentHTML('beforeend', `<section id="${s.key}"><div class="sec-head"><span class="eyebrow">${s.n} · ${s.closing ? 'Closing step' : 'Item'}</span><h2>${s.title}</h2></div>
-    <div class="mock"><div class="mock-bar"><span class="dots"><i></i><i></i><i></i></span>Pencairan · Institut Pertanian Bogor${s.closing ? ' · after all eight items are done' : ''}</div>
-      <div class="app"><aside class="rail"><span class="lbl">Butir</span>${rail}</aside>
-        <div class="main"><div class="bar"><b>${s.title}</b>${s.top}<span style="margin-left:auto">${NUM}</span><span class="pill p-info">${s.closing ? '9 dari 9' : '7 dari 9'}</span></div>
-          <div class="doc">${s.doc}</div><div class="act">${s.bar}</div></div></div></div>
-    <p class="note">${s.note}</p></section>`);
-}
-</script>
+<section id="plan">
+  <div class="sec-head"><span class="eyebrow">6 · Plan</span><h2>Three steps, each usable on its own</h2></div>
+  <ol class="clean" style="list-style:decimal">
+    <li><b>Rules and token (half a day).</b> Rule table in the schema script, provisioning applies it, sign in hands the token to the browser, a shared browser client, the campus test proves isolation. Nothing else changes; the server GETs still work.</li>
+    <li><b>Reads move (one day).</b> Dashboard, Tahap 1, checklist screen, RAB table, Riwayat, notifications, Pengguna list read PocketBase directly; assessment and checks move to the shared library; the redundant server GETs are removed.</li>
+    <li><b>Realtime (half a day).</b> Subscriptions on the open campus so the list and the card update live.</li>
+  </ol>
+  <p class="note">Tested on a local PocketBase with the seeded Universitas Uji Coba and its two accounts, then provisioned to production.</p>
+</section>
+
+<section id="tanya">
+  <div class="sec-head"><span class="eyebrow">7 · Two questions</span><h2>Before I start</h2></div>
+  <ul class="clean">
+    <li><b>Token life.</b> One day with refresh (recommended) or PocketBase's default seven days?</li>
+    <li><b>Realtime now or later.</b> Step 3 is optional for onboarding.</li>
+  </ul>
+</section>
+<footer><span>Rule expressions use PocketBase filter syntax and the field names of the current schema.</span><span>Version 12, 20 September 2026.</span></footer>
+</div>

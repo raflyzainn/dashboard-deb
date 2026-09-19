@@ -1,12 +1,13 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import { secured, ok, fail, ANY, ADMIN, actorInfo, recordId } from '$lib/server/deb/access';
 import { readJsonBody } from '$lib/server/deb/request-body';
-import { workspace, updateDisbursement } from '$lib/server/deb/pencairan';
+import { workspace, updateDisbursement, forCampus } from '$lib/server/deb/pencairan';
 
 export const GET: RequestHandler = event => secured(event, ANY, async ({ actor, pb }) => {
   const campusId = recordId(event.params.campus, 'Kampus');
   if (!actor.admin && actor.campusId !== campusId) fail(403, 'Halaman ini bukan milik kampus Anda.');
-  return ok(await workspace(pb, campusId));
+  const ws = await workspace(pb, campusId);
+  return ok(actor.admin ? ws : forCampus(ws));
 });
 
 export const PATCH: RequestHandler = event => secured(event, ADMIN, async ({ actor, pb }) => {

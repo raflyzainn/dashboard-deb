@@ -30,7 +30,10 @@
   let selectedVersionId = $state('');
   let draft = $state<Record<string, string | boolean>>({});
   let saved = $state('');
-  let noteInput = $state<HTMLInputElement | null>(null);
+  let noteInput = $state<HTMLTextAreaElement | null>(null);
+  let noteBody = $state('');
+  let noteInternal = $state(false);
+  let threadEl = $state<HTMLDivElement | null>(null);
   let reviewNote = $state('');
   let bankNameSeen = $state('');
   let forceCheck = $state(false);
@@ -73,6 +76,9 @@
   });
   const thread = $derived(doc ? doc.versions.flatMap(v => v.reviews.map(r => ({ ...r, version: v.number }))).sort((a, b) => b.created.localeCompare(a.created)) : []);
   const campusThread = $derived(thread.filter(r => r.decision === 'perlu_revisi' && r.note));
+  /** The conversation on this item, oldest first. Decisions keep their own note in the bar and their history in Riwayat. */
+  const conversation = $derived(doc ? [...doc.notes].sort((a, b) => a.created.localeCompare(b.created)) : []);
+  $effect(() => { void conversation.length; const el = threadEl; if (el) requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; }); });
   /** The review note is one editable text: it starts as the sheet's commentary and is saved again with every decision. */
   const latestNote = $derived(thread.find(r => r.note)?.note || '');
   $effect(() => { const n = latestNote; untrack(() => { reviewNote = n; }); });
@@ -178,6 +184,14 @@
     finally { busy = false; }
   }
   /** A filled template becomes the next managed RAB version; the table and the checks refresh at once. */
+  /** One message on the conversation; staff may keep it internal. */
+  async function sendNote() {
+    const body = noteBody.trim();
+    if (!body) return;
+    const ok = await run(() => dataService.api.post<KartuData>(`/api/pencairan/${campusId}/documents/${kind}/catatan`, { body, internal: admin && noteInternal }), noteInternal && admin ? 'Catatan internal tersimpan.' : 'Catatan terkirim.');
+    if (ok) { noteBody = ''; noteInternal = false; }
+  }
+  const grow = (e: Event) => { const t = e.currentTarget as HTMLTextAreaElement; t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 180) + 'px'; };
   async function importRab(file: File | null) {
     if (!file || !admin) return;
     const body = new FormData();
@@ -285,14 +299,6 @@
             {/if}
           </div>
 
-          {#if (admin ? thread : campusThread).length > 1}
-            <div class="max-h-20 overflow-y-auto border-t border-slate-200/70 bg-slate-50 px-3 py-1.5" aria-label="Catatan sebelumnya">
-              {#each (admin ? thread : campusThread).slice(1) as r}
-                <p class="text-[12px] leading-snug text-slate-600"><span class="font-semibold text-slate-500">{r.imported ? 'Lembar review' : r.actorName} · v{r.version} · {full.format(new Date(r.created))}:</span> {r.note || (r.decision === 'sesuai' ? 'Sesuai' : r.decision === 'perlu_revisi' ? 'Perlu revisi' : '')}</p>
-              {/each}
-            </div>
-          {/if}
-
           <div class="grid gap-2.5 border-t border-slate-200/70 bg-white px-3 py-3">
             {#if kind === 'sk'}
               <div class="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2">
@@ -341,9 +347,9 @@
                 <button type="button" class="text-[12px] font-semibold text-slate-500 hover:underline" onclick={() => (forceCheck = true)}>Tetap periksa</button>
               {:else}
                 {#if kind === 'rekening'}<label class="grid min-w-0 gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">Nama di bank<input class="min-h-[38px] w-[170px] max-w-full rounded-lg border border-slate-300 px-2 text-[13px] font-medium normal-case tracking-normal text-slate-900" bind:value={bankNameSeen} placeholder="Bila berbeda" /></label>{/if}
-                <label class="grid min-w-[220px] flex-1 gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">
-                  <span>Catatan review{#if doc?.decidedByName}<span class="ml-2 font-medium normal-case tracking-normal text-slate-400">{state === 'perlu_revisi' ? DECISION_LABEL[kind].bad : decided ? DECISION_LABEL[kind].ok : ITEM_STATE_LABEL[state]} · {doc.decidedByName}{doc.decidedAt ? ` · ${time.format(new Date(doc.decidedAt))}` : ''}</span>{/if}</span>
-                  <input bind:this={noteInput} class="min-h-[38px] w-full rounded-lg border px-3 text-[13.5px] font-medium normal-case tracking-normal text-slate-900 {state === 'perlu_revisi' ? 'border-amber-300 bg-amber-50/40' : 'border-slate-300'}" bind:value={reviewNote} placeholder={kind === 'sk' ? 'Bila berbeda: nilai yang tercetak di SK' : 'Catatan untuk kampus atau pemeriksa berikutnya'} />
+                <label class="grid basis-full gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400 sm:min-w-[220px] sm:flex-1 sm:basis-auto">
+                  <span>Catatan keputusan{#if doc?.decidedByName}<span class="ml-2 font-medium normal-case tracking-normal text-slate-400">{state === 'perlu_revisi' ? DECISION_LABEL[kind].bad : decided ? DECISION_LABEL[kind].ok : ITEM_STATE_LABEL[state]} · {doc.decidedByName}{doc.decidedAt ? ` · ${time.format(new Date(doc.decidedAt))}` : ''}</span>{/if}</span>
+                  <textarea bind:this={noteInput} rows="2" class="min-h-[46px] w-full rounded-lg border px-3 py-2 text-[14px] font-medium leading-relaxed normal-case tracking-normal text-slate-900 {state === 'perlu_revisi' ? 'border-amber-300 bg-amber-50/40' : 'border-slate-300'}" bind:value={reviewNote} oninput={grow} placeholder={kind === 'sk' ? 'Bila berbeda: nilai yang tercetak di SK' : 'Catatan keputusan: alasan revisi atau keterangan lolos, dikirim ke kampus'}></textarea>
                 </label>
                 {#if DECISION_LABEL[kind].none}<button type="button" class="min-h-[38px] rounded-lg border border-slate-300 bg-white px-3.5 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-40" disabled={busy} onclick={() => decide('none')}>{DECISION_LABEL[kind].none}</button>{/if}
                 <button type="button" class="min-h-[38px] rounded-lg border px-3.5 text-[13px] font-semibold transition disabled:opacity-40 {state === 'perlu_revisi' ? 'border-amber-400 bg-amber-100 text-amber-900' : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50'}" disabled={busy || !canDecide} title={canDecide ? '' : 'Unggah berkas dulu'} onclick={() => decide('bad')}>{DECISION_LABEL[kind].bad}</button>
@@ -351,6 +357,24 @@
               {/if}
             </div>
           </div>
+          <div class="border-t border-slate-200/70 bg-white px-3 py-2.5">
+            <div class="flex flex-wrap items-baseline justify-between gap-2"><h3 class="text-[11px] font-bold uppercase tracking-[0.06em] text-[#3975b7]">Catatan</h3><span class="text-[11.5px] text-slate-500">{admin ? 'Percakapan dengan kampus. Catatan internal hanya terlihat tim Pertamina Foundation.' : 'Percakapan dengan Pertamina Foundation.'}</span></div>
+            <div class="mt-1.5 grid max-h-56 gap-1.5 overflow-y-auto" bind:this={threadEl} aria-live="polite">
+              {#each conversation as m (m.id)}
+                <div class="rounded-lg px-3 py-2 {m.internal ? 'bg-amber-50 ring-1 ring-amber-200' : m.authorRole === 'campus' ? 'bg-blue-50' : 'bg-slate-50'}">
+                  <span class="text-[12px] font-semibold text-slate-500">{m.authorName}{m.authorRole === 'campus' ? ' (kampus)' : ''} · {full.format(new Date(m.created))}{m.internal ? ' · internal' : ''}</span>
+                  <p class="whitespace-pre-wrap text-[14px] leading-relaxed text-slate-800">{m.body}</p>
+                </div>
+              {/each}
+              {#if !conversation.length}<p class="text-[13px] text-slate-500">Belum ada catatan pada butir ini.</p>{/if}
+            </div>
+            <form class="mt-2 flex flex-wrap items-end gap-2" onsubmit={(e) => { e.preventDefault(); void sendNote(); }}>
+              <textarea rows="2" class="min-h-[46px] min-w-[220px] flex-1 rounded-lg border border-slate-300 px-3 py-2 text-[14px] leading-relaxed text-slate-900" bind:value={noteBody} oninput={grow} placeholder={admin ? 'Tulis catatan untuk kampus atau untuk tim' : 'Tulis catatan untuk Pertamina Foundation'} onkeydown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void sendNote(); } }}></textarea>
+              {#if admin}<label class="flex min-h-[38px] items-center gap-1.5 rounded-lg border px-2.5 text-[12.5px] font-semibold {noteInternal ? 'border-amber-300 bg-amber-50 text-amber-900' : 'border-slate-200 text-slate-600'}"><input type="checkbox" bind:checked={noteInternal} />Catatan internal</label>{/if}
+              <button type="submit" class="min-h-[38px] rounded-lg bg-[#0066B2] px-4 text-[13px] font-semibold text-white shadow-[0_8px_18px_#0066b233] hover:bg-[#015a9a] disabled:opacity-40" disabled={busy || !noteBody.trim()}>Kirim</button>
+            </form>
+          </div>
+
         {/if}
       </div>
     </div>
