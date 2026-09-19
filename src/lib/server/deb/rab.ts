@@ -234,10 +234,16 @@ export async function revokeVersion(pb: PocketBase, actor: AuditActor & { id: st
  * an approved one is left as it is. Perlu revisi: an approved version loses its approval so the lines can change. The document status itself is
  * written by the caller through reviewDocument; the audit rows of the version changes come from the functions above.
  */
-export async function decideVersion(pb: PocketBase, actor: AuditActor & { id: string }, campusId: string, decision: 'sesuai' | 'perlu_revisi', note: string) {
+export async function decideVersion(pb: PocketBase, actor: AuditActor & { id: string }, campusId: string, decision: 'sesuai' | 'perlu_revisi' | 'batal', note: string) {
   const { award } = await campusWithAward(pb, campusId);
   const latest = await pb.collection('rab_versions').getList(1, 1, { filter: pb.filter('campus = {:c}', { c: campusId }), sort: '-number', ...opts });
   const version = latest.items[0] || null;
+  // Taking the decision back: an approved managed RAB returns to draft, a typed Tahap 1 amount is cleared.
+  if (decision === 'batal') {
+    if (version && version.status === 'disetujui') await revokeVersion(pb, actor, campusId, version.id);
+    else await updateDisbursement(pb, actor, campusId, { requestedSen: 0 });
+    return;
+  }
   if (decision === 'perlu_revisi') {
     if (!note.trim()) throw new PreviewError(400, 'Tulis catatan revisi.');
     if (version && version.status === 'disetujui') await revokeVersion(pb, actor, campusId, version.id);

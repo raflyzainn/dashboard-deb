@@ -37,7 +37,8 @@
   let threadEl = $state<HTMLDivElement | null>(null);
   let reviewNote = $state('');
   let bankNameSeen = $state('');
-  let forceCheck = $state(false);
+  /** True while the admin reopens the buttons on an item that already has a decision. */
+  let editing = $state(false);
   let showLook = $state(false);
   let showRiwayat = $state(false);
   let rabTab = $state<'digital' | 'asli'>('digital');
@@ -89,6 +90,11 @@
     return { ttd: letters.length > 0 && letters.every(d => d.originalReceived), lampiran: data.lampiranCount > 0, bayar: Boolean(data.disbursement.paidAt) };
   });
   const decided = $derived(state === 'sesuai' || state === 'tidak_perlu');
+  /** The decision statement replaces the buttons once an item is decided, until the admin opens them again. */
+  const showDecision = $derived(admin && (decided || state === 'perlu_revisi') && !editing);
+  const decisionLabel = $derived(state === 'perlu_revisi' ? DECISION_LABEL[kind].bad : state === 'tidak_perlu' ? 'Tanpa surat kuasa' : DECISION_LABEL[kind].ok);
+  /** A surat kuasa counted as not needed because the account holder signs the PKS has no decision to take back. */
+  const computedOnly = $derived(state === 'tidak_perlu' && doc?.status !== 'tidak_perlu');
   const canDecide = $derived(admin && data !== null && (kind === 'sk' || kind === 'rab' || Boolean(version)));
 
   function say(message: string) { notice = message; if (noticeTimer) clearTimeout(noticeTimer); if (message) noticeTimer = setTimeout(() => (notice = ''), 4000); }
@@ -100,7 +106,7 @@
   $effect(() => { untrack(() => { void load(); }); });
   $effect(() => {
     void selected;
-    untrack(() => { selectedVersionId = ''; bankNameSeen = ''; forceCheck = false; showLook = false; rabTab = 'digital'; });
+    untrack(() => { selectedVersionId = ''; bankNameSeen = ''; editing = false; showLook = false; rabTab = 'digital'; });
   });
   $effect(() => {
     const v = version;
@@ -121,7 +127,7 @@
       const t = e.target as HTMLElement | null;
       const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT');
       if (e.key === 'Escape') { if (showRiwayat || showLook) { showRiwayat = false; showLook = false; } else if (admin) void goto('/admin/pencairan/tahap-1'); }
-      if (e.key === 'Enter' && !typing && admin && isItem && canDecide && !decided) void decide('ok');
+      if (e.key === 'Enter' && !typing && admin && isItem && canDecide && !decided && !showDecision) void decide('ok');
     };
     window.addEventListener('resize', fit); window.addEventListener('keydown', onKey);
     return () => { window.removeEventListener('resize', fit); window.removeEventListener('keydown', onKey); };
@@ -169,7 +175,15 @@
     if (kind === 'rekening') body.bank = { result: which === 'ok' ? 'sesuai' : 'berbeda', nameSeen: bankNameSeen.trim() || (which === 'bad' ? note : '') };
     const url = kind === 'rab' ? `/api/pencairan/${campusId}/rab/keputusan` : `/api/pencairan/${campusId}/documents/${kind}/review`;
     const ok = await run(() => dataService.api.post<KartuData>(url, body), which === 'ok' ? `${KIND_SHORT[kind]}: ${DECISION_LABEL[kind].ok}.` : which === 'none' ? 'Ditandai tanpa surat kuasa.' : `${KIND_SHORT[kind]}: catatan revisi tersimpan.`);
-    if (ok) { bankNameSeen = ''; if (which !== 'bad') void open(nextAfter(kind)); }
+    if (ok) { bankNameSeen = ''; editing = false; if (which !== 'bad') void open(nextAfter(kind)); }
+  }
+  /** Takes the decision back: the item returns to Periksa, the history keeps both entries. */
+  async function undo() {
+    if (!data || !admin || !isItem) return;
+    const url = kind === 'rab' ? `/api/pencairan/${campusId}/rab/keputusan` : `/api/pencairan/${campusId}/documents/${kind}/review`;
+    const body = kind === 'rab' ? { decision: 'batal' } : { decision: 'perlu_konfirmasi', note: '' };
+    const ok = await run(() => dataService.api.post<KartuData>(url, body), `${KIND_SHORT[kind]}: keputusan dibatalkan, butir kembali ke Periksa.`);
+    if (ok) editing = false;
   }
   /** The latest managed RAB version in the same workbook layout as the template, built in the browser. */
   async function exportRab() {
@@ -344,9 +358,19 @@
                   {#if campusThread[0]}<p class="w-full text-[13px] text-slate-800"><b class="font-semibold text-slate-500">Catatan pemeriksa:</b> {campusThread[0].note}</p>{/if}
                   <span class="text-[13px] text-slate-600">{state === 'sesuai' ? 'Sudah sesuai.' : state === 'tidak_perlu' ? 'Tidak diperlukan.' : state === 'perlu_revisi' ? 'Admin program mengunggah berkas perbaikan.' : 'Menunggu pemeriksaan.'}</span>
                 {/if}
-              {:else if state === 'tidak_perlu' && !forceCheck}
-                <span class="text-[13px] text-slate-600">{doc?.status === 'tidak_perlu' ? `Tanpa surat kuasa${doc.decidedByName ? ` · ${doc.decidedByName}` : ''}${doc.decidedAt ? ` · ${time.format(new Date(doc.decidedAt))}` : ''}.` : 'Tidak diperlukan: pemilik rekening adalah penandatangan PKS.'}</span>
-                <button type="button" class="text-[12px] font-semibold text-slate-500 hover:underline" onclick={() => (forceCheck = true)}>Tetap periksa</button>
+              {:else if showDecision}
+                <div class="flex w-full flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border px-3.5 py-2.5 {state === 'perlu_revisi' ? 'border-amber-300 bg-amber-50' : 'border-green-200 bg-green-50'}" role="status">
+                  <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[17px] font-bold text-white {state === 'perlu_revisi' ? 'bg-amber-500' : 'bg-green-700'}" aria-hidden="true">{state === 'perlu_revisi' ? '!' : '✓'}</span>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-[15px] font-bold {state === 'perlu_revisi' ? 'text-amber-900' : 'text-green-900'}">{decisionLabel}</p>
+                    <p class="text-[12.5px] text-slate-600">{computedOnly ? 'Pemilik rekening adalah penandatangan PKS, surat kuasa tidak diperlukan.' : `${doc?.decidedByName || (thread[0]?.imported ? 'Lembar review' : 'Sistem')}${doc?.decidedAt ? ` · ${full.format(new Date(doc.decidedAt))}` : ''}`}</p>
+                    {#if latestNote && !computedOnly && latestNote.trim().toLowerCase() !== decisionLabel.toLowerCase()}<p class="mt-1 whitespace-pre-wrap text-[14px] leading-relaxed text-slate-800">{latestNote}</p>{/if}
+                  </div>
+                  <div class="flex flex-wrap gap-2">
+                    <button type="button" class="min-h-[38px] rounded-lg border border-slate-300 bg-white px-3.5 text-[13px] font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-40" disabled={busy} onclick={() => (editing = true)}>{computedOnly ? 'Periksa juga' : 'Ubah keputusan'}</button>
+                    {#if !computedOnly}<button type="button" class="min-h-[38px] rounded-lg border border-red-200 bg-white px-3.5 text-[13px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-40" disabled={busy} title="Butir kembali ke Periksa; riwayat tetap tersimpan" onclick={() => void undo()}>Batalkan keputusan</button>{/if}
+                  </div>
+                </div>
               {:else}
                 {#if kind === 'rekening'}<label class="grid min-w-0 gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">Nama di bank<input class="min-h-[38px] w-[170px] max-w-full rounded-lg border border-slate-300 px-2 text-[13px] font-medium normal-case tracking-normal text-slate-900" bind:value={bankNameSeen} placeholder="Bila berbeda" /></label>{/if}
                 <label class="grid basis-full gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400 sm:min-w-[220px] sm:flex-1 sm:basis-auto">
@@ -356,6 +380,7 @@
                 {#if DECISION_LABEL[kind].none}<button type="button" class="min-h-[38px] rounded-lg border border-slate-300 bg-white px-3.5 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-40" disabled={busy} onclick={() => decide('none')}>{DECISION_LABEL[kind].none}</button>{/if}
                 <button type="button" class="min-h-[38px] rounded-lg border px-3.5 text-[13px] font-semibold transition disabled:opacity-40 {state === 'perlu_revisi' ? 'border-amber-400 bg-amber-100 text-amber-900' : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50'}" disabled={busy || !canDecide} title={canDecide ? '' : 'Unggah berkas dulu'} onclick={() => decide('bad')}>{DECISION_LABEL[kind].bad}</button>
                 <button type="button" class="min-h-[38px] rounded-lg px-4 text-[13px] font-bold text-white shadow-[0_8px_18px_#15803d33] transition active:scale-[0.98] disabled:opacity-40 {decided ? 'bg-green-800 ring-2 ring-green-300' : 'bg-green-700 hover:bg-green-800'}" disabled={busy || !canDecide} title={canDecide ? 'Enter' : 'Unggah berkas dulu'} onclick={() => decide('ok')}>{decided ? '✓ ' : ''}{DECISION_LABEL[kind].ok}</button>
+                {#if editing}<button type="button" class="min-h-[38px] px-2 text-[13px] font-semibold text-slate-500 hover:underline" onclick={() => (editing = false)}>Tutup</button>{/if}
               {/if}
             </div>
           </div>
