@@ -8,7 +8,7 @@ export interface Note { id: string; body: string; internal: boolean; authorName:
 export interface Doc { id: string; kind: Kind; status: Status; signedReceived: boolean; signedReceivedAt: string; signedReceivedByName: string; originalReceived: boolean; originalReceivedAt: string; originalReceivedByName: string; currentVersionId: string; versions: Version[]; generated: boolean; decidedByName: string; decidedAt: string; notes: Note[]; reviews: Review[] }
 export interface Check { kind: Kind | 'umum'; level: 'ok' | 'warn' | 'bad' | 'info'; text: string }
 export interface KartuData {
-  campus: { id: string; name: string; code: string; initials: string; programYear: string; fillMode: string; signatoryName: string; contacts: { mentor: string; coordinator: string; localHero: string } };
+  campus: { id: string; name: string; code: string; initials: string; programYear: string; fillMode: string; signatoryName: string; team: string; contacts: { mentor: string; coordinator: string; localHero: string } };
   summary: { skNumber: string; amountSen: number; limitSen: number; requestedSen: number; term2Sen: number; term1Percent: number; term2Percent: number; programTitle: string; programYear: string };
   disbursement: { id: string; stage: number; requestedSen: number; paidSen: number; paidAt: string; paidRef: string; paidByName: string; properties: Record<string, unknown>; clauseChecked: boolean; templateMode: string };
   documents: Doc[];

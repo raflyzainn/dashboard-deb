@@ -1,7 +1,7 @@
 import type PocketBase from 'pocketbase';
 import type { RecordModel } from 'pocketbase';
 import { versionHolds, type RabVersionShare } from '../../rab';
-import { KINDS, KIND_LABEL, FIELDS, GENERATED, LETTERS, limitSen, remainderSen, formatSen, percentOf, formatPercent, splitNames, namesMatch, terbilang, assess, type Assessment, type Kind, type Status } from '../../pencairan';
+import { KINDS, KIND_LABEL, FIELDS, GENERATED, LETTERS, isRabKind, limitSen, remainderSen, formatSen, percentOf, formatPercent, splitNames, namesMatch, terbilang, assess, type Assessment, type Kind, type Status } from '../../pencairan';
 import { PreviewError } from './preview-error';
 import { writeAudit, type AuditActor } from './audit';
 import { versionKey, mimeFor, extensionOf, ALLOWED_EXTENSIONS, type Storage } from './r2';
@@ -15,11 +15,11 @@ const opts = { requestKey: null } as const;
 export const TERM = 1;
 export const context = (campusId: string, term = TERM) => `kampus:${campusId}/pencairan/t${term}`;
 
-export interface CampusInfo { id: string; name: string; code: string; initials: string; programYear: string; fillMode: string; region: string; signatoryName: string; signatoryTitle: string; contacts: { mentor: string; coordinator: string; localHero: string } }
+export interface CampusInfo { id: string; name: string; code: string; initials: string; programYear: string; fillMode: string; region: string; signatoryName: string; signatoryTitle: string; team: string; contacts: { mentor: string; coordinator: string; localHero: string } }
 const mapCampus = (r: RecordModel): CampusInfo => {
   const program = (r.program && typeof r.program === 'object' ? r.program : {}) as Record<string, unknown>;
   const text = (key: string) => (typeof program[key] === 'string' ? (program[key] as string) : '');
-  return { contacts: { mentor: text('mentor'), coordinator: text('coordinator'), localHero: text('localHero') }, id: r.id, name: r.name, code: r.code || r.acronym || r.initials, initials: r.initials, programYear: r.programYear || '', fillMode: r.fillMode || 'admin', region: r.region || '', signatoryName: typeof program.signatoryName === 'string' ? program.signatoryName : '', signatoryTitle: typeof program.signatoryTitle === 'string' ? program.signatoryTitle : '' };
+  return { team: text('pfTeam'), contacts: { mentor: text('mentor'), coordinator: text('coordinator'), localHero: text('localHero') }, id: r.id, name: r.name, code: r.code || r.acronym || r.initials, initials: r.initials, programYear: r.programYear || '', fillMode: r.fillMode || 'admin', region: r.region || '', signatoryName: typeof program.signatoryName === 'string' ? program.signatoryName : '', signatoryTitle: typeof program.signatoryTitle === 'string' ? program.signatoryTitle : '' };
 };
 
 export async function fundedCampuses(pb: PocketBase) {
@@ -532,4 +532,58 @@ export async function fileResponse(pb: PocketBase, store: Storage, campusId: str
   headers.set('Cache-Control', 'private, max-age=300');
   headers.set('X-Content-Type-Options', 'nosniff');
   return new Response(source.body, { status: 200, headers });
+}
+
+/** One row of the review queue (decision 50): an item waiting for an admin, what arrived, and why it is here. */
+export interface QueueRow {
+  campus: { id: string; name: string; code: string; initials: string; team: string };
+  kind: Kind; status: Status; reason: 'baru' | 'revisi_ulang' | 'bukti'; arrivedAt: string;
+  arrival: { number: number; originalName: string; uploadedByName: string; created: string; note: string } | null;
+  request: { note: string; actorName: string; created: string } | null;
+}
+/**
+ * Every item across the funded campuses whose status waits for an admin (menunggu_review or perlu_konfirmasi), newest arrival
+ * first. A revision after a "Perlu revisi" carries the earlier request; a file less item at Periksa is there because its sheet
+ * was found in the campus file (or a decision was taken back).
+ */
+export async function reviewQueue(pb: PocketBase): Promise<QueueRow[]> {
+  const funded = await fundedCampuses(pb);
+  const [disbursements, documents] = await Promise.all([
+    pb.collection('disbursements').getFullList({ filter: `term = ${TERM}`, fields: 'id,campus', ...opts }),
+    pb.collection('documents').getFullList({ filter: 'status = "menunggu_review" || status = "perlu_konfirmasi"', ...opts })
+  ]);
+  // The three RAB sheet items share the RAB file: their arrival is the current version of the campus's RAB document.
+  const rabDocs = await pb.collection('documents').getFullList({ filter: 'kind = "rab"', fields: 'id,disbursement,currentVersion', ...opts });
+  const currentIds = [...new Set([...documents.map(d => d.currentVersion), ...rabDocs.map(d => d.currentVersion)].filter(Boolean))];
+  const versions = currentIds.length ? await pb.collection('document_versions').getFullList({ filter: currentIds.map(id => pb.filter('id = {:id}', { id })).join(' || '), fields: 'id,document,number,originalName,origin,uploadedBy,uploadedByName,created,note', ...opts }) : [];
+  const docIds = documents.map(d => d.id);
+  const reviews = docIds.length ? await pb.collection('reviews').getFullList({ filter: docIds.map(id => pb.filter('document = {:id}', { id })).join(' || '), sort: '-created', fields: 'id,document,version,decision,note,actorName,created', ...opts }) : [];
+  // Older reviews sit on earlier versions without a document link; fetch them by version for the documents in the queue.
+  const docVersionIds = docIds.length ? await pb.collection('document_versions').getFullList({ filter: docIds.map(id => pb.filter('document = {:id}', { id })).join(' || '), fields: 'id,document', ...opts }) : [];
+  const versionDoc = new Map(docVersionIds.map(v => [v.id, v.document as string]));
+  const oldReviews = docVersionIds.length ? await pb.collection('reviews').getFullList({ filter: docVersionIds.map(v => pb.filter('version = {:id}', { id: v.id })).join(' || '), sort: '-created', fields: 'id,document,version,decision,note,actorName,created', ...opts }) : [];
+  const allReviews = [...reviews, ...oldReviews.filter(r => !reviews.some(x => x.id === r.id))].map(r => ({ ...r, document: r.document || versionDoc.get(r.version) || '' }));
+  const out: QueueRow[] = [];
+  for (const { campus } of funded) {
+    const disbursement = disbursements.find(d => d.campus === campus.id);
+    if (!disbursement) continue;
+    for (const d of documents.filter(x => x.disbursement === disbursement.id)) {
+      const kind = d.kind as Kind;
+      if (!KINDS.includes(kind)) continue;
+      const fileDoc = isRabKind(kind) ? rabDocs.find(x => x.disbursement === disbursement.id) : d;
+      const v = versions.find(x => x.id === fileDoc?.currentVersion) || null;
+      const mine = allReviews.filter(r => r.document === d.id).sort((a, b) => String(b.created).localeCompare(String(a.created)));
+      const arrivedAt = String(v?.created || d.updated || d.created);
+      const earlierRequest = v ? mine.find(r => r.decision === 'perlu_revisi' && String(r.created) < arrivedAt) : undefined;
+      // Bukti di berkas: a RAB sheet that came with the files we loaded, not with an upload by the campus.
+      const reason: QueueRow['reason'] = earlierRequest ? 'revisi_ulang' : isRabKind(kind) && (!v || v.origin === 'initial_load') ? 'bukti' : 'baru';
+      out.push({
+        campus: { id: campus.id, name: campus.name, code: campus.code, initials: campus.initials, team: campus.team },
+        kind, status: d.status as Status, reason, arrivedAt,
+        arrival: v ? { number: Number(v.number), originalName: v.originalName || '', uploadedByName: v.uploadedByName || '', created: v.created, note: v.note || '' } : null,
+        request: earlierRequest ? { note: earlierRequest.note || '', actorName: earlierRequest.actorName || '', created: earlierRequest.created } : null
+      });
+    }
+  }
+  return out.sort((a, b) => b.arrivedAt.localeCompare(a.arrivedAt));
 }

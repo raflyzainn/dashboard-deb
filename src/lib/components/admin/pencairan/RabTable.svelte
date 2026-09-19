@@ -29,6 +29,8 @@
   const standing = $derived<'kosong' | 'lebih' | 'sesuai' | 'beda'>(!data || !total ? 'kosong' : share === 'tahap1' ? (total > target ? 'lebih' : 'sesuai') : total === target ? 'sesuai' : 'beda');
   const pillText = $derived(!data ? '' : share === 'penuh' ? `${SHARE_LABEL.penuh} ${formatSen(total)} · Nilai SK ${formatSen(target)}` : share === 'tahap1' ? `${SHARE_LABEL.tahap1} ${formatSen(total)} dari batas ${formatSen(target)}` : `${SHARE_LABEL.tahap2} ${formatSen(total)} · sisa Nilai SK setelah Tahap 1 ${formatSen(target)}`);
   const editorUrl = $derived(`/admin/pencairan/${campusId}/rab`);
+  /** The version before the one shown that carried the same sheet, for the reviewer to compare totals. */
+  const previous = $derived.by(() => { if (!data?.version) return null; const before = data.versions.filter(v => v.number < data.version!.number && holds(v, share)); const p = before[before.length - 1]; return p ? { number: p.number, total: share === 'penuh' ? p.totalSen : share === 'tahap1' ? p.term1Sen : p.term2Sen || 0 } : null; });
   const empty: Record<RabShare, string> = {
     penuh: 'Belum ada baris RAB. Impor Excel tiga lembar dari templat.',
     tahap1: 'Lembar RAB 70% masih kosong. Impor Excel dengan lembar RAB 70%, atau ketik total dari berkas di bawah.',
@@ -80,6 +82,7 @@
       <Badge tone={RAB_STATUS_TONE[version.status]}>{STATUS_SHORT[version.status]}</Badge>
       <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums {pillClass[standing]}">{pillText}</span>
       <span class="text-xs text-slate-500">{items} dari {allItems} baris RAB</span>
+      {#if previous}<span class="text-xs text-slate-500">sebelumnya versi {previous.number}: {formatSen(previous.total)}</span>{/if}
       <a href={editorUrl} class="{link} ml-auto"><Icon name="edit" size={13} />Ubah baris</a>
     </div>
     <div class="min-w-0 overflow-x-auto rounded-lg border border-slate-200/70 bg-white">

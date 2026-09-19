@@ -94,6 +94,12 @@
   /** The conversation on this item, oldest first. Decisions keep their own note in the bar and their history in Riwayat. */
   const conversation = $derived(doc ? [...doc.notes].sort((a, b) => a.created.localeCompare(b.created)) : []);
   $effect(() => { void conversation.length; const el = threadEl; if (el) requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; }); });
+  /** A revision that answers an earlier "Perlu revisi": the request and the new arrival, shown side by side while the item waits (decision 50). */
+  const answered = $derived.by(() => {
+    if (!admin || !doc || !version || (state !== 'menunggu_review' && state !== 'perlu_konfirmasi')) return null;
+    const request = thread.find(r => r.decision === 'perlu_revisi' && r.created < version.created);
+    return request ? { request, version } : null;
+  });
   /** The review note is one editable text: it starts as the sheet's commentary and is saved again with every decision. */
   const latestNote = $derived(thread.find(r => r.note)?.note || '');
   $effect(() => { const n = latestNote; untrack(() => { reviewNote = n; }); });
@@ -382,6 +388,12 @@
               </div>
             {/if}
 
+            {#if answered}
+              <div class="grid gap-1 rounded-xl border border-amber-200 bg-amber-50/70 px-3.5 py-2.5 text-[13.5px] text-amber-950" role="status">
+                <p><span class="font-bold">Diminta sebelumnya</span> · {answered.request.imported ? 'Lembar review' : answered.request.actorName || 'Admin'} · {full.format(new Date(answered.request.created))}: {answered.request.note || 'tanpa catatan'}</p>
+                <p><span class="font-bold">Jawaban kampus</span> · versi {answered.version.number} · {answered.version.uploadedByName || 'pengunggah tidak tercatat'} · {full.format(new Date(answered.version.created))}{answered.version.note ? `: ${answered.version.note}` : ''}</p>
+              </div>
+            {/if}
             <div class="flex flex-wrap items-end gap-2">
               {#if !admin}
                 <div class="grid w-full gap-2 rounded-lg border border-l-4 px-3 py-2.5 text-[13px] leading-relaxed {campusStatusClass[state]}" role="status">
