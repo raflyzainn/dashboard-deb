@@ -1,7 +1,7 @@
 <script lang="ts">
   import { dataService } from '$lib/data/service';
   import { formatSen } from '$lib/pencairan';
-  import { formatVolume, MAX_LEVEL, RAB_STATUS_TONE, SHARE_LABEL, shareSen, type RabOverview, type RabStatus, type RabShare } from '$lib/rab';
+  import { formatVolume, MAX_LEVEL, RAB_STATUS_TONE, SHARE_LABEL, shareSen, versionHolds, type RabOverview, type RabStatus, type RabShare } from '$lib/rab';
   import Badge from '$lib/components/ui/Badge.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
 
@@ -20,28 +20,34 @@
   const all = $derived(version?.lines || []);
   const lines = $derived(share === 'penuh' ? all : all.filter(l => shareSen(l, share) > 0));
   const allItems = $derived(all.filter(l => l.level === MAX_LEVEL).length);
-  /** A version loaded from a RAB 70% sheet alone carries the same figure on every line for 100% and 70%; its 100% page must say so instead of showing them. */
-  const onlyTerm1 = $derived(Boolean(version) && all.some(l => l.level === 1) && all.filter(l => l.level === 1).every(l => l.amountSen === l.term1Sen && !(l.term2Sen || 0)));
-  const fullVersion = $derived((data?.versions || []).filter(v => v.totalSen > v.term1Sen).map(v => v.number).pop() || 0);
   const items = $derived(lines.filter(l => l.level === MAX_LEVEL).length);
   const total = $derived(lines.filter(l => l.level === 1).reduce((sum, l) => sum + shareSen(l, share), 0));
-  /** What this page is measured against: RAB 100% the SK, RAB 70% the limit, RAB 30% what the SK leaves after Tahap 1. */
-  const target = $derived(!data ? 0 : share === 'penuh' ? data.summary.amountSen : share === 'tahap1' ? data.summary.limitSen : data.summary.amountSen - (data.version?.term1Sen || 0));
+  const holds = versionHolds;
+  /** What this page is measured against: RAB 100% the SK, RAB 70% the limit, RAB 30% what the SK leaves after the Tahap 1 nominal (or the latest 70% sheet). */
+  const tahap1Sen = $derived(!data ? 0 : data.disbursement.requestedSen || [...data.versions].reverse().find(v => holds(v, 'tahap1'))?.term1Sen || 0);
+  const target = $derived(!data ? 0 : share === 'penuh' ? data.summary.amountSen : share === 'tahap1' ? data.summary.limitSen : data.summary.amountSen - tahap1Sen);
   const standing = $derived<'kosong' | 'lebih' | 'sesuai' | 'beda'>(!data || !total ? 'kosong' : share === 'tahap1' ? (total > target ? 'lebih' : 'sesuai') : total === target ? 'sesuai' : 'beda');
-  const pillText = $derived(!data ? '' : share === 'penuh' ? `${SHARE_LABEL.penuh} ${formatSen(total)} · Nilai SK ${formatSen(target)}` : share === 'tahap1' ? `${SHARE_LABEL.tahap1} ${formatSen(total)} dari batas ${formatSen(target)}` : `${SHARE_LABEL.tahap2} ${formatSen(total)} · sisa Nilai SK ${formatSen(target)}`);
+  const pillText = $derived(!data ? '' : share === 'penuh' ? `${SHARE_LABEL.penuh} ${formatSen(total)} · Nilai SK ${formatSen(target)}` : share === 'tahap1' ? `${SHARE_LABEL.tahap1} ${formatSen(total)} dari batas ${formatSen(target)}` : `${SHARE_LABEL.tahap2} ${formatSen(total)} · sisa Nilai SK setelah Tahap 1 ${formatSen(target)}`);
   const editorUrl = $derived(`/admin/pencairan/${campusId}/rab`);
   const empty: Record<RabShare, string> = {
     penuh: 'Belum ada baris RAB. Impor Excel tiga lembar dari templat.',
     tahap1: 'Lembar RAB 70% masih kosong. Impor Excel dengan lembar RAB 70%, atau ketik total dari berkas di bawah.',
     tahap2: 'Lembar RAB 30% masih kosong. Impor Excel dengan lembar RAB 30%.'
   };
-
+  /** True when no stored version carries this page's sheet; the latest version is then named, not shown. */
+  let missing = $state(false);
+  /** Loads the latest version, then switches to the newest version that actually carries this page's sheet (each page shows its own sheet, nothing is merged). */
   async function load() {
     error = '';
-    try { data = await dataService.api.get<RabOverview>(`/api/pencairan/${campusId}/rab`); }
-    catch (e) { error = e instanceof Error ? e.message : 'RAB belum dapat dimuat.'; }
+    try {
+      let next = await dataService.api.get<RabOverview>(`/api/pencairan/${campusId}/rab`);
+      const best = [...next.versions].reverse().find(v => holds(v, share));
+      if (best && next.version && best.id !== next.version.id) next = await dataService.api.get<RabOverview>(`/api/pencairan/${campusId}/rab?version=${best.id}`);
+      missing = Boolean(next.version) && !best;
+      data = next;
+    } catch (e) { error = e instanceof Error ? e.message : 'RAB belum dapat dimuat.'; }
   }
-  $effect(() => { void campusId; void refresh; void load(); });
+  $effect(() => { void campusId; void refresh; void share; void load(); });
 
   const money = (sen: number) => (sen ? formatSen(sen, false) : '');
   const pillClass: Record<typeof standing, string> = { kosong: 'bg-amber-100 text-amber-900', lebih: 'bg-red-100 text-red-800', sesuai: 'bg-green-100 text-green-800', beda: 'bg-amber-100 text-amber-900' };
@@ -61,13 +67,13 @@
   </div>
 {:else}
   <div class="grid min-w-0 gap-2" data-rab-table>
-    {#if share === 'penuh' && onlyTerm1}
+    {#if missing}
       <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
-        <span class="font-semibold text-slate-900">RAB 100% · versi {version.number}</span>
+        <span class="font-semibold text-slate-900">{SHARE_LABEL[share]} · belum ada versinya</span>
         <Badge tone={RAB_STATUS_TONE[version.status]}>{STATUS_SHORT[version.status]}</Badge>
         <a href={editorUrl} class="{link} ml-auto"><Icon name="edit" size={13} />Ubah baris</a>
       </div>
-      <p class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13.5px] leading-relaxed text-amber-900">Versi {version.number} hanya memuat lembar RAB 70%; angkanya tidak ditampilkan sebagai RAB 100%.{fullVersion ? ` Lembar RAB 100% ada di versi ${fullVersion}, pilih di halaman RAB.` : ' Lembar RAB 100% belum ada di RAB terkelola.'}</p>
+      <p class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13.5px] leading-relaxed text-amber-900">Belum ada versi RAB terkelola yang memuat lembar {SHARE_LABEL[share]}. Versi terakhir (versi {version.number}) memuat lembar lain, jadi angkanya tidak ditampilkan di sini. Impor Excel dengan lembar {SHARE_LABEL[share]} untuk mengisinya.</p>
     {:else}
     <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
       <span class="font-semibold text-slate-900">{SHARE_LABEL[share]} · versi {version.number}</span>

@@ -2,7 +2,7 @@ import type PocketBase from 'pocketbase';
 import type { RecordModel } from 'pocketbase';
 import * as XLSX from 'xlsx';
 import { limitSen, formatSen, parseSen } from '../../pencairan';
-import { arrange, totalsOf, rabChecks, stripEnumerator, parseVolume, MAX_LEVEL, type Arranged, type LineInput, type RabLine, type RabStatus, type RabSource, type RabVersionInfo, type RabOverview, type RabCheck } from '../../rab';
+import { arrange, totalsOf, rabChecks, stripEnumerator, parseVolume, MAX_LEVEL, type Arranged, type LineInput, type RabLine, type RabStatus, type RabSource, type RabVersionShare, type RabVersionInfo, type RabOverview, type RabCheck } from '../../rab';
 import { PreviewError } from './preview-error';
 import { writeAudit, type AuditActor } from './audit';
 import { campusWithAward, ensureDisbursement, updateDisbursement, context, type CampusInfo } from './pencairan';
@@ -29,7 +29,7 @@ async function getVersion(pb: PocketBase, campusId: string, versionId: string) {
 }
 function mapVersion(v: RecordModel, active: string, nameOf: Map<string, string>): RabVersionInfo {
   return {
-    id: v.id, number: Number(v.number), status: v.status as RabStatus, totalSen: Number(v.totalSen || 0), term1Sen: Number(v.term1Sen || 0), term2Sen: Number(v.term2Sen || 0), source: (v.source || 'manual') as RabSource,
+    id: v.id, number: Number(v.number), status: v.status as RabStatus, totalSen: Number(v.totalSen || 0), term1Sen: Number(v.term1Sen || 0), term2Sen: Number(v.term2Sen || 0), source: (v.source || 'manual') as RabSource, share: (v.share || '') as RabVersionShare | '',
     sourceFile: v.sourceFile || '', note: v.note || '', approvedByName: nameOf.get(v.approvedBy) || '', approvedAt: v.approvedAt || '', created: v.created, updated: v.updated, active: v.id === active
   };
 }
@@ -153,7 +153,7 @@ export async function saveLines(pb: PocketBase, actor: AuditActor, campusId: str
   return result;
 }
 
-export interface NewVersionOptions { fromVersionId?: string; lines?: LineInput[]; source?: RabSource; sourceFile?: string; note?: string }
+export interface NewVersionOptions { fromVersionId?: string; lines?: LineInput[]; source?: RabSource; sourceFile?: string; note?: string; share?: RabVersionShare }
 /** A new draft: empty, copied from another version, or filled from an import. */
 export async function createVersion(pb: PocketBase, actor: AuditActor, campusId: string, options: NewVersionOptions = {}) {
   await campusWithAward(pb, campusId);
@@ -164,7 +164,7 @@ export async function createVersion(pb: PocketBase, actor: AuditActor, campusId:
   let from: RecordModel | null = null;
   if (options.fromVersionId) { from = await getVersion(pb, campusId, options.fromVersionId); lines = toInput(await versionLines(pb, from.id)); }
   const version = await pb.collection('rab_versions').create({
-    campus: campusId, disbursement: disbursement.id, number, status: 'draf', totalSen: 0, term1Sen: 0, term2Sen: 0, source: options.source || 'manual', sourceFile: (options.sourceFile || '').slice(0, 300),
+    campus: campusId, disbursement: disbursement.id, number, status: 'draf', totalSen: 0, term1Sen: 0, term2Sen: 0, source: options.source || 'manual', share: options.share || (from ? from.share || '' : ''), sourceFile: (options.sourceFile || '').slice(0, 300),
     note: (options.note || (from ? `Salinan dari versi ${from.number}.` : '')).slice(0, 2000)
   }, opts);
   const totals = lines.length ? await writeLines(pb, version.id, lines) : { totalSen: 0, term1Sen: 0, term2Sen: 0, count: 0, items: 0 };
@@ -283,7 +283,7 @@ async function typedTerm1(pb: PocketBase, campusId: string): Promise<number | nu
 /* Excel import and export */
 
 export interface ImportProblem { row: number; text: string }
-export interface ImportResult { lines: LineInput[]; rows: number; kind: 'total' | 'termin_1' | 'tiga_lembar'; totalSen: number; term1Sen: number; term2Sen?: number; problems: ImportProblem[] }
+export interface ImportResult { lines: LineInput[]; rows: number; kind: 'total' | 'termin_1' | 'tiga_lembar'; share?: RabVersionShare; totalSen: number; term1Sen: number; term2Sen?: number; problems: ImportProblem[] }
 
 /** Builds the tree from rows of the old extraction workbook (kelompok, kegiatan, sub_kegiatan, uraian, ...). Used by scripts/pencairan/load-rab.ts only. */
 export function buildImportLegacy(rows: Record<string, unknown>[], campusCode: string): ImportResult {
@@ -486,7 +486,7 @@ export function parseWorkbook(bytes: ArrayBuffer | Uint8Array, campusCode: strin
   const base = sheetRows(book.Sheets[(nameFull || nameT1)!]);
   const columns = simpleColumns(base.headers);
   if (!columns) throw new PreviewError(400, `Kolom Uraian dan Jumlah tidak ditemukan di lembar ${nameFull || nameT1}. Unduh templat: No, Uraian, Satuan, Volume, Jumlah.`);
-  if (!nameFull && !nameT2) return buildSimpleImport(base.rows, columns);
+  if (!nameFull && !nameT2) return { ...buildSimpleImport(base.rows, columns), share: 'tahap1' };
   const keyOf = (r: Record<string, unknown>, cols: Record<string, string>) => cleanCode(r[cols.no ?? '']) || normTitle(r[cols.uraian]);
   const lookup = (name: string | undefined, label: string) => {
     if (!name) return null;
@@ -522,7 +522,7 @@ export function parseWorkbook(bytes: ArrayBuffer | Uint8Array, campusCode: strin
     });
   }
   const result = buildSimpleImport(merged, columns, { term1: T1, term2: T2 });
-  return { ...result, problems: [...extra, ...result.problems] };
+  return { ...result, share: nameFull && !nameT1 && !nameT2 ? 'penuh' : 'gabungan', problems: [...extra, ...result.problems] };
 }
 
 const SIMPLE_WIDTHS = [12, 52, 10, 10, 16];

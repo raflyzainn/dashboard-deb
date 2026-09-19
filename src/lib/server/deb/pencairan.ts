@@ -1,5 +1,6 @@
 import type PocketBase from 'pocketbase';
 import type { RecordModel } from 'pocketbase';
+import { versionHolds, type RabVersionShare } from '../../rab';
 import { KINDS, KIND_LABEL, FIELDS, GENERATED, LETTERS, limitSen, remainderSen, formatSen, percentOf, formatPercent, splitNames, namesMatch, terbilang, assess, type Assessment, type Kind, type Status } from '../../pencairan';
 import { PreviewError } from './preview-error';
 import { writeAudit, type AuditActor } from './audit';
@@ -68,7 +69,7 @@ export async function directory(pb: PocketBase): Promise<DirectoryRow[]> {
     pb.collection('documents').getFullList({ ...opts }),
     pb.collection('bank_checks').getFullList({ fields: 'id,disbursement,bankResult', ...opts }),
     pb.collection('attachments').getFullList({ fields: 'id,disbursement,created', ...opts }),
-    pb.collection('rab_versions').getFullList({ filter: 'status = "disetujui"', fields: 'id,campus,number,status,totalSen,term1Sen', ...opts })
+    pb.collection('rab_versions').getFullList({ fields: 'id,campus,number,status,share,totalSen,term1Sen,term2Sen', ...opts })
   ]);
   const currentIds = documents.map(d => d.currentVersion).filter(Boolean);
   const versions = currentIds.length ? await pb.collection('document_versions').getFullList({ filter: currentIds.map(id => pb.filter('id = {:id}', { id })).join(' || '), fields: 'id,document,number,originalName,mime,origin,signed,scan,fields,created,uploadedByName', ...opts }) : [];
@@ -89,7 +90,7 @@ export async function directory(pb: PocketBase): Promise<DirectoryRow[]> {
     const rabVersion = disbursement?.rabVersion ? rabVersions.find(r => r.id === disbursement.rabVersion) : null;
     const rab = rabVersion ? { id: rabVersion.id, number: Number(rabVersion.number), status: rabVersion.status, totalSen: Number(rabVersion.totalSen || 0), term1Sen: Number(rabVersion.term1Sen || 0), term2Sen: Number(rabVersion.term2Sen || 0) } : null;
     const lampiranCount = disbursement ? attachments.filter(a => a.disbursement === disbursement.id).length : 0;
-    const { checks: list, suratKuasaRequired } = checks(docs, summary, { campus, bankResult: String(bank?.bankResult || 'belum'), rab });
+    const { checks: list, suratKuasaRequired } = checks(docs, summary, { campus, bankResult: String(bank?.bankResult || 'belum'), rab, sheets: sheetTotals(rabVersions.filter(v => v.campus === campus.id)) });
     const assessment = assess(statuses, { suratKuasaRequired, redChecks: list.filter(c => c.level === 'bad').length, paidAt: String(disbursement?.paidAt || ''), originalsAll: docs.filter(d => d.generated).every(d => d.originalReceived), lampiranCount });
     const checkedAt = own.map(d => String(d.updated || '')).sort().pop() || '';
     return { campus, amountSen, limitSen: limitSen(amountSen), stage: Number(disbursement?.stage || 1), requestedSen, paidSen: Number(disbursement?.paidSen || 0), paidAt: String(disbursement?.paidAt || ''), lampiranCount, statuses, assessment, checkedAt, bukti: rabEvidence(disbursement?.properties) };
@@ -127,6 +128,7 @@ export async function workspace(pb: PocketBase, campusId: string) {
   const attachments = await pb.collection('attachments').getFullList({ filter: pb.filter('disbursement = {:d}', { d: disbursement.id }), fields: 'id', ...opts });
   // The managed RAB is the source of the Tahap 1 amount once its 70% total is approved; the uploaded RAB file stays the campus evidence.
   const rabVersion = disbursement.rabVersion ? await pb.collection('rab_versions').getOne(disbursement.rabVersion, opts).catch(() => null) : null;
+  const allRabVersions = await pb.collection('rab_versions').getFullList({ filter: pb.filter('campus = {:c}', { c: campusId }), fields: 'id,number,status,share,totalSen,term1Sen,term2Sen', ...opts });
   const rab = rabVersion ? { id: rabVersion.id, number: Number(rabVersion.number), status: rabVersion.status, totalSen: Number(rabVersion.totalSen || 0), term1Sen: Number(rabVersion.term1Sen || 0), term2Sen: Number(rabVersion.term2Sen || 0) } : null;
   const docs: DocumentInfo[] = KINDS.map(kind => {
     const d = documents.find(x => x.kind === kind)!;
@@ -155,7 +157,7 @@ export async function workspace(pb: PocketBase, campusId: string) {
     skFile: Boolean(award.fileKey), skLampiranPage: Number(award.lampiranPage || 0), skLampiranNo: Number(award.lampiranNo || 0)
   };
   const bankRow = bank.items[0] || null;
-  const { checks: list, suratKuasaRequired } = checks(docs, summary, { campus, bankResult: String(bankRow?.bankResult || 'belum'), rab });
+  const { checks: list, suratKuasaRequired } = checks(docs, summary, { campus, bankResult: String(bankRow?.bankResult || 'belum'), rab, sheets: sheetTotals(allRabVersions) });
   const statuses = Object.fromEntries(docs.map(d => [d.kind, d.status])) as Record<Kind, Status>;
   const readiness = assess(statuses, { suratKuasaRequired, redChecks: list.filter(c => c.level === 'bad').length, paidAt: String(disbursement.paidAt || ''), originalsAll: docs.filter(d => d.generated).every(d => d.originalReceived), lampiranCount: attachments.length });
   return {
@@ -182,7 +184,20 @@ const lettersOnly = (text: string) => text.toLowerCase().replace(/[^a-z]/g, '');
 /** The name before the first comma: "Nama, Jabatan" typed from the PKS becomes "Nama". */
 const nameOnly = (text: string) => text.split(/[,;]/)[0].trim();
 
-export interface CheckContext { campus: CampusInfo; bankResult: string; rab: { term1Sen: number; term2Sen?: number; totalSen: number; number: number; status?: string } | null }
+export interface CheckContext { campus: CampusInfo; bankResult: string; rab: { term1Sen: number; term2Sen?: number; totalSen: number; number: number; status?: string } | null; sheets?: SheetTotals }
+/** The latest stored total of each RAB sheet (100%, 70%, 30%) over all versions of a campus, following each version's share. */
+export interface SheetTotals { penuh: number | null; tahap1: number | null; tahap2: number | null; numbers: { penuh: number; tahap1: number; tahap2: number } }
+export function sheetTotals(versions: RecordModel[]): SheetTotals {
+  const sorted = [...versions].sort((a, b) => Number(a.number) - Number(b.number));
+  const out: SheetTotals = { penuh: null, tahap1: null, tahap2: null, numbers: { penuh: 0, tahap1: 0, tahap2: 0 } };
+  for (const v of sorted) {
+    const info = { share: (v.share || '') as RabVersionShare | '', totalSen: Number(v.totalSen || 0), term1Sen: Number(v.term1Sen || 0), term2Sen: Number(v.term2Sen || 0) };
+    if (versionHolds(info, 'penuh')) { out.penuh = info.totalSen; out.numbers.penuh = Number(v.number); }
+    if (versionHolds(info, 'tahap1')) { out.tahap1 = info.term1Sen; out.numbers.tahap1 = Number(v.number); }
+    if (versionHolds(info, 'tahap2')) { out.tahap2 = info.term2Sen; out.numbers.tahap2 = Number(v.number); }
+  }
+  return out;
+}
 /**
  * Automatic checks: the machine counts, the person decides. Every check names the item it belongs to so the card and the panel can show it in place.
  * Also answers whether a surat kuasa is required (account holder differs from the PKS signatory), or null when the names are not typed yet.
@@ -202,16 +217,15 @@ export function checks(docs: DocumentInfo[], summary: { amountSen: number; limit
   } else {
     out.push({ kind: 'rab', level: 'info', text: 'RAB 70% belum disetujui di RAB terkelola. Nominal Tahap 1 ditetapkan saat disetujui.' });
   }
-  // RAB 100% and RAB 30%: the same approved managed RAB, read against the SK and against each other.
-  if (ctx.rab) {
-    const t = ctx.rab.totalSen, t1 = ctx.rab.term1Sen, t2 = ctx.rab.term2Sen || 0;
-    out.push(t === summary.amountSen ? { kind: 'rab_penuh', level: 'ok', text: `RAB 100% ${formatSen(t)} sama dengan Nilai SK.` } : { kind: 'rab_penuh', level: 'warn', text: `RAB 100% ${formatSen(t)} berbeda dari Nilai SK ${formatSen(summary.amountSen)}.` });
-    if (!t2) out.push({ kind: 'rab_tahap2', level: 'info', text: 'RAB 30% belum diisi di RAB terkelola.' });
-    else out.push(t1 + t2 === t ? { kind: 'rab_tahap2', level: 'ok', text: `RAB 70% + RAB 30% sama dengan RAB 100% ${formatSen(t)}.` } : { kind: 'rab_tahap2', level: 'warn', text: `RAB 70% + RAB 30% ${formatSen(t1 + t2)} berbeda dari RAB 100% ${formatSen(t)}.` });
-  } else {
-    out.push({ kind: 'rab_penuh', level: 'info', text: 'RAB terkelola belum disetujui. Lihat lembar RAB 100% di atas.' });
-    out.push({ kind: 'rab_tahap2', level: 'info', text: 'RAB terkelola belum disetujui. Lihat lembar RAB 30% di atas.' });
-  }
+  // RAB 100% and RAB 30%: each read from the latest managed version that carries that sheet (decision 48), against the SK and against each other.
+  const sheets = ctx.sheets;
+  if (sheets?.penuh) out.push(sheets.penuh === summary.amountSen ? { kind: 'rab_penuh', level: 'ok', text: `RAB 100% ${formatSen(sheets.penuh)} (versi ${sheets.numbers.penuh}) sama dengan Nilai SK.` } : { kind: 'rab_penuh', level: 'warn', text: `RAB 100% ${formatSen(sheets.penuh)} (versi ${sheets.numbers.penuh}) berbeda dari Nilai SK ${formatSen(summary.amountSen)}.` });
+  else out.push({ kind: 'rab_penuh', level: 'info', text: 'Lembar RAB 100% belum ada di RAB terkelola.' });
+  if (sheets?.tahap2) {
+    const t1 = sheets.tahap1 ?? summary.requestedSen;
+    if (sheets.penuh && t1) out.push(t1 + sheets.tahap2 === sheets.penuh ? { kind: 'rab_tahap2', level: 'ok', text: `RAB 70% + RAB 30% sama dengan RAB 100% ${formatSen(sheets.penuh)}.` } : { kind: 'rab_tahap2', level: 'warn', text: `RAB 70% + RAB 30% ${formatSen(t1 + sheets.tahap2)} berbeda dari RAB 100% ${formatSen(sheets.penuh)}.` });
+    else out.push({ kind: 'rab_tahap2', level: 'info', text: `RAB 30% ${formatSen(sheets.tahap2)} (versi ${sheets.numbers.tahap2}); sisa Nilai SK setelah Tahap 1 ${formatSen(summary.amountSen - t1)}.` });
+  } else out.push({ kind: 'rab_tahap2', level: 'info', text: 'Lembar RAB 30% belum ada di RAB terkelola.' });
   // The Tahap 1 total typed from the campus file: the reviewer's own reading. It must agree with the managed RAB, and it stands in when the managed RAB has no Tahap 1 column yet.
   const fileTerm1 = money('rab', 'termin1Sen');
   const managedTerm1 = ctx.rab?.term1Sen || 0;

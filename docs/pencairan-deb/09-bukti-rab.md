@@ -25,7 +25,7 @@ Batas = 70% dari Nilai SK, tepat. "ada" berarti lembar atau kolomnya ada di berk
 | UNAIR | tidak | ada, 52.495.000 (batas 52.496.500) | tidak | `RANCANGAN ANGGARAN BIAYA (RAB).pdf` |
 | UNDIP | ada, 75.000.000 (= SK) | ada, 52.527.000 (batas 52.500.000) | tidak | kolom Pengajuan I pada lembar Laporan terisi |
 | UNIROW | ada, 71.500.000 (= SK) | tidak | tidak | `160726- Format RAB DEB UNIROW.xlsx`, satu lembar |
-| UNMUL | ada, 71.237.320 (= SK) | ada, 49.866.124 (= batas) | ada, 21.371.196 | `RAB KEBERLANJUTAN NEW 2026, fiks.xlsx`: lembar DEB 2026, TERMIN I 70%, TERMIN II 30%; 70% + 30% = 100%. Lembar 30% belum dimuat ke RAB terkelola |
+| UNMUL | ada, 71.237.320 (= SK) | ada, 49.866.124 (= batas) | ada, 21.371.196 | `RAB KEBERLANJUTAN NEW 2026, fiks.xlsx`: lembar DEB 2026, TERMIN I 70%, TERMIN II 30%; 70% + 30% = 100%. Ketiganya ada di RAB terkelola (versi 1, 2, 3) |
 | UNRI | ada, 75.000.000 (= SK) | ada, 52.500.000 (= batas) | tidak | kolom PENGAJUAN 1 pada lembar RAB dan lembar Rencana realisasi 70% |
 | UNS | ada, 89.157.500 (SK 71.680.250) | ada, 50.176.175 (= batas) | tidak | lembar Rencana Anggaran Biaya adalah RAB 70%; lembar C-1 adalah RAB 100% (lebih dari SK); lembar Copy of Rencana Anggaran Biaya masih contoh templat |
 | UNSIKA | ada, 74.703.437 (= SK) | ada, 64.789.606 (batas 52.292.405) | tidak | kolom Pengajuan I pada lembar Laporan terisi, jumlahnya 86,7% dari SK |
@@ -41,13 +41,14 @@ Ringkasan: 13 kampus punya RAB 100%, 13 kampus punya RAB 70%, hanya UNMUL yang p
 ## Apa yang salah di sistem sebelum ini
 
 - Versi RAB terkelola untuk IPB, IVET, STAI SIAK, UIR, UNAIR, UNS, USK dimuat dari lembar 70% saja, dengan jumlah yang sama pada kolom 100% dan 70%. Halaman RAB 100% menampilkan angka itu sebagai RAB 100%. Sekarang halaman itu menyatakan versi hanya memuat lembar 70%.
-- UNMUL dan UNTIRTA punya dua versi (versi 1 dari lembar 100%, versi 2 dari lembar 70%); layar menampilkan versi terakhir untuk ketiga halaman, jadi RAB 100% tampak sama dengan 70%. Sekarang halaman 100% menunjuk ke versi 1.
+- UNMUL dan UNTIRTA punya dua versi (versi 1 dari lembar 100%, versi 2 dari lembar 70%); layar menampilkan versi terakhir untuk ketiga halaman, jadi RAB 100% tampak sama dengan 70%. Sekarang tiap halaman membuka sendiri versi terbaru yang memuat lembarnya: halaman RAB 100% membuka versi 1, halaman RAB 70% versi 2, tanpa penggabungan.
 - Lembar TERMIN II 30% UNMUL tidak pernah diekstrak (ekstraksi hanya mengenal jenis total dan termin_1), sehingga halaman RAB 30% UNMUL kosong.
 - Keputusan RAB 100% dan RAB 30% yang dibuat tim pada 20 September 2026 sebagian dibuat saat layar menampilkan lembar yang tidak ada atau tidak menampilkan lembar yang ada. Status kini mengikuti bukti: tidak ada lembar = Belum ada; lembar ada tetapi belum dilihat = Periksa; keputusan atas lembar yang memang ada dipertahankan, kecuali UNMUL (100% dan 30%) dan UNTIRTA (100%) yang dikembalikan ke Periksa.
 
 ## Yang masih perlu tangan manusia
 
+- UNRI: setelah pemeriksaan ini, tim menandai RAB 30% Sesuai, padahal berkas UNRI tidak memuat lembar 30%. Skrip bukti tidak lagi menimpa keputusan orang (hanya menandai Periksa bila lembar ada tetapi butirnya masih Belum ada); konfirmasi maksudnya.
 - UBT: butir RAB 70% sebelumnya Sesuai dengan total ketikan 52.500.000, padahal berkas tidak memuat lembar 70%; kini Belum ada. Konfirmasi ke kampus.
 - UNSIKA: Pengajuan I 64.789.606 jauh di atas batas; periksa apakah kolom itu memang rencana Tahap 1.
 - IPB: ekstraksi membaca 53.235.400 pada lembar 70%, lembar review menulis 50.110.400; keduanya perlu dicek pada berkasnya.
-- UNMUL: lembar TERMIN II 30% ada di berkas tetapi belum dimuat ke RAB terkelola; memuatnya menunggu keputusan pengguna (tanpa penggabungan).
+- UNMUL: lembar TERMIN II 30% kini dimuat sebagai versi 3 (share tahap2, Rp21.371.196), dan lembar C-1 UNS sebagai versi 2 (share penuh, Rp89.157.500), keduanya apa adanya tanpa penggabungan (keputusan 48).

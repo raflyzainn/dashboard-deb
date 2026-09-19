@@ -27,7 +27,7 @@ export interface RabLine {
 export interface Arranged extends LineInput { level: number; order: number; code: string; hasChildren: boolean; sumSen: number; sumTerm1Sen: number; sumTerm2Sen: number }
 export interface RabCheck { level: 'ok' | 'warn' | 'bad' | 'info'; text: string }
 export interface RabVersionInfo {
-  id: string; number: number; status: RabStatus; totalSen: number; term1Sen: number; term2Sen: number; source: RabSource; sourceFile: string; note: string;
+  id: string; number: number; status: RabStatus; totalSen: number; term1Sen: number; term2Sen: number; source: RabSource; share: RabShare | 'gabungan' | ''; sourceFile: string; note: string;
   approvedByName: string; approvedAt: string; created: string; updated: string; active: boolean;
 }
 export interface RabOverview {
@@ -105,7 +105,15 @@ export const totalsOf = (nodes: Arranged[]) => nodes.filter(n => n.level === 1).
 
 /** The three pages of the RAB item: the full budget and its Tahap 1 and Tahap 2 parts. */
 export type RabShare = 'penuh' | 'tahap1' | 'tahap2';
+/** Which sheet a stored version came from; gabungan carries RAB 100% with its 70% (and 30%) parts on the same lines. */
+export type RabVersionShare = RabShare | 'gabungan';
 export const SHARE_LABEL: Record<RabShare, string> = { penuh: 'RAB 100%', tahap1: 'RAB 70%', tahap2: 'RAB 30%' };
+/** Whether a version can serve a page: its own sheet, or the combined sheets when they carry that part. Versions without a share fall back to their totals. */
+export const versionHolds = (v: { share: RabVersionShare | ''; totalSen: number; term1Sen: number; term2Sen?: number }, share: RabShare) => {
+  if (v.share === 'gabungan') return share === 'penuh' ? v.totalSen > 0 : share === 'tahap1' ? v.term1Sen > 0 : (v.term2Sen || 0) > 0;
+  if (v.share) return v.share === share;
+  return share === 'penuh' ? v.totalSen > 0 && v.totalSen !== v.term1Sen : share === 'tahap1' ? v.term1Sen > 0 : (v.term2Sen || 0) > 0;
+};
 export const shareSen = (line: { amountSen: number; term1Sen: number; term2Sen?: number }, share: RabShare) => (share === 'penuh' ? line.amountSen : share === 'tahap1' ? line.term1Sen : line.term2Sen || 0);
 
 const listCodes = (codes: string[]) => (codes.length > 6 ? codes.slice(0, 6).join(', ') + ` dan ${codes.length - 6} baris lain` : codes.join(', '));

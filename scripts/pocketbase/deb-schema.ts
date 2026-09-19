@@ -95,7 +95,7 @@ export function debCollections(campusesId: string) {
     ]),
     base('rab_versions', IDS.rab_versions, [
       rel('campus', campusesId, { required: true }), rel('disbursement', IDS.disbursements), num('number', { required: true }), sel('status', ['draf', 'menunggu', 'disetujui'], { required: true }),
-      num('totalSen'), num('term1Sen'), num('term2Sen'), rel('approvedBy', IDS.users), date('approvedAt'), sel('source', ['manual', 'import', 'extraction']), text('note', 2000), text('sourceFile', 300)
+      num('totalSen'), num('term1Sen'), num('term2Sen'), rel('approvedBy', IDS.users), date('approvedAt'), sel('source', ['manual', 'import', 'extraction']), sel('share', ['penuh', 'tahap1', 'tahap2', 'gabungan']), text('note', 2000), text('sourceFile', 300)
     ], ['CREATE UNIQUE INDEX idx_rab_versions_number ON rab_versions (campus, number)']),
     base('rab_lines', IDS.rab_lines, [
       rel('version', IDS.rab_versions, { required: true }), rel('parent', IDS.rab_lines), num('level', { required: true }), num('order'), text('code', 40), text('title', 500),

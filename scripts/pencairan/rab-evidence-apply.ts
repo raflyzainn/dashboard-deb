@@ -2,9 +2,8 @@
  * Marks, per funded campus, what the campus's own RAB file really contains (checked by hand on 20 September 2026 against the
  * files in D:\deb, see docs/pencairan-deb/09-bukti-rab.md): a RAB 100%, a RAB 70%, a separate RAB 30%. Nothing is merged.
  * The marks go to the disbursement properties (buktiRab100, buktiRab70, buktiRab30, buktiRabCatatan) and the three RAB items
- * follow the evidence: no sheet in the file means Belum ada; a sheet that exists but was never looked at means Periksa
- * (perlu_konfirmasi); decisions people made on sheets that do exist are kept, except the ones listed in `reset`, which were
- * made while the screen showed nothing for a sheet that is in the file.
+ * follow the evidence on first run (20 September 2026); on later runs only the marks and notes are refreshed and a sheet that
+ * exists but was never looked at becomes Periksa. Decisions people made are never overridden again.
  * Usage: npx tsx scripts/pencairan/rab-evidence-apply.ts            (dry run)
  *        npx tsx scripts/pencairan/rab-evidence-apply.ts --apply
  */
@@ -28,11 +27,11 @@ const EVIDENCE: Record<string, Evidence> = {
   UNAIR: { r100: 'tidak', r70: 'ada', r30: 'tidak', note: 'RANCANGAN ANGGARAN BIAYA (RAB).pdf: hanya RAB 70% Rp52.495.000 (batas Rp52.496.500); tidak ada RAB 100%.' },
   UNDIP: { r100: 'ada', r70: 'ada', r30: 'tidak', note: 'Format RAB dan Penggunaan Dana: RAB 100% Rp75.000.000 sama dengan Nilai SK; kolom Pengajuan I di lembar Laporan Rp52.527.000 (batas Rp52.500.000); tidak ada lembar 30%.' },
   UNIROW: { r100: 'ada', r70: 'tidak', r30: 'tidak', note: 'Format RAB DEB UNIROW.xlsx: RAB 100% Rp71.500.000 sama dengan Nilai SK; tidak ada lembar 70%.' },
-  UNMUL: { r100: 'ada', r70: 'ada', r30: 'ada', reset: ['rab_penuh', 'rab_tahap2'], note: 'RAB KEBERLANJUTAN NEW 2026, fiks.xlsx: lembar DEB 2026 adalah RAB 100% Rp71.237.320 (sama dengan Nilai SK), TERMIN I 70% Rp49.866.124 (sama dengan batas), TERMIN II 30% Rp21.371.196; 70% + 30% = 100%. Lembar 30% belum dimuat ke RAB terkelola.' },
+  UNMUL: { r100: 'ada', r70: 'ada', r30: 'ada', note: 'RAB KEBERLANJUTAN NEW 2026, fiks.xlsx: lembar DEB 2026 adalah RAB 100% Rp71.237.320 (sama dengan Nilai SK), TERMIN I 70% Rp49.866.124 (sama dengan batas), TERMIN II 30% Rp21.371.196; 70% + 30% = 100%. Ketiganya ada di RAB terkelola (versi 1, 2, 3).' },
   UNRI: { r100: 'ada', r70: 'ada', r30: 'tidak', note: 'RAB dan Penggunaan Dana Termin 1 UNRI 2026.xlsx: RAB 100% Rp75.000.000 sama dengan Nilai SK dengan kolom PENGAJUAN 1 Rp52.500.000 (sama dengan batas); lembar Rencana realisasi 70% terisi; tidak ada lembar 30%.' },
-  UNS: { r100: 'ada', r70: 'ada', r30: 'tidak', note: 'RAB DEB UNS 2026 TERMIN 1.xlsx: lembar Rencana Anggaran Biaya adalah RAB 70% Rp50.176.175 (sama dengan batas); lembar C-1 adalah RAB 100% Rp89.157.500 (Nilai SK Rp71.680.250); lembar Copy of Rencana Anggaran Biaya masih contoh templat.' },
+  UNS: { r100: 'ada', r70: 'ada', r30: 'tidak', note: 'RAB DEB UNS 2026 TERMIN 1.xlsx: lembar Rencana Anggaran Biaya adalah RAB 70% Rp50.176.175 (sama dengan batas); lembar C-1 adalah RAB 100% Rp89.157.500 (Nilai SK Rp71.680.250), dimuat sebagai versi 2; lembar Copy of Rencana Anggaran Biaya masih contoh templat.' },
   UNSIKA: { r100: 'ada', r70: 'ada', r30: 'tidak', note: 'Rencana Anggaran dan Biaya (RAB) dan Rencana Realisasi.xlsx: RAB 100% Rp74.703.437 sama dengan Nilai SK; kolom Pengajuan I di lembar Laporan Rp64.789.606 (batas Rp52.292.405); tidak ada lembar 30%.' },
-  UNTIRTA: { r100: 'ada', r70: 'ada', r30: 'tidak', reset: ['rab_penuh'], note: 'Rencana Anggaran Biaya Sobi Untirta.pdf adalah RAB 100% Rp69.554.700 (sama dengan Nilai SK); RAB DEB UNTIRTA 2026 70%.xlsx adalah RAB 70% Rp48.969.900 (batas Rp48.688.290); tidak ada lembar 30%.' },
+  UNTIRTA: { r100: 'ada', r70: 'ada', r30: 'tidak', note: 'Rencana Anggaran Biaya Sobi Untirta.pdf adalah RAB 100% Rp69.554.700 (sama dengan Nilai SK); RAB DEB UNTIRTA 2026 70%.xlsx adalah RAB 70% Rp48.969.900 (batas Rp48.688.290); tidak ada lembar 30%.' },
   UNY: { r100: 'ada', r70: 'ada', r30: 'tidak', note: 'UNY_RAB_DEB 2026.xlsx: RAB 100% Rp75.000.000 (Nilai SK Rp74.800.000) dengan kolom PENGAJUAN 1 (70%) Rp52.500.000 (batas Rp52.360.000); tidak ada lembar 30%.' },
   USB: { r100: 'ada', r70: 'tidak', r30: 'tidak', note: 'RAB_DEB_Sobat_Bumi_Pertamina_USB.xlsx: RAB 100% Rp60.000.000 sama dengan Nilai SK; tidak ada lembar 70%.' },
   USK: { r100: 'tidak', r70: 'ada', r30: 'tidak', note: '04_RAB_Termin1_DEB_SobatBumiUSK_2026.xlsx: hanya lembar RAB TERMIN 1 Rp52.500.000 (sama dengan batas); tidak ada RAB 100%.' },
@@ -69,7 +68,7 @@ async function main() {
       const doc = documents.find(d => d.kind === item.kind)!;
       const from = String(doc.status);
       const mark = ev[item.mark];
-      if (mark === 'tidak' && from !== 'belum_ada') statusPlan.push({ kind: item.kind, from, to: 'belum_ada', docId: doc.id });
+      if (mark === 'tidak' && from === 'perlu_konfirmasi') statusPlan.push({ kind: item.kind, from, to: 'belum_ada', docId: doc.id });
       else if (mark === 'ada' && (from === 'belum_ada' || ev.reset?.includes(item.kind)) && from !== 'perlu_konfirmasi') statusPlan.push({ kind: item.kind, from, to: 'perlu_konfirmasi', docId: doc.id });
     }
     for (const s of statusPlan) plan.push(`${KIND_LABEL[s.kind]}: ${s.from} -> ${s.to}`);

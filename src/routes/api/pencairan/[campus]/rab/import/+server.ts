@@ -18,6 +18,6 @@ export const POST: RequestHandler = event => secured(event, ADMIN, async ({ acto
   const result = parseWorkbook(await file.arrayBuffer(), campus.code);
   const summary = { rows: result.rows, kind: result.kind, totalSen: result.totalSen, term1Sen: result.term1Sen, term2Sen: result.term2Sen || 0, problems: result.problems.slice(0, 200), problemCount: result.problems.length, fileName: file.name };
   if (String(form?.get('mode') || '') === 'preview') return ok({ preview: summary });
-  const created = await createVersion(pb, actorInfo(actor), campusId, { lines: result.lines, source: 'import', sourceFile: file.name, note: result.problems.length ? `${result.problems.length} catatan saat impor.` : '' });
+  const created = await createVersion(pb, actorInfo(actor), campusId, { lines: result.lines, source: 'import', share: result.share, sourceFile: file.name, note: result.problems.length ? `${result.problems.length} catatan saat impor.` : '' });
   return ok({ ...(await overview(pb, campusId, created.id)), imported: summary }, 201);
 });
