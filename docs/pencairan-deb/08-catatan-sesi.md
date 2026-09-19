@@ -46,6 +46,17 @@ Skrip itu masih memuat jalur folder sementara sesi lama di variabel `S` atau sej
 
 Pakai Playwright **sebagai pustaka** (bukan test runner) dengan Chrome tanpa kepala (`channel: 'chrome'`), dimuat lewat `createRequire('D:/repos/monev-deb/package.json')`. Server dev pengguna biasanya sudah berjalan di `http://127.0.0.1:5176`. Jangan pakai `localhost:5176`, karena IPv6 di mesin ini milik server proyek lain. Periksa lebar 1366 (atau 1280) dan 390, gulir mendatar, dan galat halaman.
 
+## Uji coba tanpa menyentuh produksi
+
+PocketBase di `PB_URL` dan bucket R2 di `.env` adalah produksi. Data uji tidak pernah dibuat di sana.
+
+1. Jalankan PocketBase lokal: `npm run pb:setup` (sekali, mengunduh biner ke `.local/`), lalu `npm run pb:serve`.
+2. Buat `.env.local` (diabaikan git) berisi `PB_URL=http://127.0.0.1:8096`, `DEB_LOCAL_PREVIEW_ENABLED=true`, `DEB_PUBLIC_URL=http://127.0.0.1:5176`, kredensial superuser lokal dari `.local/pocketbase/credentials.json`, dan R2 untuk bucket uji tersendiri (misalnya `pf-monev-deb-uji`), bukan bucket produksi. Selama `.env.local` ada, server dev dan semua skrip `scripts/` membidik instans lokal itu.
+3. `npx tsx scripts/pocketbase/provision-deb.ts --apply` (koleksi dan 40 kampus di lokal), lalu `npx tsx scripts/pencairan/seed-test.ts`: membuat Universitas Uji Coba (kode UJI, SK uji Rp75.000.000, mode kampus) beserta akun `kampus.uji@deb.test` dan `admin.uji@deb.test` dengan kata sandi acak yang dicetak sekali. Skrip menolak berjalan bila `PB_URL` bukan alamat lokal.
+4. Hapus `.env.local` (atau ganti nama) sebelum menjalankan skrip terhadap produksi.
+
+Akun uji `qa.kampus@example.org` yang sempat dibuat di produksi pada 19 September 2026 dihapus pada 20 September 2026 dengan `scripts/pencairan/remove-user.ts`.
+
 ## Kendala lingkungan (Windows)
 
 - Heredoc bash yang besar dan `python -c` multi baris gagal. Tulis skrip dengan alat Write lalu jalankan.

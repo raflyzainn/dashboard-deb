@@ -8,5 +8,5 @@
   });
 </script>
 
-<svelte:head><title>Kampus mitra · Dashboard DEB</title></svelte:head>
+<svelte:head><title>Kampus mitra · Desa Energi Berdikari</title></svelte:head>
 <Campuses />

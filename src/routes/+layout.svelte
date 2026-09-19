@@ -16,7 +16,7 @@
     });
   });
 </script>
-<svelte:head><title>DEB · Ruang tumbuh bersama</title></svelte:head>
+<svelte:head><title>Desa Energi Berdikari · Pertamina Foundation</title></svelte:head>
 <a
   href="#main-content"
   class="[-webkit-tap-highlight-color:transparent] text-[white] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] fixed top-[-80px] left-[16px] z-[200] [background-image:initial] [background-color:var(--dark)] px-[20px] py-[12px] rounded-[8px] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:focus]:top-[12px] skip-link"

@@ -35,7 +35,7 @@
   }
 </script>
 
-<svelte:head><title>Masuk · Dashboard DEB</title></svelte:head>
+<svelte:head><title>Masuk · Desa Energi Berdikari</title></svelte:head>
 
 <main class="grid min-h-screen lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
   <section class="relative hidden flex-col justify-between overflow-hidden bg-[#0066B2] p-10 text-white lg:flex">

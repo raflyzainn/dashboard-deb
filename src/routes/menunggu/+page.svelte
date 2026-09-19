@@ -17,7 +17,7 @@
   }
 </script>
 
-<svelte:head><title>Menunggu peran · Dashboard DEB</title></svelte:head>
+<svelte:head><title>Menunggu peran · Desa Energi Berdikari</title></svelte:head>
 
 <main class="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50/40 px-4 py-10">
   <section class="w-full max-w-md rounded-2xl border border-slate-200/70 bg-white/90 p-8 shadow-[0_18px_45px_#0b254514] backdrop-blur">

@@ -57,7 +57,7 @@
   ];
 </script>
 
-<svelte:head><title>Panduan aplikasi · Digitalisasi DEB</title></svelte:head>
+<svelte:head><title>Panduan aplikasi · Desa Energi Berdikari</title></svelte:head>
 <div
   class="[&&]:max-w-[1120px] [&&]:grid [&&]:gap-y-[30px] [&&]:gap-x-[30px] [&&]:mx-[auto] [&&]:my-[0px] max-[600.01px]:[&&]:gap-y-[24px] max-[600.01px]:[&&]:gap-x-[24px] app-guide"
 >

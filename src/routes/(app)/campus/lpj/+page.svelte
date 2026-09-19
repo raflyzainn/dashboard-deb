@@ -4,7 +4,7 @@
   import Empty from '$lib/components/ui/Empty.svelte';
 </script>
 
-<svelte:head><title>LPJ · Dashboard DEB</title></svelte:head>
+<svelte:head><title>LPJ · Desa Energi Berdikari</title></svelte:head>
 {#if app.session?.campusId}
   <Lpj campusId={app.session.campusId} mode="campus" />
 {:else}

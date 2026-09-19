@@ -114,7 +114,7 @@
       confirmation = null;
   }
 </script>
-<svelte:head><title>Master indikator · Digitalisasi DEB</title></svelte:head>
+<svelte:head><title>Master indikator · Desa Energi Berdikari</title></svelte:head>
 
 <div
   class="flex items-center justify-between gap-y-[20px] gap-x-[20px] mb-[27px] [&_p]:text-[14px] [&_p]:text-[#637796] [&_p]:mt-[8px] max-[900.01px]:[&_h1]:text-[24px] max-[700.01px]:items-start max-[700.01px]:gap-y-[15px] max-[700.01px]:gap-x-[15px] max-[700.01px]:mb-[22px] max-[700.01px]:flex-wrap max-[700.01px]:[&_h1]:text-[23px] max-[700.01px]:[&_p]:text-[14px] max-[700.01px]:[&_p]:leading-[1.65] max-[700.01px]:[&_p]:max-w-[340px] max-[700.01px]:[&_.period]:hidden page-heading"

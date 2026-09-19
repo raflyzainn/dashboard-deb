@@ -4,7 +4,7 @@
   import RiwayatPerubahan from '$lib/components/ui/RiwayatPerubahan.svelte';
   const campus = $derived(app.data?.campuses.find((c) => c.id === app.session?.campusId));
 </script>
-<svelte:head><title>Profil Program &middot; Digitalisasi DEB</title></svelte:head>
+<svelte:head><title>Profil Program · Desa Energi Berdikari</title></svelte:head>
 <div class="mx-auto max-w-[1200px] space-y-5">
   <header>
     <h1 class="m-0 text-2xl font-bold text-[#17365f]">Profil Program</h1>

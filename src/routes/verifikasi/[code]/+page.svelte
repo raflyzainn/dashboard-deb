@@ -26,7 +26,7 @@
   }
 </script>
 
-<svelte:head><title>Verifikasi dokumen · MonevDEB</title></svelte:head>
+<svelte:head><title>Verifikasi dokumen · Desa Energi Berdikari</title></svelte:head>
 
 <main class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/40">
   <header class="bg-[#0066B2] text-white">
