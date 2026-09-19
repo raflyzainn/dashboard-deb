@@ -1,208 +1,88 @@
+<script module lang="ts">
+  // Query string of the last directory view, so the back link returns to the same filters.
+  let directorySearch = '';
+</script>
+
 <script lang="ts">
   import { page } from '$app/state';
   import { app } from '$lib/state.svelte';
-  import { dataService } from '$lib/data/service';
-  import { STAGES } from '$lib/payments';
+  import Button from '$lib/components/ui/Button.svelte';
+  import Empty from '$lib/components/ui/Empty.svelte';
   import PaymentProgress from './PaymentProgress.svelte';
   import PaymentDetail from './PaymentDetail.svelte';
-  let campus = $state('');
-  let selectedId = $state('');
-  let campusQuery = $state('');
-  let stageFilter = $state('');
-  $effect(() => {
-    campus = page.url.searchParams.get('campus') || '';
-    selectedId = page.url.searchParams.get('payment') || '';
-  });
-  let proposalId = $state('');
-  let amount = $state(50000000);
+  import PaymentDirectory from './PaymentDirectory.svelte';
+
   const isCampus = $derived(app.session?.role === 'campus');
-  const filteredCampuses = $derived(
-    (app.data?.campuses || []).filter(
-      (item) =>
-        (!campusQuery.trim() ||
-          item.name
-            .toLocaleLowerCase('id')
-            .includes(campusQuery.trim().toLocaleLowerCase('id'))) &&
-        (!stageFilter ||
-          (app.data?.payments || []).some(
-            (payment) => payment.campusId === item.id && payment.stage === stageFilter
-          ))
-    )
-  );
-  const activeCampus = $derived(
-    isCampus
-      ? app.session?.campusId
-      : campus || page.url.searchParams.get('campus') || filteredCampuses[0]?.id
-  );
-  const cases = $derived((app.data?.payments || []).filter((p) => p.campusId === activeCampus));
-  const selected = $derived(
-    cases.find((p) => p.id === (selectedId || page.url.searchParams.get('payment'))) || cases.at(-1)
-  );
-  const available = $derived(
-    (app.data?.proposals || [])
-      .filter((p) => p.campusId === activeCampus && !cases.some((c) => c.proposalId === p.id))
-      .sort((a, b) => b.version - a.version)
-  );
+  const paymentId = $derived(page.url.searchParams.get('payment') || '');
+  const payments = $derived(app.data?.payments || []);
+
+  // Campus role: own cases only, the linked one or else the latest.
+  const ownCases = $derived(payments.filter((p) => p.campusId === app.session?.campusId));
+  const ownSelected = $derived(ownCases.find((p) => p.id === paymentId) || ownCases.at(-1));
+
+  // Admin and finance: a case opens only through its id in the URL.
+  const selected = $derived(paymentId ? payments.find((p) => p.id === paymentId) : undefined);
+  const campus = $derived(app.data?.campuses.find((item) => item.id === selected?.campusId));
+  const version = $derived(app.data?.proposals.find((item) => item.id === selected?.proposalId)?.version);
+  const backHref = $derived(page.url.pathname + (paymentId ? directorySearch : ''));
   $effect(() => {
-    if (!isCampus && campus && !filteredCampuses.some((item) => item.id === campus)) {
-      campus = filteredCampuses[0]?.id || '';
-      selectedId = '';
-      proposalId = '';
-    }
+    if (!isCampus && !page.url.searchParams.has('payment')) directorySearch = page.url.search;
   });
-  async function create() {
-    const id = available.find((p) => p.id === proposalId)?.id || available[0]?.id;
-    if (!id) return;
-    if (
-      await app.mutate(() => dataService.createPayment(id, amount), 'Pengajuan pencairan dibuat.')
-    )
-      selectedId = '';
-  }
 </script>
+
 <svelte:head><title>Pencairan · Digitalisasi DEB</title></svelte:head>
-{#if isCampus}
-  <h1 class="sr-only">Pencairan program</h1>
-  {#if selected}<PaymentProgress payment={selected} />
-  {:else}<p class="rounded-xl border bg-white p-5">Belum ada pengajuan pencairan.</p>{/if}
-{:else}
-  <header class="mb-6">
-    <p class="text-xs font-semibold tracking-widest text-blue-600">PROPOSAL & PEMBAYARAN</p>
-    <h1 class="mt-2 text-3xl font-semibold text-[#0d234c]">Pencairan program</h1>
-    <p class="mt-2 text-sm text-slate-600">
-      Ikuti penilaian proposal, kelengkapan berkas, dan persetujuan sampai pencairan.
-    </p>
-  </header>
+
+{#snippet notice()}
   <p
     class="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-6 text-amber-900"
   >
     Mode simulasi · KPI dan nominal adalah contoh, bukan ketentuan resmi Pertamina Holding.
     Pengiriman ke keuangan berlangsung di aplikasi demo; tidak ada transfer uang atau email nyata.
   </p>
-  <section
-    class="mb-5 grid gap-4 rounded-xl border border-slate-200 bg-white p-5 sm:grid-cols-2"
-    aria-label="Pilih pengajuan pencairan"
-  >
-    <label class="grid gap-2 text-sm font-semibold"
-      >Cari kampus<input
-        aria-label="Cari kampus pencairan"
-        type="search"
-        placeholder="Ketik nama kampus..."
-        bind:value={campusQuery}
-        class="min-w-0 w-full rounded-lg border border-slate-300 p-3 font-normal"
-      /></label
-    >
-    <label class="grid gap-2 text-sm font-semibold"
-      >Tahap pencairan<select
-        aria-label="Filter tahap pencairan"
-        bind:value={stageFilter}
-        class="min-w-0 w-full rounded-lg border border-slate-300 p-3 font-normal"
-      >
-        <option value="">Semua tahap</option>
-        {#each Object.entries(STAGES) as [key, label]}<option value={key}>{label}</option>{/each}
-      </select></label
-    >
-    {#if filteredCampuses.length}
-      {#if !isCampus}<label class="grid gap-2 text-sm font-semibold"
-        >Kampus
-        <select
-          aria-label="Kampus pencairan"
-          value={activeCampus}
-          onchange={(e) => {
-            campus = e.currentTarget.value;
-            selectedId = '';
-            proposalId = '';
-          }}
-          class="min-w-0 w-full rounded-lg border border-slate-300 p-3"
-        >
-          {#each filteredCampuses as c}<option value={c.id}>{c.name}</option>{/each}
-          {#if !filteredCampuses.length}<option value="">Tidak ada kampus</option>{/if}
-        </select></label
-      >{/if}
-      <label class="grid gap-2 text-sm font-semibold"
-        >Pengajuan
-        <select
-          aria-label="Pengajuan pencairan"
-          value={selected?.id || ''}
-          onchange={(e) => (selectedId = e.currentTarget.value)}
-          class="min-w-0 w-full rounded-lg border border-slate-300 p-3"
-        >
-          {#each cases as p}<option value={p.id}
-              >Versi {app.data?.proposals.find((v) => v.id === p.proposalId)?.version} · {STAGES[
-                p.stage
-              ]}</option
-            >{/each}
-          {#if !cases.length}<option value="">Belum ada pengajuan</option>{/if}
-        </select></label
-      >
-    {:else}
-      <div
-        class="grid justify-items-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center sm:col-span-2"
-        role="status"
-      >
-        <strong class="text-sm text-[#0d234c]">Tidak ada kampus pada filter ini</strong>
-        <p class="m-0 text-xs leading-5 text-slate-600">
-          Ubah nama kampus atau tahap pencairan untuk melihat pengajuan lainnya.
-        </p>
-        <button
-          type="button"
-          class="mt-1 rounded-lg border border-blue-200 bg-white px-4 py-2 text-xs font-semibold text-blue-700"
-          onclick={() => {
-            campusQuery = '';
-            stageFilter = '';
-          }}>Reset filter</button
-        >
-      </div>
-    {/if}
-  </section>
-  {#if app.session?.role === 'admin' && available.length}
-    <details class="mb-5 rounded-xl border border-slate-200 bg-white p-5">
-      <summary class="cursor-pointer text-sm font-semibold"
-        >Ajukan pencairan untuk versi proposal lain</summary
-      >
-      <form
-        class="mt-4 grid gap-4 sm:grid-cols-3"
-        onsubmit={(e) => {
-          e.preventDefault();
-          void create();
-        }}
-      >
-        <label class="grid gap-2 text-sm"
-          >Versi proposal<select
-            aria-label="Versi untuk pencairan"
-            bind:value={proposalId}
-            class="w-full rounded-lg border p-3"
-            ><option value="">Versi terbaru tersedia</option>{#each available as p}<option
-                value={p.id}>Versi {p.version} · {p.filename}</option
-              >{/each}</select
-          ></label
-        >
-        <label class="grid gap-2 text-sm"
-          >Nominal (Rp)<input
-            aria-label="Nominal pengajuan baru"
-            type="number"
-            min="1"
-            max="1000000000000"
-            step="1"
-            required
-            bind:value={amount}
-            class="w-full rounded-lg border p-3"
-          /></label
-        >
-        <button
-          disabled={app.busy || app.loading}
-          class="self-end rounded-lg bg-blue-700 px-4 py-3 text-sm font-semibold text-white"
-          >Buat pengajuan</button
-        >
-      </form>
-    </details>
-  {/if}
+{/snippet}
+
+{#if isCampus}
+  <h1 class="sr-only">Pencairan program</h1>
+  {#if ownSelected}<PaymentProgress payment={ownSelected} />
+  {:else}<p class="rounded-xl border bg-white p-5">Belum ada pengajuan pencairan.</p>{/if}
+{:else if paymentId}
+  <div class="mb-3 -ml-3">
+    <Button variant="ghost" size="sm" icon="back" href={backHref}>Semua pengajuan</Button>
+  </div>
   {#if selected}
+    <header class="mb-5 flex items-center gap-3">
+      <span
+        aria-hidden="true"
+        class="grid h-12 min-w-12 shrink-0 place-items-center rounded-xl bg-[linear-gradient(135deg,#0877d8,#1559d6)] px-2 text-[13px] font-bold text-white"
+        >{campus?.initials || 'K'}</span
+      >
+      <div class="min-w-0">
+        <p class="text-xs font-semibold tracking-[0.06em] text-[#075fc7]">PENCAIRAN PROGRAM</p>
+        <h1
+          class="mt-1 text-[22px] leading-tight font-semibold tracking-[-0.01em] text-[#0d234c] min-[700px]:text-2xl"
+        >
+          {campus?.name || 'Kampus'}
+          <span class="mt-1 block text-sm font-medium tracking-normal text-[#475569]"
+            >{version ? `Proposal versi ${version}` : 'Proposal'}</span
+          >
+        </h1>
+      </div>
+    </header>
+    {@render notice()}
     {#key selected.id + ':' + selected.revision}<PaymentDetail payment={selected} />{/key}
-  {:else if filteredCampuses.length}<section class="rounded-xl border bg-white p-8 text-center">
-      <p>Belum ada pengajuan pencairan.</p>
-      {#if app.session?.role === 'admin'}<a
-          class="mt-3 inline-block text-blue-700"
-          href="/admin/proposal">Buka proposal untuk mengunggah PDF</a
-        >{/if}
-    </section>{/if}
+  {:else}
+    <h1 class="sr-only">Pencairan program</h1>
+    <div class="rounded-xl border border-[#dce7f7] bg-white pb-8 shadow-[0_10px_30px_#1a4d8f08]">
+      <Empty
+        title="Pengajuan tidak ditemukan"
+        description="Buka daftar pengajuan lalu pilih kartu kampus yang dituju."
+        icon="payments"
+      />
+      <div class="-mt-8 flex justify-center">
+        <Button variant="secondary" size="sm" icon="back" href={backHref}>Semua pengajuan</Button>
+      </div>
+    </div>
+  {/if}
+{:else}
+  <PaymentDirectory {notice} />
 {/if}

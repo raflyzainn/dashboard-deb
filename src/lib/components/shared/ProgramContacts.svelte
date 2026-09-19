@@ -1,163 +1,45 @@
 <script lang="ts">
+  // Program profile: every part is shown read only first and switches to a form through its own "Ubah" button.
   import type { ProgramProfile } from '$lib/types';
   import { app } from '$lib/state.svelte';
-  import { dataService } from '$lib/data/service';
-  import Icon from '$lib/components/ui/Icon.svelte';
+  import ContactSection from './profile/ContactSection.svelte';
+  import LocationSection from './profile/LocationSection.svelte';
+  import ProgramInfoSection from './profile/ProgramInfoSection.svelte';
+  import DescriptionSection from './profile/DescriptionSection.svelte';
+
   let {
     program,
     campusId,
-    readOnly = false,
-    floating = false
+    readOnly = false
   }: {
     program?: ProgramProfile;
     campusId: string;
     readOnly?: boolean;
-    floating?: boolean;
   } = $props();
-  const contacts = [
+
+  const GROUPS = [
     ['mentor', 'Mentor'],
     ['coordinator', 'Koordinator PFS 12'],
     ['localHero', 'Local hero']
   ] as const;
-  const details = [
-    ['subholding', 'Subholding'],
-    ['operatingUnit', 'Unit operasi Pertamina terdekat'],
-    ['currentClass', 'Kategori kelas saat ini'],
-    ['targetClass', 'Target kategori kelas'],
-    ['actionPlanTemplate', 'Template rencana aksi'],
-    ['replicationVillage', 'Desa replikasi'],
-    ['sourceStatus', 'Status pada sumber'],
-    ['description', 'Deskripsi program'],
-    ['budget', 'Estimasi RAB'],
-    ['address', 'Alamat program'],
-    ['mapUrl', 'Tautan Google Maps'],
-    ['coordinates', 'Koordinat lokasi'],
-    ['province', 'Provinsi']
-  ] as const;
-  type Field = (typeof contacts)[number][0] | (typeof details)[number][0];
-  let drafts = $state<Partial<Record<Field, string>>>({});
-  let saving = $state(false);
-  let message = $state('');
-  let identity = $state('');
-  $effect(() => {
-    if (identity !== campusId) {
-      identity = campusId;
-      drafts = {};
-      message = '';
-    }
-  });
-  const value = (key: Field) => drafts[key] ?? String(program?.[key] ?? '');
-  const dirty = $derived(Object.keys(drafts).length > 0);
-  function edit(key: Field, input: string) {
-    drafts[key] = input;
-    message = '';
-  }
-  async function save() {
-    if (saving || readOnly || !dirty) return;
-    const values = { ...drafts },
-      selected = campusId;
-    saving = true;
-    const saved = await app.mutate(
-      () => dataService.updateProgram(selected, values),
-      'Data program tersimpan.'
-    );
-    if (selected === campusId && saved && !app.stale) {
-      for (const key of Object.keys(values) as Field[])
-        if (drafts[key] === values[key]) delete drafts[key];
-      drafts = { ...drafts };
-      message = 'Perubahan tersimpan.';
-    }
-    saving = false;
-  }
+  const canEdit = $derived(!readOnly && !app.readOnly);
 </script>
 
-<section class="mt-[18px]" aria-label="Pendamping dan kontak program">
-  <h3 class="m-0 mb-[10px] text-[13px] font-[650] text-[color:var(--navy)]">
-    Pendamping dan kontak program
-  </h3>
-  <p class="mb-[12px] text-[11px] leading-[1.7] text-[#617a9a]">
-    Data awal mengikuti Excel. Lengkapi atau perbarui isian, lalu simpan perubahan.
-  </p>
-  <form
-    onsubmit={(event) => {
-      event.preventDefault();
-      void save();
-    }}
-  >
-    <div class="grid grid-cols-3 gap-[12px] max-[900px]:grid-cols-1">
-      {#each contacts as [key, label]}
-        <label class="block min-w-0 rounded-[9px] border border-[#b9d9f5] bg-white p-[14px]">
-          <span class="text-[11px] font-[650] text-[color:var(--navy)]">{label}</span>
-          <textarea
-            aria-label={label}
-            class="mt-[8px] block min-h-[150px] w-full resize-y rounded-[7px] border border-[#9ecbf1] bg-white p-[10px] text-[12px] leading-[1.8] text-[#244568] focus:border-[#1681df] focus:outline-2 focus:outline-[#b9d9f5] disabled:bg-[#f7fbff]"
-            rows="6"
-            maxlength="10000"
-            value={value(key)}
-            oninput={(event) => edit(key, event.currentTarget.value)}
-            disabled={readOnly || saving}></textarea>
-        </label>
-      {/each}
-    </div>
-    <section
-      class="mt-[12px] rounded-[9px] border border-[#dce9f7] p-[14px] text-[11px] text-[#244568]"
-    >
-      <h3 class="m-0 text-[12px] font-[650]">Informasi rencana aksi lainnya</h3>
-      <div class="mt-[12px] grid grid-cols-2 gap-[12px] max-[700px]:grid-cols-1">
-        {#each details as [key, label]}
-          <label class="block min-w-0">
-            <span class="font-[650]">{label}</span>
-            {#if key === 'description'}<span class="mt-1 block text-[11px] text-slate-500"
-                >Tulis satu poin per baris; akan ditampilkan sebagai daftar.</span
-              >{/if}
-            <textarea
-              aria-label={label}
-              class="mt-[6px] block w-full resize-y rounded-[7px] border border-[#9ecbf1] bg-white p-[10px] text-[12px] leading-[1.8] text-[#244568] focus:border-[#1681df] focus:outline-2 focus:outline-[#b9d9f5] disabled:bg-[#f7fbff]"
-              rows={key === 'description' ? 6 : 2}
-              maxlength="10000"
-              value={value(key)}
-              oninput={(event) => edit(key, event.currentTarget.value)}
-              disabled={readOnly || saving}></textarea>
-          </label>
+<!-- Another campus starts from fresh sections, so no draft carries over. -->
+{#key campusId}
+  <div class="space-y-5">
+    <section class="@container" aria-label="Pendamping dan kontak program">
+      <h3 class="m-0 text-[16px] font-bold text-[#0d234c]">Pendamping dan kontak program</h3>
+      <p class="m-0 mt-1 text-[13px] leading-[1.55] text-[#475569]">Orang yang dapat dihubungi untuk program ini.</p>
+      <!-- Three columns once every card is wide enough to keep its title and button on one row. -->
+      <div class="mt-3 grid items-start gap-4 @[940px]:grid-cols-3">
+        {#each GROUPS as [field, title]}
+          <ContactSection {field} {title} value={program?.[field]} {campusId} {canEdit} />
         {/each}
       </div>
     </section>
-    <div
-      class="mt-[14px] flex flex-wrap items-center gap-[12px]"
-      class:sticky={floating}
-      class:bottom-3={floating}
-      class:z-20={floating}
-      class:rounded-xl={floating}
-      class:border={floating}
-      class:border-blue-100={floating}
-      class:bg-white={floating}
-      class:p-4={floating}
-      class:shadow-xl={floating}
-    >
-      {#if floating}<span
-          class="flex size-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-700"
-          aria-hidden="true"><Icon name={saving ? 'clock' : 'save'} size={17} /></span
-        >
-        <div class="min-w-0 flex-1">
-          <strong class="block text-[12px] text-[#17365f]">Simpan Profil Program</strong>
-          <span class="text-[11px] text-[#617a9a]"
-            >{saving
-              ? 'Menyimpan perubahan...'
-              : dirty
-                ? 'Ada perubahan yang belum disimpan.'
-                : 'Semua perubahan sudah tersimpan.'}</span
-          >
-        </div>{/if}
-      {#if !readOnly}<button
-          class="rounded-[8px] bg-[#086bd6] px-[18px] py-[11px] text-[12px] font-[650] text-white hover:bg-[#0758b2] disabled:cursor-not-allowed disabled:opacity-50"
-          type="submit"
-          disabled={!dirty || saving || app.busy}
-          >{saving ? 'Menyimpan...' : 'Simpan data program'}</button
-        >{/if}
-      {#if dirty && !floating}<span class="text-[11px] text-[#986611]"
-          >Ada perubahan belum disimpan.</span
-        >{/if}
-      {#if message}<span class="text-[11px] text-[#17753c]" role="status">{message}</span>{/if}
-    </div>
-  </form>
-</section>
+    <LocationSection {program} {campusId} {canEdit} />
+    <ProgramInfoSection {program} {campusId} {canEdit} />
+    <DescriptionSection value={program?.description} {campusId} {canEdit} />
+  </div>
+{/key}

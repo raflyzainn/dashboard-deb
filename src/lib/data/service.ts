@@ -40,7 +40,7 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
   const session = (): Promise<SessionResponse> => request('/api/session', response => response.json());
   const navigation = (): Promise<NavigationData> => request('/api/navigation', response => response.json());
   async function page(input: PageRequest): Promise<PageResponse> {
-    if (input.view === 'masters' || input.view === 'guide') return { data: {}, loadedAt: new Date().toISOString() };
+    if (input.view === 'masters' || input.view === 'guide' || input.view === 'static') return { data: {}, loadedAt: new Date().toISOString() };
     const params = new URLSearchParams();
     if (input.period !== undefined) params.set('period', input.period);
     if (input.campus) params.set('campus', input.campus);
@@ -112,8 +112,25 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
       } while (ids === undefined && more);
     }
   };
-  return { ...service, selectAccount, session, navigation, page, async accounts(): Promise<PreviewAccount[]> {
+  // Plain JSON helpers for the modules built on the real backend (users, pencairan, audit).
+  const send = <T,>(url: string, method: string, body?: object | FormData): Promise<T> => request<T>(url, response => response.json(), {
+    method, body: body instanceof FormData ? body : body === undefined ? undefined : JSON.stringify(body),
+    headers: body instanceof FormData || body === undefined ? {} : { 'Content-Type': 'application/json' }
+  });
+  const api = {
+    get: <T,>(url: string) => request<T>(url, response => response.json()),
+    post: <T,>(url: string, body?: object | FormData) => send<T>(url, 'POST', body),
+    patch: <T,>(url: string, body?: object) => send<T>(url, 'PATCH', body),
+    del: <T,>(url: string, body?: object) => send<T>(url, 'DELETE', body),
+    blob: (url: string) => request(url, response => response.blob())
+  };
+  const unavailable = () => Promise.reject(new DataReadError(404, 'Fitur ini belum tersedia pada sistem produksi.'));
+  const legacy = { updateReadiness: unavailable, updateIndicatorTarget: unavailable, commentProposal: unavailable, createPayment: unavailable, paymentAction: unavailable,
+    uploadPaymentDocument: unavailable, reviewPaymentDocument: unavailable, addPaymentFeedback: unavailable, savePaymentKpi: unavailable, exportPayment: unavailable,
+    updateProgram: (campusId: string, values: Record<string, unknown>) => done(write('/api/campuses/' + idPath(campusId) + '/program', 'PATCH', values)) };
+  return { ...service, ...legacy, api, selectAccount, session, navigation, page, async accounts(): Promise<PreviewAccount[]> {
     return request('/api/dev/accounts', async response => (await response.json()).accounts);
   } };
 }
-export const dataService = createDemoService();
+export const dataService = createHttpService();
+export { createDemoService };

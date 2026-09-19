@@ -145,35 +145,35 @@
 <svelte:head><title>Peta Persebaran · Digitalisasi DEB</title></svelte:head>
 
 <div
-  class="flex items-center justify-between gap-y-[20px] gap-x-[20px] mb-[27px] [&_p]:text-[12px] [&_p]:text-[#637796] [&_p]:mt-[8px] max-[900.01px]:[&_h1]:text-[24px] max-[700.01px]:[&&]:items-start max-[700.01px]:gap-y-[15px] max-[700.01px]:gap-x-[15px] max-[700.01px]:mb-[22px] max-[700.01px]:flex-wrap max-[700.01px]:[&_h1]:text-[23px] max-[700.01px]:[&_p]:text-[12px] max-[700.01px]:[&_p]:leading-[1.9] max-[700.01px]:[&_p]:max-w-[340px] max-[700.01px]:[&_.period]:hidden page-heading"
+  class="flex items-center justify-between gap-y-[20px] gap-x-[20px] mb-[27px] [&_p]:text-[14px] [&_p]:text-[#637796] [&_p]:mt-[8px] max-[900.01px]:[&_h1]:text-[24px] max-[700.01px]:[&&]:items-start max-[700.01px]:gap-y-[15px] max-[700.01px]:gap-x-[15px] max-[700.01px]:mb-[22px] max-[700.01px]:flex-wrap max-[700.01px]:[&_h1]:text-[23px] max-[700.01px]:[&_p]:text-[14px] max-[700.01px]:[&_p]:leading-[1.65] max-[700.01px]:[&_p]:max-w-[340px] max-[700.01px]:[&_.period]:hidden page-heading"
 >
   <div>
     <span
-      class="block text-[10px] tracking-[1.9px] font-[750] text-[#3975b7] mb-[9px] max-[700.01px]:text-[8px] eyebrow"
+      class="block text-[12px] tracking-[0.06em] font-[700] text-[#3975b7] mb-[9px] max-[700.01px]:text-[10px] eyebrow"
       >PANDANGAN WILAYAH ADMIN</span
     >
     <h1
-      class="font-[650] text-[color:var(--navy)] text-[29px] tracking-[-1.15px] leading-[1.3] m-[0px]"
+      class="font-[700] text-[color:var(--navy)] text-[29px] tracking-[-0.01em] leading-[1.3] m-[0px]"
     >
       Peta Persebaran Kampus
     </h1>
-    <p class="leading-[1.8] m-[0px]">
+    <p class="leading-[1.6] m-[0px]">
       Lihat jangkauan {app.data!.campuses.length} kampus mitra dan progres simulasi program DEB di berbagai
       wilayah Indonesia.
     </p>
   </div>
   <span
-    class="[&&]:flex [&&]:items-center [&&]:gap-y-[7px] [&&]:gap-x-[7px] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_255,_255)] text-[#52739b]! [&&]:text-[11px] [&&]:px-[13px] [&&]:py-[9px] [&&]:border-[1px] [&&]:border-solid border-[color:rgb(210,_227,_245)]! [&&]:rounded-[999px] max-[700.01px]:[&&]:[align-self:flex-start] readonly"
+    class="[&&]:flex [&&]:items-center [&&]:gap-y-[7px] [&&]:gap-x-[7px] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_255,_255)] text-[#52739b]! [&&]:text-[13px] [&&]:px-[13px] [&&]:py-[9px] [&&]:border-[1px] [&&]:border-solid border-[color:rgb(210,_227,_245)]! [&&]:rounded-[999px] max-[700.01px]:[&&]:[align-self:flex-start] readonly"
     ><Icon name="eye" size={15} />Hanya baca</span
   >
 </div>
 
-<p role="status" class="leading-[1.8] m-[0px] map-missing">
+<p role="status" class="leading-[1.6] m-[0px] map-missing">
   {app.data!.campuses.length - allPoints.length} kampus belum dapat dipetakan karena koordinat kosong
   atau di luar area peta.
 </p>
 <section
-  class="[&_small]:text-[#6680a0]! [&_p]:text-[#6680a0]! [&_strong]:text-[#183b68]! [&&]:grid [&&]:grid-cols-[repeat(4,_minmax(0,_1fr))] [&&]:gap-y-[15px] [&&]:gap-x-[15px] [&&]:mb-[22px] max-[1150.01px]:[&&]:grid-cols-[repeat(2,_minmax(0,_1fr))] max-[700.01px]:[&&]:gap-y-[8px] max-[700.01px]:[&&]:gap-x-[8px] map-stats"
+  class="[&_small]:text-[#475569]! [&_p]:text-[#475569]! [&_strong]:text-[#183b68]! [&&]:grid [&&]:grid-cols-[repeat(4,_minmax(0,_1fr))] [&&]:gap-y-[15px] [&&]:gap-x-[15px] [&&]:mb-[22px] max-[1150.01px]:[&&]:grid-cols-[repeat(2,_minmax(0,_1fr))] max-[700.01px]:[&&]:gap-y-[8px] max-[700.01px]:[&&]:gap-x-[8px] map-stats"
   aria-label="Ringkasan persebaran"
 >
   <article
@@ -184,16 +184,16 @@
       ><Icon name="campuses" /></span
     >
     <div>
-      <small class="[&&]:text-[10px] [&&]:text-[#74826f] leading-[1.7] [&&]:block"
+      <small class="[&&]:text-[12px] [&&]:text-[#475569] leading-[1.55] [&&]:block"
         >Kampus ditampilkan</small
       ><strong
-        class="font-[650] [&&]:flex [&&]:items-baseline [&&]:gap-y-[7px] [&&]:gap-x-[7px] [&&]:text-[26px] [&&]:mt-[5px] [&&]:mb-[4px] [&&]:mx-[0px] max-[700.01px]:[&&]:text-[21px]"
-        >{visible.length}<span class="[&&]:text-[10px] [&&]:font-[500] [&&]:text-[#71806b]"
+        class="font-[600] [&&]:flex [&&]:items-baseline [&&]:gap-y-[7px] [&&]:gap-x-[7px] [&&]:text-[26px] [&&]:mt-[5px] [&&]:mb-[4px] [&&]:mx-[0px] max-[700.01px]:[&&]:text-[21px]"
+        >{visible.length}<span class="[&&]:text-[12px] [&&]:font-[500] [&&]:text-[#475569]"
           >dari {app.data!.campuses.length}</span
         ></strong
       >
       <p
-        class="leading-[1.8] [&&]:text-[9px] [&&]:text-[#84917e] m-[0px] max-[700.01px]:[&&]:hidden"
+        class="leading-[1.6] [&&]:text-[11px] [&&]:text-[#64748b] m-[0px] max-[700.01px]:[&&]:hidden"
       >
         {region}
       </p>
@@ -207,16 +207,16 @@
       ><Icon name="sebaran" /></span
     >
     <div>
-      <small class="[&&]:text-[10px] [&&]:text-[#74826f] leading-[1.7] [&&]:block"
+      <small class="[&&]:text-[12px] [&&]:text-[#475569] leading-[1.55] [&&]:block"
         >Provinsi terjangkau</small
       ><strong
-        class="font-[650] [&&]:flex [&&]:items-baseline [&&]:gap-y-[7px] [&&]:gap-x-[7px] [&&]:text-[26px] [&&]:mt-[5px] [&&]:mb-[4px] [&&]:mx-[0px] max-[700.01px]:[&&]:text-[21px]"
-        >{provinceCount}<span class="[&&]:text-[10px] [&&]:font-[500] [&&]:text-[#71806b]"
+        class="font-[600] [&&]:flex [&&]:items-baseline [&&]:gap-y-[7px] [&&]:gap-x-[7px] [&&]:text-[26px] [&&]:mt-[5px] [&&]:mb-[4px] [&&]:mx-[0px] max-[700.01px]:[&&]:text-[21px]"
+        >{provinceCount}<span class="[&&]:text-[12px] [&&]:font-[500] [&&]:text-[#475569]"
           >provinsi</span
         ></strong
       >
       <p
-        class="leading-[1.8] [&&]:text-[9px] [&&]:text-[#84917e] m-[0px] max-[700.01px]:[&&]:hidden"
+        class="leading-[1.6] [&&]:text-[11px] [&&]:text-[#64748b] m-[0px] max-[700.01px]:[&&]:hidden"
       >
         Lokasi kampus pada filter aktif
       </p>
@@ -226,19 +226,19 @@
     class="[&&]:flex [&&]:items-start [&&]:gap-y-[13px] [&&]:gap-x-[13px] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_255,_255)] [&&]:p-[20px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(223,_231,_218)] [&&]:rounded-[12px] max-[700.01px]:[&&]:gap-y-[9px] max-[700.01px]:[&&]:gap-x-[9px] max-[700.01px]:[&&]:p-[13px]"
   >
     <span
-      class="[&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:w-[38px] [&&]:h-[38px] [&&&]:[background-image:initial] [&&&]:[background-color:rgb(251,_240,_217)] [&&&]:text-[#a37523] [&&]:shrink-0 [&&]:rounded-[10px] max-[700.01px]:[&&]:w-[32px] max-[700.01px]:[&&]:h-[32px] max-[700.01px]:[&>svg]:w-[17px] max-[700.01px]:[&>svg]:h-[17px] stat-icon amber"
+      class="[&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:w-[38px] [&&]:h-[38px] [&&&]:[background-image:initial] [&&&]:[background-color:rgb(251,_240,_217)] [&&&]:text-[#966c20] [&&]:shrink-0 [&&]:rounded-[10px] max-[700.01px]:[&&]:w-[32px] max-[700.01px]:[&&]:h-[32px] max-[700.01px]:[&>svg]:w-[17px] max-[700.01px]:[&>svg]:h-[17px] stat-icon amber"
       ><Icon name="target" /></span
     >
     <div>
-      <small class="[&&]:text-[10px] [&&]:text-[#74826f] leading-[1.7] [&&]:block"
+      <small class="[&&]:text-[12px] [&&]:text-[#475569] leading-[1.55] [&&]:block"
         >Rata-rata progres</small
       ><strong
-        class="font-[650] [&&]:flex [&&]:items-baseline [&&]:gap-y-[7px] [&&]:gap-x-[7px] [&&]:text-[26px] [&&]:mt-[5px] [&&]:mb-[4px] [&&]:mx-[0px] max-[700.01px]:[&&]:text-[21px]"
-        >{number(average)}<span class="[&&]:text-[10px] [&&]:font-[500] [&&]:text-[#71806b]">%</span
+        class="font-[600] [&&]:flex [&&]:items-baseline [&&]:gap-y-[7px] [&&]:gap-x-[7px] [&&]:text-[26px] [&&]:mt-[5px] [&&]:mb-[4px] [&&]:mx-[0px] max-[700.01px]:[&&]:text-[21px]"
+        >{number(average)}<span class="[&&]:text-[12px] [&&]:font-[500] [&&]:text-[#475569]">%</span
         ></strong
       >
       <p
-        class="leading-[1.8] [&&]:text-[9px] [&&]:text-[#84917e] m-[0px] max-[700.01px]:[&&]:hidden"
+        class="leading-[1.6] [&&]:text-[11px] [&&]:text-[#64748b] m-[0px] max-[700.01px]:[&&]:hidden"
       >
         Perhitungan data simulasi
       </p>
@@ -252,15 +252,15 @@
       ><Icon name="check" /></span
     >
     <div>
-      <small class="[&&]:text-[10px] [&&]:text-[#74826f] leading-[1.7] [&&]:block"
+      <small class="[&&]:text-[12px] [&&]:text-[#475569] leading-[1.55] [&&]:block"
         >Progres tertinggi</small
       ><strong
-        class="font-[650] [&&]:flex [&&]:items-baseline [&&]:gap-y-[7px] [&&]:gap-x-[7px] [&&]:text-[26px] [&&]:mt-[5px] [&&]:mb-[4px] [&&]:mx-[0px] max-[700.01px]:[&&]:text-[21px]"
-        >{reached}<span class="[&&]:text-[10px] [&&]:font-[500] [&&]:text-[#71806b]">kampus</span
+        class="font-[600] [&&]:flex [&&]:items-baseline [&&]:gap-y-[7px] [&&]:gap-x-[7px] [&&]:text-[26px] [&&]:mt-[5px] [&&]:mb-[4px] [&&]:mx-[0px] max-[700.01px]:[&&]:text-[21px]"
+        >{reached}<span class="[&&]:text-[12px] [&&]:font-[500] [&&]:text-[#475569]">kampus</span
         ></strong
       >
       <p
-        class="leading-[1.8] [&&]:text-[9px] [&&]:text-[#84917e] m-[0px] max-[700.01px]:[&&]:hidden"
+        class="leading-[1.6] [&&]:text-[11px] [&&]:text-[#64748b] m-[0px] max-[700.01px]:[&&]:hidden"
       >
         Progres simulasi minimal 70%
       </p>
@@ -275,22 +275,22 @@
   <div
     class="max-[1150.01px]:[&&]:[grid-column-start:1] max-[1150.01px]:[&&]:[grid-column-end:-1] max-[700.01px]:[&&]:[grid-column-start:auto] max-[700.01px]:[&&]:[grid-column-end:auto]"
   >
-    <strong class="font-[650] [&&]:text-[13px]">Jelajahi persebaran</strong>
-    <p class="[&&]:mt-[5px] mb-[0px] leading-[1.8] [&&]:text-[10px] [&&]:text-[#778473] mx-[0px]">
+    <strong class="font-[600] [&&]:text-[14px]">Jelajahi persebaran</strong>
+    <p class="[&&]:mt-[5px] mb-[0px] leading-[1.6] [&&]:text-[12px] [&&]:text-[#475569] mx-[0px]">
       Filter akan memperbarui titik peta dan ringkasan wilayah.
     </p>
   </div>
   <label
-    class="flex items-center [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#7b94b4] grow shrink [flex-basis:0%] min-w-[200px] [&&&]:w-[100%] px-[12px] py-[0px] border-[1px] border-solid border-[color:rgb(211,_226,_243)] rounded-[7px] [&_input]:[background-image:initial] [&_input]:[background-color:transparent] [&_input]:min-w-[0] [&_input]:w-[100%] [&_input]:text-[11px] [&_input]:p-[10px] [&_input]:border-[0px] [&_input]:border-none [&_input]:border-[color:currentcolor] [&:focus-within]:[outline-color:#7fc1ff] [&:focus-within]:[outline-style:solid] [&:focus-within]:[outline-width:2px] [&_input:focus]:[outline-color:initial] [&_input:focus]:[outline-style:none] [&_input:focus]:[outline-width:initial] search-field"
+    class="flex items-center [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#64748b] grow shrink [flex-basis:0%] min-w-[200px] [&&&]:w-[100%] px-[12px] py-[0px] border-[1px] border-solid border-[color:rgb(211,_226,_243)] rounded-[7px] [&_input]:[background-image:initial] [&_input]:[background-color:transparent] [&_input]:min-w-[0] [&_input]:w-[100%] [&_input]:text-[13px] [&_input]:p-[10px] [&_input]:border-[0px] [&_input]:border-none [&_input]:border-[color:currentcolor] [&:focus-within]:[outline-color:#7fc1ff] [&:focus-within]:[outline-style:solid] [&:focus-within]:[outline-width:2px] [&_input:focus]:[outline-color:initial] [&_input:focus]:[outline-style:none] [&_input:focus]:[outline-width:initial] search-field"
     ><Icon name="search" size={17} /><input
-      class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#17365f] max-w-[100%] [&&]:min-w-[0] px-[12px] py-[11px] border-[1px] border-solid border-[color:rgb(212,_225,_241)] rounded-[7px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(39,_144,_232)] [&::placeholder]:text-[#8ea1bc]"
+      class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#17365f] max-w-[100%] [&&]:min-w-[0] px-[12px] py-[11px] border-[1px] border-solid border-[color:rgb(212,_225,_241)] rounded-[7px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(39,_144,_232)] [&::placeholder]:text-[#64748b]"
       aria-label="Cari kampus di peta"
       placeholder="Cari kampus, singkatan, atau provinsi…"
       bind:value={search}
     /></label
   >
   <select
-    class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] text-[11px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#17365f] max-w-[290px] min-h-[37px] px-[12px] py-[11px] border-[1px] border-solid border-[color:rgb(212,_225,_241)] rounded-[7px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(39,_144,_232)]"
+    class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] text-[13px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#17365f] max-w-[290px] min-h-[37px] px-[12px] py-[11px] border-[1px] border-solid border-[color:rgb(212,_225,_241)] rounded-[7px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(39,_144,_232)]"
     aria-label="Filter wilayah peta"
     bind:value={region}
     >{#each regions as item}<option value={item}>{item}</option>{/each}</select
@@ -301,23 +301,23 @@
   class="[&&]:grid [&&]:grid-cols-[minmax(0,_1.8fr)_minmax(270px,_0.72fr)] [&&]:gap-y-[22px] [&&]:gap-x-[22px] [&&]:[align-items:start] max-[1150.01px]:[&&]:grid-cols-[1fr] map-layout"
 >
   <section
-    class="[background-image:initial] [background-color:white] [&&]:min-w-[0] overflow-x-hidden overflow-y-hidden [box-shadow:0_10px_30px_#1a4d8f08] border-[1px] border-solid border-[color:rgb(220,_231,_247)] rounded-[11px] [&:hover]:border-[color:rgb(210,_226,_245)] [&_header_p]:text-[#6680a0]! [&_h2]:text-[#183b68]! [&_header>span]:text-[#3970aa]! [&_header>span]:[background-image:initial]! [&_header>span]:[background-color:rgb(234,_243,_255)]! panel map-panel"
+    class="[background-image:initial] [background-color:white] [&&]:min-w-[0] overflow-x-hidden overflow-y-hidden [box-shadow:0_10px_30px_#1a4d8f08] border-[1px] border-solid border-[color:rgb(220,_231,_247)] rounded-[11px] [&:hover]:border-[color:rgb(210,_226,_245)] [&_header_p]:text-[#475569]! [&_h2]:text-[#183b68]! [&_header>span]:text-[#3970aa]! [&_header>span]:[background-image:initial]! [&_header>span]:[background-color:rgb(234,_243,_255)]! panel map-panel"
   >
     <header
       class="[&&]:flex [&&]:items-start [&&]:justify-between [&&]:gap-y-[12px] [&&]:gap-x-[12px] [&&]:[border-bottom-width:1px] [&&]:[border-bottom-style:solid] [&&]:[border-bottom-color:rgb(231,_236,_227)] [&&]:px-[22px] [&&]:py-[20px] max-[700.01px]:[&&]:p-[17px]"
     >
       <div>
-        <h2 class="font-[650] text-[color:var(--navy)] [&&]:text-[15px] tracking-[-0.45px] m-[0px]">
+        <h2 class="font-[600] text-[color:var(--navy)] [&&]:text-[16px] tracking-[-0.01em] m-[0px]">
           Sebaran geografis
         </h2>
         <p
-          class="[&&]:mt-[5px] mb-[0px] leading-[1.8] [&&]:text-[10px] [&&]:text-[#74816f] mx-[0px]"
+          class="[&&]:mt-[5px] mb-[0px] leading-[1.6] [&&]:text-[12px] [&&]:text-[#475569] mx-[0px]"
         >
           Ketuk titik untuk memilih kampus. Gunakan +/− untuk zoom, lalu geser peta.
         </p>
       </div>
       <span
-        class="[&&]:text-[10px] [&&]:text-[#6a7b66] [&&]:[background-image:initial] [&&]:[background-color:rgb(240,_245,_236)] [&&]:px-[10px] [&&]:py-[7px] [&&]:rounded-[999px]"
+        class="[&&]:text-[12px] [&&]:text-[#6a7b66] [&&]:[background-image:initial] [&&]:[background-color:rgb(240,_245,_236)] [&&]:px-[10px] [&&]:py-[7px] [&&]:rounded-[999px]"
         >{visible.length} kampus</span
       >
     </header>
@@ -341,20 +341,20 @@
         aria-label="Kontrol pembesaran peta"
       >
         <button
-          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[15px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#456342] [&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:h-[40px] [&&]:min-w-[40px] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[7px] [&:disabled]:cursor-default [&:disabled]:opacity-[0.35] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(237,_244,_232)]"
+          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[16px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#456342] [&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:h-[40px] [&&]:min-w-[40px] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[7px] [&:disabled]:cursor-default [&:disabled]:opacity-[0.35] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(237,_244,_232)]"
           aria-label="Perkecil peta"
           disabled={zoom <= 1}
           onclick={() => setZoom(zoom - 0.25)}>−</button
         ><output
-          class="[&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:h-[40px] [&&]:min-w-[48px] [&&]:[border-top-width:0px] [&&]:[border-right-width:1px] [&&]:[border-bottom-width:0px] [&&]:[border-left-width:1px] [&&]:[border-top-style:none] [&&]:[border-right-style:solid] [&&]:[border-bottom-style:none] [&&]:[border-left-style:solid] [&&]:[border-top-color:currentcolor] [&&]:[border-right-color:rgb(226,_233,_221)] [&&]:[border-bottom-color:currentcolor] [&&]:[border-left-color:rgb(226,_233,_221)] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:text-[#456342] [&&]:text-[9px]"
+          class="[&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:h-[40px] [&&]:min-w-[48px] [&&]:[border-top-width:0px] [&&]:[border-right-width:1px] [&&]:[border-bottom-width:0px] [&&]:[border-left-width:1px] [&&]:[border-top-style:none] [&&]:[border-right-style:solid] [&&]:[border-bottom-style:none] [&&]:[border-left-style:solid] [&&]:[border-top-color:currentcolor] [&&]:[border-right-color:rgb(226,_233,_221)] [&&]:[border-bottom-color:currentcolor] [&&]:[border-left-color:rgb(226,_233,_221)] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:text-[#456342] [&&]:text-[11px]"
           aria-label="Tingkat pembesaran">{Math.round(zoom * 100)}%</output
         ><button
-          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[15px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#456342] [&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:h-[40px] [&&]:min-w-[40px] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[7px] [&:disabled]:cursor-default [&:disabled]:opacity-[0.35] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(237,_244,_232)]"
+          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[16px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#456342] [&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:h-[40px] [&&]:min-w-[40px] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[7px] [&:disabled]:cursor-default [&:disabled]:opacity-[0.35] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(237,_244,_232)]"
           aria-label="Perbesar peta"
           disabled={zoom >= 3}
           onclick={() => setZoom(zoom + 0.25)}>+</button
         ><button
-          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[15px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#456342] [&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:h-[40px] [&&]:min-w-[40px] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&&]:ml-[3px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[7px] [&:disabled]:cursor-default [&:disabled]:opacity-[0.35] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(237,_244,_232)] reset-zoom"
+          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[16px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#456342] [&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:h-[40px] [&&]:min-w-[40px] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&&]:ml-[3px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[7px] [&:disabled]:cursor-default [&:disabled]:opacity-[0.35] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(237,_244,_232)] reset-zoom"
           aria-label="Atur ulang pembesaran"
           disabled={zoom === 1 && panX === 0 && panY === 0}
           onclick={resetMap}><Icon name="reset" size={14} /></button
@@ -418,36 +418,36 @@
       >
         <div class="[&&]:flex [&&]:justify-between [&&]:items-center [&&]:mb-[9px] map-card-top">
           <span
-            class="[&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:min-w-[30px] [&&]:h-[30px] [background-image:initial]! [background-color:rgb(230,_242,_255)]! text-[#1768bd]! [&&]:text-[9px] [&&]:font-[700] [&&]:px-[7px] [&&]:py-[0px] [&&]:rounded-[8px] map-avatar"
+            class="[&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:min-w-[30px] [&&]:h-[30px] [background-image:initial]! [background-color:rgb(230,_242,_255)]! text-[#1768bd]! [&&]:text-[11px] [&&]:font-[700] [&&]:px-[7px] [&&]:py-[0px] [&&]:rounded-[8px] map-avatar"
             >{selected.initials}</span
           ><button
-            class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[20px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#70806b] [&&]:min-w-[44px] [&&]:min-h-[44px] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&:disabled]:cursor-pointer [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px]"
+            class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[20px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#475569] [&&]:min-w-[44px] [&&]:min-h-[44px] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&:disabled]:cursor-pointer [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px]"
             aria-label="Tutup detail titik"
             onclick={() => {
               selectedId = '';
             }}>×</button
           >
         </div>
-        <strong class="font-[650] [&&]:block [&&]:text-[12px] [&&]:leading-[1.6]"
+        <strong class="font-[600] [&&]:block [&&]:text-[14px] [&&]:leading-[1.6]"
           >{selected.name}</strong
         ><small
-          class="[&&]:text-[9px] [&&]:text-[#758170] leading-[1.7] [&&]:block [&&]:mt-[3px] [&&]:mb-[12px] [&&]:mx-[0px]"
+          class="[&&]:text-[11px] [&&]:text-[#475569] leading-[1.55] [&&]:block [&&]:mt-[3px] [&&]:mb-[12px] [&&]:mx-[0px]"
           >{selected.province} · {selected.island}</small
         >
         <div
-          class="flex items-center justify-between gap-y-[12px] gap-x-[12px] [&&&]:text-[10px] [&&&]:mb-[7px] row-between"
+          class="flex items-center justify-between gap-y-[12px] gap-x-[12px] [&&&]:text-[12px] [&&&]:mb-[7px] row-between"
         >
           <span>{progressBands[selected.band].label}</span><b>{number(selected.score)}%</b>
         </div>
         <Progress value={selected.score} label={`Progres ${selected.name}`} /><a
-          class="[-webkit-tap-highlight-color:transparent] [&&]:text-[#176f35] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] [&&]:flex [&&]:items-center [&&]:gap-y-[6px] [&&]:gap-x-[6px] [&&]:text-[10px] [&&]:font-[650] [&&]:mt-[12px] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px]"
+          class="[-webkit-tap-highlight-color:transparent] [&&]:text-[#176f35] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] [&&]:flex [&&]:items-center [&&]:gap-y-[6px] [&&]:gap-x-[6px] [&&]:text-[12px] [&&]:font-[600] [&&]:mt-[12px] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px]"
           href={`/admin/campuses/${selected.id}`}
           >Lihat detail kampus <Icon name="arrow" size={14} /></a
         >
       </article>
     {/if}
     <div
-      class="[&_button:hover]:[background-image:initial]! [&_button:hover]:[background-color:rgb(238,_246,_255)]! [&_button:hover]:border-[color:rgb(209,_229,_248)]! [&_button.active]:[background-image:initial]! [&_button.active]:[background-color:rgb(238,_246,_255)]! [&_button.active]:border-[color:rgb(209,_229,_248)]! [&_small]:text-[#6680a0]! [&_button]:text-[#183b68]! [&&]:grid [&&]:grid-cols-[repeat(4,_minmax(0,_1fr))] [&&]:gap-y-[9px] [&&]:gap-x-[9px] [&&]:px-[20px] [&&]:py-[16px] max-[700.01px]:[&&]:grid-cols-[repeat(2,_minmax(0,_1fr))] max-[700.01px]:[&&]:p-[12px] map-legend"
+      class="[&_button:hover]:[background-image:initial]! [&_button:hover]:[background-color:rgb(238,_246,_255)]! [&_button:hover]:border-[color:rgb(209,_229,_248)]! [&_button.active]:[background-image:initial]! [&_button.active]:[background-color:rgb(238,_246,_255)]! [&_button.active]:border-[color:rgb(209,_229,_248)]! [&_small]:text-[#475569]! [&_button]:text-[#183b68]! [&&]:grid [&&]:grid-cols-[repeat(4,_minmax(0,_1fr))] [&&]:gap-y-[9px] [&&]:gap-x-[9px] [&&]:px-[20px] [&&]:py-[16px] max-[700.01px]:[&&]:grid-cols-[repeat(2,_minmax(0,_1fr))] max-[700.01px]:[&&]:p-[12px] map-legend"
     >
       {#each Object.entries(progressBands) as [key, item]}<button
           class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [font-size:inherit] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#465d43] [&&]:flex [&&]:items-center [&&]:gap-y-[8px] [&&]:gap-x-[8px] [&&]:text-left [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:p-[8px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:transparent] [&&]:rounded-[8px] [&:disabled]:cursor-pointer [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:[background-image:initial] [&:hover]:[background-color:rgb(242,_246,_239)] [&:hover]:border-[color:rgb(216,_228,_209)] [&.active]:[background-image:initial] [&.active]:[background-color:rgb(242,_246,_239)] [&.active]:border-[color:rgb(216,_228,_209)]"
@@ -456,16 +456,16 @@
           ><i
             class="[&&]:w-[11px] [&&]:h-[11px] [&&]:[background-image:initial] [&&]:[background-color:var(--legend)] [&&]:shrink-0 [&&]:rounded-[50%]"
             style={`--legend:${item.color}`}
-          ></i><span class="[&&]:text-[9px]"
+          ></i><span class="[&&]:text-[11px]"
             >{item.label}<small
-              class="text-[11px] [&&]:text-[#82907d] leading-[1.7] [&&]:block [&&]:mt-[3px]"
+              class="text-[13px] [&&]:text-[#64748b] leading-[1.55] [&&]:block [&&]:mt-[3px]"
               >{item.short} · {allPoints.filter((point) => point.band === key).length} kampus</small
             ></span
           ></button
         >{/each}
     </div>
     <p
-      class="[&&]:mt-[0px] [&&]:mb-[18px] leading-[1.8] [&&]:flex [&&]:items-center [&&]:gap-y-[8px] [&&]:gap-x-[8px] [background-image:initial]! [background-color:rgb(245,_249,_255)]! text-[#5c789b]! [&&]:text-[9px] [&&]:px-[13px] [&&]:py-[11px] [&&]:mx-[20px] [&&]:rounded-[8px] max-[700.01px]:[&&]:mt-[0px] max-[700.01px]:[&&]:mb-[14px] max-[700.01px]:[&&]:leading-[1.6] max-[700.01px]:[&&]:mx-[12px] map-note"
+      class="[&&]:mt-[0px] [&&]:mb-[18px] leading-[1.6] [&&]:flex [&&]:items-center [&&]:gap-y-[8px] [&&]:gap-x-[8px] [background-image:initial]! [background-color:rgb(245,_249,_255)]! text-[#5c789b]! [&&]:text-[11px] [&&]:px-[13px] [&&]:py-[11px] [&&]:mx-[20px] [&&]:rounded-[8px] max-[700.01px]:[&&]:mt-[0px] max-[700.01px]:[&&]:mb-[14px] max-[700.01px]:[&&]:leading-[1.6] max-[700.01px]:[&&]:mx-[12px] map-note"
     >
       <Icon name="faq" size={15} />Setiap titik mewakili satu kampus. Garis tipis menghubungkan
       titik yang direnggangkan ke lokasi aslinya.
@@ -473,28 +473,28 @@
   </section>
 
   <aside
-    class="[background-image:initial] [background-color:white] [&&]:min-w-[0] overflow-x-hidden overflow-y-hidden [box-shadow:0_10px_30px_#1a4d8f08] border-[1px] border-solid border-[color:rgb(220,_231,_247)] rounded-[11px] [&:hover]:border-[color:rgb(210,_226,_245)] [&_header_p]:text-[#6680a0]! [&_h2]:text-[#183b68]! [&_header>span]:text-[#3970aa]! [&_header>span]:[background-image:initial]! [&_header>span]:[background-color:rgb(234,_243,_255)]! panel region-panel"
+    class="[background-image:initial] [background-color:white] [&&]:min-w-[0] overflow-x-hidden overflow-y-hidden [box-shadow:0_10px_30px_#1a4d8f08] border-[1px] border-solid border-[color:rgb(220,_231,_247)] rounded-[11px] [&:hover]:border-[color:rgb(210,_226,_245)] [&_header_p]:text-[#475569]! [&_h2]:text-[#183b68]! [&_header>span]:text-[#3970aa]! [&_header>span]:[background-image:initial]! [&_header>span]:[background-color:rgb(234,_243,_255)]! panel region-panel"
   >
     <header
       class="[&&]:flex [&&]:items-start [&&]:justify-between [&&]:gap-y-[12px] [&&]:gap-x-[12px] [&&]:[border-bottom-width:1px] [&&]:[border-bottom-style:solid] [&&]:[border-bottom-color:rgb(231,_236,_227)] [&&]:px-[22px] [&&]:py-[20px] max-[700.01px]:[&&]:p-[17px]"
     >
       <div>
-        <h2 class="font-[650] text-[color:var(--navy)] [&&]:text-[15px] tracking-[-0.45px] m-[0px]">
+        <h2 class="font-[600] text-[color:var(--navy)] [&&]:text-[16px] tracking-[-0.01em] m-[0px]">
           Ringkasan wilayah
         </h2>
         <p
-          class="[&&]:mt-[5px] mb-[0px] leading-[1.8] [&&]:text-[10px] [&&]:text-[#74816f] mx-[0px]"
+          class="[&&]:mt-[5px] mb-[0px] leading-[1.6] [&&]:text-[12px] [&&]:text-[#475569] mx-[0px]"
         >
           Dikelompokkan per pulau atau kepulauan.
         </p>
       </div>
       <span
-        class="[&&]:text-[10px] [&&]:text-[#6a7b66] [&&]:[background-image:initial] [&&]:[background-color:rgb(240,_245,_236)] [&&]:px-[10px] [&&]:py-[7px] [&&]:rounded-[999px]"
+        class="[&&]:text-[12px] [&&]:text-[#6a7b66] [&&]:[background-image:initial] [&&]:[background-color:rgb(240,_245,_236)] [&&]:px-[10px] [&&]:py-[7px] [&&]:rounded-[999px]"
         >{summaries.length} wilayah</span
       >
     </header>
     <div
-      class="[&_button:hover]:[background-image:initial]! [&_button:hover]:[background-color:rgb(238,_246,_255)]! [&_button:hover]:border-[color:rgb(209,_229,_248)]! [&_button.active]:[background-image:initial]! [&_button.active]:[background-color:rgb(238,_246,_255)]! [&_button.active]:border-[color:rgb(209,_229,_248)]! [&_small]:text-[#6680a0]! [&_button]:text-[#183b68]! [&&]:p-[8px] max-[1150.01px]:[&&]:grid max-[1150.01px]:[&&]:grid-cols-[repeat(2,_minmax(0,_1fr))] max-[700.01px]:[&&]:grid-cols-[1fr] region-list"
+      class="[&_button:hover]:[background-image:initial]! [&_button:hover]:[background-color:rgb(238,_246,_255)]! [&_button:hover]:border-[color:rgb(209,_229,_248)]! [&_button.active]:[background-image:initial]! [&_button.active]:[background-color:rgb(238,_246,_255)]! [&_button.active]:border-[color:rgb(209,_229,_248)]! [&_small]:text-[#475569]! [&_button]:text-[#183b68]! [&&]:p-[8px] max-[1150.01px]:[&&]:grid max-[1150.01px]:[&&]:grid-cols-[repeat(2,_minmax(0,_1fr))] max-[700.01px]:[&&]:grid-cols-[1fr] region-list"
     >
       {#each summaries as row}<button
           class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [font-size:inherit] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#385038] [&&]:w-[100%] [&&]:grid [&&]:grid-cols-[35px_minmax(0,_1fr)_auto] [&&]:items-center [&&]:gap-y-[10px] [&&]:gap-x-[10px] [&&]:text-left [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:p-[12px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:transparent] [&&]:rounded-[9px] [&:disabled]:cursor-pointer [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:[background-image:initial] [&:hover]:[background-color:rgb(241,_246,_237)] [&:hover]:border-[color:rgb(217,_229,_210)] [&.active]:[background-image:initial] [&.active]:[background-color:rgb(241,_246,_237)] [&.active]:border-[color:rgb(217,_229,_210)]"
@@ -504,19 +504,19 @@
             class="[&&]:w-[32px] [&&]:h-[32px] [&&]:grid [&&]:items-center [&&]:[justify-items:center] [background-image:initial]! [background-color:rgb(230,_242,_255)]! text-[#1768bd]! [&&]:rounded-[8px] region-mark"
             ><Icon name="sebaran" size={17} /></span
           ><span
-            ><strong class="font-[650] [&&]:text-[11px]">{row.island}</strong><small
-              class="[&&]:text-[9px] [&&]:text-[#7b8976] leading-[1.7] [&&]:block [&&]:mt-[4px]"
+            ><strong class="font-[600] [&&]:text-[13px]">{row.island}</strong><small
+              class="[&&]:text-[11px] [&&]:text-[#475569] leading-[1.55] [&&]:block [&&]:mt-[4px]"
               >{row.provinces} provinsi · {row.campuses} kampus</small
             ></span
-          ><b class="[&&]:text-[11px]">{number(row.average)}%</b></button
+          ><b class="[&&]:text-[13px]">{number(row.average)}%</b></button
         >{/each}
     </div>
     <div
-      class="[&&]:[border-top-width:1px] [&&]:[border-top-style:solid] [&&]:[border-top-color:rgb(231,_236,_227)] [background-image:initial]! [background-color:rgb(245,_249,_255)]! [&&]:px-[20px] [&&]:py-[17px] [&_p]:text-[#6680a0]! region-foot"
+      class="[&&]:[border-top-width:1px] [&&]:[border-top-style:solid] [&&]:[border-top-color:rgb(231,_236,_227)] [background-image:initial]! [background-color:rgb(245,_249,_255)]! [&&]:px-[20px] [&&]:py-[17px] [&_p]:text-[#475569]! region-foot"
     >
-      <strong class="font-[650] [&&]:text-[10px]">Tentang data peta</strong>
+      <strong class="font-[600] [&&]:text-[12px]">Tentang data peta</strong>
       <p
-        class="[&&]:mt-[7px] mb-[0px] [&&]:leading-[1.7] [&&]:text-[9px] [&&]:text-[#788574] mx-[0px]"
+        class="[&&]:mt-[7px] mb-[0px] [&&]:leading-[1.55] [&&]:text-[11px] [&&]:text-[#475569] mx-[0px]"
       >
         Nama kampus berasal dari daftar proyek. Posisi dan seluruh nilai capaian masih bersifat
         simulasi untuk kebutuhan prototype.

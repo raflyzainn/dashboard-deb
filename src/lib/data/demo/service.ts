@@ -183,7 +183,7 @@ export function createDemoService() {
     );
   const updateProgram = (campusId: string, values: Partial<ProgramProfile>) => run((s, user) => {
     own(user, campusId);
-    const allowed = ['mentor', 'coordinator', 'localHero', 'subholding', 'operatingUnit', 'actionPlanTemplate', 'replicationVillage', 'sourceStatus', 'description', 'budget', 'currentClass', 'targetClass', 'address', 'mapUrl', 'coordinates', 'province'];
+    const allowed = ['mentor', 'coordinator', 'localHero', 'subholding', 'operatingUnit', 'actionPlanTemplate', 'replicationVillage', 'sourceStatus', 'description', 'budget', 'currentClass', 'targetClass', 'address', 'mapUrl', 'coordinates', 'province', 'provinceId', 'regencyId', 'regency', 'districtId', 'district', 'villageId', 'village', 'postalCode'];
     const program = (find(s.data.campuses, campusId).program ??= {});
     for (const [key, value] of Object.entries(values)) {
       if (!allowed.includes(key) || typeof value !== 'string' || value.length > 10000) throw Error('Isian program tidak valid.');

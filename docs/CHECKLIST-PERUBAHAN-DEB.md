@@ -35,6 +35,16 @@ Diperbarui: **18 September 2026** setelah implementasi lokal.
 
 Data contoh mencakup PDF, KPI, nominal, riwayat, komentar, dan notifikasi. Kasus diproses/sudah dicairkan dibuat melalui langkah 6–7, sehingga arsip merupakan hasil ekspor sesungguhnya. Migrasi tidak menghapus unggahan atau perubahan lama; approval dummy hanya memakai proposal fixture buatan aplikasi.
 
+## C. Keterbacaan dan logo (18 September 2026)
+
+- [x] Font diganti ke font sistem seperti PF Series; webfont Plus Jakarta Sans dihapus dari dependensi.
+- [x] Ukuran teks dinaikkan ke skala baca PF Series (isi 14px, keterangan 13px, label 12px); tidak ada lagi teks 6 sampai 9px.
+- [x] Jarak huruf judul yang terlalu rapat dilonggarkan; tinggi baris paragraf disesuaikan.
+- [x] Warna teks pucat yang gagal kontras 4.5:1 di latar putih digelapkan (`--muted` menjadi `#475569`).
+- [x] Logo PF di sidebar biru memakai versi putih solid sesuai pedoman merek; panel login menampilkan logo putih.
+- QA: pemeriksaan visual di browser pada 1366px dan 390px untuk login, dashboard, verifikasi, master indikator, kampus, proposal, pencairan, forum, peta, pengaturan, dan halaman kampus. Tidak ada scroll horizontal, teks terpotong, atau error JavaScript. `npm run check`, format, build, dan tes terminal belum dijalankan.
+- Aturan lengkap: `src/lib/components/README.md` bagian Tipografi dan logo.
+
 ## Batas implementasi
 
 - KPI resmi membutuhkan kriteria/ambang dari PF/Holding. Demo tidak menebak kebijakan tersebut.

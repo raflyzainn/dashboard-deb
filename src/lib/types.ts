@@ -1,8 +1,8 @@
 import type { Period, PeriodState } from './periods';
 import type { ForumCategoryId } from './forum';
-export type Role = 'campus' | 'admin' | 'finance';
+export type Role = 'campus' | 'admin' | 'baru';
 export interface DemoSession { role: Role; name: string; campusId?: string; campusRole?: 'mentor' | 'sobi' }
-export interface AppSession extends DemoSession { id: string }
+export interface AppSession extends DemoSession { id: string; email?: string; superAdmin?: boolean }
 export interface PreviewAccount { key: string; name: string; role: Role }
 export interface DemoActivationStatus { email: string; activated: boolean }
 export interface LocationDto { campusId: string; province: string; island: string; longitude: number | null; latitude: number | null; approximate: boolean }
@@ -16,10 +16,13 @@ export interface ProgramProfile {
   currentClass?: string | null; targetClass?: string | null; existingEbt?: string | null;
     description?: string | null; intervention?: string | null; interventionSummary?: string | null; budget?: number | string | null;
   address?: string | null; mapUrl?: string | null; province?: string | null;
+  // Standard address picked with RegionSelect (ids follow the region data codes). `address` holds the street detail, `coordinates` the map pin as "lat, lng".
+  provinceId?: string | null; regencyId?: string | null; regency?: string | null; districtId?: string | null; district?: string | null;
+  villageId?: string | null; village?: string | null; postalCode?: string | null;
   coordinates?: string | null; socialMapping?: string | null; conflict?: string | null;
   ikm?: string | null; institution?: string | null; landPermit?: string | null; siteSurvey?: string | null;
 }
-export interface Campus { id: string; name: string; region: string; initials: string; acronym?: string; city?: string; program?: ProgramProfile; source?: 'user' | 'document' | 'admin'; revision?: number }
+export interface Campus { id: string; name: string; region: string; initials: string; acronym?: string; city?: string; program?: ProgramProfile; source?: 'user' | 'document' | 'admin'; revision?: number; code?: string; fillMode?: 'admin' | 'campus'; fundedWave?: number; programYear?: 'kedua' | 'ketiga' }
 export interface IndicatorDefinition { id: string; name: string; category: string; unit: string; description: string }
 export interface MasterDefinition extends IndicatorDefinition { period?: string; periodState?: PeriodState; code: string; baseline: number; target: number; status: 'draft' | 'active'; revision: number }
 export interface DefinitionInput { period?: string; id?: string; revision?: number; code: string; name: string; category: string; unit: string; description: string; baseline: number; target: number }

@@ -15,7 +15,7 @@ const collections = {
 type Resource = keyof typeof collections;
 // Read only mapper inputs, excluding unused PocketBase metadata and storage fields.
 const fields: Record<Resource, string> = {
-  campuses: 'id,name,region,initials,acronym,city,source,revision,province,island,hasLocation,longitude,latitude,locationApproximate',
+  campuses: 'id,name,region,initials,acronym,city,source,revision,province,island,hasLocation,longitude,latitude,locationApproximate,program,code,fillMode,fundedWave,programYear',
   definitions: 'id,name,category,unit,description,baseline,target,period,periodState',
   indicators: 'id,campus,definition,current,unfilled,note,updated',
   submissions: 'id,campus,period,version,status,snapshot,submittedAt,reviewedAt,reviewedBy,decisionNote,simulated',
@@ -122,6 +122,7 @@ export async function readPage(pb: PocketBase, actor: AppSession, request: PageR
 }
 
 export async function readNavigation(pb: PocketBase, actor: AppSession): Promise<NavigationData> {
+  if (actor.role === 'baru') return { pendingCount: 0, revisionCount: 0, unreadCount: 0 };
   const count = async (collection: string, filter: string) => (await pb.collection(collection).getList(1, 1, { filter, fields: 'id' })).totalItems;
   const [pendingCount, revisionCount, unreadCount, campus] = await Promise.all([
     actor.role === 'admin' ? count('deb_submissions', 'status = "pending"') : 0,

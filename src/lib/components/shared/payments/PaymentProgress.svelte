@@ -69,7 +69,7 @@
             class={`block leading-5 ${i === currentIndex ? 'font-bold text-blue-700' : i < currentIndex ? 'font-semibold text-emerald-700' : 'font-medium text-slate-500'}`}
             >{label}</span
           >
-          <span class="mt-0.5 block text-[10px] text-slate-400">
+          <span class="mt-0.5 block text-[12px] text-slate-400">
             {i < currentIndex ? 'Selesai' : i === currentIndex ? 'Sedang diproses' : 'Berikutnya'}
           </span>
         </span>

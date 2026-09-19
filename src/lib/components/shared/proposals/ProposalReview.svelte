@@ -37,17 +37,17 @@
   }
 </script>
 <section aria-label="Tanggapan admin" class="mt-[20px] border-t border-[#dce7f7] pt-[18px]">
-  <h2 class="text-[16px] font-semibold text-[#0d234c]">
+  <h2 class="text-[17px] font-semibold text-[#0d234c]">
     Tanggapan admin · Versi {proposal.version}
   </h2>
   {#if proposal.reviewNote}
-    <p class="mt-[12px] whitespace-pre-wrap break-words text-[13px] leading-[1.8] text-[#17365f]">
+    <p class="mt-[12px] whitespace-pre-wrap break-words text-[14px] leading-[1.6] text-[#17365f]">
       {proposal.reviewNote}
     </p>
-    {#if proposal.reviewedAt}<p class="mt-[8px] text-[11px] text-[#647699]">
+    {#if proposal.reviewedAt}<p class="mt-[8px] text-[13px] text-[#647699]">
         Admin PF · {date(proposal.reviewedAt)}
       </p>{/if}
-  {:else}<p class="mt-[12px] text-[13px] text-[#647699]">
+  {:else}<p class="mt-[12px] text-[14px] text-[#647699]">
       Belum ada tanggapan untuk versi ini.
     </p>{/if}
   {#if app.session?.role === 'admin'}
@@ -58,7 +58,7 @@
         save();
       }}
     >
-      <label class="grid gap-[8px] text-[12px] font-semibold text-[#17365f]">
+      <label class="grid gap-[8px] text-[14px] font-semibold text-[#17365f]">
         {proposal.reviewNote ? 'Perbarui tanggapan' : 'Tulis tanggapan'}
         <textarea
           aria-label="Isi tanggapan admin"
@@ -67,16 +67,16 @@
           maxlength="5000"
           bind:value={note}
           disabled={app.readOnly || app.busy || app.loading}
-          class="w-full rounded-[8px] border border-[#dce7f7] p-[12px] text-[13px] font-normal focus:outline-2 focus:outline-[#7fc1ff]"
+          class="w-full rounded-[8px] border border-[#dce7f7] p-[12px] text-[14px] font-normal focus:outline-2 focus:outline-[#7fc1ff]"
         ></textarea>
       </label>
-      <p class="text-[11px] text-[#647699]">
+      <p class="text-[13px] text-[#647699]">
         Tanggapan ini dapat dibaca kampus pada versi yang dipilih. Menyimpan kembali akan
         memperbarui tanggapan tersebut.
       </p>
       <button
         disabled={!note.trim() || app.readOnly || app.busy || app.loading || app.stale}
-        class="justify-self-start rounded-[8px] bg-[#075fc7] px-[18px] py-[11px] text-[12px] font-semibold text-white disabled:opacity-50"
+        class="justify-self-start rounded-[8px] bg-[#075fc7] px-[18px] py-[11px] text-[14px] font-semibold text-white disabled:opacity-50"
         >{app.busy ? 'Menyimpan…' : 'Simpan tanggapan'}</button
       >
     </form>

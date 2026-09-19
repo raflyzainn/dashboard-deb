@@ -1,6 +1,6 @@
 import type { Snapshot, Campus, AppSession } from './types';
 
-export type PageView = 'dashboard' | 'campuses' | 'campus-detail' | 'accounts' | 'map' | 'indicators' | 'proposals' | 'payments' | 'questions' | 'question-detail' | 'faq' | 'notifications' | 'review' | 'masters' | 'guide';
+export type PageView = 'dashboard' | 'campuses' | 'campus-detail' | 'accounts' | 'map' | 'indicators' | 'proposals' | 'payments' | 'questions' | 'question-detail' | 'faq' | 'notifications' | 'review' | 'masters' | 'guide' | 'static';
 export interface PageRequest { view: PageView; period?: string; campus?: string; question?: string; tab?: string }
 export interface PageResponse { data: Partial<Snapshot>; loadedAt: string }
 export interface NavigationData { pendingCount: number; revisionCount: number; unreadCount: number; campus?: Campus }
@@ -21,6 +21,7 @@ function routeRequest(url: URL): PageRequest {
   switch (section) {
     case 'profile': case 'settings': return { view: 'dashboard' };
     case 'guide': return { view: 'guide' };
+    case 'users': case 'pencairan': case 'lpj': return { view: 'static' };
     case 'campuses': return id ? { view: 'campus-detail', campus: decodeURIComponent(id), tab: url.searchParams.get('tab') || 'Ringkasan' } : { view: url.searchParams.get('tab') === 'accounts' ? 'accounts' : 'campuses' };
     case 'sebaran': return { view: 'map' };
     case 'proposal': return { view: 'proposals' };

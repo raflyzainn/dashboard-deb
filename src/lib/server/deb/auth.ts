@@ -20,9 +20,11 @@ export async function sessionClient(event: RequestEvent) {
     pb.authStore.save(token);
     // Refresh verifies the signature/tokenKey and fetches the current account. Keep the original expiry.
     const result = await pb.collection('users').authRefresh();
-    if (!result.record.active || !result.record.verified || result.record.simulated || !['admin', 'campus'].includes(result.record.role)) throw new Error('Invalid session');
+    if (!result.record.active || !result.record.verified || result.record.simulated || !['admin', 'campus', 'baru', 'super_admin'].includes(result.record.role)) throw new Error('Invalid session');
     if ((result.record.sessionVersion || '') !== claims.version) throw new Error('Revoked session');
-    pb.authStore.save(token, result.record); return pb;
+    // The existing modules check the literal role admin; a super admin is an admin with a flag.
+    const record = result.record.role === 'super_admin' ? { ...result.record, role: 'admin', superAdmin: true } : result.record;
+    pb.authStore.save(token, record); return pb;
   } catch (error) {
     const status = (error as { status?: number }).status;
     if (status !== undefined && ![400,401,403,404].includes(status)) throw new Error('Layanan sesi belum tersedia.');

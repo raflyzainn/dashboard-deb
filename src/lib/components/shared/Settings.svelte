@@ -7,7 +7,7 @@
   const prefix = $derived(`/${app.session?.role}`);
   const campus = $derived(app.data?.campuses.find((item) => item.id === app.session?.campusId));
   const profileHref = $derived(
-    app.session?.role === 'admin' ? '/admin/campuses?tab=accounts' : '/campus/profile'
+    app.session?.role === 'admin' ? '/admin/users' : '/campus/profile'
   );
 </script>
 
@@ -16,7 +16,7 @@
 <div class="mx-auto max-w-[980px] space-y-6">
   <header>
     <h1 class="m-0 text-2xl font-bold text-[#17365f]">Pengaturan</h1>
-    <p class="mt-2 text-sm text-[#617a9a]">Akun, notifikasi, bantuan, dan informasi aplikasi.</p>
+    <p class="mt-2 text-sm text-[#475569]">Akun, notifikasi, bantuan, dan informasi aplikasi.</p>
   </header>
 
   <section
@@ -29,7 +29,7 @@
       >
       <div class="min-w-0">
         <strong class="block truncate text-base text-[#17365f]">{app.session?.name}</strong>
-        <span class="mt-1 block text-xs text-[#617a9a]"
+        <span class="mt-1 block text-xs text-[#475569]"
           >{app.session?.role === 'admin' ? 'Administrator Program DEB' : campus?.name}</span
         >
       </div>
@@ -41,7 +41,7 @@
   </section>
 
   <div>
-    <p class="mb-2 ml-1 text-[10px] font-bold tracking-[1.2px] text-[#8297b6]">AKUN</p>
+    <p class="mb-2 ml-1 text-[12px] font-bold tracking-[0.06em] text-[#64748b]">AKUN</p>
     <section class="overflow-hidden rounded-xl border border-[#dce7f7] bg-white shadow-sm">
       <a
         class="flex items-center gap-3 border-b border-[#edf2f8] px-4 py-4 hover:bg-blue-50"
@@ -53,7 +53,7 @@
         >
         <span class="min-w-0 grow"
           ><strong class="block text-sm text-[#17365f]">Profil</strong><small
-            class="mt-1 block text-xs text-[#71829b]"
+            class="mt-1 block text-xs text-[#475569]"
             >{app.session?.role === 'admin'
               ? 'Kelola akun kampus mitra'
               : 'Data kampus dan program'}</small
@@ -70,7 +70,7 @@
         >
         <span class="min-w-0 grow"
           ><strong class="block text-sm text-[#17365f]">Notifikasi</strong><small
-            class="mt-1 block text-xs text-[#71829b]"
+            class="mt-1 block text-xs text-[#475569]"
             >{app.navigation.unreadCount} belum dibaca</small
           ></span
         ><Icon name="chevron" size={16} />
@@ -86,7 +86,7 @@
         >
         <span class="min-w-0 grow"
           ><strong class="block text-sm text-[#17365f]">Ganti password</strong><small
-            class="mt-1 block text-xs text-[#71829b]">Perbarui password akun Anda</small
+            class="mt-1 block text-xs text-[#475569]">Perbarui password akun Anda</small
           ></span
         ><Icon name="chevron" size={16} />
       </button>
@@ -94,7 +94,7 @@
   </div>
 
   <div>
-    <p class="mb-2 ml-1 text-[10px] font-bold tracking-[1.2px] text-[#8297b6]">BANTUAN</p>
+    <p class="mb-2 ml-1 text-[12px] font-bold tracking-[0.06em] text-[#64748b]">BANTUAN</p>
     <section class="overflow-hidden rounded-xl border border-[#dce7f7] bg-white shadow-sm">
       <a
         class="flex items-center gap-3 border-b border-[#edf2f8] px-4 py-4 hover:bg-blue-50"
@@ -106,7 +106,7 @@
         >
         <span class="min-w-0 grow"
           ><strong class="block text-sm text-[#17365f]">Panduan aplikasi</strong><small
-            class="mt-1 block text-xs text-[#71829b]">Petunjuk penggunaan dan pertanyaan umum</small
+            class="mt-1 block text-xs text-[#475569]">Petunjuk penggunaan dan pertanyaan umum</small
           ></span
         ><Icon name="chevron" size={16} />
       </a>
@@ -117,7 +117,7 @@
         >
         <span class="min-w-0 grow"
           ><strong class="block text-sm text-[#17365f]">Forum Tanya Jawab</strong><small
-            class="mt-1 block text-xs text-[#71829b]">Diskusi dengan Tim DEB dan kampus mitra</small
+            class="mt-1 block text-xs text-[#475569]">Diskusi dengan Tim DEB dan kampus mitra</small
           ></span
         ><Icon name="chevron" size={16} />
       </a>
@@ -125,7 +125,7 @@
   </div>
 
   <div>
-    <p class="mb-2 ml-1 text-[10px] font-bold tracking-[1.2px] text-[#8297b6]">TENTANG</p>
+    <p class="mb-2 ml-1 text-[12px] font-bold tracking-[0.06em] text-[#64748b]">TENTANG</p>
     <section
       class="flex items-center gap-4 rounded-xl border border-[#dce7f7] bg-white p-4 shadow-sm"
     >
@@ -138,7 +138,7 @@
       />
       <div>
         <strong class="block text-sm text-[#17365f]">Digitalisasi DEB</strong><small
-          class="mt-1 block text-xs text-[#71829b]"
+          class="mt-1 block text-xs text-[#475569]"
           >Portal monitoring dan evaluasi kampus mitra.</small
         >
       </div>

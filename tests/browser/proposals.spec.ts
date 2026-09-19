@@ -37,16 +37,39 @@ test('proposal versions preview automatically and admin responses persist with c
     expect((await page.request.post(`/api/proposals/${latest.id}/review`, {headers:headers('campus-010'),data:{note:'forged',revision:0}})).status()).toBe(403);
     expect((await page.request.get(`/api/proposals/${latest.id}/file`, {headers:headers('campus-011')})).status()).toBe(404);
     await login(admin,'admin-1'); await admin.goto('/admin/proposal');
-    await admin.getByLabel('Pilih kampus proposal').selectOption(latest.campusId);
+    // The admin page opens on the directory: one card per campus, no document yet.
+    const card = admin.locator(`a[data-campus="${latest.campusId}"]`);
+    await expect(admin.getByRole('region',{name:'Ringkasan proposal'})).toBeVisible();
+    await expect(admin.locator('iframe')).toHaveCount(0);
+    await admin.getByRole('group',{name:'Filter status proposal'}).getByRole('button',{name:/Menunggu tanggapan/}).click();
+    await expect(admin).toHaveURL(/status=waiting/);
+    await expect(card).toContainText('Versi 2');
+    await expect(card).toContainText('Menunggu tanggapan');
+    await card.click();
+    await expect(admin).toHaveURL(new RegExp(`campus=${latest.campusId}`));
+    await expect(admin.getByRole('link',{name:'Semua proposal'})).toBeVisible();
     await expect(admin.locator('iframe')).toHaveAttribute('title','Pratinjau proposal-qa-2.pdf');
     await expect(admin.locator('iframe')).toHaveAttribute('src',/^blob:/);
     const note = 'Mohon lengkapi jadwal kegiatan. <script>literal</script>';
     await admin.getByLabel('Isi tanggapan admin').fill(note);
     await admin.getByRole('button',{name:'Simpan tanggapan',exact:true}).click();
     await expect(admin.getByRole('region',{name:'Tanggapan admin'}).getByText(note,{exact:true})).toBeVisible();
+    // The campus stays in the URL, so a reload returns to the same detail.
     await admin.reload();
-    await admin.getByLabel('Pilih kampus proposal').selectOption(latest.campusId);
     await expect(admin.getByLabel('Isi tanggapan admin')).toHaveValue(note);
+    // Browser Back returns to the directory with the filter kept; the campus has left the waiting list.
+    await admin.goBack();
+    await expect(admin).toHaveURL(/status=waiting/);
+    await expect(admin.getByRole('region',{name:'Ringkasan proposal'})).toBeVisible();
+    await expect(card).toHaveCount(0);
+    await admin.getByRole('group',{name:'Filter status proposal'}).getByRole('button',{name:/Sudah ditanggapi/}).click();
+    await expect(card).toContainText('Sudah ditanggapi');
+    // A notification deep link opens the right campus and version directly.
+    await admin.goto('/admin/proposal?version='+previous.id);
+    await expect(admin.getByRole('link',{name:'Semua proposal'})).toBeVisible();
+    await expect(admin.locator('iframe')).toHaveAttribute('title','Pratinjau proposal-qa-1.pdf');
+    await admin.goto(`/admin/proposal?campus=${latest.campusId}`);
+    await expect(admin.locator('iframe')).toHaveAttribute('title','Pratinjau proposal-qa-2.pdf');
     expect((await admin.request.post(`/api/proposals/${latest.id}/review`, {headers:headers('admin-1'),data:{note:'stale',revision:0}})).status()).toBe(409);
     await page.reload();
     await expect(page.getByRole('region',{name:'Tanggapan admin'}).getByText(note,{exact:true})).toBeVisible();

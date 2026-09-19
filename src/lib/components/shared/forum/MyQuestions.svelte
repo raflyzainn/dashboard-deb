@@ -25,20 +25,20 @@
   >
     <div>
       <span
-        class="block text-[10px] tracking-[1.9px] font-[750] text-[#3975b7] mb-[9px] max-[700.01px]:text-[8px] eyebrow"
+        class="block text-[12px] tracking-[0.06em] font-[700] text-[#3975b7] mb-[9px] max-[700.01px]:text-[10px] eyebrow"
         >DISKUSI KAMPUS ANDA</span
       >
       <h2
-        class="[&&]:mt-[6px] mb-[0px] font-[650] [&&]:text-[#12386b] [&&]:text-[20px] [&&]:tracking-[-0.5px] [&&]:flex [&&]:items-center [&&]:gap-y-[10px] [&&]:gap-x-[10px] mx-[0px] max-[700.01px]:[&&]:text-[18px]"
+        class="[&&]:mt-[6px] mb-[0px] font-[600] [&&]:text-[#12386b] [&&]:text-[20px] [&&]:tracking-[-0.01em] [&&]:flex [&&]:items-center [&&]:gap-y-[10px] [&&]:gap-x-[10px] mx-[0px] max-[700.01px]:[&&]:text-[18px]"
         id="my-questions-title"
       >
         Pertanyaan saya <span
-          class="[&&]:inline-grid [&&]:items-center [&&]:[justify-items:center] [&&]:min-w-[26px] [&&]:h-[26px] [&&]:[background-image:initial] [&&]:[background-color:rgb(232,_241,_255)] [&&]:text-[#1262bd] [&&]:text-[12px] [&&]:tracking-[0] [&&]:px-[7px] [&&]:py-[0px] [&&]:rounded-[8px] total"
+          class="[&&]:inline-grid [&&]:items-center [&&]:[justify-items:center] [&&]:min-w-[26px] [&&]:h-[26px] [&&]:[background-image:initial] [&&]:[background-color:rgb(232,_241,_255)] [&&]:text-[#1262bd] [&&]:text-[14px] [&&]:tracking-[0] [&&]:px-[7px] [&&]:py-[0px] [&&]:rounded-[8px] total"
           >{questions.length}</span
         >
       </h2>
       <p
-        class="[&&]:mt-[6px] mb-[0px] leading-[1.8] [&&]:text-[12px] [&&]:text-[#62768b] mx-[0px] max-[700.01px]:[&&]:text-[11px]"
+        class="[&&]:mt-[6px] mb-[0px] leading-[1.6] [&&]:text-[14px] [&&]:text-[#62768b] mx-[0px] max-[700.01px]:[&&]:text-[13px]"
       >
         Pantau jawaban dan lanjutkan pertanyaan yang Anda ajukan.
       </p>
@@ -60,17 +60,17 @@
             aria-label={`Buka pertanyaan saya: ${question.title}`}
           >
             <div
-              class="[&&]:flex [&&]:justify-between [&&]:gap-y-[10px] [&&]:gap-x-[10px] [&&]:mb-[14px] [&&]:text-[#62768b] [&&]:text-[11px] card-meta"
+              class="[&&]:flex [&&]:justify-between [&&]:gap-y-[10px] [&&]:gap-x-[10px] [&&]:mb-[14px] [&&]:text-[#62768b] [&&]:text-[13px] card-meta"
             >
               <span>{date(question.createdAt)}</span><span>{question.replyCount || 0} balasan</span>
             </div>
             <strong
-              class="font-[650] [&&]:text-[14px] [&&]:leading-[1.7] [&&]:text-[#12386b] [&&]:wrap-anywhere max-[700.01px]:[&&]:text-[13px] question-title"
+              class="font-[600] [&&]:text-[15px] [&&]:leading-[1.55] [&&]:text-[#12386b] [&&]:wrap-anywhere max-[700.01px]:[&&]:text-[14px] question-title"
               >{question.title}</strong
             >
             <CategoryTags ids={questionCategories(question)} />
             <div
-              class="[&&]:flex [&&]:items-center [&&]:justify-between [&&]:gap-y-[10px] [&&]:gap-x-[10px] [&&]:mt-[auto] [&&]:pt-[14px] [&&]:[border-top-width:1px] [&&]:[border-top-style:solid] [&&]:[border-top-color:rgb(232,_239,_248)] [&&]:text-[11px] [&&]:text-[#9b6b17] max-[1100.01px]:[&&]:items-start max-[1100.01px]:[&&]:flex-col max-[700.01px]:[&&]:flex-row card-bottom"
+              class="[&&]:flex [&&]:items-center [&&]:justify-between [&&]:gap-y-[10px] [&&]:gap-x-[10px] [&&]:mt-[auto] [&&]:pt-[14px] [&&]:[border-top-width:1px] [&&]:[border-top-style:solid] [&&]:[border-top-color:rgb(232,_239,_248)] [&&]:text-[13px] [&&]:text-[#9b6b17] max-[1100.01px]:[&&]:items-start max-[1100.01px]:[&&]:flex-col max-[700.01px]:[&&]:flex-row card-bottom"
             >
               <span
                 class="[&.answered]:text-[#1262bd]"
@@ -87,17 +87,17 @@
     </ul>
     {#if questions.length > 3}
       <div
-        class="[&&]:flex [&&]:justify-between [&&]:items-center [&&]:gap-y-[12px] [&&]:gap-x-[12px] [&&]:mt-[10px] [&&]:text-[12px] [&&]:text-[#62768b] max-[700.01px]:[&&]:items-start max-[700.01px]:[&&]:gap-y-[4px] max-[700.01px]:[&&]:gap-x-[4px] max-[700.01px]:[&&]:flex-col section-footer"
+        class="[&&]:flex [&&]:justify-between [&&]:items-center [&&]:gap-y-[12px] [&&]:gap-x-[12px] [&&]:mt-[10px] [&&]:text-[14px] [&&]:text-[#62768b] max-[700.01px]:[&&]:items-start max-[700.01px]:[&&]:gap-y-[4px] max-[700.01px]:[&&]:gap-x-[4px] max-[700.01px]:[&&]:flex-col section-footer"
       >
         <span
           >Menampilkan {Math.min(visibleCount, questions.length)} dari {questions.length} pertanyaan</span
         >
         <div class="[&&]:flex [&&]:gap-y-[16px] [&&]:gap-x-[16px] [&&]:flex-wrap">
           {#if visibleCount < questions.length}<button
-              class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[650] [font-stretch:inherit] text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[#0668ce] inline-flex items-center gap-y-[7px] gap-x-[7px] [background-image:none] [background-color:initial] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [&&]:min-h-[44px] p-[0px] border-[0px] border-none border-[color:currentcolor] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:text-[#0a3eaa] text-link"
+              class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[600] [font-stretch:inherit] text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[#0668ce] inline-flex items-center gap-y-[7px] gap-x-[7px] [background-image:none] [background-color:initial] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [&&]:min-h-[44px] p-[0px] border-[0px] border-none border-[color:currentcolor] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:text-[#0a3eaa] text-link"
               onclick={() => (visibleCount += 3)}>Tampilkan lebih banyak</button
             >{/if}{#if visibleCount > 3}<button
-              class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[650] [font-stretch:inherit] text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[#0668ce] inline-flex items-center gap-y-[7px] gap-x-[7px] [background-image:none] [background-color:initial] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [&&]:min-h-[44px] p-[0px] border-[0px] border-none border-[color:currentcolor] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:text-[#0a3eaa] text-link"
+              class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[600] [font-stretch:inherit] text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[#0668ce] inline-flex items-center gap-y-[7px] gap-x-[7px] [background-image:none] [background-color:initial] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [&&]:min-h-[44px] p-[0px] border-[0px] border-none border-[color:currentcolor] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:text-[#0a3eaa] text-link"
               onclick={() => (visibleCount = 3)}>Tampilkan lebih sedikit</button
             >{/if}
         </div>
@@ -105,13 +105,13 @@
     {/if}
   {:else}
     <div
-      class="[&&]:text-[#62768b] [&&]:text-[12px] [&&]:leading-[1.8] [&&]:[background-image:initial] [&&]:[background-color:rgb(247,_250,_255)] [&&]:p-[22px] [&&]:border-[1px] [&&]:border-dashed [&&]:border-[color:rgb(199,_217,_238)] [&&]:rounded-[12px] empty-questions"
+      class="[&&]:text-[#62768b] [&&]:text-[14px] [&&]:leading-[1.6] [&&]:[background-image:initial] [&&]:[background-color:rgb(247,_250,_255)] [&&]:p-[22px] [&&]:border-[1px] [&&]:border-dashed [&&]:border-[color:rgb(199,_217,_238)] [&&]:rounded-[12px] empty-questions"
     >
-      <p class="leading-[1.8] m-[0px]">
+      <p class="leading-[1.6] m-[0px]">
         Anda belum mengajukan pertanyaan. Mulai diskusi dengan Admin PF di sini.
       </p>
       <button
-        class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[650] [font-stretch:inherit] text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[#0668ce] inline-flex items-center gap-y-[7px] gap-x-[7px] [background-image:none] [background-color:initial] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [&&]:min-h-[44px] [&&]:mt-[6px] p-[0px] border-[0px] border-none border-[color:currentcolor] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:text-[#0a3eaa] text-link"
+        class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[600] [font-stretch:inherit] text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[#0668ce] inline-flex items-center gap-y-[7px] gap-x-[7px] [background-image:none] [background-color:initial] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [&&]:min-h-[44px] [&&]:mt-[6px] p-[0px] border-[0px] border-none border-[color:currentcolor] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:text-[#0a3eaa] text-link"
         disabled={app.readOnly || app.loading || app.busy}
         onclick={onask}>Ajukan pertanyaan pertama<Icon name="arrow" size={16} /></button
       >

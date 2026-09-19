@@ -9,7 +9,7 @@
 </script>
 {#if points.length}<ul
     aria-label="Poin deskripsi program"
-    class="my-3 list-disc space-y-2 pl-5 text-xs leading-7 text-[#617a9a]"
+    class="my-3 list-disc space-y-2 pl-5 text-xs leading-7 text-[#475569]"
   >
     {#each points as point}<li>{point}</li>{/each}
   </ul>

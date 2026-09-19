@@ -31,10 +31,24 @@ class AppState {
     this.initializing = true;
     let key = '';
     try { key = sessionStorage.getItem(SESSION_KEY) || ''; } catch { /* Selection persistence is optional. */ }
-    if (key) await this.login(key);
-    // Demo accounts are loaded by the account picker.
+    // An empty key reads the session cookie; a key selects a local preview account in development.
+    await this.login(key);
+    if (!this.session) this.error = '';
     this.ready = true;
     this.initializing = false;
+  }
+  /** Home page for the current session: waiting page for new accounts, otherwise the dashboard of the role. */
+  home() {
+    if (!this.session) return '/login';
+    return this.session.role === 'baru' ? '/menunggu' : `/${this.session.role}/dashboard`;
+  }
+  async loginWithPassword(email: string, password: string) {
+    const response = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }), cache: 'no-store' });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.message || 'Email atau kata sandi tidak sesuai.');
+    }
+    return this.login('');
   }
   async loadAccounts() {
     const revision = this.revision;
@@ -61,6 +75,7 @@ class AppState {
     } finally { if (revision === this.revision) this.loading = false; }
   }
   async logout() {
+    try { await fetch('/api/auth/logout', { method: 'POST', cache: 'no-store' }); } catch (error) { console.warn('Logout request failed', error); }
     this.revision++; dataService.selectAccount('');
     this.pageRevision++; this.currentPage = null; this.pageId = ''; this.navigation = { pendingCount: 0, revisionCount: 0, unreadCount: 0 };
     this.readOnly = true; this.session = null; this.data = null; this.error = ''; this.toast = ''; this.loadedAt = ''; this.stale = false; this.loading = false; this.busy = false; this.dialogs = 0;
@@ -137,6 +152,6 @@ class AppState {
       return false;
     } finally { if (revision === this.revision) this.busy = false; }
   }
-  private message(error: unknown) { return error instanceof Error ? error.message : 'Data demo belum dapat dimuat. Coba muat ulang.'; }
+  private message(error: unknown) { return error instanceof Error ? error.message : 'Data belum dapat dimuat. Coba muat ulang.'; }
 }
 export const app = new AppState();
