@@ -78,7 +78,8 @@ async function main() {
   if (!apply) { console.log('Dry run. Add --apply to write.'); return; }
 
   await pb.collections.import(definitions, false);
-  await pb.settings.update({ meta: { appURL: env.DEB_PUBLIC_URL }, batch: { enabled: true, maxRequests: 2000, timeout: 30, maxBodySize: 16777216 } });
+  // Behind the Cloudflare tunnel every request arrives from one internal address; the real client is in CF-Connecting-IP, so rate limits count per visitor.
+  await pb.settings.update({ meta: { appURL: env.DEB_PUBLIC_URL }, batch: { enabled: true, maxRequests: 2000, timeout: 30, maxBodySize: 16777216 }, trustedProxy: { headers: ['CF-Connecting-IP'], useLeftmostIP: false } });
   const current = await pb.settings.getAll();
   if (!current.rateLimits?.enabled) await pb.settings.update({ rateLimits: { enabled: true, rules: [{ label: '*:auth', audience: '', duration: 60, maxRequests: 60 }, { label: '/api/', audience: '', duration: 10, maxRequests: 600 }] } });
   console.log('Collections and settings written.');

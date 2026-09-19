@@ -15,12 +15,29 @@ export async function serverSettings(): Promise<Record<string, string>> {
   return settings;
 }
 
+/**
+ * The superuser token is kept per isolate and reused for a while: one sign in serves many requests instead of one per request,
+ * which keeps the app under PocketBase's auth rate limit even when every caller shares one address behind a proxy.
+ */
+const TOKEN_TTL_MS = 30 * 60 * 1000;
+let cached: { key: string; token: string; until: number } | null = null;
+export const forgetServerAuth = () => { cached = null; };
+
 export async function serverClient() {
   const settings = await serverSettings();
   if (!settings.PB_URL || !settings.PB_SUPERUSER_EMAIL || !settings.PB_SUPERUSER_PASSWORD) throw new PreviewError(503, 'Koneksi backend belum dikonfigurasi.');
   const pb = new PocketBase(settings.PB_URL); pb.autoCancellation(false);
   pb.beforeSend=(url,options)=>({url,options:{...options,redirect:'error'}});
-  try { await pb.collection('_superusers').authWithPassword(settings.PB_SUPERUSER_EMAIL, settings.PB_SUPERUSER_PASSWORD); }
-  catch { throw new PreviewError(503, 'Koneksi backend belum tersedia.'); }
+  const key = `${settings.PB_URL}|${settings.PB_SUPERUSER_EMAIL}`;
+  if (cached && cached.key === key && cached.until > Date.now()) { pb.authStore.save(cached.token, null); return { pb, settings }; }
+  try {
+    const auth = await pb.collection('_superusers').authWithPassword(settings.PB_SUPERUSER_EMAIL, settings.PB_SUPERUSER_PASSWORD);
+    cached = { key, token: auth.token, until: Date.now() + TOKEN_TTL_MS };
+  } catch (error) {
+    cached = null;
+    const status = (error as { status?: number }).status;
+    console.warn('PocketBase superuser sign in failed', status ?? '', (error as Error)?.message?.slice(0, 120));
+    throw new PreviewError(503, status === 429 ? 'Server sedang sibuk. Coba lagi sebentar.' : 'Koneksi backend belum tersedia.');
+  }
   return { pb, settings };
 }
