@@ -24,7 +24,7 @@ export const GET: RequestHandler = async () => {
   if (report.reachable) {
     // The same request shape the SDK uses, with a throwaway identity: tells apart "cannot send a POST" from "wrong credentials".
     try {
-      const probe = await fetch(url.replace(/\/+$/, '') + '/api/collections/_superusers/auth-with-password', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ identity: 'health-check@example.invalid', password: 'health-check' }), redirect: 'error' });
+      const probe = await fetch(url.replace(/\/+$/, '') + '/api/collections/_superusers/auth-with-password', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ identity: 'health-check@example.invalid', password: 'health-check' }), redirect: 'manual' });
       report.postStatus = probe.status;
     } catch (error) {
       report.postError = String((error as Error)?.message || error).slice(0, 160);

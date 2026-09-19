@@ -1,3 +1,4 @@
+import { assertNoRedirect } from './pb-fetch';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import PocketBase from 'pocketbase';
@@ -31,7 +32,7 @@ export async function previewContext(request: PreviewRequest, config: PreviewCon
         url.username || url.password || url.pathname !== '/' || url.search || url.hash ||
         marker.project !== 'dashboard-deb' || marker.kind !== (fixture ? 'test' : 'development') ||
         marker.directory !== directory || marker.url !== url.origin || !marker.instanceId) throw new Error('Invalid instance');
-    const health = await fetch(url.origin + '/api/health', { redirect: 'error', signal: AbortSignal.timeout(5000) });
+    const health = assertNoRedirect(await fetch(url.origin + '/api/health', { redirect: 'manual', signal: AbortSignal.timeout(5000) }));
     if (!health.ok) throw new Error('PocketBase unavailable');
     const credentials: Credentials = JSON.parse(await readFile(path.join(directory, 'credentials.json'), 'utf8'));
     const keys = Object.keys(credentials.users).filter(key => /^(campus-\d{3}|admin-[12])$/.test(key));
@@ -40,7 +41,7 @@ export async function previewContext(request: PreviewRequest, config: PreviewCon
       const secret = credentials.users[key];
       const pb = new PocketBase(url.origin);
       pb.autoCancellation(false);
-      pb.beforeSend = (target, options) => ({ url: target, options: { ...options, redirect: 'error', signal: AbortSignal.timeout(15000) } });
+      pb.beforeSend = (target, options) => ({ url: target, options: { ...options, redirect: 'manual', signal: AbortSignal.timeout(15000) } });
       try {
         const result = await pb.collection('users').authWithPassword(secret.email, secret.password);
         const record = result.record;

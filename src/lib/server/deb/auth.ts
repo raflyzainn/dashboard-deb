@@ -1,3 +1,4 @@
+import { noRedirects } from './pb-fetch';
 import PocketBase from 'pocketbase';
 import { env } from '$env/dynamic/private';
 import type { RequestEvent } from '@sveltejs/kit';
@@ -7,7 +8,7 @@ export const SESSION_COOKIE = 'deb_session';
 export function client() {
   if (!env.PB_URL) throw new Error('PB_URL belum dikonfigurasi.');
   const pb = new PocketBase(env.PB_URL); pb.autoCancellation(false);
-  pb.beforeSend=(url,options)=>({url,options:{...options,redirect:'error'}}); return pb;
+  return noRedirects(pb);
 }
 export async function sessionClient(event: RequestEvent) {
   const cookie = event.cookies.get(SESSION_COOKIE); if (!cookie) return null;

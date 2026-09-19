@@ -2,6 +2,7 @@ import PocketBase from 'pocketbase';
 import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
 import { PreviewError } from './preview-error';
+import { noRedirects } from './pb-fetch';
 
 export async function serverSettings(): Promise<Record<string, string>> {
   const settings: Record<string, string> = Object.fromEntries(Object.entries(env).filter((entry): entry is [string, string] => typeof entry[1] === 'string'));
@@ -39,8 +40,7 @@ export async function serverAuthMode() {
 export async function serverClient() {
   const settings = await serverSettings();
   if (!settings.PB_URL) throw new PreviewError(503, 'Koneksi backend belum dikonfigurasi.');
-  const pb = new PocketBase(settings.PB_URL); pb.autoCancellation(false);
-  pb.beforeSend=(url,options)=>({url,options:{...options,redirect:'error'}});
+  const pb = noRedirects(new PocketBase(settings.PB_URL)); pb.autoCancellation(false);
   // The pre issued superuser token: no sign in request at all, as in PF Series (PB_SUPER_TOKEN).
   if (settings.PB_SUPER_TOKEN) {
     const expiresAt = tokenExpiry(settings.PB_SUPER_TOKEN);
