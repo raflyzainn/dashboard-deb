@@ -56,9 +56,10 @@ export async function previewContext(request: PreviewRequest, config: PreviewCon
         const campuses = await pb.collection('campuses').getFullList({ sort: 'name' });
         const root = new PocketBase(url.origin);
         await root.collection('_superusers').authWithPassword(credentials.superuser.email, credentials.superuser.password);
-        const eligible = new Set<string>((await root.collection('users').getFullList({ filter: 'simulated = true && active = true', fields: 'legacyId' })).map(u => u.legacyId));
+        const users = await root.collection('users').getFullList({ filter: 'simulated = true && active = true', fields: 'legacyId,campus,role' });
+        const eligible = new Set<string>(users.map(u => u.legacyId));
         // Each account is also checked on entry; migrated campus credentials are never reset by preview.
-        const rows: PreviewAccount[] = campuses.filter(c => keys.includes(c.legacyId) && eligible.has(c.legacyId)).map(c => ({ key: c.legacyId, name: c.name, role: 'campus' }));
+        const rows: PreviewAccount[] = campuses.flatMap(c => users.filter(u => u.role === 'campus' && u.campus === c.id && keys.includes(u.legacyId)).map(u => ({ key: u.legacyId, name: c.name, role: 'campus' as const })));
         return [...rows, ...keys.filter(k => k.startsWith('admin-') && eligible.has(k)).sort().map(key => ({ key, name: `Admin PF lokal ${key.slice(-1)}`, role: 'admin' as const }))];
       }
     };

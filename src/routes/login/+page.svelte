@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { dev } from '$app/environment';
   import { page } from '$app/state';
   import { untrack } from 'svelte';
   import { app } from '$lib/state.svelte';
@@ -10,10 +11,15 @@
   let password = $state('');
   let showPassword = $state(false);
   let busy = $state(false);
+  let previewAccount = $state('');
   let error = $state(page.url.searchParams.get('error') || '');
+  const localAccounts = $derived(app.accounts.filter((account) => account.role === 'campus' || account.role === 'admin'));
 
   $effect(() => {
-    untrack(() => { void app.init(); });
+    untrack(() => {
+      void app.init();
+      if (dev) void app.loadAccounts();
+    });
   });
   $effect(() => {
     if (app.ready && app.session) goto(app.home(), { replaceState: true });
@@ -32,6 +38,15 @@
     } catch (e) {
       error = e instanceof Error ? e.message : 'Email atau kata sandi tidak sesuai.';
     } finally { busy = false; }
+  }
+
+  async function impersonate() {
+    if (!previewAccount || busy) return;
+    busy = true;
+    error = '';
+    if (await app.login(previewAccount)) await goto(app.home());
+    else error = app.error || 'Akun lokal tidak dapat dibuka.';
+    busy = false;
   }
 </script>
 
@@ -89,6 +104,19 @@
         </label>
         <Button type="submit" full loading={busy}>Masuk</Button>
       </form>
+
+      {#if dev && localAccounts.length}
+        <div class="mt-6 grid gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
+          <label class="grid gap-1.5 text-sm font-medium text-slate-700">
+            Masuk sebagai akun lokal
+            <select class="min-h-[44px] rounded-xl border border-slate-300 bg-white px-3 text-[15px] text-slate-900" bind:value={previewAccount}>
+              <option value="">Pilih akun kampus atau admin</option>
+              {#each localAccounts as account}<option value={account.key}>{account.name}</option>{/each}
+            </select>
+          </label>
+          <Button type="button" full loading={busy} disabled={!previewAccount} onclick={impersonate}>Masuk ke ruang kerja</Button>
+        </div>
+      {/if}
       <p class="mt-6 text-xs leading-5 text-slate-500">Akun baru dibuat otomatis saat pertama kali masuk dengan Microsoft. Admin program memberi peran sebelum akun dapat bekerja.</p>
     </div>
   </section>

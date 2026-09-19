@@ -48,6 +48,7 @@ export async function readPage(pb: PocketBase, actor: AppSession, request: PageR
   if (request.view === 'notifications' && actor.role === 'campus') keys = ['notifications'];
   if (request.view === 'campus-detail') {
     if (request.tab === 'Proposal') keys = ['campuses', 'proposals', 'feedback'];
+    else if (request.tab === 'Akun') keys = ['campuses'];
     else if (request.tab === 'Feedback') keys = ['campuses', 'definitions', 'indicators', 'feedback'];
     else if (request.tab === 'Indikator') keys = ['campuses', 'definitions', 'indicators', 'feedback', 'submissions'];
     else keys = stats;

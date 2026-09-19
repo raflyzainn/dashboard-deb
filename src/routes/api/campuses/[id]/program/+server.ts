@@ -3,7 +3,7 @@ import { secured, ok, fail, ANY, actorInfo, recordId } from '$lib/server/deb/acc
 import { writeAudit } from '$lib/server/deb/audit';
 import { readJsonBody } from '$lib/server/deb/request-body';
 
-/** Profil DEB fields an admin may write. Contacts are stored as one string per group (see src/lib/contacts.ts). */
+/** Profil DEB fields an admin or the owning campus may write. Contacts use one string per group (see src/lib/contacts.ts). */
 const ALLOWED = ['mentor', 'coordinator', 'localHero', 'subholding', 'operatingUnit', 'actionPlanTemplate', 'replicationVillage', 'sourceStatus', 'pfTeam', 'description', 'budget', 'currentClass', 'targetClass',
   'address', 'mapUrl', 'coordinates', 'province', 'provinceId', 'regencyId', 'regency', 'districtId', 'district', 'villageId', 'village', 'postalCode', 'signatoryName', 'signatoryTitle', 'theme', 'programTitle'];
 
@@ -12,7 +12,6 @@ export const PATCH: RequestHandler = event => secured(event, ANY, async ({ actor
   const campus = await pb.collection('campuses').getOne(id, { requestKey: null });
   if (!actor.admin) {
     if (actor.role !== 'campus' || actor.campusId !== id) fail(403, 'Profil ini bukan milik kampus Anda.');
-    if (campus.fillMode !== 'campus') fail(403, 'Profil DEB kampus ini diisi oleh admin program.');
   }
   const body = await readJsonBody(event.request, 65536);
   const values: Record<string, string> = {};

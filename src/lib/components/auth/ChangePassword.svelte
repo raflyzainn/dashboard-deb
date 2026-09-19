@@ -1,7 +1,7 @@
 <script lang="ts">
   import Modal from '$lib/components/ui/Modal.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
-  let { onclose }: { onclose: () => void } = $props();
+  let { onclose, required = false }: { onclose: () => void; required?: boolean } = $props();
   let currentPassword = $state(''),
     password = $state(''),
     confirmation = $state('');
@@ -54,10 +54,12 @@
 
 <Modal title={success ? 'Password berhasil diubah' : 'Ganti password'} onclose={close}>
   {#if success}
-    <div class="[&&]:text-center [&&]:text-[#197749] password-success" role="status">
-      <Icon name="check" size={30} />
+    <div class="flex flex-col items-center gap-4 pb-6 pt-2 text-center password-success" role="status">
+      <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700" aria-hidden="true">
+        <Icon name="check" size={28} />
+      </span>
       <p
-        class="[&&]:mt-[15px] [&&]:mb-[22px] [&&]:leading-[1.6] [&&]:text-[14px] [&&]:text-[#475569] [&&]:mx-[0px]"
+        class="m-0 max-w-sm text-sm leading-6 text-slate-600"
       >
         Gunakan password baru untuk masuk kembali. Sesi login sebelumnya sudah diakhiri di semua
         perangkat.
@@ -71,6 +73,7 @@
     <p
       class="[&&]:mt-[0px] [&&]:mb-[22px] [&&]:leading-[1.6] [&&]:text-[14px] [&&]:text-[#475569] [&&]:mx-[0px] intro"
     >
+      {#if required}Untuk keamanan akun, ganti kata sandi sementara dari admin sebelum melanjutkan. Menutup formulir ini akan mengeluarkan Anda.{/if}
       Masukkan password saat ini dan buat password baru. Setelah berhasil, Anda perlu masuk kembali
       di semua perangkat.
     </p>
@@ -193,7 +196,7 @@
           class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[600] [font-stretch:inherit] text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer [&&]:text-[#075fc7] inline-flex items-center justify-center gap-y-[9px] gap-x-[9px] min-h-[42px] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_255,_255)] [transition-behavior:normal,_normal] [transition-duration:0.15s,_0.15s] [transition-timing-function:ease,_ease] [transition-delay:0s,_0s] [transition-property:background,_box-shadow] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [&&]:[box-shadow:none] px-[18px] py-[11px] border-[1px] border-solid [&&]:border-[color:rgb(185,_214,_244)] rounded-[8px] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(237,_246,_255)] [&:hover:not(:disabled)]:[box-shadow:0_10px_24px_#075fc72c] [&:hover:not(:disabled)]:border-[color:rgb(104,_172,_233)] max-[700.01px]:text-[13px] max-[700.01px]:px-[15px] max-[700.01px]:py-[10px] max-[500.01px]:[&&&]:text-[13px] max-[500.01px]:[&&&]:grow max-[500.01px]:[&&&]:shrink max-[500.01px]:[&&&]:[flex-basis:0%] button secondary"
           type="button"
           disabled={busy}
-          onclick={close}>Batal</button
+          onclick={close}>{required ? 'Keluar' : 'Batal'}</button
         ><button
           class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[600] [font-stretch:inherit] text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[white] inline-flex items-center justify-center gap-y-[9px] gap-x-[9px] min-h-[42px] [background-image:linear-gradient(135deg,_rgb(8,_119,_216),_rgb(21,_89,_214))] [background-color:initial] [transition-behavior:normal,_normal] [transition-duration:0.15s,_0.15s] [transition-timing-function:ease,_ease] [transition-delay:0s,_0s] [transition-property:background,_box-shadow] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [box-shadow:0_8px_18px_#075fc71a] px-[18px] py-[11px] border-[1px] border-solid border-[color:rgb(8,_107,_201)] rounded-[8px] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:linear-gradient(135deg,_rgb(5,_104,_196),_rgb(18,_75,_197))] [&:hover:not(:disabled)]:[background-color:initial] [&:hover:not(:disabled)]:[box-shadow:0_10px_24px_#075fc72c] max-[700.01px]:text-[13px] max-[700.01px]:px-[15px] max-[700.01px]:py-[10px] max-[500.01px]:[&&&]:text-[13px] max-[500.01px]:[&&&]:grow max-[500.01px]:[&&&]:shrink max-[500.01px]:[&&&]:[flex-basis:0%] button"
           type="submit"

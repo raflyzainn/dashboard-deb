@@ -9,6 +9,7 @@ export async function serverSettings(): Promise<Record<string, string>> {
   if (dev && settings.DEB_LOCAL_PREVIEW_ENABLED === 'true' && /^http:\/\/127\.0\.0\.1:809[67]$/.test(settings.PB_URL || '')) {
     const local = await (await import('./local-config')).localServerConfig(settings.DEB_LOCAL_INSTANCE_DIR || '', settings.PB_URL);
     // The selected marked QA instance owns its credentials; never mix them with another .env database.
+    delete settings.PB_SUPER_TOKEN;
     Object.assign(settings, local);
     settings.DEB_LOCAL_INSTANCE_ID = 'local';
     settings.DEB_PUBLIC_URL ||= settings.PB_URL.endsWith('8097') ? 'http://127.0.0.1:5177' : 'http://127.0.0.1:5176';

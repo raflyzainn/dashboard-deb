@@ -10,6 +10,7 @@
   $effect(() => {
     if (!app.ready) return;
     if (!app.session) goto('/login', { replaceState: true });
+    else if (app.session.passwordChangeRequired) goto('/ganti-password', { replaceState: true });
     else if (app.session.role !== 'baru') goto(app.home(), { replaceState: true });
   });
   async function leave() {

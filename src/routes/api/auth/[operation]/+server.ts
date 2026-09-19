@@ -15,6 +15,7 @@ export const POST: RequestHandler = async event => {
   const op = event.params.operation || '';
   try {
     if (op === 'logout') {
+      event.cookies.delete('deb_local_preview', { path: '/' });
       if (event.locals.pb) {
         const backend = await serverClient();
         await revokeSessions(backend.pb, event.locals.pb.authStore.record!);
@@ -44,7 +45,9 @@ export const POST: RequestHandler = async event => {
       const pb = client();
       const result = await pb.collection('users').authWithPassword(body.email.trim().toLowerCase(), body.password);
       if (!result.record.active || !result.record.verified || result.record.simulated) return json({ message: 'Email atau password tidak sesuai.' }, { status: 401 });
-      const cookie = security.createJWT({ kind: 'session', token: result.token, version: result.record.sessionVersion || '' }, backend.settings.DEB_INVITATION_KEY, 28800);
+      await backend.pb.collection('users').update(result.record.id, { lastLoginAt: new Date().toISOString() }, { requestKey: null });
+      const cookie = security.createJWT({ kind: 'session', method: 'password', token: result.token, version: result.record.sessionVersion || '' }, backend.settings.DEB_INVITATION_KEY, 28800);
+      event.cookies.delete('deb_local_preview', { path: '/' });
       event.cookies.set(SESSION_COOKIE, cookie, { path: '/', httpOnly: true, sameSite: 'lax', secure: event.url.protocol === 'https:', maxAge: 28800 });
       return json({ session: mapSession(result.record) });
     }

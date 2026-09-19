@@ -40,6 +40,7 @@ class AppState {
   /** Home page for the current session: waiting page for new accounts, otherwise the dashboard of the role. */
   home() {
     if (!this.session) return '/login';
+    if (this.session.passwordChangeRequired) return '/ganti-password';
     return this.session.role === 'baru' ? '/menunggu' : `/${this.session.role}/dashboard`;
   }
   async loginWithPassword(email: string, password: string) {

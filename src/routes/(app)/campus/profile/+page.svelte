@@ -16,5 +16,5 @@
         : 'Lihat data program. Pilih Ubah pada bagian yang ingin diperbarui.'}
     </p>
   </header>
-  {#if campus}<ProgramContacts program={campus.program} campusId={campus.id} readOnly={app.readOnly || campus.fillMode !== 'campus'} /><RiwayatPerubahan context={`kampus:${campus.id}/profil`} />{/if}
+  {#if campus}<ProgramContacts program={campus.program} campusId={campus.id} readOnly={app.readOnly} /><RiwayatPerubahan context={`kampus:${campus.id}/profil`} />{/if}
 </div>

@@ -1,9 +1,10 @@
 import { noRedirects } from './pb-fetch';
-import PocketBase from 'pocketbase';
+import PocketBase, { type RecordModel } from 'pocketbase';
 import { env } from '$env/dynamic/private';
 import type { RequestEvent } from '@sveltejs/kit';
 import { security } from './security';
 import { serverSettings } from './server-client';
+import { requiresPasswordChange } from './password-policy';
 export const SESSION_COOKIE = 'deb_session';
 export function client() {
   if (!env.PB_URL) throw new Error('PB_URL belum dikonfigurasi.');
@@ -24,7 +25,9 @@ export async function sessionClient(event: RequestEvent) {
     if (!result.record.active || !result.record.verified || result.record.simulated || !['admin', 'campus', 'baru', 'super_admin'].includes(result.record.role)) throw new Error('Invalid session');
     if ((result.record.sessionVersion || '') !== claims.version) throw new Error('Revoked session');
     // The existing modules check the literal role admin; a super admin is an admin with a flag.
-    const record = result.record.role === 'super_admin' ? { ...result.record, role: 'admin', superAdmin: true } : result.record;
+    const record: RecordModel = result.record.role === 'super_admin' ? { ...result.record, role: 'admin', superAdmin: true } : result.record;
+    // Only a server-signed OAuth session bypasses the application password prompt.
+    record.passwordChangeRequired = requiresPasswordChange(record) && claims.method !== 'oauth';
     pb.authStore.save(token, record); return pb;
   } catch (error) {
     const status = (error as { status?: number }).status;

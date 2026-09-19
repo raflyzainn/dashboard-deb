@@ -10,7 +10,7 @@
   import { startRealtime } from '$lib/realtime.svelte';
   let { children } = $props();
   const routeRole = $derived(page.url.pathname.split('/')[1]);
-  const authorized = $derived(app.ready && app.session && routeRole === app.session.role);
+  const authorized = $derived(app.ready && app.session && !app.session.passwordChangeRequired && routeRole === app.session.role);
   const request = $derived(pageRequest(page.url));
   const requestKey = $derived(pageKey(request));
   $effect(() => {
@@ -35,6 +35,7 @@
   $effect(() => {
     if (!app.ready) return;
     if (!app.session) goto('/login', { replaceState: true });
+    else if (app.session.passwordChangeRequired) goto('/ganti-password', { replaceState: true });
     else if (app.session.role === 'baru') goto('/menunggu', { replaceState: true });
     else if (routeRole !== app.session.role) goto(app.home(), { replaceState: true });
   });

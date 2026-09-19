@@ -13,6 +13,7 @@
   import Empty from '$lib/components/ui/Empty.svelte';
   import Indicators from '$lib/components/shared/indicators/Indicators.svelte';
   import Proposals from '$lib/components/shared/proposals/Proposals.svelte';
+  import Users from '$lib/components/admin/users/Users.svelte';
   let { id = '' }: { id?: string } = $props();
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
@@ -99,7 +100,7 @@
     <div
       class="flex gap-y-[30px] gap-x-[30px] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:var(--line)] overflow-x-auto mb-[24px] p-[0px] [&_button]:[background-image:none] [&_button]:[background-color:initial] [&_button]:[border-top-width:0px] [&_button]:[border-right-width:0px] [&_button]:[border-bottom-width:2px] [&_button]:[border-left-width:0px] [&_button]:[border-top-style:none] [&_button]:[border-right-style:none] [&_button]:[border-bottom-style:solid] [&_button]:[border-left-style:none] [&_button]:[border-top-color:currentcolor] [&_button]:[border-right-color:currentcolor] [&_button]:[border-bottom-color:transparent] [&_button]:[border-left-color:currentcolor] [&_button]:pt-[16px] [&_button]:pb-[13px] [&_button]:[white-space-collapse:collapse] [&_button]:[text-wrap-mode:nowrap] [&_button]:text-[13px] [&_button]:text-[#64748b] [&_button]:flex [&_button]:gap-y-[8px] [&_button]:gap-x-[8px] [&_button]:items-center [&_button]:px-[0px] [&_button.active]:text-[#075fc7] [&_button.active]:[border-bottom-color:#1681df] [&_button.active]:font-[700] max-[700.01px]:gap-y-[24px] max-[700.01px]:gap-x-[24px] max-[700.01px]:p-[0px] max-[700.01px]:[&_button]:text-[12px] tabs page-tabs"
     >
-      {#each ['Ringkasan', 'Indikator', 'Proposal', 'Feedback'] as t}<button
+      {#each ['Ringkasan', 'Indikator', 'Proposal', 'Feedback', 'Akun'] as t}<button
           class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [font-size:inherit] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[inherit] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px]"
           class:active={tab === t}
           onclick={() => selectTab(t)}
@@ -228,7 +229,7 @@
       </section>{:else if tab === 'Indikator'}<Indicators
         campusId={id}
         embedded
-      />{:else if tab === 'Proposal'}<Proposals campusId={id} embedded />{:else}<section
+      />{:else if tab === 'Proposal'}<Proposals campusId={id} embedded />{:else if tab === 'Akun'}{#key id}<Users campusId={id} />{/key}{:else}<section
         class="[background-image:initial] [background-color:white] min-w-[0] overflow-x-hidden overflow-y-hidden [box-shadow:0_10px_30px_#1a4d8f08] border-[1px] border-solid border-[color:rgb(220,_231,_247)] rounded-[11px] [&:hover]:border-[color:rgb(210,_226,_245)] panel"
       >
         <div

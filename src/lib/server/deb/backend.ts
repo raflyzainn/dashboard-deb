@@ -4,6 +4,7 @@ import { atomic, StoreRecord, type SnapshotReads } from './rest-store';
 import { runWorkflow } from './business/workflows';
 import { createAccounts } from './business/accounts';
 import { security } from './security';
+import { requiresPasswordChange, newSessionVersion } from './password-policy';
 import { PreviewError } from './preview-error';
 
 function workflowReads(pb: PocketBase, actor: RecordModel, operation: string, body: Record<string, unknown>, key: string): SnapshotReads {
@@ -87,7 +88,7 @@ export async function revokeSessions(pb: PocketBase, actor: RecordModel) {
     const user = store.findRecordById('users', actor.id);
     // A retry must not revoke sessions created after this logout already committed.
     if (user.getString('sessionVersion') !== (actor.sessionVersion || '')) return;
-    user.set('sessionVersion', security.randomString(50));
+    user.set('sessionVersion', newSessionVersion(requiresPasswordChange(user.data)));
     // StoreRecord's legacy tokenKey setter aliases sessionVersion; rotate the native key explicitly too.
     user.data.tokenKey = security.randomString(50);
     store.save(user);

@@ -41,7 +41,7 @@ export function writeAudit(pb: PocketBase, input: AuditInput) {
 
 export async function readAudit(pb: PocketBase, context: string, page = 1, limit = 20): Promise<{ items: AuditEntry[]; total: number }> {
   const result = await pb.collection('audit').getList(page, limit, {
-    filter: pb.filter('context = {:context}', { context }),
+    filter: context === 'pengguna' ? 'context = "pengguna" || context ~ "pengguna:"' : pb.filter('context = {:context}', { context }),
     sort: '-created',
     fields: 'id,actorName,action,before,after,note,created',
     requestKey: null

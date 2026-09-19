@@ -1,4 +1,5 @@
 import { AwsClient } from 'aws4fetch';
+import { dev } from '$app/environment';
 import { PreviewError } from './preview-error';
 
 /**
@@ -14,6 +15,33 @@ export interface Storage {
 const encodeKey = (key: string) => key.split('/').map(encodeURIComponent).join('/');
 
 export function storage(settings: Record<string, string>): Storage {
+  if (dev && settings.DEB_LOCAL_INSTANCE_ID === 'local') {
+    // Local preview keeps copied documents and new uploads in the marked local instance.
+    const file = async (key: string) => {
+      const { createHash } = await import('node:crypto');
+      const path = await import('node:path');
+      return path.join(settings.DEB_LOCAL_INSTANCE_DIR || '.local/pocketbase', 'objects', createHash('sha256').update(key).digest('hex'));
+    };
+    return {
+      async put(key, body) {
+        const fs = await import('node:fs/promises');
+        const path = await import('node:path');
+        const target = await file(key);
+        await fs.mkdir(path.dirname(target), { recursive: true });
+        await fs.writeFile(target, new Uint8Array(body));
+      },
+      async get(key) {
+        const fs = await import('node:fs/promises');
+        try { return new Response(new Uint8Array(await fs.readFile(await file(key))), { headers: { 'Content-Type': mimeFor(key) } }); }
+        catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') throw new PreviewError(404, 'Berkas lokal belum tersedia.'); throw error; }
+      },
+      async exists(key) {
+        const fs = await import('node:fs/promises');
+        try { await fs.access(await file(key)); return true; }
+        catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false; throw error; }
+      }
+    };
+  }
   const { R2_ENDPOINT, R2_BUCKET, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY } = settings;
   if (!R2_ENDPOINT || !R2_BUCKET || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) throw new PreviewError(503, 'Penyimpanan berkas belum dikonfigurasi.');
   const client = new AwsClient({ accessKeyId: R2_ACCESS_KEY_ID, secretAccessKey: R2_SECRET_ACCESS_KEY, service: 's3', region: 'auto' });
