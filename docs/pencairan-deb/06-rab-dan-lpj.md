@@ -1,3 +1,5 @@
+> **Pembaruan 20 September 2026 (keputusan 49):** templat, ekspor, dan impor memakai format resmi Pertamina Foundation (PERHITUNGAN per sel, VOLUME dengan satuan, HARGA SATUAN, Sub total dan Jumlah), tiga lembar; pembaca `rab-grid.ts`.
+
 > **Pembaruan 20 September 2026 (keputusan 42):** templat dan ekspor kini tiga lembar (RAB 100%, RAB 70%, RAB 30%) dengan lembar Petunjuk yang merekonsiliasi ketiganya; tiap baris menyimpan `amountSen`, `term1Sen`, `term2Sen`; butir RAB punya tiga halaman.
 
 > **Pembaruan 19 September 2026 (keputusan 35 dan 36):** RAB terkelola adalah RAB Tahap 1; templat Excel untuk kampus dan admin kini lima kolom saja (No, Uraian, Satuan, Volume, Jumlah) dengan contoh baris di dalamnya; impor dan ekspor tersedia di butir RAB pada layar daftar periksa. Uraian templat lama di bawah hanya berlaku untuk berkas ekstraksi awal.

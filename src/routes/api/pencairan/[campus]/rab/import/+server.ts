@@ -13,9 +13,9 @@ export const POST: RequestHandler = event => secured(event, ADMIN, async ({ acto
   const file = form?.get('file');
   if (!(file instanceof File)) fail(400, 'Pilih berkas Excel yang akan diimpor.');
   if (!/\.(xlsx|xlsm|xls)$/i.test(file.name)) fail(400, 'Gunakan berkas Excel (.xlsx) dari templat.');
-  if (file.size > 10 * 1024 * 1024) fail(413, 'Ukuran berkas maksimal 10 MB.');
+  if (file.size > 20 * 1024 * 1024) fail(413, 'Ukuran berkas maksimal 20 MB.');
   const { campus } = await campusWithAward(pb, campusId);
-  const result = parseWorkbook(await file.arrayBuffer(), campus.code);
+  const result = parseWorkbook(await file.arrayBuffer(), campus.code, file.name);
   const summary = { rows: result.rows, kind: result.kind, totalSen: result.totalSen, term1Sen: result.term1Sen, term2Sen: result.term2Sen || 0, problems: result.problems.slice(0, 200), problemCount: result.problems.length, fileName: file.name };
   if (String(form?.get('mode') || '') === 'preview') return ok({ preview: summary });
   const created = await createVersion(pb, actorInfo(actor), campusId, { lines: result.lines, source: 'import', share: result.share, sourceFile: file.name, note: result.problems.length ? `${result.problems.length} catatan saat impor.` : '' });

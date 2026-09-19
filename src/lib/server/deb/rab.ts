@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx';
 import { limitSen, formatSen, parseSen } from '../../pencairan';
 import { arrange, totalsOf, rabChecks, stripEnumerator, parseVolume, MAX_LEVEL, type Arranged, type LineInput, type RabLine, type RabStatus, type RabSource, type RabVersionShare, type RabVersionInfo, type RabOverview, type RabCheck } from '../../rab';
 import { PreviewError } from './preview-error';
+import { gridHeader, isGridSheet, parseGridSheet, mergeGridSheets, type GridResult } from './rab-grid';
 import { writeAudit, type AuditActor } from './audit';
 import { campusWithAward, ensureDisbursement, updateDisbursement, context, type CampusInfo } from './pencairan';
 
@@ -464,28 +465,61 @@ const normTitle = (value: unknown) => String(value ?? '').trim().toLowerCase().r
 const isBlank = (value: unknown) => value === null || value === undefined || value === '';
 
 /**
- * Reads an uploaded workbook. The three sheet template (RAB 100%, RAB 70%, RAB 30%) is merged line by line on the No column
- * (the Uraian when a row has no No): Jumlah of RAB 100% is the line, the two other sheets give its Tahap 1 and Tahap 2 parts.
- * A file with only the RAB 70% sheet (older template) or the old extraction layout still reads as before.
+ * Reads an uploaded workbook. Sheets in the official Pertamina Foundation layout (No, URAIAN, PERHITUNGAN, VOLUME, HARGA SATUAN,
+ * JUMLAH) are read by rab-grid.ts; the three sheets (RAB 100%, RAB 70%, RAB 30%) are laid over each other line by line on the
+ * heading and item names. The older five column template (No, Uraian, Satuan, Volume, Jumlah) is still read, merged on its No
+ * column. A single sheet counts as RAB 70% when its sheet or file name says so, as RAB 30% likewise, otherwise as RAB 100%.
  */
-export function parseWorkbook(bytes: ArrayBuffer | Uint8Array, campusCode: string): ImportResult {
+export function parseWorkbook(bytes: ArrayBuffer | Uint8Array, campusCode: string, fileName = ''): ImportResult {
   let book: XLSX.WorkBook;
   try { book = XLSX.read(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes), { type: 'array', cellDates: false }); }
   catch { throw new PreviewError(400, 'Berkas tidak terbaca. Unggah berkas Excel (.xlsx) dari templat.'); }
-  const find = (test: RegExp) => book.SheetNames.find(n => test.test(n.toLowerCase().replace(/\s+/g, ' ')));
-  const nameFull = find(/rab 100|100 ?%|penuh|rab total/), nameT1 = find(/rab 70|70 ?%|tahap 1|termin 1/), nameT2 = find(/rab 30|30 ?%|tahap 2|termin 2/);
-  if (!nameFull && !nameT1) {
-    const legacy = book.Sheets['RAB'] || book.Sheets[book.SheetNames.find(n => n !== 'Petunjuk' && n !== nameT2) || book.SheetNames[0]];
-    if (!legacy) throw new PreviewError(400, 'Lembar RAB tidak ditemukan. Gunakan templat yang disediakan.');
-    const { rows, headers } = sheetRows(legacy);
+  const names = book.SheetNames.filter(n => !/petunjuk|laporan/i.test(n));
+  const find = (test: RegExp) => names.find(n => test.test(n.toLowerCase().replace(/\s+/g, ' ')));
+  const nameT1 = find(/rab 70|70 ?%|tahap 1|termin 1|termin i\b/), nameT2 = find(/rab 30|30 ?%|tahap 2|termin 2|termin ii\b/);
+  const nameFull = find(/rab 100|100 ?%|penuh|rab total/) || ((nameT1 || nameT2) ? names.find(n => n !== nameT1 && n !== nameT2 && gridHeader(XLSX.utils.sheet_to_json<unknown[]>(book.Sheets[n], { header: 1, raw: true, defval: null })) !== null) : undefined);
+  const arrays = (name: string) => XLSX.utils.sheet_to_json<unknown[]>(book.Sheets[name], { header: 1, raw: true, defval: null });
+  const shareOfSingle = (name: string): RabVersionShare => (/70|tahap ?1|termin ?1|termin i\b/i.test(name + ' ' + fileName) ? 'tahap1' : /30|tahap ?2|termin ?2|termin ii\b/i.test(name + ' ' + fileName) ? 'tahap2' : 'penuh');
+  const finish = (grid: GridResult, kind: ImportResult['kind'], share: RabVersionShare): ImportResult => {
+    if (!grid.items) throw new PreviewError(400, 'Tidak ada baris barang di berkas ini. Isi uraian, volume, harga satuan, dan jumlah pada tiap baris barang.');
+    const totals = totalsOf(arrange(grid.lines));
+    return { lines: grid.lines, rows: grid.items, kind, share, ...totals, problems: grid.problems.map(p => ({ row: p.row, text: p.text })) };
+  };
+  // Official layout on any of the sheets.
+  const gridNames = [nameFull, nameT1, nameT2].filter((n): n is string => Boolean(n) && isGridSheet(arrays(n!)));
+  if (gridNames.length) {
+    const parsed = (name?: string) => (name && isGridSheet(arrays(name)) ? parseGridSheet(arrays(name)) : null);
+    const full = parsed(nameFull), t1 = parsed(nameT1), t2 = parsed(nameT2);
+    if (full) {
+      const merged = mergeGridSheets(full, t1, t2);
+      return finish(merged, 'tiga_lembar', t1 || t2 ? 'gabungan' : 'penuh');
+    }
+    const only = t1 || t2!;
+    const share: RabVersionShare = t1 ? 'tahap1' : 'tahap2';
+    for (const l of only.lines) { if (share === 'tahap1') l.term1Sen = l.amountSen; else l.term2Sen = l.amountSen; }
+    if (t1 && t2) { const merged = mergeGridSheets(t1, null, t2); return finish(merged, 'tiga_lembar', 'gabungan'); }
+    return finish(only, 'termin_1', share);
+  }
+  if (!nameFull && !nameT1 && !nameT2) {
+    const legacyName = book.Sheets['RAB'] ? 'RAB' : names[0] || book.SheetNames[0];
+    if (!legacyName) throw new PreviewError(400, 'Lembar RAB tidak ditemukan. Gunakan templat yang disediakan.');
+    const rowsA = arrays(legacyName);
+    if (isGridSheet(rowsA)) {
+      const grid = parseGridSheet(rowsA);
+      const share = shareOfSingle(legacyName);
+      for (const l of grid.lines) { if (share === 'tahap1') l.term1Sen = l.amountSen; else if (share === 'tahap2') l.term2Sen = l.amountSen; }
+      return finish(grid, share === 'penuh' ? 'total' : 'termin_1', share);
+    }
+    const { rows, headers } = sheetRows(book.Sheets[legacyName]);
     if (headers.includes('kelompok') && headers.includes('kegiatan')) return buildImportLegacy(rows, campusCode);
     const columns = simpleColumns(headers);
-    if (!columns) throw new PreviewError(400, 'Kolom Uraian dan Jumlah tidak ditemukan. Unduh templat: No, Uraian, Satuan, Volume, Jumlah.');
-    return buildSimpleImport(rows, columns);
+    if (!columns) throw new PreviewError(400, 'Kepala tabel RAB tidak dikenali. Unduh templat resmi dan isi sesuai contohnya.');
+    return { ...buildSimpleImport(rows, columns), share: shareOfSingle(legacyName) };
   }
+  // The older five column template, merged on its No column.
   const base = sheetRows(book.Sheets[(nameFull || nameT1)!]);
   const columns = simpleColumns(base.headers);
-  if (!columns) throw new PreviewError(400, `Kolom Uraian dan Jumlah tidak ditemukan di lembar ${nameFull || nameT1}. Unduh templat: No, Uraian, Satuan, Volume, Jumlah.`);
+  if (!columns) throw new PreviewError(400, `Kepala tabel tidak dikenali di lembar ${nameFull || nameT1}. Unduh templat resmi dan isi sesuai contohnya.`);
   if (!nameFull && !nameT2) return { ...buildSimpleImport(base.rows, columns), share: 'tahap1' };
   const keyOf = (r: Record<string, unknown>, cols: Record<string, string>) => cleanCode(r[cols.no ?? '']) || normTitle(r[cols.uraian]);
   const lookup = (name: string | undefined, label: string) => {
@@ -504,7 +538,6 @@ export function parseWorkbook(bytes: ArrayBuffer | Uint8Array, campusCode: strin
     const k = keyOf(r, columns);
     return { ...r, [T1]: nameFull ? (t1?.map.get(k)?.[t1.cols.jumlah] ?? null) : r[columns.jumlah], [T2]: t2?.map.get(k)?.[t2.cols.jumlah] ?? null };
   });
-  // Items that appear only on the RAB 70% or RAB 30% sheet are kept and reported; they have no RAB 100% line to compare with.
   const extra: ImportProblem[] = [];
   const seen = new Set(base.rows.map(r => keyOf(r, columns)));
   for (const [label, sheet] of [['RAB 70%', nameFull ? t1 : null], ['RAB 30%', t2]] as const) {

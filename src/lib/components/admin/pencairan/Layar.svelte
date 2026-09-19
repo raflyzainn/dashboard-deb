@@ -210,11 +210,11 @@
     if (!data || busy) return;
     busy = true; error = '';
     try {
-      const overview = await dataService.api.get<{ campus: { code: string; name: string }; version: { number: number; lines: { level: number; code: string; title: string; unit: string; volume: number; amountSen: number; term1Sen: number; term2Sen: number }[] } | null }>(`/api/pencairan/${campusId}/rab`);
+      const overview = await dataService.api.get<{ campus: { code: string; name: string }; version: { number: number; lines: { level: number; code: string; title: string; calculation: string; unit: string; volume: number; unitPriceSen: number; amountSen: number; term1Sen: number; term2Sen: number }[] } | null }>(`/api/pencairan/${campusId}/rab`);
       if (!overview.version) throw new Error('Belum ada RAB terkelola untuk diekspor.');
       const { downloadRabWorkbook, linesToRows } = await import('$lib/rab-excel');
       const lines = overview.version.lines;
-      await downloadRabWorkbook(`RAB_${overview.campus.code.replace(/\s+/g, '')}_v${overview.version.number}.xlsx`, { title: `RAB · ${overview.campus.name}`, penuh: linesToRows(lines, 'penuh'), tahap1: linesToRows(lines, 'tahap1'), tahap2: linesToRows(lines, 'tahap2') });
+      await downloadRabWorkbook(`RAB_${overview.campus.code.replace(/\s+/g, '')}_v${overview.version.number}.xlsx`, { university: overview.campus.name.toUpperCase(), penuh: linesToRows(lines, 'penuh'), tahap1: linesToRows(lines, 'tahap1'), tahap2: linesToRows(lines, 'tahap2') });
       say(`Versi ${overview.version.number} diekspor.`);
     } catch (e) { error = e instanceof Error ? e.message : 'Ekspor belum berhasil.'; }
     finally { busy = false; }
