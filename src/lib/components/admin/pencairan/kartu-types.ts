@@ -22,5 +22,5 @@ export interface KartuData {
 export interface DirectoryRow {
   campus: { id: string; name: string; code: string; programYear: string; fillMode: string };
   amountSen: number; limitSen: number; stage: number; requestedSen: number; paidSen: number; paidAt: string; lampiranCount: number;
-  statuses: Record<Kind, Status>; assessment: Assessment; checkedAt: string;
+  statuses: Record<Kind, Status>; assessment: Assessment; checkedAt: string; bukti: { r100: string; r70: string; r30: string };
 }

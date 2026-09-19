@@ -36,7 +36,7 @@ Batas = 70% dari Nilai SK, tepat. "ada" berarti lembar atau kolomnya ada di berk
 | USU | tidak | tidak | tidak | hanya tautan `RAB DEB USU 2026.url` |
 | UB, PNC, ITERA | tidak | tidak | tidak | folder tidak berisi berkas RAB |
 
-Ringkasan: 12 kampus punya RAB 100%, 13 kampus punya RAB 70%, hanya UNMUL yang punya lembar 30% terpisah, 4 kampus tidak punya berkas RAB yang terbaca.
+Ringkasan: 13 kampus punya RAB 100%, 13 kampus punya RAB 70%, hanya UNMUL yang punya lembar 30% terpisah, 4 kampus tidak punya berkas RAB yang terbaca.
 
 ## Apa yang salah di sistem sebelum ini
 

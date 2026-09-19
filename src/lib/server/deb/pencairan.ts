@@ -51,9 +51,11 @@ export async function ensureDisbursement(pb: PocketBase, campusId: string, term 
   return { disbursement, documents };
 }
 
+/** The evidence marks of the three RAB sheets, as set from the campus file (decision 47): 'ada', 'tidak', or '' when not checked. */
+export const rabEvidence = (properties: unknown) => { const p = (properties && typeof properties === 'object' ? properties : {}) as Record<string, unknown>; const m = (k: string) => (p[k] === 'ada' ? 'ada' : p[k] === 'tidak' ? 'tidak' : ''); return { r100: m('buktiRab100'), r70: m('buktiRab70'), r30: m('buktiRab30') }; };
 export interface DirectoryRow {
   campus: CampusInfo; amountSen: number; limitSen: number; stage: number; requestedSen: number; paidSen: number; paidAt: string; lampiranCount: number;
-  statuses: Record<Kind, Status>; assessment: Assessment; checkedAt: string;
+  statuses: Record<Kind, Status>; assessment: Assessment; checkedAt: string; bukti: { r100: string; r70: string; r30: string };
 }
 /**
  * The dashboard: every funded campus with its eight items and the same reading the card gives (assess).
@@ -90,7 +92,7 @@ export async function directory(pb: PocketBase): Promise<DirectoryRow[]> {
     const { checks: list, suratKuasaRequired } = checks(docs, summary, { campus, bankResult: String(bank?.bankResult || 'belum'), rab });
     const assessment = assess(statuses, { suratKuasaRequired, redChecks: list.filter(c => c.level === 'bad').length, paidAt: String(disbursement?.paidAt || ''), originalsAll: docs.filter(d => d.generated).every(d => d.originalReceived), lampiranCount });
     const checkedAt = own.map(d => String(d.updated || '')).sort().pop() || '';
-    return { campus, amountSen, limitSen: limitSen(amountSen), stage: Number(disbursement?.stage || 1), requestedSen, paidSen: Number(disbursement?.paidSen || 0), paidAt: String(disbursement?.paidAt || ''), lampiranCount, statuses, assessment, checkedAt };
+    return { campus, amountSen, limitSen: limitSen(amountSen), stage: Number(disbursement?.stage || 1), requestedSen, paidSen: Number(disbursement?.paidSen || 0), paidAt: String(disbursement?.paidAt || ''), lampiranCount, statuses, assessment, checkedAt, bukti: rabEvidence(disbursement?.properties) };
   });
 }
 const lightVersion = (v: RecordModel): VersionInfo => ({
