@@ -80,15 +80,15 @@ Masih terbuka:
 
 - `npm run build` belum pernah dijalankan (dilarang tanpa permintaan); deploy Pages dan variabel lingkungannya adalah langkah pengguna.
 - Hasil ekstraksi RAB kampus perlu dilihat: pada IPB kolom RAB 70% versi 1 sama dengan RAB penuh (Rp53.235.399,50), di atas batas, sehingga persetujuan terkunci sampai barisnya disesuaikan; lembar review menyebut Rp50.110.400.
-- Isi butir "Format laporan DEB Termin 1" belum jelas (keputusan 28a).
+- Butir "Format laporan DEB Termin 1" dihapus pada 20 September 2026 (keputusan 39).
 - Tahap 2 hanya kartu penampung; LPJ masih halaman lama; tampilan kampus belum diaktifkan untuk 17 kampus lain.
 - Akun uji `qa.kampus@example.org` (peran kampus, Politeknik Negeri Kupang) dibuat untuk QA tampilan kampus; hapus atau nonaktifkan bila tidak diperlukan.
 
 ## Kondisi pembangunan versi 11 (19 September 2026, larut malam)
 
-- **Server**: `KINDS` dimulai dengan `sk` (sembilan butir); slot `sk` dibuat dengan status `perlu_konfirmasi`; `GET /api/pencairan/sk` mengalirkan berkas SK dari R2; `sk_awards.fileKey`, `lampiranPage`, `lampiranNo` diisi oleh `scripts/pencairan/load-sk.ts --apply` (halaman Lampiran I 4 sampai 8); `POST .../documents/[kind]/review` menerima `bank: { result, nameSeen }` untuk rekening (cek bank dan keputusan dalam satu panggilan); `POST .../rab/keputusan` menyetujui atau menarik RAB terkelola dan memutuskan butir RAB; keputusan SK tidak memberi tahu kampus.
+- **Server**: `KINDS` dimulai dengan `sk` (delapan butir sejak keputusan 39); slot `sk` dibuat dengan status `perlu_konfirmasi`; `GET /api/pencairan/sk` mengalirkan berkas SK dari R2; `sk_awards.fileKey`, `lampiranPage`, `lampiranNo` diisi oleh `scripts/pencairan/load-sk.ts --apply` (halaman Lampiran I 4 sampai 8); `POST .../documents/[kind]/review` menerima `bank: { result, nameSeen }` untuk rekening (cek bank dan keputusan dalam satu panggilan); `POST .../rab/keputusan` menyetujui atau menarik RAB terkelola dan memutuskan butir RAB; keputusan SK tidak memberi tahu kampus.
 - **Layar**: `Layar.svelte` (daftar butir, dokumen, panel Catatan, bilah aksi), `Dashboard.svelte` (ringkasan dan grid), `Tahap1Grid.svelte` (grid pilih kampus), `RabTable.svelte`, `TandaTanganView.svelte`, `LampiranView.svelte`, `PembayaranView.svelte`, `RiwayatSheet.svelte`, `PencairanNav.svelte` (Tahap 1, Tahap 2). Dihapus: `Kartu.svelte`, `ItemPanel.svelte`, `Tahap1.svelte`, `TandaTangan.svelte`, `Lampiran.svelte`, rute `/[id]/tanda-tangan`, `/[id]/lampiran`.
-- **Masih terbuka**: sama dengan versi 9 (build, deploy, ekstraksi RAB IPB di atas batas, isi Format laporan, Tahap 2 penampung), ditambah: halaman verifikasi tidak lagi memeriksa sesi; akun uji di produksi sudah dihapus, uji coba memakai PocketBase lokal (dokumen 08, "Uji coba tanpa menyentuh produksi").
+- **Masih terbuka**: sama dengan versi 9 (build, deploy, ekstraksi RAB IPB di atas batas, Tahap 2 penampung), ditambah: halaman verifikasi tidak lagi memeriksa sesi; akun uji di produksi sudah dihapus, uji coba memakai PocketBase lokal (dokumen 08, "Uji coba tanpa menyentuh produksi").
 
 ## Tambahan 20 September 2026: Catatan percakapan (keputusan 38)
 

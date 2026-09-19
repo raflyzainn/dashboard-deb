@@ -21,7 +21,7 @@ const opts = { requestKey: null } as const;
 type Actor = AuditActor & { id: string };
 const LAMPIRAN_STAGE = 7;
 
-export type SourceKind = Exclude<Kind, 'laporan'>;
+export type SourceKind = Kind;
 export const ORDER: SourceKind[] = ['permohonan', 'invois', 'kuitansi', 'rab', 'rekening', 'surat_kuasa', 'pks'];
 /** Entry number on the sheet's list of six attachments. Surat kuasa and PKS share entry 6. */
 export const ENTRY_OF: Record<SourceKind, number> = { permohonan: 1, invois: 2, kuitansi: 3, rab: 4, rekening: 5, surat_kuasa: 6, pks: 6 };

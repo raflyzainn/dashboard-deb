@@ -1,22 +1,22 @@
 /** Shared vocabulary of the Pencairan module: kinds, statuses, stages, money in sen, terbilang. Pure TypeScript, used by server and browser. */
 
-/** The SK first, then the eight check columns of the review sheet in the sheet's order. One checklist item each. */
-export const KINDS = ['sk', 'pks', 'rab', 'permohonan', 'kuitansi', 'invois', 'laporan', 'rekening', 'surat_kuasa'] as const;
+/** The SK first, then the check columns of the review sheet in the sheet's order, one checklist item each. The sheet's "Format laporan" column was a placeholder and is not an item (decision 39); its old document rows stay in the database unused. */
+export const KINDS = ['sk', 'pks', 'rab', 'permohonan', 'kuitansi', 'invois', 'rekening', 'surat_kuasa'] as const;
 export type Kind = (typeof KINDS)[number];
 export const KIND_LABEL: Record<Kind, string> = {
   sk: 'SK penetapan penerima', pks: 'Draft PKS', rab: 'RAB dan rencana realisasi 70%', permohonan: 'Permohonan pencairan dana', kuitansi: 'Kuitansi penerimaan dana', invois: 'Invoice penerimaan dana',
-  laporan: 'Format laporan DEB Termin 1', rekening: 'Buku rekening', surat_kuasa: 'Surat kuasa'
+  rekening: 'Buku rekening', surat_kuasa: 'Surat kuasa'
 };
-export const KIND_SHORT: Record<Kind, string> = { sk: 'SK', pks: 'PKS', rab: 'RAB 70%', permohonan: 'Permohonan', kuitansi: 'Kuitansi', invois: 'Invois', laporan: 'Format laporan', rekening: 'Rekening', surat_kuasa: 'Surat kuasa' };
+export const KIND_SHORT: Record<Kind, string> = { sk: 'SK', pks: 'PKS', rab: 'RAB 70%', permohonan: 'Permohonan', kuitansi: 'Kuitansi', invois: 'Invois', rekening: 'Rekening', surat_kuasa: 'Surat kuasa' };
 /** What file each item expects, shown in the item panel. */
 export const KIND_FILE: Record<Kind, string> = {
   sk: 'Satu SK untuk semua kampus', pks: 'Berkas Word', rab: 'RAB terkelola; berkas Excel asli tetap bisa dilihat', permohonan: 'Word atau PDF', kuitansi: 'Word atau PDF', invois: 'Word atau PDF',
-  laporan: 'Berkas laporan', rekening: 'Pindaian halaman depan buku rekening (PDF atau gambar)', surat_kuasa: 'Pindaian atau Word'
+  rekening: 'Pindaian halaman depan buku rekening (PDF atau gambar)', surat_kuasa: 'Pindaian atau Word'
 };
 /** The two buttons of each item: the green one is the right answer, the grey one the wrong one (asks for a note). */
 export const DECISION_LABEL: Record<Kind, { ok: string; bad: string; none?: string }> = {
   sk: { ok: 'Nilai sesuai dengan SK', bad: 'Nilai berbeda' }, pks: { ok: 'Sesuai', bad: 'Perlu revisi' }, rab: { ok: 'Sesuai: jadikan nominal Tahap 1', bad: 'Perlu revisi' },
-  permohonan: { ok: 'Sesuai', bad: 'Perlu revisi' }, kuitansi: { ok: 'Sesuai', bad: 'Perlu revisi' }, invois: { ok: 'Sesuai', bad: 'Perlu revisi' }, laporan: { ok: 'Sesuai', bad: 'Perlu revisi' },
+  permohonan: { ok: 'Sesuai', bad: 'Perlu revisi' }, kuitansi: { ok: 'Sesuai', bad: 'Perlu revisi' }, invois: { ok: 'Sesuai', bad: 'Perlu revisi' },
   rekening: { ok: 'Nama sesuai di bank', bad: 'Nama berbeda di bank' }, surat_kuasa: { ok: 'Nama cocok', bad: 'Nama berbeda', none: 'Tanpa surat kuasa' }
 };
 /** Reminders per item, written from the reviewers' own notes in the review sheet. For the checker's eye; the decision is the two buttons. */
@@ -27,12 +27,11 @@ export const LOOK_AT: Record<Kind, string[]> = {
   permohonan: ['Kop surat kampus, nomor dan tanggal surat', 'Ditujukan ke Pertamina Foundation, menyebut program dan tahun', 'Nominal dan terbilang Termin 1 saja, tidak ada halaman Termin 2', 'Penandatangan adalah pihak kedua PKS, tanpa tanda tangan tambahan'],
   kuitansi: ['Kop, nomor dan tanggal kuitansi', '"Telah terima dari" Pertamina Foundation, keterangan Termin 1 program DEB', 'Jumlah uang dan terbilang sama', 'Tempat meterai dan tanda tangan pihak kedua ada, tanpa sorotan kuning'],
   invois: ['Kop, nomor dan tanggal invois', 'Nominal Termin 1 saja', 'Nama bank, nomor rekening dan nama pemilik tertulis dan sama dengan buku rekening', 'Penandatangan pihak kedua'],
-  laporan: ['Berkas ada dan mengikuti templat laporan DEB'],
   rekening: ['Halaman depan buku tabungan atau rekening koran, bukan surat identitas kampus', 'Nama bank, nomor rekening, nama pemilik terbaca jelas', 'Rekening atas nama lembaga, atau atas nama orang bila disertai surat kuasa', 'Nama dicek di bank dan hasilnya dicatat di sini'],
   surat_kuasa: ['Pemberi kuasa adalah penandatangan PKS', 'Penerima kuasa sama dengan nama pemilik rekening', 'Bertanda tangan, bermeterai, bertanggal', 'Menyebut penerimaan dana program DEB']
 };
 /** Who usually checks the item. Shown, never enforced. */
-export const USUAL_CHECKER: Record<Kind, string> = { sk: 'Tim program', pks: 'Tim program', rab: 'Tim program', permohonan: 'Tim program', kuitansi: 'Tim program', invois: 'Tim program', laporan: 'Tim program', rekening: 'Keuangan', surat_kuasa: 'Keuangan' };
+export const USUAL_CHECKER: Record<Kind, string> = { sk: 'Tim program', pks: 'Tim program', rab: 'Tim program', permohonan: 'Tim program', kuitansi: 'Tim program', invois: 'Tim program', rekening: 'Keuangan', surat_kuasa: 'Keuangan' };
 /** Documents the system generates for wet signature; the others are uploads only. */
 export const GENERATED: Kind[] = ['pks', 'permohonan', 'invois', 'kuitansi'];
 /** Letters that must carry Termin 1 only: a Termin 2 page left inside is a finding. */
@@ -48,7 +47,7 @@ export type ItemState = Status;
 export const ITEM_STATE_LABEL: Record<ItemState, string> = { ...STATUS_LABEL, tidak_perlu: 'Tanpa surat kuasa' };
 export const isDone = (state: ItemState) => state === 'sesuai' || state === 'tidak_perlu';
 /** Short names used inside phrases: "Masih 2 yang perlu dilengkapi: surat kuasa dan buku rekening." */
-export const ITEM_NAME: Record<Kind, string> = { sk: 'nilai SK', pks: 'draft PKS', rab: 'RAB 70%', permohonan: 'surat permohonan', kuitansi: 'kuitansi', invois: 'invois', laporan: 'format laporan Termin 1', rekening: 'buku rekening', surat_kuasa: 'surat kuasa' };
+export const ITEM_NAME: Record<Kind, string> = { sk: 'nilai SK', pks: 'draft PKS', rab: 'RAB 70%', permohonan: 'surat permohonan', kuitansi: 'kuitansi', invois: 'invois', rekening: 'buku rekening', surat_kuasa: 'surat kuasa' };
 /** Rail word per state: short, for the list on the left. */
 export const RAIL_WORD: Record<ItemState, string> = { sesuai: 'Sesuai', tidak_perlu: 'Tanpa', perlu_konfirmasi: 'Periksa', menunggu_review: 'Periksa', perlu_revisi: 'Revisi', belum_ada: 'Belum' };
 
@@ -114,7 +113,6 @@ export const FIELDS: Record<Kind, { key: string; label: string; type: 'text' | '
   permohonan: [{ key: 'nomorSurat', label: 'Nomor surat', type: 'text' }, { key: 'tanggalSurat', label: 'Tanggal surat', type: 'date' }, { key: 'nominalSen', label: 'Nominal Termin 1', type: 'money' }, { key: 'penandatangan', label: 'Penandatangan', type: 'text' }],
   invois: [{ key: 'nomorInvois', label: 'Nomor invois', type: 'text' }, { key: 'tanggal', label: 'Tanggal', type: 'date' }, { key: 'nominalSen', label: 'Nominal', type: 'money' }, { key: 'namaBank', label: 'Nama bank di invois', type: 'text' }, { key: 'rekeningTujuan', label: 'Nomor rekening di invois', type: 'text' }, { key: 'namaPemilik', label: 'Nama pemilik rekening di invois', type: 'names' }],
   kuitansi: [{ key: 'nomorKuitansi', label: 'Nomor kuitansi', type: 'text' }, { key: 'tanggal', label: 'Tanggal', type: 'date' }, { key: 'nominalSen', label: 'Nominal', type: 'money' }, { key: 'terbilang', label: 'Terbilang', type: 'text' }, { key: 'bermeterai', label: 'Bermeterai', type: 'bool' }],
-  laporan: [],
   rekening: [{ key: 'namaBank', label: 'Nama bank', type: 'text' }, { key: 'cabang', label: 'Cabang', type: 'text' }, { key: 'namaPemilik', label: 'Nama pemilik rekening', type: 'names' }, { key: 'nomorRekening', label: 'Nomor rekening', type: 'text' }],
   surat_kuasa: [{ key: 'nomorSurat', label: 'Nomor surat', type: 'text' }, { key: 'tanggalSurat', label: 'Tanggal surat', type: 'date' }, { key: 'pemberiKuasa', label: 'Pemberi kuasa dan jabatan', type: 'text' }, { key: 'penerimaKuasa', label: 'Nama penerima kuasa', type: 'names' }]
 };
