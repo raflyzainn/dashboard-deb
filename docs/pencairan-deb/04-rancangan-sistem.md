@@ -142,6 +142,10 @@ Surat kuasa dan buku rekening adalah berkas terlindungi; tidak ada ekstraksi oto
 - Halaman publik `/verifikasi/[kode]` dan `GET /api/verifikasi/[kode]` tanpa sesi: hanya kampus, jenis dokumen, tahap, tanggal terbit, nominal, dan SHA-256. Tidak ada nama orang, tidak ada akses berkas.
 - Bacaan kampus (`assess()` di `src/lib/pencairan.ts`) dipakai server dan browser: butir selesai bila Sesuai atau Tidak diperlukan; Lengkap bila semua selesai dan tidak ada cek otomatis merah; Siap dibayar bila Lengkap, empat asli diterima, dan lampiran tersimpan; Dibayar bila `paidAt` terisi.
 
+## Token server (20 September 2026, mengikuti PF Series)
+
+Server aplikasi memegang `PB_SUPER_TOKEN`, token superuser berumur panjang yang diterbitkan sekali oleh `scripts/pocketbase/super-token.ts` (masuk dengan kata sandi dari mesin pengembang, lalu impersonasi superuser selama 400 hari; token ditulis ke `.env`, tidak pernah dicetak). Saat melayani permintaan, server hanya memasang token itu, tanpa permintaan masuk ke PocketBase, seperti `createAdminPB()` dengan `PB_SUPER_TOKEN` di PF Series. Sebelumnya server masuk dengan email dan kata sandi pada setiap permintaan; itu penyimpangan dari paradigma PF Series, memakan batas laju autentikasi, dan gagal dari Cloudflare Pages. Masuk dengan kata sandi tinggal cadangan untuk pengembangan bila token tidak diisi. `/api/health` melaporkan `auth` (token atau password) dan tanggal kedaluwarsa token.
+
 ## Email dari PocketBase (20 September 2026)
 
 `scripts/pocketbase/mail-templates.ts --apply` menulis identitas pengirim (nama aplikasi dan nama pengirim "Desa Energi Berdikari · Pertamina Foundation", alamat pengirim tetap) dan lima templat email koleksi `users` dalam bahasa Indonesia dengan logo berwarna di atas putih: verifikasi email, atur ulang kata sandi, konfirmasi email baru, kode sekali pakai, dan peringatan masuk dari perangkat baru. Tautan konfirmasi membuka halaman konfirmasi bawaan PocketBase di host API karena situs belum punya halaman untuk langkah itu. Templat pada koleksi `email_challenges` dibuat aplikasi per undangan (badan email disimpan di rekaman) dan tidak diubah. SMTP tidak disentuh oleh skrip.

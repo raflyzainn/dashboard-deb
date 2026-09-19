@@ -33,7 +33,7 @@ One screen per campus. Nine items in the sheet's order with the SK first (SK, Dr
 - Shared UI built in this project: `src/lib/components/ui/{Button,EditableSection,ReadField,RegionSelect,LocationPicker,Icon}.svelte`, `src/lib/contacts.ts`, `src/lib/location.ts`, `src/lib/components/shared/profile/*`, region data in `static/data/regions/**`. Forms are read only first with an Ubah button per section.
 - Typography: system font stack, root 16px, body 14 to 15px, nothing under 10px, weights 500/600/700, contrast at least 4.5:1, `--muted:#475569`. PF Series (`D:\repos\PFseries`) is the reference, a paradigm, not a code source.
 - Logo: solid white `/logo-pf-white.png` on coloured backgrounds, full colour only on white.
-- `.env` (gitignored) holds `PB_URL` (https), PocketBase superuser credentials, `DEB_PUBLIC_URL`, `R2_ENDPOINT`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`.
+- `.env` (gitignored) holds `PB_URL` (https), `PB_SUPER_TOKEN` (long lived superuser token issued by `scripts/pocketbase/super-token.ts`; the server never signs in with a password at request time, the PF Series way), PocketBase superuser credentials for scripts only, `DEB_PUBLIC_URL`, `R2_ENDPOINT`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`. `/api/health` shows the auth mode and token expiry.
 - Working tree has about 70 uncommitted paths (typography, forms, directories, docs). Do not discard them.
 
 ## Source material outside the repo
