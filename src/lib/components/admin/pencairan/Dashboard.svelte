@@ -7,6 +7,7 @@
   import PencairanNav from './PencairanNav.svelte';
   import StatusMarker from './StatusMarker.svelte';
   import StatusLegend from './StatusLegend.svelte';
+  import ProgressChart from './ProgressChart.svelte';
 
   /** Dashboard Pencairan: the overview of every funded campus, with the same grid as the review sheet. Picking a campus opens its Tahap 1 checklist. */
   let rows = $state<DirectoryRow[] | null>(null);
@@ -78,6 +79,7 @@
       <div class="rounded-xl border border-slate-200/70 bg-white p-3.5"><p class="text-lg font-bold tabular-nums text-slate-900">{formatSen(stats.limit)}</p><p class="text-xs text-slate-500">batas Tahap 1 seluruh kampus · {stats.dibayar} dibayar</p></div>
     </div>
     <p class="text-lg font-bold text-slate-900">{phrase}</p>
+    <ProgressChart rows={visible} />
 
     <div class="grid gap-3">
       <div class="flex flex-wrap items-center gap-2">

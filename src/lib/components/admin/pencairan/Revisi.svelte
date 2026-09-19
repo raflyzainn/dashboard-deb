@@ -5,6 +5,7 @@
   import type { KartuData, Doc, Version, Review, Check } from './kartu-types';
   import Icon from '$lib/components/ui/Icon.svelte';
   import CampusLogo from '$lib/components/ui/CampusLogo.svelte';
+  import { parseContacts, formatPhone, whatsappLink } from '$lib/contacts';
 
   /**
    * Ringkasan revisi: every item of one campus that needs revision, with its decision note, the automatic findings
@@ -35,6 +36,10 @@
   const revisi = $derived(items.filter(i => i.state === 'perlu_revisi'));
   const others = $derived(items.filter(i => i.state !== 'perlu_revisi'));
   const notesOf = (doc: Doc | null) => (doc ? [...doc.notes].sort((a, b) => a.created.localeCompare(b.created)) : []);
+  /** Who to call about the revisions: the campus contacts from Profil DEB, in the order people usually ring them. */
+  const GROUPS = [['coordinator', 'Koordinator PFS 12'], ['mentor', 'Mentor'], ['localHero', 'Local hero']] as const;
+  const contacts = $derived(data ? GROUPS.map(([key, label]) => ({ key, label, people: parseContacts(data.campus.contacts[key]) })) : []);
+  const anyContact = $derived(contacts.some(g => g.people.length));
 
   /** Plain text for chat or email: the decision notes only, never the internal notes. */
   const summary = $derived.by(() => {
@@ -78,6 +83,35 @@
       </div>
       {#if error}<span class="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-800" role="alert">{error}</span>{/if}
     </div>
+
+    <section class="rounded-2xl border border-slate-200/70 bg-white px-4 py-3 shadow-[0_10px_30px_#0b254508]" aria-label="Kontak kampus">
+      <div class="flex flex-wrap items-baseline justify-between gap-2"><h2 class="text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">Kontak kampus</h2><a href={`/admin/campuses/${campusId}`} class="text-[12.5px] font-semibold text-[#0066B2] hover:underline print:hidden">Ubah di Profil DEB</a></div>
+      {#if anyContact}
+        <div class="mt-2 grid gap-3 sm:grid-cols-3">
+          {#each contacts as g (g.key)}
+            <div class="min-w-0">
+              <p class="text-[12px] font-semibold text-slate-500">{g.label}</p>
+              {#if g.people.length}
+                <ul class="mt-1 grid gap-1.5">
+                  {#each g.people as person}
+                    {@const wa = whatsappLink(person.phone)}
+                    <li class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] text-slate-900">
+                      <span class="font-semibold [overflow-wrap:anywhere]">{person.name || 'Tanpa nama'}</span>
+                      {#if person.phone}
+                        <a href={`tel:${person.phone.startsWith('+') ? person.phone : person.phone.replace(/^0/, '+62')}`} class="inline-flex min-h-[30px] items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 text-[12.5px] font-semibold tabular-nums text-slate-800 hover:border-[#0066B2] hover:text-[#0066B2] print:border-0 print:px-0">{formatPhone(person.phone)}</a>
+                        {#if wa}<a href={wa} target="_blank" rel="noopener" class="inline-flex min-h-[30px] items-center rounded-lg bg-green-700 px-2.5 text-[12.5px] font-semibold text-white hover:bg-green-800 print:hidden">WhatsApp</a>{/if}
+                      {:else}<span class="text-[12.5px] text-slate-500">Nomor belum diisi</span>{/if}
+                    </li>
+                  {/each}
+                </ul>
+              {:else}<p class="mt-1 text-[13px] text-slate-500">Belum diisi.</p>{/if}
+            </div>
+          {/each}
+        </div>
+      {:else}
+        <p class="mt-1 text-[13px] text-slate-500">Kontak kampus belum diisi. Lengkapi mentor, koordinator, dan local hero di Profil DEB.</p>
+      {/if}
+    </section>
 
     {#if revisi.length}
       <ol class="grid gap-3">

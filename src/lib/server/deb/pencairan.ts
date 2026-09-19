@@ -14,10 +14,11 @@ const opts = { requestKey: null } as const;
 export const TERM = 1;
 export const context = (campusId: string, term = TERM) => `kampus:${campusId}/pencairan/t${term}`;
 
-export interface CampusInfo { id: string; name: string; code: string; initials: string; programYear: string; fillMode: string; region: string; signatoryName: string; signatoryTitle: string }
+export interface CampusInfo { id: string; name: string; code: string; initials: string; programYear: string; fillMode: string; region: string; signatoryName: string; signatoryTitle: string; contacts: { mentor: string; coordinator: string; localHero: string } }
 const mapCampus = (r: RecordModel): CampusInfo => {
   const program = (r.program && typeof r.program === 'object' ? r.program : {}) as Record<string, unknown>;
-  return { id: r.id, name: r.name, code: r.code || r.acronym || r.initials, initials: r.initials, programYear: r.programYear || '', fillMode: r.fillMode || 'admin', region: r.region || '', signatoryName: typeof program.signatoryName === 'string' ? program.signatoryName : '', signatoryTitle: typeof program.signatoryTitle === 'string' ? program.signatoryTitle : '' };
+  const text = (key: string) => (typeof program[key] === 'string' ? (program[key] as string) : '');
+  return { contacts: { mentor: text('mentor'), coordinator: text('coordinator'), localHero: text('localHero') }, id: r.id, name: r.name, code: r.code || r.acronym || r.initials, initials: r.initials, programYear: r.programYear || '', fillMode: r.fillMode || 'admin', region: r.region || '', signatoryName: typeof program.signatoryName === 'string' ? program.signatoryName : '', signatoryTitle: typeof program.signatoryTitle === 'string' ? program.signatoryTitle : '' };
 };
 
 export async function fundedCampuses(pb: PocketBase) {
