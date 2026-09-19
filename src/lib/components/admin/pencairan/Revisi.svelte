@@ -40,6 +40,21 @@
   const GROUPS = [['coordinator', 'Koordinator PFS 12'], ['mentor', 'Mentor'], ['localHero', 'Local hero']] as const;
   const contacts = $derived(data ? GROUPS.map(([key, label]) => ({ key, label, people: parseContacts(data.campus.contacts[key]) })) : []);
   const anyContact = $derived(contacts.some(g => g.people.length));
+  /** The checklist: the campus has been contacted about these revisions (when, by whom, and how it went). */
+  const prop = (key: string) => (data && typeof data.disbursement.properties[key] === 'string' ? (data.disbursement.properties[key] as string) : '');
+  const contactedAt = $derived(prop('kampusDihubungiPada'));
+  const contactedBy = $derived(prop('kampusDihubungiOleh'));
+  let contactNote = $state('');
+  let savingContact = $state(false);
+  $effect(() => { const n = prop('kampusDihubungiCatatan'); untrack(() => { contactNote = n; }); });
+  async function saveContact(values: Record<string, string>) {
+    savingContact = true;
+    try { data = await dataService.api.patch<KartuData>(`/api/pencairan/${campusId}`, { properties: values }); error = ''; }
+    catch (e) { error = e instanceof Error ? e.message : 'Belum tersimpan.'; }
+    finally { savingContact = false; }
+  }
+  const toggleContacted = () => saveContact({ kampusDihubungiPada: contactedAt ? '' : new Date().toISOString() });
+  const saveContactNote = () => { if (contactNote.trim() !== prop('kampusDihubungiCatatan')) void saveContact({ kampusDihubungiCatatan: contactNote.trim().slice(0, 300) }); };
 
   /** Plain text for chat or email: the decision notes only, never the internal notes. */
   const summary = $derived.by(() => {
@@ -111,6 +126,14 @@
       {:else}
         <p class="mt-1 text-[13px] text-slate-500">Kontak kampus belum diisi. Lengkapi mentor, koordinator, dan local hero di Profil DEB.</p>
       {/if}
+      <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-slate-100 pt-3">
+        <label class="inline-flex min-h-[38px] cursor-pointer items-center gap-2 rounded-lg border px-3 text-[14px] font-semibold {contactedAt ? 'border-green-200 bg-green-50 text-green-900' : 'border-slate-300 bg-white text-slate-800'}">
+          <input type="checkbox" class="h-4 w-4 accent-green-700" checked={Boolean(contactedAt)} disabled={savingContact} onchange={toggleContacted} />
+          Kampus sudah dihubungi
+        </label>
+        {#if contactedAt}<span class="text-[12.5px] text-slate-600">{contactedBy || 'Sistem'} · {full.format(new Date(contactedAt))}</span>{/if}
+        <input class="min-h-[38px] min-w-[240px] flex-1 rounded-lg border border-slate-300 px-3 text-[13.5px] text-slate-900 print:border-0 print:px-0" bind:value={contactNote} maxlength="300" placeholder="Lewat apa dan hasilnya, misalnya WhatsApp ke koordinator, revisi dikirim Senin" aria-label="Catatan hubungan dengan kampus" onblur={saveContactNote} onkeydown={(e) => { if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur(); }} />
+      </div>
     </section>
 
     {#if revisi.length}

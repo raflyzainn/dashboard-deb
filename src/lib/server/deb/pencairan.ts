@@ -473,7 +473,7 @@ export async function updateDisbursement(pb: PocketBase, actor: AuditActor & { i
     if (patch.requestedSen !== Number(disbursement.requestedSen || 0)) { data.clauseChecked = false; data.clauseCheckedBy = ''; data.clauseCheckedAt = ''; }
   }
   if (patch.properties) {
-    const allowed = ['nomorPksPf', 'nomorPksKampus', 'tanggalPerjanjian', 'nomorSuratPermohonan', 'tanggalSuratPermohonan', 'nomorInvois', 'tanggalInvois', 'nomorKuitansi', 'tanggalKuitansi', 'penandatanganNama', 'penandatanganJabatan', 'tempatTandaTangan'];
+    const allowed = ['nomorPksPf', 'nomorPksKampus', 'tanggalPerjanjian', 'nomorSuratPermohonan', 'tanggalSuratPermohonan', 'nomorInvois', 'tanggalInvois', 'nomorKuitansi', 'tanggalKuitansi', 'penandatanganNama', 'penandatanganJabatan', 'tempatTandaTangan', 'kampusDihubungiPada', 'kampusDihubungiCatatan'];
     const current = (disbursement.properties || {}) as Record<string, unknown>;
     const next = { ...current };
     for (const [key, value] of Object.entries(patch.properties)) {
@@ -481,6 +481,8 @@ export async function updateDisbursement(pb: PocketBase, actor: AuditActor & { i
       if (typeof value !== 'string' || value.length > 300) throw new PreviewError(400, 'Properti dokumen tidak valid.');
       if ((current[key] || '') !== value) { before[key] = current[key] || ''; after[key] = value; }
       next[key] = value;
+      // The checklist "campus contacted": the server names who ticked it, and clears the name when it is unticked.
+      if (key === 'kampusDihubungiPada') { next.kampusDihubungiOleh = value ? actor.name || 'Sistem' : ''; if ((current[key] || '') !== value) after.kampusDihubungiOleh = next.kampusDihubungiOleh; }
     }
     data.properties = next;
   }
