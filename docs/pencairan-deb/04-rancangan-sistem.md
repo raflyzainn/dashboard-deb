@@ -66,7 +66,7 @@ Skema dibuat oleh `scripts/pocketbase/provision-deb.ts` (idempoten, hanya menamb
 | Koleksi | Isi | Catatan |
 | --- | --- | --- |
 | `users` | Akun (Entra atau kata sandi), `role` = `baru`, `campus`, `admin`, `super_admin`, `active`, `verified`, `sessionVersion`, `lastLoginAt` | Peran hanya ditulis server. Super admin ditentukan `DEB_SUPERADMIN_EMAIL`; di modul lama ia dipetakan sebagai admin bertanda, dan aturan koleksi lama yang menyebut `@request.auth.role = "admin"` diperluas oleh skrip provisioning agar `super_admin` lolos. Indeks unik satu akun kampus per kampus dihapus |
-| `campuses` | 40 kampus: nama sesuai SK untuk 23 kampus didanai, `code`, `fundedWave`, `fillMode` (`admin` atau `campus`), `programYear`, `theme`, `program` (json Profil DEB), `programRevision`, `letterheadKey`, plus kolom lama (region, province, koordinat) | Profil DEB disimpan sebagai json `program` dan diubah lewat `PATCH /api/campuses/[id]/program` |
+| `campuses` | 40 kampus: nama sesuai SK untuk 23 kampus didanai, `code`, `fundedWave`, `fillMode` (`admin` atau `campus`), `programYear`, `theme`, `program` (json Profil DEB), `programRevision`, `letterheadKey`, plus kolom lama (region, province, koordinat) | Profil DEB disimpan sebagai json `program` dan diubah lewat `PATCH /api/campuses/[id]/program`. Isinya dimuat dari lembar Rencana Aksi Naik Kelas oleh `scripts/pencairan/load-profil.ts` (dokumen 08); kunci `pfTeam` menyimpan tim pendamping |
 | `sk_awards` | `campus`, `skNumber`, `skDate`, `wave`, `amountSen`, `programTitle`, `programYear`, `locked` | 23 baris dari `deb-matrix.json`. Uang dalam sen |
 | `program_settings` | `programYear`, `pfSignatoryName`, `pfSignatoryTitle`, `agreementStart`, `agreementEnd`, `reportDeadline`, `pksTemplate` | Satu baris per tahun program, diisi admin |
 | `disbursements` | `campus`, `term`, `stage` 1 sampai 7, `requestedSen`, `paidSen`, `properties` (nomor dan tanggal surat, satu satunya tempatnya), `clauseChecked`, `templateMode`, `rabVersion`, `revision` | Unik per kampus dan termin |
@@ -79,6 +79,7 @@ Skema dibuat oleh `scripts/pocketbase/provision-deb.ts` (idempoten, hanya menamb
 | `attachments` | `disbursement`, `number`, `r2Key`, `composition` | PDF gabungan per kampus |
 | `audit` | `actor`, `actorName`, `actorEmail`, `action`, `context`, `collection`, `record`, `campus`, `before`, `after`, `note` | Hanya bisa ditambah. Ditampilkan di bawah tiap halaman lewat `RiwayatPerubahan.svelte` |
 | `lpj_entries` | Satu entri per invois | Dibuat untuk nanti |
+| `proposal_versions` (koleksi lama) | `campus`, `version`, `file` (PDF, paling besar 40 MB sejak 20 September 2026), `filename`, `size`, `changes`, `uploadedBy`, `legacyId`, catatan review | 66 versi dari arsip 2025-2026 dimuat oleh `scripts/proposals/load-proposals.ts` (dokumen 08) |
 | `notes` | `document`, `campus`, `body` (paling panjang 4000 huruf), `internal`, `author`, `authorName`, `authorRole` (`admin`, `super_admin`, `campus`) | Percakapan per butir (keputusan 38). Catatan internal tidak pernah dikirim ke akun kampus |
 
 Nilai status slot: `belum_ada`, `menunggu_review`, `perlu_konfirmasi`, `perlu_revisi`, `sesuai`.

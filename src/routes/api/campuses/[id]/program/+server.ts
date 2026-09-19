@@ -4,7 +4,7 @@ import { writeAudit } from '$lib/server/deb/audit';
 import { readJsonBody } from '$lib/server/deb/request-body';
 
 /** Profil DEB fields an admin may write. Contacts are stored as one string per group (see src/lib/contacts.ts). */
-const ALLOWED = ['mentor', 'coordinator', 'localHero', 'subholding', 'operatingUnit', 'actionPlanTemplate', 'replicationVillage', 'sourceStatus', 'description', 'budget', 'currentClass', 'targetClass',
+const ALLOWED = ['mentor', 'coordinator', 'localHero', 'subholding', 'operatingUnit', 'actionPlanTemplate', 'replicationVillage', 'sourceStatus', 'pfTeam', 'description', 'budget', 'currentClass', 'targetClass',
   'address', 'mapUrl', 'coordinates', 'province', 'provinceId', 'regencyId', 'regency', 'districtId', 'district', 'villageId', 'village', 'postalCode', 'signatoryName', 'signatoryTitle', 'theme', 'programTitle'];
 
 export const PATCH: RequestHandler = event => secured(event, ANY, async ({ actor, pb }) => {

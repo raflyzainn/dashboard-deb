@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CampusLogo from '$lib/components/ui/CampusLogo.svelte';
   import { app } from '$lib/state.svelte';
   import { campusStats, percent } from '$lib/domain';
   const CAMPUS_REGIONS = $derived(
@@ -100,12 +101,7 @@
               ><a
                 class="[-webkit-tap-highlight-color:transparent] text-[inherit] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] flex items-center gap-y-[10px] gap-x-[10px] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&_strong]:text-[14px] [&_small]:block [&_small]:text-[12px] [&_small]:text-[#475569] campus-name"
                 href={`/admin/campuses/${row.id}`}
-                ><span
-                  class={[
-                    'grid items-center [justify-items:center] w-[31px] h-[31px] [background-image:initial] [background-color:rgb(233,_243,_255)] text-[#176ac3] text-[11px] font-[600] shrink-0 border-[1px] border-solid border-[color:rgb(211,_230,_251)] rounded-[8px] table-avatar',
-                    row.initials.length > 4 ? 'text-[11px]!' : undefined
-                  ]}>{row.initials}</span
-                ><span
+                ><CampusLogo code={row.code || row.acronym} initials={row.initials} size={31} class="table-avatar" /><span
                   ><strong class="font-[600]">{row.name}</strong><small
                     class="text-[13px] text-[color:var(--muted)] leading-[1.55]"
                     >{row.acronym}{#if row.city}

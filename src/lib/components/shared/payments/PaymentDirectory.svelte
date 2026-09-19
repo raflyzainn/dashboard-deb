@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CampusLogo from '$lib/components/ui/CampusLogo.svelte';
   // Directory of payment cases for admin and finance: summary, filters, and one card per case.
   import { untrack, type Snippet } from 'svelte';
   import { goto } from '$app/navigation';
@@ -22,6 +23,7 @@
     name: string;
     haystack: string;
     initials: string;
+    code: string;
     versionLabel: string;
     index: number;
     updatedAt: string;
@@ -155,6 +157,7 @@
         name,
         haystack: normalize(`${name} ${owner?.acronym || ''}`),
         initials: owner?.initials || name.slice(0, 2).toUpperCase(),
+        code: owner?.code || owner?.acronym || '',
         versionLabel: versionById.has(payment.proposalId)
           ? `Proposal versi ${versionById.get(payment.proposalId)}`
           : 'Proposal',
@@ -460,11 +463,7 @@
             ></span>
           {/if}
           <div class="flex items-start gap-3">
-            <span
-              aria-hidden="true"
-              class="grid h-11 min-w-11 shrink-0 place-items-center rounded-xl bg-[linear-gradient(135deg,#0877d8,#1559d6)] px-2 text-xs font-bold text-white"
-              >{row.initials}</span
-            >
+            <CampusLogo code={row.code} initials={row.initials} size={44} rounded="rounded-xl" />
             <div class="min-w-0 flex-1">
               <h3 class="text-[15px] leading-snug font-semibold text-[#0d234c]">
                 <a
@@ -593,11 +592,7 @@
     <ul class={[CARD, 'mt-3 divide-y divide-[#eaf1fb]']}>
       {#each withoutCase as item (item.campus.id)}
         <li class="flex flex-wrap items-center gap-3 px-4 py-3">
-          <span
-            aria-hidden="true"
-            class="grid h-9 w-14 shrink-0 place-items-center rounded-lg bg-[#e9f3ff] text-[11px] font-bold text-[#075fc7]"
-            >{item.campus.initials}</span
-          >
+          <CampusLogo code={item.campus.code || item.campus.acronym} initials={item.campus.initials} size={36} />
           <div class="min-w-0 flex-1 basis-40">
             <p class="truncate text-sm font-semibold text-[#17365f]">{item.campus.name}</p>
             <p class="text-[13px] text-[#64748b]">Proposal versi {item.version} siap diajukan</p>

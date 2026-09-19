@@ -6,6 +6,7 @@
   import { KINDS, KIND_LABEL, KIND_SHORT, KIND_FILE, LOOK_AT, FIELDS, DECISION_LABEL, RAIL_WORD, ITEM_STATE_LABEL, formatSen, parseSen, type Kind, type ItemState } from '$lib/pencairan';
   import type { KartuData, Version, Check } from './kartu-types';
   import Icon from '$lib/components/ui/Icon.svelte';
+  import CampusLogo from '$lib/components/ui/CampusLogo.svelte';
   import FileViewer from './FileViewer.svelte';
   import RabTable from './RabTable.svelte';
   import TandaTanganView from './TandaTanganView.svelte';
@@ -215,7 +216,7 @@
   <div class="grid gap-2 [&>*]:min-w-0">
     <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
       {#if admin}<a href="/admin/pencairan/tahap-1" class="inline-flex items-center gap-1 text-sm font-semibold text-[#0066B2] hover:underline"><Icon name="back" size={14} />Tahap 1</a>{/if}
-      <h1 class="text-xl font-bold text-slate-900">{data.campus.name}</h1>
+      <CampusLogo code={data.campus.code} initials={data.campus.initials} size={36} /><h1 class="text-xl font-bold text-slate-900">{data.campus.name}</h1>
       <span class="text-xs text-slate-500">Tahun {data.summary.programYear === 'kedua' ? 'Kedua' : 'Ketiga'}</span>
       {#if notice}<span class="rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-semibold text-green-800" role="status">{notice}</span>{/if}
       {#if error}<span class="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-800" role="alert">{error}</span>{/if}

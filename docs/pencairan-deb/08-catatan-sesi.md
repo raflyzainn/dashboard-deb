@@ -42,6 +42,25 @@ Disimpan di `D:\deb\Analisis\` (di luar repo karena memuat catatan reviewer dan 
 
 Skrip itu masih memuat jalur folder sementara sesi lama di variabel `S` atau sejenisnya; sesuaikan jalurnya sebelum dijalankan ulang. Gambar halaman SK bisa dibuat ulang dengan pypdf dan PIL (perhatikan `/Rotate`).
 
+## Profil DEB dari lembar Rencana Aksi (20 September 2026)
+
+- Sumber: `D:\deb\Rencana Aksi DEB SoBI Naik Kelas.xlsx` (satu baris per kampus, 30 kolom, empat blok tim pendamping). Pengguna: "this is the profile, please put on the website".
+- Pemuat: `scripts/pencairan/load-profil.ts` (tanpa argumen hanya melaporkan, `--apply` menulis). Kolom dipetakan ke kunci `campuses.program` yang sudah ada sejak mockup (`income`, `beneficiaries`, `currentClass`, `mentor`, `address`, `existingEbt`, `description`, `intervention`, `budget`, dan seterusnya) ditambah `pfTeam` (nama tim dari baris gabungan) dan `incomePerCapita` yang dihitung ulang (pendapatan dibagi penerima manfaat, hanya bila keduanya angka). Rupiah dalam teks ("Rp 51,860,000", "Rp65.347.000,00") menjadi angka utuh; tanda "-" dan galat rumus menjadi kosong; tanggal sel menjadi teks tanggal Indonesia; tanda arah teks tak terlihat dari ponsel dibuang.
+- Pencocokan: kode kampus di kolom B dengan `code`, `acronym`, `initials`, atau nama; 40 dari 40 kampus cocok. Baris "DEB Earth's Friend" (DPMK ITB) bukan kampus dan dilewati.
+- Nilai yang sudah diubah admin di aplikasi menang atas lembar: kunci yang pernah muncul di audit `mengubah Profil DEB` untuk kampus itu tidak ditimpa (PNK: empat kunci dipertahankan). Setiap kampus mendapat satu baris audit `memuat Profil DEB dari Rencana Aksi Naik Kelas` dengan nilai sebelum dan sesudah, `programRevision` naik satu.
+- Sudah dijalankan ke produksi pada 20 September 2026. Tujuh kampus hanya punya nama tim di lembar (STT MIGAS, UGM, UNIPA, UNWIR, UNSRI, UNCEN, POLINEF); UB, STAI TUNTAS, dan UNPATTI terisi sebagian. Wilayah standar (id provinsi sampai kelurahan) tidak ada di lembar; `province` teks terisi, pilihan wilayah tetap kosong sampai admin memilihnya.
+
+## Logo kampus (20 September 2026)
+
+- Pengguna: "the campus logo, can you scrape the web or maybe their official website, and put it on us". Empat puluh logo diambil oleh `scripts/kampus/fetch-logos.mjs` dari kotak info artikel Wikipedia (bahasa Indonesia, lalu Inggris; jeda antar panggilan karena batas laju), enam sisanya dari situs resmi atau favicon (ITPB, IVET, PNK, STAI SIAK, STAI TUNTAS, UNIROW, UPP) dan diperiksa mata satu per satu lewat lembar kontak.
+- `scripts/kampus/logos.py` memotong tepi kosong, memuat tiap logo ke kanvas 256 px transparan di `static/logo-kampus/<slug>.png`, dan menulis `src/lib/campus-logos.ts` (daftar kode yang punya logo, `campusLogo(code)`). `CampusLogo.svelte` menampilkan logo bila ada, inisial bila belum: dipakai di Kampus mitra (daftar dan judul), Layar pencairan, Profil Program kampus, direktori proposal, direktori pembayaran, dan kartu Peta Persebaran.
+
+## Proposal DEB 2025-2026 (20 September 2026)
+
+- Pengguna: "also this is the proposal, lets push it up D:\deb\Proposal DEB Sobat Bumi Tahun 2025-2026" (67 berkas: 44 PDF, 22 ZIP, 1 DOCX, 384 MB; nama `DEB_<KODE>[_Ver N]`).
+- `scripts/proposals/stage-proposals.py` membuat satu PDF per kampus dan versi di `D:\deb\Analisis\proposals` (ZIP digabung: proposal dulu, lalu BMC, lampiran, dan foto sebagai halaman; DOCX diubah ke PDF lewat Word dengan PowerShell COM, lalu skrip yang sama menggabungkannya) beserta `manifest.json`. `scripts/proposals/load-proposals.ts --apply` memuatnya ke `proposal_versions` atas nama akun super admin, idempoten lewat `legacyId = arsip-2026:<kode>:v<n>`, nama berkas `DEB_<KODE>_v<n>.pdf`, catatan `changes` menyebut berkas sumber. Hasil: 66 versi untuk 38 kampus (UGM dan UNUD sampai versi 3; UNIPA dan UPER tidak ada di arsip). Berkas sumber tetap di `D:\deb`.
+- Batas berkas proposal dinaikkan dari 10 MiB ke 40 MB (`db-schema/collections.json`, `workflows.ts`, dan `scripts/pocketbase/proposal-file-limit.ts` untuk produksi) karena proposal asli mencapai 31 MB.
+
 ## Cara verifikasi visual
 
 Pakai Playwright **sebagai pustaka** (bukan test runner) dengan Chrome tanpa kepala (`channel: 'chrome'`), dimuat lewat `createRequire('D:/repos/monev-deb/package.json')`. Server dev pengguna biasanya sudah berjalan di `http://127.0.0.1:5176`. Jangan pakai `localhost:5176`, karena IPv6 di mesin ini milik server proyek lain. Periksa lebar 1366 (atau 1280) dan 390, gulir mendatar, dan galat halaman.

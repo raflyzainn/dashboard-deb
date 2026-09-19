@@ -11,7 +11,7 @@ export interface ProgramProfile {
   simulatedFields?: string[];
   mentor?: string | null; coordinator?: string | null; localHero?: string | null;
   subholding?: string | null; operatingUnit?: string | null; actionPlanTemplate?: string | null;
-  replicationVillage?: string | null; sourceStatus?: string | null;
+  replicationVillage?: string | null; sourceStatus?: string | null; pfTeam?: string | null;
   income?: number | string | null; beneficiaries?: number | string | null; incomePerCapita?: number | string | null;
   currentClass?: string | null; targetClass?: string | null; existingEbt?: string | null;
     description?: string | null; intervention?: string | null; interventionSummary?: string | null; budget?: number | string | null;

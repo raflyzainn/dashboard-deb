@@ -7,6 +7,7 @@
 
   const TITLE = 'Informasi program';
   const FIELDS = [
+    ['pfTeam', 'Tim pendamping'],
     ['subholding', 'Subholding'],
     ['operatingUnit', 'Unit operasi Pertamina terdekat'],
     ['currentClass', 'Kategori kelas saat ini'],

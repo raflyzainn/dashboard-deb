@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CampusLogo from '$lib/components/ui/CampusLogo.svelte';
   import { onDestroy } from 'svelte';
   import { app } from '$lib/state.svelte';
   import {
@@ -417,10 +418,7 @@
         aria-label="Detail kampus terpilih"
       >
         <div class="[&&]:flex [&&]:justify-between [&&]:items-center [&&]:mb-[9px] map-card-top">
-          <span
-            class="[&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:min-w-[30px] [&&]:h-[30px] [background-image:initial]! [background-color:rgb(230,_242,_255)]! text-[#1768bd]! [&&]:text-[11px] [&&]:font-[700] [&&]:px-[7px] [&&]:py-[0px] [&&]:rounded-[8px] map-avatar"
-            >{selected.initials}</span
-          ><button
+          <CampusLogo code={selected.code || selected.acronym} initials={selected.initials} size={30} class="map-avatar" /><button
             class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[20px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#475569] [&&]:min-w-[44px] [&&]:min-h-[44px] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&:disabled]:cursor-pointer [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px]"
             aria-label="Tutup detail titik"
             onclick={() => {

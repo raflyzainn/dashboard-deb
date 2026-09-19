@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CampusLogo from '$lib/components/ui/CampusLogo.svelte';
   // Admin directory of campus proposals. Search, filter and sort live in the URL (q, status, sort)
   // so the browser Back button returns here with the same view.
   import { goto } from '$app/navigation';
@@ -333,11 +334,7 @@
             class="group flex h-full flex-col rounded-xl border border-[#dce7f7] bg-white p-4 text-inherit no-underline shadow-[0_10px_30px_#1a4d8f08] transition hover:border-[#9cc3ef] hover:shadow-md focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[#55a9f2] active:scale-[0.99]"
           >
             <div class="flex items-start gap-3 min-[700px]:min-h-[62px]">
-              <span
-                aria-hidden="true"
-                class="grid size-11 shrink-0 place-items-center rounded-xl bg-[linear-gradient(135deg,#0877d8,#1559d6)] text-[11px] font-bold text-white"
-                >{avatar(row.campus)}</span
-              >
+              <CampusLogo code={row.campus.code || row.campus.acronym} initials={avatar(row.campus)} size={44} rounded="rounded-xl" />
               <div class="min-w-0 flex-1">
                 <h3 class="m-0 line-clamp-2 text-[15px] leading-snug font-semibold text-[#0d234c]">
                   {row.campus.name}

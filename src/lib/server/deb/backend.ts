@@ -72,8 +72,8 @@ function workflowReads(pb: PocketBase, actor: RecordModel, operation: string, bo
 
 export async function executeWorkflow(pb: PocketBase, actor: RecordModel | null, operation: string, body: Record<string, unknown>, key: string, local: boolean, file?: File) {
   if (!actor) throw new PreviewError(401, 'Silakan masuk terlebih dahulu.');
-  if (file && file.size > 10485760) throw new PreviewError(413, 'PDF maksimal 10 MiB.');
-  if (operation === 'uploadProposal' && (!file || !file.size || file.size > 10485760 || !/\.pdf$/i.test(file.name) || (file.type && file.type !== 'application/pdf') || new TextDecoder().decode(await file.slice(0, 5).arrayBuffer()) !== '%PDF-')) throw new PreviewError(400, 'Pilih satu PDF valid maksimal 10 MiB.');
+  if (file && file.size > 41943040) throw new PreviewError(413, 'PDF maksimal 40 MB.');
+  if (operation === 'uploadProposal' && (!file || !file.size || file.size > 41943040 || !/\.pdf$/i.test(file.name) || (file.type && file.type !== 'application/pdf') || new TextDecoder().decode(await file.slice(0, 5).arrayBuffer()) !== '%PDF-')) throw new PreviewError(400, 'Pilih satu PDF valid maksimal 10 MiB.');
   let fileHash = '';
   if (file) fileHash = security.sha256(Buffer.from(await file.arrayBuffer()).toString('base64'));
   return atomic(pb, store => runWorkflow({ app: store, auth: actor, local, file, fileHash,

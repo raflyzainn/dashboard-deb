@@ -3,6 +3,7 @@
   import { app } from '$lib/state.svelte';
   import { campusStats, percent, date, feedbackLabel } from '$lib/domain';
   import Icon from '$lib/components/ui/Icon.svelte';
+  import CampusLogo from '$lib/components/ui/CampusLogo.svelte';
   import Badge from '$lib/components/ui/Badge.svelte';
   import Stat from '$lib/components/ui/Stat.svelte';
   import ProgramContacts from '$lib/components/shared/ProgramContacts.svelte';
@@ -74,12 +75,7 @@
       <div
         class="flex items-center gap-y-[20px] gap-x-[20px] max-[700.01px]:gap-y-[12px] max-[700.01px]:gap-x-[12px] max-[700.01px]:[&_h1]:text-[21px] campus-detail-title"
       >
-        <span
-          class={[
-            'w-[64px] h-[64px] [background-image:initial] [background-color:rgb(233,_243,_255)] grid items-center [justify-items:center] text-[#176ac3] text-[20px] font-[700] border-[1px] border-solid border-[color:rgb(211,_230,_251)] rounded-[14px] max-[700.01px]:w-[50px] max-[700.01px]:h-[50px] max-[700.01px]:text-[16px] max-[700.01px]:shrink-0 large-avatar',
-            campus.initials.length > 4 ? 'text-[14px]!' : undefined
-          ]}>{campus.initials}</span
-        >
+        <CampusLogo code={campus.code || campus.acronym} initials={campus.initials} size={64} rounded="rounded-[14px]" class="large-avatar" />
         <div>
           <span
             class="block text-[12px] tracking-[0.06em] font-[700] text-[#3975b7] mb-[9px] max-[700.01px]:text-[10px] eyebrow"
