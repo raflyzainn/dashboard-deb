@@ -89,7 +89,7 @@
     if (bad.length) return bad;
     return [...mine.filter(c => c.level === 'warn').slice(0, 1), ...mine.filter(c => c.level === 'ok').slice(0, 1), ...(mine.some(c => c.level === 'warn' || c.level === 'ok') ? [] : mine.filter(c => c.level === 'info').slice(0, 1))];
   });
-  const thread = $derived(doc ? doc.versions.flatMap(v => v.reviews.map(r => ({ ...r, version: v.number }))).sort((a, b) => b.created.localeCompare(a.created)) : []);
+  const thread = $derived(doc ? [...doc.versions.flatMap(v => v.reviews.map(r => ({ ...r, version: v.number }))), ...(doc.reviews || []).map(r => ({ ...r, version: 0 }))].sort((a, b) => b.created.localeCompare(a.created)) : []);
   const campusThread = $derived(thread.filter(r => r.decision === 'perlu_revisi' && r.note));
   /** The conversation on this item, oldest first. Decisions keep their own note in the bar and their history in Riwayat. */
   const conversation = $derived(doc ? [...doc.notes].sort((a, b) => a.created.localeCompare(b.created)) : []);

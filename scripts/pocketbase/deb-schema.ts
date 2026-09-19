@@ -81,7 +81,7 @@ export function debCollections(campusesId: string) {
       bool('signed'), json('scan', 20000)
     ], ['CREATE UNIQUE INDEX idx_document_versions_number ON document_versions (document, number)']),
     base('reviews', IDS.reviews, [
-      rel('version', IDS.document_versions, { required: true }), sel('decision', ['sesuai', 'perlu_revisi', 'perlu_konfirmasi', 'catatan', 'tidak_perlu'], { required: true }), text('note', 4000),
+      rel('version', IDS.document_versions), rel('document', IDS.documents), sel('decision', ['sesuai', 'perlu_revisi', 'perlu_konfirmasi', 'catatan', 'tidak_perlu'], { required: true }), text('note', 4000),
       rel('actor', IDS.users), text('actorName', 120), bool('imported')
     ]),
     base('bank_checks', IDS.bank_checks, [

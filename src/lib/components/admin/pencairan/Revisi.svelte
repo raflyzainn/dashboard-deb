@@ -29,7 +29,7 @@
     return KINDS.map(kind => {
       const doc = d.documents.find(x => x.kind === kind) || null;
       const version = doc ? doc.versions.find(v => v.id === doc.currentVersionId) || doc.versions[doc.versions.length - 1] || null : null;
-      const reviews = doc ? doc.versions.flatMap(v => v.reviews.map(r => ({ ...r, version: v.number }))).sort((a, b) => b.created.localeCompare(a.created)) : [];
+      const reviews = doc ? [...doc.versions.flatMap(v => v.reviews.map(r => ({ ...r, version: v.number }))), ...(doc.reviews || []).map(r => ({ ...r, version: 0 }))].sort((a, b) => b.created.localeCompare(a.created)) : [];
       const decision = reviews.find(r => r.decision === 'perlu_revisi') || reviews[0] || null;
       return { kind, state: d.readiness.items[kind], doc, version, decision, checks: d.checks.filter(c => c.kind === kind && (c.level === 'bad' || c.level === 'warn')) };
     });

@@ -107,7 +107,7 @@ export interface VersionInfo {
   reviews: { id: string; decision: string; note: string; actorName: string; created: string; imported: boolean }[];
 }
 export interface NoteInfo { id: string; body: string; internal: boolean; authorName: string; authorRole: string; created: string }
-export interface DocumentInfo { id: string; kind: Kind; status: Status; signedReceived: boolean; signedReceivedAt: string; signedReceivedByName: string; originalReceived: boolean; originalReceivedAt: string; originalReceivedByName: string; currentVersionId: string; versions: VersionInfo[]; generated: boolean; decidedByName: string; decidedAt: string; notes: NoteInfo[] }
+export interface DocumentInfo { id: string; kind: Kind; status: Status; signedReceived: boolean; signedReceivedAt: string; signedReceivedByName: string; originalReceived: boolean; originalReceivedAt: string; originalReceivedByName: string; currentVersionId: string; versions: VersionInfo[]; generated: boolean; decidedByName: string; decidedAt: string; notes: NoteInfo[]; reviews: VersionInfo['reviews'] }
 export interface Check { kind: Kind | 'umum'; level: 'ok' | 'warn' | 'bad' | 'info'; text: string }
 
 async function names(pb: PocketBase, ids: string[]) {
@@ -121,7 +121,9 @@ export async function workspace(pb: PocketBase, campusId: string) {
   const { campus, award } = await campusWithAward(pb, campusId);
   const { disbursement, documents } = await ensureDisbursement(pb, campusId);
   const versions = await pb.collection('document_versions').getFullList({ filter: documents.map(d => pb.filter('document = {:id}', { id: d.id })).join(' || '), sort: 'document,number', ...opts });
-  const reviews = versions.length ? await pb.collection('reviews').getFullList({ filter: versions.map(v => pb.filter('version = {:id}', { id: v.id })).join(' || '), sort: '-created', ...opts }) : [];
+  const reviewFilter = [...versions.map(v => pb.filter('version = {:id}', { id: v.id })), ...documents.map(d => pb.filter('document = {:id}', { id: d.id }))].join(' || ');
+  const reviews = reviewFilter ? await pb.collection('reviews').getFullList({ filter: reviewFilter, sort: '-created', ...opts }) : [];
+  const mapReview = (r: RecordModel) => ({ id: r.id, decision: r.decision as string, note: (r.note || '') as string, actorName: (r.actorName || '') as string, created: r.created as string, imported: Boolean(r.imported) });
   const notes = await pb.collection('notes').getFullList({ filter: pb.filter('campus = {:c}', { c: campusId }), sort: 'created', ...opts });
   const nameOf = await names(pb, versions.flatMap(v => [v.fieldsBy, v.fieldsCheckedBy]));
   const bank = await pb.collection('bank_checks').getList(1, 1, { filter: pb.filter('disbursement = {:d}', { d: disbursement.id }), ...opts });
@@ -132,17 +134,20 @@ export async function workspace(pb: PocketBase, campusId: string) {
   const rab = rabVersion ? { id: rabVersion.id, number: Number(rabVersion.number), status: rabVersion.status, totalSen: Number(rabVersion.totalSen || 0), term1Sen: Number(rabVersion.term1Sen || 0), term2Sen: Number(rabVersion.term2Sen || 0) } : null;
   const docs: DocumentInfo[] = KINDS.map(kind => {
     const d = documents.find(x => x.kind === kind)!;
-    const currentReviews = reviews.filter(r => r.version === d.currentVersion);
+    // Decisions on the current file version, plus decisions made on the slot itself (SK, RAB 100%, RAB 30%: no file).
+    const slotReviews = reviews.filter(r => !r.version && r.document === d.id);
+    const currentReviews = [...reviews.filter(r => r.version === d.currentVersion), ...slotReviews].sort((a, b) => String(b.created).localeCompare(String(a.created)));
     const decided = currentReviews.find(r => r.decision !== 'catatan');
     return {
       id: d.id, kind, status: d.status as Status, signedReceived: Boolean(d.signedReceived), signedReceivedAt: d.signedReceivedAt || '', signedReceivedByName: d.signedReceivedByName || '', originalReceived: Boolean(d.originalReceived), originalReceivedAt: d.originalReceivedAt || '', originalReceivedByName: d.originalReceivedByName || '', currentVersionId: d.currentVersion || '', generated: GENERATED.includes(kind),
       decidedByName: decided ? (decided.imported ? 'Lembar review' : decided.actorName || '') : '', decidedAt: decided?.created || '',
       notes: notes.filter(n => n.document === d.id).map(n => ({ id: n.id, body: n.body || '', internal: Boolean(n.internal), authorName: n.authorName || '', authorRole: n.authorRole || '', created: n.created })),
+      reviews: slotReviews.map(mapReview),
       versions: versions.filter(v => v.document === d.id).map(v => ({
         id: v.id, number: v.number, originalName: v.originalName, size: v.size, mime: v.mime, origin: v.origin, uploadedByName: v.uploadedByName || '', created: v.created, note: v.note || '', signed: Boolean(v.signed), scan: (v.scan && typeof v.scan === 'object' ? v.scan : null) as DocScan | null,
         fields: (v.fields && typeof v.fields === 'object' ? v.fields : {}) as Record<string, unknown>, fieldsByName: nameOf.get(v.fieldsBy) || '', fieldsAt: v.fieldsAt || '',
         fieldsCheckedByName: nameOf.get(v.fieldsCheckedBy) || '', fieldsCheckedAt: v.fieldsCheckedAt || '', fieldsSamePerson: Boolean(v.fieldsSamePerson),
-        reviews: reviews.filter(r => r.version === v.id).map(r => ({ id: r.id, decision: r.decision, note: r.note || '', actorName: r.actorName || '', created: r.created, imported: Boolean(r.imported) }))
+        reviews: reviews.filter(r => r.version === v.id).map(mapReview)
       }))
     };
   });
@@ -369,7 +374,8 @@ export async function reviewDocument(pb: PocketBase, actor: AuditActor, campusId
   // The SK has no upload and the RAB's document is the managed RAB; every other item needs a file before it can be Sesuai.
   if (kind !== 'sk' && kind !== 'rab' && kind !== 'rab_penuh' && kind !== 'rab_tahap2' && !doc.currentVersion && decision === 'sesuai') throw new PreviewError(400, 'Unggah berkas dulu sebelum menandai Sesuai.');
   if (decision === 'perlu_revisi' && !note.trim()) throw new PreviewError(400, kind === 'sk' ? 'Tulis nilai yang tercetak di SK agar super admin bisa memperbaikinya.' : 'Tulis catatan revisi agar kampus tahu yang harus diperbaiki.');
-  if (doc.currentVersion) await pb.collection('reviews').create({ version: doc.currentVersion, decision, note, actor: actor.id || '', actorName: actor.name || 'Sistem', imported: Boolean(options.imported) }, opts);
+  // Every decision is a review row: on the current file version when there is one, otherwise on the slot itself.
+  await pb.collection('reviews').create({ version: doc.currentVersion || '', document: doc.id, decision, note, actor: actor.id || '', actorName: actor.name || 'Sistem', imported: Boolean(options.imported) }, opts);
   const before = doc.status;
   await pb.collection('documents').update(doc.id, { status: decision, revision: Number(doc.revision || 1) + 1 }, opts);
   if (Number(disbursement.stage || 1) < 3) await pb.collection('disbursements').update(disbursement.id, { stage: 3 }, opts);
@@ -402,7 +408,7 @@ export async function addNote(pb: PocketBase, actor: AuditActor & { id: string; 
 }
 /** The campus never receives internal notes, nor the review entries that were only for staff. */
 export function forCampus<T extends { documents: DocumentInfo[] }>(ws: T): T {
-  return { ...ws, documents: ws.documents.map(d => ({ ...d, notes: d.notes.filter(n => !n.internal), versions: d.versions.map(v => ({ ...v, reviews: v.reviews.filter(r => r.decision === 'sesuai' || r.decision === 'perlu_revisi' || r.decision === 'tidak_perlu') })) })) };
+  return { ...ws, documents: ws.documents.map(d => ({ ...d, notes: d.notes.filter(n => !n.internal), reviews: d.reviews.filter(r => r.decision === 'sesuai' || r.decision === 'perlu_revisi' || r.decision === 'tidak_perlu'), versions: d.versions.map(v => ({ ...v, reviews: v.reviews.filter(r => r.decision === 'sesuai' || r.decision === 'perlu_revisi' || r.decision === 'tidak_perlu') })) })) };
 }
 
 /** Streams the one SK file for all campuses, stored once in R2 by scripts/pencairan/load-sk.ts. */
