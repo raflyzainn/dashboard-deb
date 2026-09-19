@@ -34,7 +34,7 @@ const EVIDENCE: Record<string, Evidence> = {
   UNTIRTA: { r100: 'ada', r70: 'ada', r30: 'tidak', note: 'Rencana Anggaran Biaya Sobi Untirta.pdf adalah RAB 100% Rp69.554.700 (sama dengan Nilai SK); RAB DEB UNTIRTA 2026 70%.xlsx adalah RAB 70% Rp48.969.900 (batas Rp48.688.290); tidak ada lembar 30%.' },
   UNY: { r100: 'ada', r70: 'ada', r30: 'tidak', note: 'UNY_RAB_DEB 2026.xlsx: RAB 100% Rp75.000.000 (Nilai SK Rp74.800.000) dengan kolom PENGAJUAN 1 (70%) Rp52.500.000 (batas Rp52.360.000); tidak ada lembar 30%.' },
   USB: { r100: 'ada', r70: 'tidak', r30: 'tidak', note: 'RAB_DEB_Sobat_Bumi_Pertamina_USB.xlsx: RAB 100% Rp60.000.000 sama dengan Nilai SK; tidak ada lembar 70%.' },
-  USK: { r100: 'tidak', r70: 'ada', r30: 'tidak', note: '04_RAB_Termin1_DEB_SobatBumiUSK_2026.xlsx: hanya lembar RAB TERMIN 1 Rp52.500.000 (sama dengan batas); tidak ada RAB 100%.' },
+  USK: { r100: 'ada', r70: 'ada', r30: 'tidak', note: '04_RAB_DEB_SobatBumiUSK_2026.xlsx (revisi 20 September 2026): lembar RAB 75 JT adalah RAB 100% Rp75.000.000 (sama dengan Nilai SK), lembar RAB_Termin 1 adalah RAB 70% Rp52.500.000 (sama dengan batas); tidak ada lembar 30%. Berkas lama hanya memuat RAB Termin 1.' },
   USU: { r100: 'tidak', r70: 'tidak', r30: 'tidak', note: 'Hanya tautan (RAB DEB USU 2026.url); tidak ada berkas RAB yang bisa dibaca.' },
   UB: { r100: 'tidak', r70: 'tidak', r30: 'tidak', note: 'Folder kampus tidak berisi berkas RAB.' },
   PNC: { r100: 'tidak', r70: 'tidak', r30: 'tidak', note: 'Folder kampus tidak berisi berkas RAB.' },

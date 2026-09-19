@@ -32,11 +32,11 @@ Batas = 70% dari Nilai SK, tepat. "ada" berarti lembar atau kolomnya ada di berk
 | UNTIRTA | ada, 69.554.700 (= SK) | ada, 48.969.900 (batas 48.688.290) | tidak | `Rencana Anggaran Biaya Sobi Untirta.pdf` (100%) dan `RAB DEB UNTIRTA 2026 70%.xlsx` (70%) |
 | UNY | ada, 75.000.000 (SK 74.800.000) | ada, 52.500.000 (batas 52.360.000) | tidak | kolom PENGAJUAN 1 (70%) pada lembar RAB |
 | USB | ada, 60.000.000 (= SK) | tidak | tidak | `RAB_DEB_Sobat_Bumi_Pertamina_USB.xlsx`, satu lembar |
-| USK | tidak | ada, 52.500.000 (= batas) | tidak | `04_RAB_Termin1_DEB_SobatBumiUSK_2026.xlsx`, lembar RAB TERMIN 1 |
+| USK | ada, 75.000.000 (= SK), revisi 20 Sep | ada, 52.500.000 (= batas) | tidak | berkas revisi `04_RAB_DEB_SobatBumiUSK_2026.xlsx` (lembar RAB 75 JT dan RAB_Termin 1), diunggah sebagai versi 2 berkas dan versi 2 RAB terkelola (gabungan); berkas lama hanya memuat RAB TERMIN 1 |
 | USU | tidak | tidak | tidak | hanya tautan `RAB DEB USU 2026.url` |
 | UB, PNC, ITERA | tidak | tidak | tidak | folder tidak berisi berkas RAB |
 
-Ringkasan: 13 kampus punya RAB 100%, 13 kampus punya RAB 70%, hanya UNMUL yang punya lembar 30% terpisah, 4 kampus tidak punya berkas RAB yang terbaca.
+Ringkasan (setelah revisi USK 20 September): 14 kampus punya RAB 100%, 13 kampus punya RAB 70%, hanya UNMUL yang punya lembar 30% terpisah, 4 kampus tidak punya berkas RAB yang terbaca.
 
 ## Apa yang salah di sistem sebelum ini
 
