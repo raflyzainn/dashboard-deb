@@ -53,6 +53,14 @@
   const full = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' });
   const dot: Record<ItemState, string> = { sesuai: 'bg-green-600', tidak_perlu: 'bg-green-200', perlu_konfirmasi: 'bg-[#0066B2]', menunggu_review: 'bg-sky-400', perlu_revisi: 'bg-amber-500', belum_ada: 'bg-white ring-1 ring-slate-300' };
   const chipClass: Record<Check['level'], string> = { ok: 'bg-green-50 text-green-800', warn: 'bg-amber-50 text-amber-900', bad: 'bg-red-50 text-red-800', info: 'bg-blue-50 text-[#015a9a]' };
+  const campusStatusClass: Record<ItemState, string> = {
+    perlu_revisi: 'border-amber-300 bg-amber-50 text-amber-900',
+    sesuai: 'border-green-200 bg-green-50 text-green-800',
+    menunggu_review: 'border-blue-200 bg-blue-50 text-blue-900',
+    perlu_konfirmasi: 'border-blue-200 bg-blue-50 text-blue-900',
+    tidak_perlu: 'border-slate-200 bg-slate-50 text-slate-700',
+    belum_ada: 'border-slate-200 bg-slate-50 text-slate-700'
+  };
 
   const requested = $derived.by<Row>(() => { const k = page.url.searchParams.get('butir'); return k && ([...KINDS, 'ttd', 'lampiran', 'bayar'] as string[]).includes(k) ? (k as Row) : firstOpen(); });
   function firstOpen(): Row {
@@ -351,12 +359,15 @@
 
             <div class="flex flex-wrap items-end gap-2">
               {#if !admin}
+                <div class="grid w-full gap-2 rounded-lg border border-l-4 px-3 py-2.5 text-[13px] leading-relaxed {campusStatusClass[state]}" role="status">
+                  <strong class="font-semibold">{ITEM_STATE_LABEL[state]}</strong>
+                  {#if campusThread[0]}<p class="whitespace-pre-wrap break-words"><b class="font-semibold">Catatan pemeriksa:</b> {campusThread[0].note}</p>{/if}
+                  {#if !(canUpload && (state === 'perlu_revisi' || state === 'belum_ada'))}
+                    <p>{state === 'sesuai' ? 'Sudah sesuai.' : state === 'tidak_perlu' ? 'Tidak diperlukan.' : state === 'perlu_revisi' ? 'Admin program mengunggah berkas perbaikan.' : 'Menunggu pemeriksaan.'}</p>
+                  {/if}
+                </div>
                 {#if canUpload && (state === 'perlu_revisi' || state === 'belum_ada')}
-                  {#if campusThread[0]}<p class="w-full text-[13px] text-slate-800"><b class="font-semibold text-slate-500">Catatan pemeriksa:</b> {campusThread[0].note}</p>{/if}
                   <label class="ml-auto cursor-pointer rounded-lg bg-[#0066B2] px-3.5 py-2 text-[13px] font-semibold text-white shadow-[0_8px_18px_#0066b233] hover:bg-[#015a9a]">{state === 'perlu_revisi' ? 'Unggah berkas perbaikan' : 'Unggah berkas'}<input type="file" class="sr-only" accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.doc,.xlsx,.xls" onchange={(e) => upload((e.currentTarget as HTMLInputElement).files?.[0] || null)} /></label>
-                {:else}
-                  {#if campusThread[0]}<p class="w-full text-[13px] text-slate-800"><b class="font-semibold text-slate-500">Catatan pemeriksa:</b> {campusThread[0].note}</p>{/if}
-                  <span class="text-[13px] text-slate-600">{state === 'sesuai' ? 'Sudah sesuai.' : state === 'tidak_perlu' ? 'Tidak diperlukan.' : state === 'perlu_revisi' ? 'Admin program mengunggah berkas perbaikan.' : 'Menunggu pemeriksaan.'}</span>
                 {/if}
               {:else if showDecision}
                 <div class="flex w-full flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border px-3.5 py-2.5 {state === 'perlu_revisi' ? 'border-amber-300 bg-amber-50' : 'border-green-200 bg-green-50'}" role="status">
