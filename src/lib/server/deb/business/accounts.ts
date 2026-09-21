@@ -159,7 +159,7 @@ api.public = e => {
 api.limit = limit;
 api.changePassword = e => {
   const b = e.requestInfo().body;
-  const allowed = u => u.getBool('active') && u.getBool('verified') && !u.getBool('simulated') && ['admin', 'campus'].includes(u.getString('role'));
+  const allowed = u => u.getBool('active') && u.getBool('verified') && !u.getBool('simulated') && ['admin', 'campus', 'baru', 'super_admin'].includes(u.getString('role'));
   if (!e.auth || !allowed(e.auth)) fail('Silakan masuk menggunakan akun aktif, bukan akun QA.', 403);
 
   if (typeof b.currentPassword !== 'string' || !b.currentPassword || b.currentPassword.length > 128) fail('Masukkan password saat ini.');

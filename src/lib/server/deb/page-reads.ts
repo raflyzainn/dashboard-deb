@@ -15,12 +15,12 @@ const collections = {
 type Resource = keyof typeof collections;
 // Read only mapper inputs, excluding unused PocketBase metadata and storage fields.
 const fields: Record<Resource, string> = {
-  campuses: 'id,name,region,initials,acronym,city,source,revision,province,island,hasLocation,longitude,latitude,locationApproximate',
+  campuses: 'id,name,region,initials,acronym,city,source,revision,province,island,hasLocation,longitude,latitude,locationApproximate,program,code,fillMode,fundedWave,programYear',
   definitions: 'id,name,category,unit,description,baseline,target,period,periodState',
   indicators: 'id,campus,definition,current,unfilled,note,updated',
   submissions: 'id,campus,period,version,status,snapshot,submittedAt,reviewedAt,reviewedBy,decisionNote,simulated',
   feedback: 'id,campus,indicator,text,requiresRevision,state,created,updated',
-  proposals: 'id,campus,version,filename,size,changes,created,simulated',
+  proposals: 'id,campus,version,filename,size,changes,created,simulated,reviewNote,reviewedAt,reviewedBy,reviewRevision',
   questions: 'id,campus,title,body,categoryIds,replyCount,lastReplyRole,created',
   answers: 'id,question,body,updated', likes: 'id,question,campus',
   faq: 'id,sourceQuestion,question,answer,order', activities: 'id,campus,text,created',
@@ -28,6 +28,7 @@ const fields: Record<Resource, string> = {
 };
 const stats: Resource[] = ['campuses', 'definitions', 'indicators', 'feedback', 'proposals'];
 const dependencies: Record<PageRequest['view'], Resource[]> = {
+  payments: [], // Standalone demo only; no production payment endpoint is enabled.
   guide: [],
   dashboard: [...stats, 'activities', 'questions', 'likes'], campuses: stats,
   'campus-detail': [...stats, 'submissions'], accounts: ['campuses'], map: stats,
@@ -47,6 +48,7 @@ export async function readPage(pb: PocketBase, actor: AppSession, request: PageR
   if (request.view === 'notifications' && actor.role === 'campus') keys = ['notifications'];
   if (request.view === 'campus-detail') {
     if (request.tab === 'Proposal') keys = ['campuses', 'proposals', 'feedback'];
+    else if (request.tab === 'Akun') keys = ['campuses'];
     else if (request.tab === 'Feedback') keys = ['campuses', 'definitions', 'indicators', 'feedback'];
     else if (request.tab === 'Indikator') keys = ['campuses', 'definitions', 'indicators', 'feedback', 'submissions'];
     else keys = stats;
@@ -121,6 +123,7 @@ export async function readPage(pb: PocketBase, actor: AppSession, request: PageR
 }
 
 export async function readNavigation(pb: PocketBase, actor: AppSession): Promise<NavigationData> {
+  if (actor.role === 'baru') return { pendingCount: 0, revisionCount: 0, unreadCount: 0 };
   const count = async (collection: string, filter: string) => (await pb.collection(collection).getList(1, 1, { filter, fields: 'id' })).totalItems;
   const [pendingCount, revisionCount, unreadCount, campus] = await Promise.all([
     actor.role === 'admin' ? count('deb_submissions', 'status = "pending"') : 0,

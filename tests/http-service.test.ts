@@ -134,11 +134,11 @@ test('missing/invalid/out-of-map coordinates do not fabricate markers or lose ca
   assert.ok(mapCampuses(data).some(point => point.id === campus.id));
 });
 
-test('application runtime has no mock/Dexie/fixture imports or legacy campus IDs', async () => {
+test('demo fixtures stay isolated from presentation components', async () => {
   async function files(directory: string): Promise<string[]> {
     return (await Promise.all((await readdir(directory, { withFileTypes: true })).map(entry => entry.isDirectory() ? files(path.join(directory, entry.name)) : [path.join(directory, entry.name)]))).flat();
   }
-  for (const file of (await files('src')).filter(f => /\.(ts|svelte)$/.test(f))) {
+  for (const file of (await files('src')).filter(f => /\.(ts|svelte)$/.test(f) && !f.replaceAll('\\', '/').includes('/data/demo/'))) {
     const content = await readFile(file, 'utf8');
     assert.ok(!/createMockService|createSeed|fake-indexeddb|from ['"]dexie|scripts\/fixtures|DEMO_CAMPUS|['"]campus-001['"]/.test(content), file);
   }

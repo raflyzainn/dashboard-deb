@@ -11,7 +11,7 @@ Login/restorasi pilihan akun meminta `/api/session`, yang hanya berisi sesi, kem
 | Beranda | `/api/views/dashboard` | Kampus, definisi/aktual indikator, feedback dan proposal untuk statistik; empat aktivitas terbaru; pertanyaan dan like untuk panel forum |
 | Kampus mitra | `/api/views/campuses` | Kampus/lokasi, indikator, feedback dan proposal untuk tabel capaian |
 | Akun kampus | `/api/views/accounts` | Daftar kampus shell; roster PIC persisten melalui `/api/admin/accounts` dengan pagination server |
-| Detail kampus | `/api/views/campus-detail?campus=...&tab=...` | Data kampus terpilih, sesuai tab Ringkasan/Indikator/Proposal/Feedback |
+| Detail kampus | `/api/views/campus-detail?campus=...&tab=...` | Data kampus terpilih, sesuai tab Ringkasan/Indikator/Proposal/Feedback/Akun. Tab Akun hanya memuat identitas kampus; daftar dan mutasi akun melalui `/api/users?campus=...` khusus admin. |
 | Peta persebaran | `/api/views/map` | Kampus/lokasi dan data capaian yang digunakan kartu peta |
 | Indikator DEB | `/api/views/indicators` | Definisi, nilai aktual, feedback, pengajuan dan identitas kampus |
 | Proposal | `/api/views/proposals` | Identitas kampus dan metadata versi proposal; file PDF tetap diminta ketika dibuka |

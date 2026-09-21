@@ -26,6 +26,14 @@
       action: 'Kelola proposal'
     },
     {
+      icon: 'payments',
+      title: 'Pencairan',
+      description:
+        'Pantau delapan tahap pencairan proposal. Mentor dan SoBI dapat melihat progres setiap tahap.',
+      href: 'payments',
+      action: 'Lihat pencairan'
+    },
+    {
       icon: 'questions',
       title: 'Forum Q&A',
       description: 'Ajukan pertanyaan dan berdiskusi bersama admin serta kampus mitra lainnya.',
@@ -49,7 +57,7 @@
   ];
 </script>
 
-<svelte:head><title>Panduan aplikasi · Digitalisasi DEB</title></svelte:head>
+<svelte:head><title>Panduan aplikasi · Desa Energi Berdikari</title></svelte:head>
 <div
   class="[&&]:max-w-[1120px] [&&]:grid [&&]:gap-y-[30px] [&&]:gap-x-[30px] [&&]:mx-[auto] [&&]:my-[0px] max-[600.01px]:[&&]:gap-y-[24px] max-[600.01px]:[&&]:gap-x-[24px] app-guide"
 >
@@ -65,23 +73,23 @@
       height="55"
     />
     <span
-      class="[&&]:block [&&]:text-[10px] [&&]:font-[600] [&&]:tracking-[2px] [&&]:text-[#d2e9ff] guide-eyebrow"
+      class="[&&]:block [&&]:text-[12px] [&&]:font-[600] [&&]:tracking-[0.06em] [&&]:text-[#d2e9ff] guide-eyebrow"
       >KENALI RUANG KERJA ANDA</span
     >
     <h1
-      class="[&&]:mt-[13px] [&&]:mb-[16px] font-[650] [&&]:text-[white] [&&]:text-[34px] [&&]:tracking-[-1px] [&&]:leading-[1.3] [&&]:mx-[0px] max-[600.01px]:[&&]:text-[27px]"
+      class="[&&]:mt-[13px] [&&]:mb-[16px] font-[600] [&&]:text-[white] [&&]:text-[34px] [&&]:tracking-[-0.01em] [&&]:leading-[1.3] [&&]:mx-[0px] max-[600.01px]:[&&]:text-[27px]"
       id="guide-title"
     >
       Langkah pertama menuju<br />dampak bersama.
     </h1>
     <p
-      class="[&&]:mt-[0px] [&&]:mb-[24px] [&&]:leading-[1.8] [&&]:max-w-[620px] [&&]:text-[14px] [&&]:text-[#e0eeff] [&&]:mx-[0px] max-[600.01px]:[&&]:text-[13px]"
+      class="[&&]:mt-[0px] [&&]:mb-[24px] [&&]:leading-[1.6] [&&]:max-w-[620px] [&&]:text-[15px] [&&]:text-[#e0eeff] [&&]:mx-[0px] max-[600.01px]:[&&]:text-[14px]"
     >
       Digitalisasi DEB membantu kampus mitra memantau capaian, mengelola proposal, dan belajar
       bersama dalam satu tempat.
     </p>
     <a
-      class="[-webkit-tap-highlight-color:transparent] [&&]:text-[#1256b6] [&&]:[text-decoration-line:none] [&&]:[text-decoration-thickness:initial] [&&]:[text-decoration-style:initial] [&&]:[text-decoration-color:initial] [&&]:inline-flex [&&]:items-center [&&]:gap-y-[16px] [&&]:gap-x-[16px] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_255,_255)] [&&]:text-[13px] [&&]:font-[700] [&&]:px-[18px] [&&]:py-[13px] [&&]:rounded-[9px] [&:focus-visible]:[outline-color:rgb(244,_190,_64)] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[5px] guide-start"
+      class="[-webkit-tap-highlight-color:transparent] [&&]:text-[#1256b6] [&&]:[text-decoration-line:none] [&&]:[text-decoration-thickness:initial] [&&]:[text-decoration-style:initial] [&&]:[text-decoration-color:initial] [&&]:inline-flex [&&]:items-center [&&]:gap-y-[16px] [&&]:gap-x-[16px] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_255,_255)] [&&]:text-[14px] [&&]:font-[700] [&&]:px-[18px] [&&]:py-[13px] [&&]:rounded-[9px] [&:focus-visible]:[outline-color:rgb(244,_190,_64)] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[5px] guide-start"
       href="/campus/dashboard">Mulai dari Beranda <Icon name="arrow" size={18} /></a
     >
   </section>
@@ -89,13 +97,13 @@
   <section aria-labelledby="features-title">
     <div class="guide-heading">
       <h2
-        class="[&&]:mt-[0px] [&&]:mb-[9px] font-[650] [&&]:text-[#173963] [&&]:text-[21px] tracking-[-0.45px] [&&]:mx-[0px] max-[600.01px]:[&&]:text-[19px]"
+        class="[&&]:mt-[0px] [&&]:mb-[9px] font-[600] [&&]:text-[#173963] [&&]:text-[21px] tracking-[-0.01em] [&&]:mx-[0px] max-[600.01px]:[&&]:text-[19px]"
         id="features-title"
       >
         Apa yang bisa Anda lakukan?
       </h2>
       <p
-        class="[&&]:mt-[0px] [&&]:mb-[20px] [&&]:leading-[1.8] [&&]:text-[13px] [&&]:text-[#647b97] [&&]:mx-[0px]"
+        class="[&&]:mt-[0px] [&&]:mb-[20px] [&&]:leading-[1.6] [&&]:text-[14px] [&&]:text-[#475569] [&&]:mx-[0px]"
       >
         Pilih fitur yang ingin digunakan. Panduan ini bisa dibuka kembali melalui ikon ? di samping
         bel.
@@ -113,17 +121,17 @@
             ><Icon name={feature.icon} size={24} /></span
           >
           <h3
-            class="[&&]:mt-[0px] [&&]:mb-[10px] font-[650] [&&]:text-[#173963] [&&]:text-[16px] leading-[1.5] [&&]:mx-[0px]"
+            class="[&&]:mt-[0px] [&&]:mb-[10px] font-[600] [&&]:text-[#173963] [&&]:text-[17px] leading-[1.5] [&&]:mx-[0px]"
           >
             {feature.title}
           </h3>
           <p
-            class="[&&]:mt-[0px] [&&]:mb-[22px] [&&]:leading-[1.8] [&&]:text-[13px] [&&]:text-[#647b97] [&&]:grow [&&]:shrink [&&]:[flex-basis:0%] [&&]:mx-[0px]"
+            class="[&&]:mt-[0px] [&&]:mb-[22px] [&&]:leading-[1.6] [&&]:text-[14px] [&&]:text-[#475569] [&&]:grow [&&]:shrink [&&]:[flex-basis:0%] [&&]:mx-[0px]"
           >
             {feature.description}
           </p>
           <a
-            class="[-webkit-tap-highlight-color:transparent] [&&]:text-[#1265c8] [&&]:[text-decoration-line:none] [&&]:[text-decoration-thickness:initial] [&&]:[text-decoration-style:initial] [&&]:[text-decoration-color:initial] [&&]:inline-flex [&&]:items-center [&&]:gap-y-[10px] [&&]:gap-x-[10px] [&&]:text-[12px] [&&]:font-[700] [&:focus-visible]:[outline-color:rgb(244,_190,_64)] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[5px] [&:hover]:[text-decoration-line:underline] [&:hover]:[text-decoration-thickness:initial] [&:hover]:[text-decoration-style:initial] [&:hover]:[text-decoration-color:initial]"
+            class="[-webkit-tap-highlight-color:transparent] [&&]:text-[#1265c8] [&&]:[text-decoration-line:none] [&&]:[text-decoration-thickness:initial] [&&]:[text-decoration-style:initial] [&&]:[text-decoration-color:initial] [&&]:inline-flex [&&]:items-center [&&]:gap-y-[10px] [&&]:gap-x-[10px] [&&]:text-[14px] [&&]:font-[700] [&:focus-visible]:[outline-color:rgb(244,_190,_64)] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[5px] [&:hover]:[text-decoration-line:underline] [&:hover]:[text-decoration-thickness:initial] [&:hover]:[text-decoration-style:initial] [&:hover]:[text-decoration-color:initial]"
             href={`/campus/${feature.href}`}>{feature.action}<Icon name="arrow" size={16} /></a
           >
         </article>
@@ -139,11 +147,11 @@
     >
     <div>
       <h2
-        class="[&&]:mt-[0px] [&&]:mb-[8px] font-[650] [&&]:text-[#173963] [&&]:text-[15px] tracking-[-0.45px] [&&]:mx-[0px]"
+        class="[&&]:mt-[0px] [&&]:mb-[8px] font-[600] [&&]:text-[#173963] [&&]:text-[16px] tracking-[-0.01em] [&&]:mx-[0px]"
       >
         Mulai sedikit, lanjutkan bersama.
       </h2>
-      <p class="[&&]:leading-[1.8] [&&]:text-[13px] [&&]:text-[#587395] [&&]:m-[0px]">
+      <p class="[&&]:leading-[1.6] [&&]:text-[14px] [&&]:text-[#587395] [&&]:m-[0px]">
         Buka Beranda, periksa indikator yang perlu dilengkapi, lalu baca masukan admin. Jika ada
         yang belum jelas, cari jawabannya di Pusat bantuan atau tanyakan melalui Forum Q&A.
       </p>

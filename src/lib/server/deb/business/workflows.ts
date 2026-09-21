@@ -131,6 +131,14 @@ export const runWorkflow = (e) => {
       roleIs('admin'); const r = get(app, 'indicator_feedback', payload.id);
       requireOpenDefinition(app, get(app, 'campus_indicators', r.getString('indicator')).getString('definition'));
       if (r.getString('state') !== 'closed') { r.set('state', 'closed'); app.save(r); event(r.getString('campus'), 'feedback_closed', r.id, 'Feedback indikator ditandai selesai.', 'campus', '/campus/indicators'); }
+    } else if (op === 'reviewProposal') {
+      roleIs('admin');
+      const r = get(app, 'proposal_versions', payload.id);
+      const note = text(payload.note, 5000);
+      if (!Number.isInteger(payload.revision) || payload.revision !== r.getInt('reviewRevision')) fail('Tanggapan sudah berubah. Muat ulang untuk membaca tanggapan terbaru.', 409);
+      r.set('reviewNote', note); r.set('reviewedBy', actor.id); r.set('reviewedAt', now);
+      r.set('reviewRevision', r.getInt('reviewRevision') + 1); app.save(r);
+      event(r.getString('campus'), 'proposal_reviewed', r.id, 'Admin memberikan tanggapan proposal versi ' + r.getInt('version') + '.', 'campus', '/campus/proposal?version=' + r.id);
     } else if (op === 'uploadProposal') {
       roleIs('campus');
       const previous = list(app, 'proposal_versions', 'campus = {:c}', { c: campus }, '-version')[0];

@@ -1,3 +1,3 @@
-// Client-rendered P2 UI. All business data comes from same-origin PocketBase APIs.
+// Standalone demo: client-only data and PDF storage in IndexedDB.
 export const ssr = false;
 export const prerender = false;

@@ -1,13 +1,15 @@
-import PocketBase from 'pocketbase';
+import { noRedirects } from './pb-fetch';
+import PocketBase, { type RecordModel } from 'pocketbase';
 import { env } from '$env/dynamic/private';
 import type { RequestEvent } from '@sveltejs/kit';
 import { security } from './security';
 import { serverSettings } from './server-client';
+import { requiresPasswordChange } from './password-policy';
 export const SESSION_COOKIE = 'deb_session';
 export function client() {
   if (!env.PB_URL) throw new Error('PB_URL belum dikonfigurasi.');
   const pb = new PocketBase(env.PB_URL); pb.autoCancellation(false);
-  pb.beforeSend=(url,options)=>({url,options:{...options,redirect:'error'}}); return pb;
+  return noRedirects(pb);
 }
 export async function sessionClient(event: RequestEvent) {
   const cookie = event.cookies.get(SESSION_COOKIE); if (!cookie) return null;
@@ -20,9 +22,13 @@ export async function sessionClient(event: RequestEvent) {
     pb.authStore.save(token);
     // Refresh verifies the signature/tokenKey and fetches the current account. Keep the original expiry.
     const result = await pb.collection('users').authRefresh();
-    if (!result.record.active || !result.record.verified || result.record.simulated || !['admin', 'campus'].includes(result.record.role)) throw new Error('Invalid session');
+    if (!result.record.active || !result.record.verified || result.record.simulated || !['admin', 'campus', 'baru', 'super_admin'].includes(result.record.role)) throw new Error('Invalid session');
     if ((result.record.sessionVersion || '') !== claims.version) throw new Error('Revoked session');
-    pb.authStore.save(token, result.record); return pb;
+    // The existing modules check the literal role admin; a super admin is an admin with a flag.
+    const record: RecordModel = result.record.role === 'super_admin' ? { ...result.record, role: 'admin', superAdmin: true } : result.record;
+    // Only a server-signed OAuth session bypasses the application password prompt.
+    record.passwordChangeRequired = requiresPasswordChange(record) && claims.method !== 'oauth';
+    pb.authStore.save(token, record); return pb;
   } catch (error) {
     const status = (error as { status?: number }).status;
     if (status !== undefined && ![400,401,403,404].includes(status)) throw new Error('Layanan sesi belum tersedia.');
