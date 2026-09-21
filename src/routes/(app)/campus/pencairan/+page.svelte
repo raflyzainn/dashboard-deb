@@ -4,7 +4,7 @@
   import Empty from '$lib/components/ui/Empty.svelte';
 </script>
 
-<svelte:head><title>Pencairan · Desa Energi Berdikari</title></svelte:head>
+<svelte:head><title>Pencairan Dana · Desa Energi Berdikari</title></svelte:head>
 {#if app.session?.campusId}
   <Layar campusId={app.session.campusId} mode="campus" />
 {:else}

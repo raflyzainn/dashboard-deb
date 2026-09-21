@@ -11,7 +11,7 @@
    * Sits inside the document area of the item panel; the table scrolls sideways inside its own box.
    * `refresh` reloads the table when the parent has changed the version (a decision, an import).
    */
-  let { campusId, share = 'tahap1', compact = false, refresh = 0 }: { campusId: string; share?: RabShare; compact?: boolean; refresh?: number } = $props();
+  let { campusId, share = 'tahap1', compact = false, refresh = 0, canEdit = true }: { campusId: string; share?: RabShare; compact?: boolean; refresh?: number; canEdit?: boolean } = $props();
   let data = $state<RabOverview | null>(null);
   let error = $state('');
 
@@ -64,8 +64,8 @@
   <p class="text-sm text-slate-500">Memuat RAB…</p>
 {:else if !version}
   <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-700">
-    <span>Belum ada RAB terkelola. Impor Excel tiga lembar dari templat, atau buka halaman RAB.</span>
-    <a href={editorUrl} class={link}><Icon name="external" size={13} />Buka halaman RAB</a>
+    <span>{canEdit ? 'Belum ada RAB terkelola. Impor Excel tiga lembar dari templat, atau buka halaman RAB.' : 'Belum ada RAB terkelola. Menunggu Pertamina Foundation.'}</span>
+    {#if canEdit}<a href={editorUrl} class={link}><Icon name="external" size={13} />Buka halaman RAB</a>{/if}
   </div>
 {:else}
   <div class="grid min-w-0 gap-2" data-rab-table>
@@ -73,7 +73,7 @@
       <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
         <span class="font-semibold text-slate-900">{SHARE_LABEL[share]} · belum ada versinya</span>
         <Badge tone={RAB_STATUS_TONE[version.status]}>{STATUS_SHORT[version.status]}</Badge>
-        <a href={editorUrl} class="{link} ml-auto"><Icon name="edit" size={13} />Ubah baris</a>
+        {#if canEdit}<a href={editorUrl} class="{link} ml-auto"><Icon name="edit" size={13} />Ubah baris</a>{/if}
       </div>
       <p class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13.5px] leading-relaxed text-amber-900">Belum ada versi RAB terkelola yang memuat lembar {SHARE_LABEL[share]}. Versi terakhir (versi {version.number}) memuat lembar lain, jadi angkanya tidak ditampilkan di sini. Impor Excel dengan lembar {SHARE_LABEL[share]} untuk mengisinya.</p>
     {:else}
@@ -83,7 +83,7 @@
       <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums {pillClass[standing]}">{pillText}</span>
       <span class="text-xs text-slate-500">{items} dari {allItems} baris RAB</span>
       {#if previous}<span class="text-xs text-slate-500">sebelumnya versi {previous.number}: {formatSen(previous.total)}</span>{/if}
-      <a href={editorUrl} class="{link} ml-auto"><Icon name="edit" size={13} />Ubah baris</a>
+      {#if canEdit}<a href={editorUrl} class="{link} ml-auto"><Icon name="edit" size={13} />Ubah baris</a>{/if}
     </div>
     <div class="min-w-0 overflow-x-auto rounded-lg border border-slate-200/70 bg-white">
       <table class="w-full min-w-[720px] border-collapse {compact ? 'text-[13px]' : 'text-sm'}">

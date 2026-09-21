@@ -17,6 +17,7 @@ export function pageRequest(url: URL): PageRequest {
   return request;
 }
 function routeRequest(url: URL): PageRequest {
+  if (/^\/campus\/dashboard\/?$/.test(url.pathname)) return { view: 'static' };
   const [, , section, id] = url.pathname.split('/');
   switch (section) {
     case 'profile': case 'settings': return { view: 'dashboard' };

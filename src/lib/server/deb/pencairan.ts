@@ -1,6 +1,7 @@
 import type PocketBase from 'pocketbase';
 import type { RecordModel } from 'pocketbase';
 import { versionHolds, type RabVersionShare } from '../../rab';
+import { campusUploadBlockedReason } from '../../pencairan';
 import { KINDS, KIND_LABEL, FIELDS, GENERATED, LETTERS, isRabKind, limitSen, remainderSen, formatSen, percentOf, formatPercent, splitNames, namesMatch, terbilang, assess, type Assessment, type Kind, type Status } from '../../pencairan';
 import { PreviewError } from './preview-error';
 import { writeAudit, type AuditActor } from './audit';
@@ -305,6 +306,14 @@ export async function addVersion(pb: PocketBase, store: Storage, actor: AuditAct
   const { campus } = await campusWithAward(pb, campusId);
   const { disbursement, documents } = await ensureDisbursement(pb, campusId);
   const doc = documents.find(d => d.kind === kind)!;
+  if (options.byCampus) {
+    const ws = await workspace(pb, campusId);
+    const current = ws.documents.find(d => d.kind === kind)!;
+    const blocked = campusUploadBlockedReason(kind, ws.readiness.items[kind], current, Boolean(disbursement.paidAt));
+    if (blocked) throw new PreviewError(403, blocked);
+    if (options.signed || options.keepStatus || (options.origin && options.origin !== 'upload')) throw new PreviewError(403, 'Kampus hanya dapat mengirim dokumen untuk diperiksa.');
+    if (current.versions.find(v => v.id === current.currentVersionId)?.signed) throw new PreviewError(403, 'Berkas bertanda tangan tidak dapat diganti lewat unggah revisi.');
+  }
   const last = await pb.collection('document_versions').getList(1, 1, { filter: pb.filter('document = {:id}', { id: doc.id }), sort: '-number', fields: 'number', ...opts });
   const number = (last.items[0]?.number || 0) + 1;
   const key = versionKey(campus.code, TERM, kind, number, file.name);

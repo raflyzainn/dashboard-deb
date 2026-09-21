@@ -4,6 +4,8 @@
   import { goto } from '$app/navigation';
   import { dataService } from '$lib/data/service';
   import { onChange } from '$lib/realtime.svelte';
+  import { pollVisible } from '$lib/polling';
+  import { campusUploadBlockedReason, CAMPUS_STATE_LABEL } from '$lib/pencairan';
   import { KINDS, KIND_LABEL, KIND_SHORT, KIND_FILE, LOOK_AT, FIELDS, DECISION_LABEL, RAIL_WORD, ITEM_STATE_LABEL, RAB_SHARE, isRabKind, formatSen, parseSen, type Kind, type ItemState } from '$lib/pencairan';
   import type { KartuData, Version, Check } from './kartu-types';
   import Icon from '$lib/components/ui/Icon.svelte';
@@ -46,10 +48,25 @@
   let docHeight = $state(560);
   let noticeTimer: ReturnType<typeof setTimeout> | undefined;
   let fileInput = $state<HTMLInputElement | null>(null);
+  let uploadFile = $state<File | null>(null);
+  let uploadNote = $state('');
+  let loadGeneration = 0;
+  let railThumb = $state({ width: 100, left: 0 });
+  function trackRail(node: HTMLElement) {
+    const update = () => {
+      railThumb = { width: node.clientWidth / node.scrollWidth * 100, left: node.scrollLeft / node.scrollWidth * 100 };
+    };
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    node.addEventListener('scroll', update, { passive: true });
+    update();
+    return { destroy() { observer.disconnect(); node.removeEventListener('scroll', update); } };
+  }
 
   const admin = $derived(mode === 'admin');
   const base = $derived(admin ? `/admin/pencairan/${campusId}` : '/campus/pencairan');
-  const canUpload = $derived(admin || data?.campus.fillMode === 'campus');
+  const uploadBlocked = $derived(campusUploadBlockedReason(kind, state, doc, Boolean(data?.disbursement.paidAt)) || (doc?.versions.find(v => v.id === doc.currentVersionId)?.signed ? 'Berkas bertanda tangan tidak dapat diganti lewat unggah revisi.' : ''));
+  const canUpload = $derived(admin || (Boolean(data) && !uploadBlocked));
   const time = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', timeZone: 'Asia/Jakarta' });
   const full = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' });
   const dot: Record<ItemState, string> = { sesuai: 'bg-green-600', tidak_perlu: 'bg-green-200', perlu_konfirmasi: 'bg-[#0066B2]', menunggu_review: 'bg-sky-400', perlu_revisi: 'bg-amber-500', belum_ada: 'bg-white ring-1 ring-slate-300' };
@@ -63,7 +80,7 @@
     belum_ada: 'border-slate-200 bg-slate-50 text-slate-700'
   };
 
-  const requested = $derived.by<Row>(() => { const k = page.url.searchParams.get('butir'); return k && ([...KINDS, 'ttd', 'lampiran', 'bayar'] as string[]).includes(k) ? (k as Row) : firstOpen(); });
+  const requested = $derived.by<Row>(() => { const k = page.url.searchParams.get('butir'); return k && (admin ? [...KINDS, 'ttd', 'lampiran', 'bayar'] : [...KINDS] as string[]).includes(k) ? (k as Row) : firstOpen(); });
   function firstOpen(): Row {
     if (!data) return 'sk';
     const k = KINDS.find(k => !['sesuai', 'tidak_perlu'].includes(data!.readiness.items[k]));
@@ -90,7 +107,7 @@
     return [...mine.filter(c => c.level === 'warn').slice(0, 1), ...mine.filter(c => c.level === 'ok').slice(0, 1), ...(mine.some(c => c.level === 'warn' || c.level === 'ok') ? [] : mine.filter(c => c.level === 'info').slice(0, 1))];
   });
   const thread = $derived(doc ? [...doc.versions.flatMap(v => v.reviews.map(r => ({ ...r, version: v.number }))), ...(doc.reviews || []).map(r => ({ ...r, version: 0 }))].sort((a, b) => b.created.localeCompare(a.created)) : []);
-  const campusThread = $derived(thread.filter(r => r.decision === 'perlu_revisi' && r.note));
+  const campusRevision = $derived(state === 'perlu_revisi' ? thread.find(r => r.decision === 'perlu_revisi' && r.note) : null);
   /** The conversation on this item, oldest first. Decisions keep their own note in the bar and their history in Riwayat. */
   const conversation = $derived(doc ? [...doc.notes].sort((a, b) => a.created.localeCompare(b.created)) : []);
   $effect(() => { void conversation.length; const el = threadEl; if (el) requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; }); });
@@ -125,14 +142,20 @@
   function say(message: string) { notice = message; if (noticeTimer) clearTimeout(noticeTimer); if (message) noticeTimer = setTimeout(() => (notice = ''), 4000); }
   function apply(next: KartuData, message = '') { data = next; error = ''; refresh++; if (message) say(message); }
   async function load() {
-    try { apply(await dataService.api.get<KartuData>(`/api/pencairan/${campusId}`)); }
-    catch (e) { error = e instanceof Error ? e.message : 'Layar belum dapat dimuat.'; }
+    if (busy) return;
+    const generation = ++loadGeneration;
+    try {
+      const next = await dataService.api.get<KartuData>(`/api/pencairan/${campusId}`);
+      if (generation === loadGeneration) apply(next);
+    }
+    catch (e) { if (generation === loadGeneration) error = e instanceof Error ? e.message : 'Layar belum dapat dimuat.'; }
   }
   $effect(() => { untrack(() => { void load(); }); });
   $effect(() => onChange(() => void load(), { campus: campusId }));
+  $effect(() => { if (!admin) return pollVisible(async () => { if (!busy) await load(); }, 15000); });
   $effect(() => {
     void selected;
-    untrack(() => { selectedVersionId = ''; bankNameSeen = ''; editing = false; showLook = false; rabTab = 'digital'; });
+    untrack(() => { selectedVersionId = ''; bankNameSeen = ''; editing = false; showLook = false; rabTab = 'digital'; uploadFile = null; uploadNote = ''; if (fileInput) fileInput.value = ''; });
   });
   $effect(() => {
     const v = version;
@@ -159,9 +182,11 @@
     return () => { window.removeEventListener('resize', fit); window.removeEventListener('keydown', onKey); };
   });
 
-  const open = (row: Row) => goto(`${base}?butir=${row}`, { replaceState: true, noScroll: true, keepFocus: true });
+  const open = (row: Row) => { if (!busy) return goto(`${base}?butir=${row}`, { replaceState: true, noScroll: true, keepFocus: true }); };
   async function run(action: () => Promise<KartuData>, message: string) {
     if (busy) return false;
+    // A read started before this mutation must not overwrite its newer result.
+    loadGeneration++;
     busy = true; error = '';
     try { apply(await action(), message); return true; }
     catch (e) { error = e instanceof Error ? e.message : 'Perubahan belum tersimpan.'; return false; }
@@ -242,14 +267,21 @@
   }
   async function upload(file: File | null) {
     if (!file || !canUpload) return;
+    if (!file.size || file.size > 40 * 1024 * 1024) { error = 'Pilih berkas tidak kosong dengan ukuran maksimal 40 MB.'; return; }
     const body = new FormData();
-    body.set('file', file); body.set('note', '');
-    const ok = await run(async () => { const next = await dataService.api.post<KartuData>(`/api/pencairan/${campusId}/documents/${fileKind}/versions`, body); selectedVersionId = ''; return next; }, admin ? `Versi baru tersimpan.` : 'Berkas terkirim.');
-    if (ok && fileInput) fileInput.value = '';
+    body.set('file', file); body.set('note', admin ? '' : uploadNote.trim());
+    const ok = await run(async () => { const next = await dataService.api.post<KartuData>(`/api/pencairan/${campusId}/documents/${fileKind}/versions`, body); selectedVersionId = ''; return next; }, admin ? `Versi baru tersimpan.` : 'Berkas terkirim. Menunggu pemeriksaan Pertamina Foundation.');
+    if (ok) { uploadFile = null; uploadNote = ''; if (fileInput) fileInput.value = ''; }
   }
 </script>
 
-{#if error && !data}
+{#if !admin && !data && error === 'Kampus ini tidak termasuk penerima gelombang pertama.'}
+  <section class="grid gap-2 rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
+    <h1 class="text-lg font-bold text-slate-900">Pencairan belum tersedia</h1>
+    <p>Belum ada penetapan pencairan gelombang pertama untuk kampus Anda. Silakan hubungi tim Pertamina Foundation untuk informasi lebih lanjut.</p>
+    <a class="font-semibold text-[#0066B2] hover:underline" href="/campus/dashboard">Kembali ke Beranda</a>
+  </section>
+{:else if error && !data}
   <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">{error}</div>
 {:else if !data}
   <p class="text-sm text-slate-500">Memuat…</p>
@@ -264,13 +296,22 @@
       {#if error}<span class="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-800" role="alert">{error}</span>{/if}
     </div>
 
-    <div class="grid grid-cols-[minmax(0,1fr)] overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_10px_30px_#0b254508] lg:grid-cols-[224px_minmax(0,1fr)]">
-      <aside class="flex gap-1 overflow-x-auto border-b border-slate-200/70 bg-slate-50/80 p-2 lg:grid lg:content-start lg:gap-0.5 lg:overflow-visible lg:border-b-0 lg:border-r lg:p-2.5" aria-label="Butir">
+    {#if !admin}
+      <section aria-label="Progres pencairan" class="my-2 grid gap-2 rounded-xl border border-blue-100 bg-blue-50/60 p-4 text-sm text-slate-700">
+        <div class="flex flex-wrap items-center justify-between gap-2"><h2 class="font-bold text-slate-900">Progres pencairan Tahap 1 · {CAMPUS_STATE_LABEL[data.readiness.state]}</h2><button type="button" class="font-semibold text-[#0066B2] disabled:opacity-50" disabled={busy} onclick={load}>Perbarui status</button></div>
+        <p>{data.readiness.done} dari {data.readiness.total} butir selesai · {data.readiness.belum} belum ada · {data.readiness.revisi} perlu revisi · {data.readiness.adminWait} menunggu pemeriksaan</p>
+        <p>{data.readiness.phrase}</p>
+        <p class="text-xs text-slate-500">Pilih dokumen untuk melihat berkas dan catatan pemeriksa. SK dan RAB hanya dapat dilihat; unggah RAB belum dibuka.</p>
+      </section>
+    {/if}
+    <div class="document-frame grid grid-cols-[minmax(0,1fr)] overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_10px_30px_#0b254508] lg:grid-cols-[240px_minmax(0,1fr)]">
+      <div class="document-navigation min-w-0 border-b border-slate-200/70 bg-slate-50/80 lg:border-b-0 lg:border-r">
+      <aside use:trackRail class="flex gap-1 overflow-x-auto p-2 lg:grid lg:content-start lg:gap-0.5 lg:overflow-visible lg:p-2.5" aria-label="Butir">
         <span class="hidden px-2.5 pb-1 text-[10.5px] font-bold uppercase tracking-[0.06em] text-slate-400 lg:block">Butir</span>
         {#each KINDS as k}
           {@const s = data.readiness.items[k]}
           <button type="button" class="flex shrink-0 items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] transition {selected === k ? 'bg-white font-bold text-slate-900 shadow-[0_4px_12px_#0b254514]' : 'text-slate-700 hover:bg-white/70'}" onclick={() => open(k)} aria-current={selected === k ? 'true' : undefined} title={ITEM_STATE_LABEL[s]}>
-            <i class="size-2.5 shrink-0 rounded-full {dot[s]}"></i><span class="whitespace-nowrap">{KIND_SHORT[k]}</span><span class="ml-auto pl-2 text-[11px] font-medium text-slate-400">{admin ? RAIL_WORD[s] : s === 'perlu_revisi' ? 'Perbaiki' : s === 'belum_ada' ? 'Kirim' : s === 'sesuai' ? 'Sesuai' : s === 'tidak_perlu' ? 'Tidak perlu' : 'Diperiksa'}</span>
+            <i class="size-2.5 shrink-0 rounded-full {dot[s]}"></i><span class="whitespace-nowrap">{KIND_SHORT[k]}</span><span class="ml-auto whitespace-nowrap pl-2 text-[11px] font-medium text-slate-500">{admin ? RAIL_WORD[s] : s === 'perlu_revisi' ? 'Perlu revisi' : s === 'belum_ada' ? 'Belum ada' : s === 'sesuai' ? 'Sesuai' : s === 'tidak_perlu' ? 'Tidak perlu' : 'Menunggu PF'}</span>
           </button>
         {/each}
         {#if admin}
@@ -284,9 +325,16 @@
           {/each}
         {/if}
       </aside>
+      <div class="px-4 pb-3 lg:hidden">
+        <div class="relative h-1.5 overflow-hidden rounded-full bg-slate-200" aria-hidden="true">
+          <div class="absolute h-full rounded-full bg-[#0066B2]" style:width={`${railThumb.width}%`} style:left={`${railThumb.left}%`}></div>
+        </div>
+        <p class="mt-2 text-center text-xs text-slate-600">↔ Geser untuk melihat dokumen lainnya</p>
+      </div>
+      </div>
 
-      <div class="grid min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] [&>*]:min-w-0">
-        <div class="flex flex-wrap items-center gap-2 border-b border-slate-200/70 px-3 py-2 text-xs text-slate-500">
+      <div class="document-content grid min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] [&>*]:min-w-0">
+        <div class="document-toolbar flex flex-wrap items-center gap-2 border-b border-slate-200/70 px-3 py-2 text-xs text-slate-500">
           <b class="text-[15px] text-slate-900">{isItem ? KIND_LABEL[kind] : CLOSING.find(c => c.key === selected)?.label}</b>
           {#if isItem && kind === 'sk'}
             <span class="rounded-full bg-[#0066B2] px-2.5 py-0.5 text-[11.5px] font-semibold text-white">{data.summary.skNumber}{data.summary.skDate ? ` · ${time.format(new Date(data.summary.skDate))} ${new Date(data.summary.skDate).getFullYear()}` : ''}</span>
@@ -304,7 +352,7 @@
               <button type="button" class="rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold {version?.id === v.id ? 'bg-[#0066B2] text-white' : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300'}" onclick={() => (selectedVersionId = v.id)}>Versi {v.number} · {time.format(new Date(v.created))}{v.signed ? ' · ttd' : v.origin === 'generated' ? ' · sistem' : ''}</button>
             {/each}
           {/if}
-          {#if isItem && kind !== 'sk' && canUpload && (!isRab || rabTab === 'asli')}
+          {#if admin && isItem && kind !== 'sk' && (!isRab || rabTab === 'asli')}
             <label class="cursor-pointer rounded-full border border-dashed border-slate-300 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-[#0066B2] hover:border-[#0066B2]">+ versi baru<input type="file" class="sr-only" bind:this={fileInput} accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.doc,.xlsx,.xls" onchange={(e) => upload((e.currentTarget as HTMLInputElement).files?.[0] || null)} /></label>
           {/if}
           <span class="ml-auto hidden xl:inline">Nilai SK <b class="tabular-nums text-slate-800">{formatSen(data.summary.amountSen)}</b> · Batas <b class="tabular-nums text-slate-800">{formatSen(data.summary.limitSen)}</b> · Diajukan <b class="tabular-nums text-slate-800">{data.summary.requestedSen ? formatSen(data.summary.requestedSen) : 'belum'}</b></span>
@@ -313,7 +361,27 @@
           {#if admin}<button type="button" class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300" onclick={() => (showRiwayat = true)}>Riwayat</button>{/if}
         </div>
 
-        {#if !isItem}
+        {#if !admin && isItem}
+          <section aria-label="Status dokumen" class="grid gap-3 border-b border-slate-200 p-3 text-sm">
+            <div class="grid gap-1 rounded-lg border border-l-4 p-3 {campusStatusClass[state]}" role="status">
+              <strong>{ITEM_STATE_LABEL[state]}</strong>
+              {#if campusRevision}<p class="whitespace-pre-wrap break-words"><b>Catatan pemeriksa:</b> {campusRevision.note}</p>{/if}
+              <p>{uploadBlocked || (state === 'perlu_revisi' ? 'Perbaiki sesuai catatan, lalu kirim sebagai versi baru. Berkas sebelumnya tetap tersimpan.' : 'Lengkapi dokumen dengan mengunggah berkas di bawah.')}</p>
+            </div>
+            {#if canUpload}
+              <form class="grid min-w-0 gap-2" onsubmit={(e) => { e.preventDefault(); void upload(uploadFile); }}>
+                <label class="grid min-w-0 gap-1 font-semibold">{state === 'perlu_revisi' ? 'Berkas revisi' : 'Berkas kelengkapan'}
+                  <input type="file" class="min-w-0 max-w-full rounded-lg border border-slate-300 p-2 text-sm font-normal" bind:this={fileInput} disabled={busy} accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.docx,.doc,.xlsx,.xls,.csv" onchange={(e) => { uploadFile = e.currentTarget.files?.[0] || null; error = ''; }} />
+                </label>
+                <p class="text-xs text-slate-500">PDF, gambar, Word, atau Excel · maksimal 40 MB. Berkas dikirim setelah tombol di bawah ditekan.</p>
+                <label class="grid gap-1">Catatan unggahan (opsional)<textarea rows="2" maxlength="2000" class="w-full rounded-lg border border-slate-300 p-2" bind:value={uploadNote} disabled={busy}></textarea></label>
+                <button type="submit" class="justify-self-start rounded-lg bg-[#0066B2] px-4 py-2 font-semibold text-white disabled:opacity-50" disabled={busy || !uploadFile}>{busy ? 'Mengirim…' : state === 'perlu_revisi' ? 'Kirim revisi' : 'Kirim dokumen'}</button>
+              </form>
+            {/if}
+            {#if version && !isCurrent}<p class="text-amber-800">Anda melihat versi lama. Status di atas adalah status dokumen terbaru.</p>{/if}
+          </section>
+        {/if}
+        {#if !isItem && admin}
           <div class="relative grid min-h-0 min-w-0 grid-rows-[minmax(0,1fr)] overflow-hidden" style={`height:${docHeight + 56}px`}>
             {#if selected === 'ttd'}<TandaTanganView {campusId} {data} onchange={apply} />
             {:else if selected === 'lampiran'}<LampiranView {campusId} {data} onchange={apply} />
@@ -345,16 +413,17 @@
                     {#if bukti.note}<p class="mt-1 text-[13px] leading-relaxed text-slate-700">{bukti.note}</p>{/if}
                   </div>
                 {/if}
-                <RabTable {campusId} compact {refresh} share={RAB_SHARE[kind as keyof typeof RAB_SHARE]} />
+                <RabTable {campusId} compact {refresh} canEdit={admin} share={RAB_SHARE[kind as keyof typeof RAB_SHARE]} />
               </div>
             {:else if version}
               <FileViewer src={fileUrl} mime={version.mime} name={version.originalName} height={docHeight} />
             {:else}
-              <div class="flex h-full flex-col items-center justify-center gap-2 text-sm text-slate-600"><Icon name="upload" size={26} /><span>Belum ada berkas.</span>{#if canUpload}<span class="text-xs text-slate-500">Pilih "+ versi baru" di atas.</span>{/if}</div>
+              <div class="flex h-full flex-col items-center justify-center gap-2 text-sm text-slate-600"><Icon name="upload" size={26} /><span>Belum ada berkas.</span>{#if canUpload}<span class="text-xs text-slate-500">{admin ? 'Pilih "+ versi baru" di atas.' : 'Gunakan formulir unggah di atas.'}</span>{/if}</div>
             {/if}
           </div>
 
-          <div class="grid gap-2.5 border-t border-slate-200/70 bg-white px-3 py-3">
+          {#if admin || kind === 'sk' || spec.some(f => version?.fields?.[f.key] !== null && version?.fields?.[f.key] !== undefined && version?.fields?.[f.key] !== '')}
+          <div class="document-review grid gap-2.5 border-t border-slate-200/70 bg-white px-3 py-3">
             {#if kind === 'sk'}
               <div class="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2">
                 <label class="grid min-w-0 gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">Nilai SK<span class="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[13px] font-medium normal-case tracking-normal tabular-nums text-slate-900">{formatSen(data.summary.amountSen)}</span></label>
@@ -394,19 +463,8 @@
                 <p><span class="font-bold">Jawaban kampus</span> · versi {answered.version.number} · {answered.version.uploadedByName || 'pengunggah tidak tercatat'} · {full.format(new Date(answered.version.created))}{answered.version.note ? `: ${answered.version.note}` : ''}</p>
               </div>
             {/if}
-            <div class="flex flex-wrap items-end gap-2">
-              {#if !admin}
-                <div class="grid w-full gap-2 rounded-lg border border-l-4 px-3 py-2.5 text-[13px] leading-relaxed {campusStatusClass[state]}" role="status">
-                  <strong class="font-semibold">{ITEM_STATE_LABEL[state]}</strong>
-                  {#if campusThread[0]}<p class="whitespace-pre-wrap break-words"><b class="font-semibold">Catatan pemeriksa:</b> {campusThread[0].note}</p>{/if}
-                  {#if !(canUpload && (state === 'perlu_revisi' || state === 'belum_ada'))}
-                    <p>{state === 'sesuai' ? 'Sudah sesuai.' : state === 'tidak_perlu' ? 'Tidak diperlukan.' : state === 'perlu_revisi' ? 'Admin program mengunggah berkas perbaikan.' : 'Menunggu pemeriksaan.'}</p>
-                  {/if}
-                </div>
-                {#if canUpload && (state === 'perlu_revisi' || state === 'belum_ada')}
-                  <label class="ml-auto cursor-pointer rounded-lg bg-[#0066B2] px-3.5 py-2 text-[13px] font-semibold text-white shadow-[0_8px_18px_#0066b233] hover:bg-[#015a9a]">{state === 'perlu_revisi' ? 'Unggah berkas perbaikan' : 'Unggah berkas'}<input type="file" class="sr-only" accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.doc,.xlsx,.xls" onchange={(e) => upload((e.currentTarget as HTMLInputElement).files?.[0] || null)} /></label>
-                {/if}
-              {:else if showDecision}
+            <div class="review-actions flex flex-wrap items-end gap-2">
+              {#if admin && showDecision}
                 <div class="flex w-full flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border px-3.5 py-2.5 {state === 'perlu_revisi' ? 'border-amber-300 bg-amber-50' : 'border-green-200 bg-green-50'}" role="status">
                   <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[17px] font-bold text-white {state === 'perlu_revisi' ? 'bg-amber-500' : 'bg-green-700'}" aria-hidden="true">{state === 'perlu_revisi' ? '!' : '✓'}</span>
                   <div class="min-w-0 flex-1">
@@ -419,7 +477,7 @@
                     {#if !computedOnly}<button type="button" class="min-h-[38px] rounded-lg border border-red-200 bg-white px-3.5 text-[13px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-40" disabled={busy} title="Butir kembali ke Periksa; riwayat tetap tersimpan" onclick={() => void undo()}>Batalkan keputusan</button>{/if}
                   </div>
                 </div>
-              {:else}
+              {:else if admin}
                 {#if kind === 'rekening'}<label class="grid min-w-0 gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">Nama di bank<input class="min-h-[38px] w-[170px] max-w-full rounded-lg border border-slate-300 px-2 text-[13px] font-medium normal-case tracking-normal text-slate-900" bind:value={bankNameSeen} placeholder="Bila berbeda" /></label>{/if}
                 <label class="grid basis-full gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400 sm:min-w-[220px] sm:flex-1 sm:basis-auto">
                   <span>Catatan keputusan{#if doc?.decidedByName}<span class="ml-2 font-medium normal-case tracking-normal text-slate-400">{state === 'perlu_revisi' ? DECISION_LABEL[kind].bad : decided ? DECISION_LABEL[kind].ok : ITEM_STATE_LABEL[state]} · {doc.decidedByName}{doc.decidedAt ? ` · ${time.format(new Date(doc.decidedAt))}` : ''}</span>{/if}</span>
@@ -432,7 +490,8 @@
               {/if}
             </div>
           </div>
-          <div class="border-t border-slate-200/70 bg-white px-3 py-2.5">
+          {/if}
+          <div class="document-notes border-t border-slate-200/70 bg-white px-3 py-2.5">
             <div class="flex flex-wrap items-baseline justify-between gap-2"><h3 class="text-[11px] font-bold uppercase tracking-[0.06em] text-[#3975b7]">Catatan</h3><span class="text-[11.5px] text-slate-500">{admin ? 'Percakapan dengan kampus. Catatan internal hanya terlihat tim Pertamina Foundation.' : 'Percakapan dengan Pertamina Foundation.'}</span></div>
             <div class="mt-1.5 grid max-h-56 gap-1.5 overflow-y-auto" bind:this={threadEl} aria-live="polite">
               {#each conversation as m (m.id)}
@@ -457,3 +516,22 @@
   </div>
   {#if showRiwayat}<RiwayatSheet context={`kampus:${campusId}/pencairan/t1`} title="Riwayat perubahan kampus ini" onclose={() => (showRiwayat = false)} />{/if}
 {/if}
+
+<style>
+  @media (max-width: 1023px) {
+    .document-frame { gap: 20px; background: transparent; border: 0; box-shadow: none; }
+    .document-navigation { border: 0; border-radius: 12px; overflow: hidden; }
+    .document-content { row-gap: 20px; background: transparent; }
+    .document-content > :global(section) { padding: 16px; background: white; border-radius: 12px; }
+    .document-toolbar { padding: 16px; gap: 12px; background: white; border: 0; border-radius: 12px; }
+    .document-toolbar :is(button, a, label) { min-height: 44px; display: inline-flex; align-items: center; }
+    .document-review, .document-notes { padding: 20px 16px; gap: 16px; border-radius: 12px; border-top: 0; }
+    .review-actions { gap: 12px; }
+    .review-actions > label { flex-basis: 100%; gap: 8px; }
+    .review-actions textarea { min-height: 88px; }
+    .review-actions button { min-height: 44px; }
+    .document-notes form { margin-top: 16px; gap: 12px; }
+    .document-notes textarea { min-width: 0; flex-basis: 100%; min-height: 88px; }
+    .document-notes button { min-height: 44px; margin-left: auto; }
+  }
+</style>

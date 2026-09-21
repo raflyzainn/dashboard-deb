@@ -11,7 +11,7 @@
   let loading = $state(false);
   let error = $state('');
   let zoom = $state(1);
-  let sheets = $state<{ name: string; html: string }[]>([]);
+  let sheets = $state<{ name: string; html: string; limited: boolean }[]>([]);
   let sheet = $state(0);
 
   async function render() {
@@ -30,8 +30,9 @@
         if (available && pageWidth > available) zoom = Math.max(0.4, Math.floor(((available - 16) / pageWidth) * 100) / 100);
       } else if (kind === 'xlsx') {
         const XLSX = await import('xlsx');
-        const book = XLSX.read(await response.arrayBuffer(), { type: 'array', cellStyles: false });
-        sheets = book.SheetNames.map(sheetName => ({ name: sheetName, html: XLSX.utils.sheet_to_html(book.Sheets[sheetName], { editable: false }) }));
+        const { excelSheetPreview } = await import('$lib/excel-preview');
+        const book = XLSX.read(await response.arrayBuffer(), { type: 'array', cellStyles: false, sheetRows: 500 });
+        sheets = book.SheetNames.map(sheetName => ({ name: sheetName, ...excelSheetPreview(book.Sheets[sheetName]) }));
         sheet = 0;
       }
     } catch (e) {
@@ -68,7 +69,10 @@
           {#each sheets as s, i}<button type="button" class="rounded-md px-2 py-1 text-xs font-semibold {i === sheet ? 'bg-[#0066B2] text-white' : 'text-slate-600 hover:bg-slate-100'}" onclick={() => (sheet = i)}>{s.name}</button>{/each}
         </div>
       {/if}
-      {#if sheets[sheet]}<div class="sheet p-3" style={`zoom:${zoom}`}>{@html sheets[sheet].html}</div>{/if}
+      {#if sheets[sheet]}
+        {#if sheets[sheet].limited}<p class="m-3 rounded-lg bg-blue-50 p-3 text-sm text-blue-900">Pratinjau dibatasi sampai 500 baris dan 50 kolom agar halaman tetap responsif. Unduh berkas asli untuk melihat seluruh isi; file asli tidak diubah.</p>{/if}
+        <div class="sheet p-3" style={`zoom:${zoom}`}>{@html sheets[sheet].html}</div>
+      {/if}
     {:else if kind === 'other'}
       <div class="flex h-full flex-col items-center justify-center gap-2 p-6 text-center text-sm text-slate-600"><Icon name="file" size={28} />Pratinjau tidak tersedia untuk jenis berkas ini. Unduh berkas asli untuk membukanya.</div>
     {/if}

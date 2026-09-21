@@ -46,6 +46,14 @@ export const LETTERS: Kind[] = ['permohonan', 'invois', 'kuitansi'];
 /** tidak_perlu is stored only for the surat kuasa: a person decided the campus goes without one. */
 export const STATUSES = ['belum_ada', 'menunggu_review', 'perlu_konfirmasi', 'perlu_revisi', 'sesuai', 'tidak_perlu'] as const;
 export type Status = (typeof STATUSES)[number];
+/** Shared upload gate: the server remains authoritative; SK and RAB stay managed by PF. */
+export function campusUploadBlockedReason(kind: Kind, state: Status, doc: { signedReceived: boolean; originalReceived: boolean } | null, paid: boolean): string {
+  if (!(['pks', 'permohonan', 'kuitansi', 'invois', 'rekening', 'surat_kuasa'] as Kind[]).includes(kind)) return 'Dokumen ini dikelola Pertamina Foundation; unggah kampus belum dibuka.';
+  if (paid || doc?.signedReceived || doc?.originalReceived) return 'Dokumen sudah masuk proses final dan tidak dapat diganti. Hubungi Pertamina Foundation melalui catatan.';
+  if (state === 'sesuai' || state === 'tidak_perlu') return 'Dokumen sudah selesai dan tidak perlu diunggah ulang.';
+  if (state !== 'belum_ada' && state !== 'perlu_revisi') return 'Menunggu pemeriksaan Pertamina Foundation. Unggah kembali jika diminta revisi.';
+  return '';
+}
 export const STATUS_LABEL: Record<Status, string> = { belum_ada: 'Belum ada', menunggu_review: 'Menunggu pemeriksaan', perlu_konfirmasi: 'Perlu konfirmasi', perlu_revisi: 'Perlu revisi', sesuai: 'Sesuai', tidak_perlu: 'Tanpa surat kuasa' };
 export const STATUS_TONE: Record<Status, 'neutral' | 'blue' | 'amber' | 'green'> = { belum_ada: 'neutral', menunggu_review: 'blue', perlu_konfirmasi: 'blue', perlu_revisi: 'amber', sesuai: 'green', tidak_perlu: 'green' };
 /** What an item counts as on the screen: its status, or "tidak perlu" computed for a surat kuasa that the rekening does not require. */

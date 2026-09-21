@@ -8,6 +8,7 @@
   let { children }: { children: Snippet } = $props();
   let mobile = $state(false);
   let drawer: HTMLDialogElement;
+  const campus = $derived(app.session?.role === 'campus');
   const labels = {
     guide: 'Panduan aplikasi',
     profile: 'Profil Program',
@@ -42,7 +43,7 @@
           'faq',
           'notifications'
         ]
-      : ['dashboard', 'pencairan', 'lpj', 'profile', 'indicators', 'proposal', 'questions', 'faq', 'notifications']
+      : ['dashboard', 'pencairan', 'questions', 'faq', 'notifications']
   );
   const pendingCount = $derived(app.navigation.pendingCount);
   const prefix = $derived(`/${app.session?.role}`);
@@ -68,7 +69,7 @@
 {#snippet navigation()}
   <a
     class="[-webkit-tap-highlight-color:transparent] text-[color:var(--dark)] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] flex items-center gap-y-[10px] gap-x-[10px] mt-[0px] mb-[30px] text-[30px] tracking-[-0.01em] font-[800] leading-[1] mx-[10px] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] max-[900.01px]:text-[27px] brand"
-    href={`${prefix}/dashboard`}
+    href={app.home()}
     onclick={closeDrawer}
     ><span
       class="flex items-center justify-center w-[42px] h-[45px] [background-image:initial] [background-color:var(--dark)] text-[#cce8b3] [border-top-left-radius:13px] [border-top-right-radius:13px] [border-bottom-right-radius:13px] [border-bottom-left-radius:4px] brand-mark"
@@ -100,7 +101,7 @@
         onclick={closeDrawer}
         ><Icon
           name={key === 'profile' ? 'campus' : key === 'master-indicators' ? 'indicators' : key === 'pencairan' ? 'payments' : key === 'lpj' ? 'file' : key}
-        /><span>{labels[key as keyof typeof labels]}</span
+        /><span>{app.session?.role === 'campus' && key === 'pencairan' ? 'Pencairan Dana' : labels[key as keyof typeof labels]}</span
         >{#if key === 'verifikasi' && pendingCount}<span
             class="ml-[auto] flex items-center justify-center [background-image:initial] [background-color:rgb(244,_219,_168)] text-[#795716] text-[11px] min-w-[20px] h-[20px] rounded-[5px] nav-count"
             >{pendingCount}</span
@@ -131,6 +132,7 @@
   </div>
 {/snippet}
 
+{#if !campus}
 <aside
   class="fixed top-[0px] right-[auto] bottom-[0px] left-[0px] [&&]:w-[224px] [&&]:[background-image:linear-gradient(rgb(20,_94,_232)_0%,_rgb(22,_54,_181)_100%)] [&&]:[background-color:initial] [&&]:pt-[20px] [&&]:pb-[12px] flex flex-col z-[40] overflow-x-auto overflow-y-auto [overscroll-behavior-x:contain] [overscroll-behavior-y:contain] [&&]:[box-shadow:none] [&&]:[--nav-text:#d6e8ff] [&&]:[--nav-muted:#bcd9ff] [&&]:[--nav-active:#0b59cb] [&&]:[--nav-selected:#fff] [&&]:[--nav-hover:#ffffff13] [&&]:[--nav-button:#ffffff10] [&&]:[--brand-color:#fff] [&&]:[--brand-background:#ffffff1c] [&&]:text-[white] [&&]:h-[100dvh] [&&]:px-[12px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&_nav>a]:flex [&_nav>a]:items-center [&&_nav>a]:gap-y-[10px] [&&_nav>a]:gap-x-[10px] [&&_nav>a]:mb-[2px] [&&_nav>a]:text-[color:var(--nav-text)] [&&_nav>a]:text-[14px] [&&_nav>a]:font-[500] [&_nav>a]:[transition-behavior:normal] [&_nav>a]:[transition-duration:0.15s] [&_nav>a]:[transition-timing-function:ease] [&_nav>a]:[transition-delay:0s] [&_nav>a]:[transition-property:background] [&&_nav>a]:min-h-[38px] [&&_nav>a]:px-[10px] [&&_nav>a]:py-[8px] [&&_nav>a]:rounded-[10px] [&&_nav>a:hover]:[background-image:initial] [&&_nav>a:hover]:[background-color:var(--nav-hover)] [&_nav>a:hover]:text-[#fff] [&&_nav>a.active]:[background-image:initial] [&&_nav>a.active]:[background-color:var(--nav-selected)] [&&_nav>a.active]:text-[color:var(--nav-active)] [&&_nav>a.active]:font-[600] [&&_nav>a.active]:[box-shadow:none] max-[1200.01px]:[&&]:w-[224px] max-[1200.01px]:[&&]:px-[12px] max-[900.01px]:[&&]:w-[196px] max-[700.01px]:hidden max-[700.01px]:[&&_nav>a]:text-[14px] [&&_.sidebar-bottom]:pt-[24px] [&&_.sidebar-bottom]:mt-[auto] [&&_.sidebar-bottom]:shrink-0 [&_.sidebar-note]:mb-[12px] [&_.sidebar-note]:[background-image:initial] [&_.sidebar-note]:[background-color:rgba(255,_255,_255,_0.063)] [&_.sidebar-note]:p-[13px] [&_.sidebar-note]:border-[color:rgba(255,_255,_255,_0.125)] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:pt-[20px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&_.sidebar-note]:hidden [@media(min-width:_701px)_and_(max-height:_800px)]:[&&_.sidebar-bottom]:pt-[24px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&_nav>a]:py-[8px] [&&_.brand]:text-[color:var(--brand-color)] [&&_.brand]:text-[23px] [&&_.brand]:mt-[0px] [&&_.brand]:mb-[28px] [&&_.brand]:gap-y-[10px] [&&_.brand]:gap-x-[10px] [&&_.brand]:shrink-0 [&&_.brand]:mx-[6px] [&&_.brand-mark]:[background-image:initial] [&&_.brand-mark]:[background-color:var(--brand-background)] [&&_.brand-mark]:text-[#fff] [&&_.brand-mark]:w-[38px] [&&_.brand-mark]:h-[40px] [&&_.brand-mark]:shrink-0 [&&_.brand-mark]:border-[0px] [&&_.brand-mark]:border-none [&&_.brand-mark]:border-[color:currentcolor] [&&_.brand-mark]:rounded-[11px] [&&_.brand-sub]:text-[color:var(--nav-muted)] [&&_.brand-sub]:text-[10px] [&&_.brand-sub]:tracking-[0.06em] [&&_.brand-sub]:mt-[5px] [&_.workspace]:[background-image:initial] [&_.workspace]:[background-color:rgba(255,_255,_255,_0.07)] [&_.workspace]:text-[#fff] [&_.workspace]:border-[color:rgba(255,_255,_255,_0.125)] [&_.workspace-icon]:text-[#bcd9ff] [&_.workspace_small]:text-[#bcd9ff] [&&_.nav-caption]:text-[color:var(--nav-muted)] [&&_.nav-caption]:shrink-0 [&&_.nav-caption]:mt-[0px] [&&_.nav-caption]:mb-[8px] [&&_.nav-caption]:text-[11px] [&&_.nav-caption]:font-[500] [&&_.nav-caption]:tracking-[0.06em] [&&_.nav-caption]:mx-[10px] [&_.nav-divider]:[background-image:initial] [&_.nav-divider]:[background-color:rgba(255,_255,_255,_0.094)] [&&_.nav-count]:[background-image:initial] [&&_.nav-count]:[background-color:white] [&&_.nav-count]:text-[color:var(--nav-active)] [&&_.nav-count]:text-[12px] [&&_.nav-count]:px-[4px] [&&_.nav-count]:rounded-[999px] [&_.sidebar-note>svg]:text-[#fff] [&_.sidebar-note_strong]:text-[#fff] [&_.sidebar-note_p]:text-[#bcd9ff] [&&_.sidebar-action]:text-[color:var(--nav-text)] [&&_.sidebar-action]:min-h-[38px] [&&_.sidebar-action]:mt-[4px] [&&_.sidebar-action]:[background-image:initial] [&&_.sidebar-action]:[background-color:var(--nav-button)] [&&_.sidebar-action]:text-[14px] [&&_.sidebar-action]:gap-y-[8px] [&&_.sidebar-action]:gap-x-[8px] [&&_.sidebar-action]:px-[10px] [&&_.sidebar-action]:py-[9px] [&&_.sidebar-action]:rounded-[10px] [&_.sidebar-action:hover]:text-[#fff] [&&_.sidebar-action:hover]:[background-image:initial] [&&_.sidebar-action:hover]:[background-color:var(--nav-hover)] [&&_nav]:min-h-[0] [&&_nav]:overflow-y-auto [&&_nav>a>svg]:w-[18px] [&&_nav>a>svg]:h-[18px] [&&_nav>a>svg]:shrink-0 [&&_.nav-group]:mt-[26px] [&&_.sidebar-pf-logo]:w-[112px] [&&_.sidebar-pf-logo]:mt-[0px] [&&_.sidebar-pf-logo]:mb-[16px] [&&_.sidebar-pf-logo]:mx-[10px] [&&_.drawer-close]:text-[color:var(--brand-color)] sidebar navigation-panel"
 >
@@ -149,7 +151,9 @@
     onclick={closeDrawer}><Icon name="close" /></button
   >{@render navigation()}
 </dialog>
+{/if}
 <div
+  style:margin-left={campus ? '0px' : undefined}
   class="[&&]:ml-[224px] min-h-[100vh] flex flex-col max-[1200.01px]:[&&]:ml-[224px] max-[900.01px]:[&&]:ml-[196px] max-[700.01px]:[&&]:ml-[0] app-main"
 >
   <header
@@ -160,13 +164,14 @@
     >
       <button
         class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [font-size:inherit] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[#53739c] hidden items-center justify-center w-[34px] h-[34px] [background-image:initial] [background-color:transparent] border-[0px] border-none border-[color:currentcolor] rounded-[7px] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:text-[#075fc7] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(233,_243,_255)] max-[700.01px]:flex icon-button mobile-menu"
+        style:display={campus ? 'none' : undefined}
         aria-label="Buka navigasi"
         aria-expanded={mobile}
         onclick={openDrawer}><Icon name="menu" /></button
       ><span
         class="text-[13px] text-[#64748b] [&_span]:text-[#94a3b8] [&_span]:mx-[10px] [&_span]:my-[0px] [&_strong]:font-[500] [&_strong]:text-[#1e477f] max-[700.01px]:text-[12px] max-[700.01px]:[&_span]:mx-[5px] max-[700.01px]:[&_span]:my-[0px] breadcrumb"
         >Ruang kerja <span>/</span>
-        <strong class="font-[600]">{labels[section] || 'Detail'}</strong></span
+        <strong class="font-[600]">{app.session?.role === 'campus' && section === 'pencairan' ? 'Pencairan Dana' : labels[section] || 'Detail'}</strong></span
       >
     </div>
     <div
@@ -174,6 +179,7 @@
     >
       <a
         class="[-webkit-tap-highlight-color:transparent] text-[#53739c] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] inline-flex items-center justify-center w-[34px] h-[34px] [background-image:initial] [background-color:transparent] [&&&]:relative border-[0px] border-none border-[color:currentcolor] rounded-[7px] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:text-[#075fc7] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(233,_243,_255)] icon-button"
+        style:display={campus ? 'none' : undefined}
         href={`${prefix}/notifications`}
         aria-label={`Notifikasi, ${unreadCount} belum dibaca`}
         ><Icon name="notifications" />{#if unreadCount}<span
@@ -222,6 +228,14 @@
             >
           </div>
           <nav class="p-2" aria-label="Menu akun">
+            {#if campus}
+              {#each [{ key: 'dashboard', label: 'Beranda', icon: 'dashboard' }, { key: 'pencairan', label: 'Pencairan Dana', icon: 'payments' }] as item}
+                <a class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm hover:bg-blue-50" href={`/campus/${item.key}`} onclick={() => (accountMenu = false)} role="menuitem" aria-current={section === item.key ? 'page' : undefined}>
+                  <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600"><Icon name={item.icon} size={18} /></span>{item.label}
+                </a>
+              {/each}
+            {:else}
+            {#if app.session?.role === 'admin'}
               <a
                 class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm hover:bg-blue-50"
                 href={app.session?.role === 'admin' ? '/admin/users' : '/campus/profile'}
@@ -243,6 +257,7 @@
                   ><Icon name="settings" size={18} /></span
                 ><span>Pengaturan</span></a
               >
+            {/if}
               <a
                 class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm hover:bg-blue-50"
                 href={app.session?.role === 'admin' ? '/admin/faq' : '/campus/guide'}
@@ -253,6 +268,7 @@
                   ><Icon name="faq" size={18} /></span
                 ><span>Panduan Aplikasi</span></a
               >
+            {/if}
             </nav>
           <div class="border-t border-[#edf2f8] p-2">
             <button

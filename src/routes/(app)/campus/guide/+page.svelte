@@ -4,33 +4,16 @@
     {
       icon: 'dashboard',
       title: 'Beranda',
-      description:
-        'Lihat ringkasan capaian kampus dan aktivitas terbaru sebelum memulai pekerjaan.',
+      description: 'Mulai dari ringkasan progres, daftar dokumen yang perlu ditindaklanjuti, dan unggahan terbaru kampus.',
       href: 'dashboard',
       action: 'Buka Beranda'
     },
     {
-      icon: 'indicators',
-      title: 'Indikator DEB',
-      description:
-        'Lengkapi indikator kampus, periksa target, dan tindak lanjuti catatan review admin.',
-      href: 'indicators',
-      action: 'Lihat indikator'
-    },
-    {
-      icon: 'proposal',
-      title: 'Proposal',
-      description:
-        'Unggah proposal kampus, lihat riwayat versi, dan baca masukan untuk perbaikan berikutnya.',
-      href: 'proposal',
-      action: 'Kelola proposal'
-    },
-    {
       icon: 'payments',
-      title: 'Pencairan',
+      title: 'Pencairan Dana',
       description:
-        'Pantau delapan tahap pencairan proposal. Mentor dan SoBI dapat melihat progres setiap tahap.',
-      href: 'payments',
+        'Lihat progres dan status dokumen. Unggah dokumen kosong atau revisi sesuai catatan PF, lalu tunggu pemeriksaan. SK dan RAB hanya dapat dilihat.',
+      href: 'pencairan',
       action: 'Lihat pencairan'
     },
     {
@@ -85,8 +68,7 @@
     <p
       class="[&&]:mt-[0px] [&&]:mb-[24px] [&&]:leading-[1.6] [&&]:max-w-[620px] [&&]:text-[15px] [&&]:text-[#e0eeff] [&&]:mx-[0px] max-[600.01px]:[&&]:text-[14px]"
     >
-      Digitalisasi DEB membantu kampus mitra memantau capaian, mengelola proposal, dan belajar
-      bersama dalam satu tempat.
+      Pantau pencairan dana, lengkapi dokumen, dan tindak lanjuti revisi bersama Pertamina Foundation dalam satu aplikasi.
     </p>
     <a
       class="[-webkit-tap-highlight-color:transparent] [&&]:text-[#1256b6] [&&]:[text-decoration-line:none] [&&]:[text-decoration-thickness:initial] [&&]:[text-decoration-style:initial] [&&]:[text-decoration-color:initial] [&&]:inline-flex [&&]:items-center [&&]:gap-y-[16px] [&&]:gap-x-[16px] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_255,_255)] [&&]:text-[14px] [&&]:font-[700] [&&]:px-[18px] [&&]:py-[13px] [&&]:rounded-[9px] [&:focus-visible]:[outline-color:rgb(244,_190,_64)] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[5px] guide-start"
@@ -105,8 +87,7 @@
       <p
         class="[&&]:mt-[0px] [&&]:mb-[20px] [&&]:leading-[1.6] [&&]:text-[14px] [&&]:text-[#475569] [&&]:mx-[0px]"
       >
-        Pilih fitur yang ingin digunakan. Panduan ini bisa dibuka kembali melalui ikon ? di samping
-        bel.
+        Pilih fitur yang ingin digunakan. Panduan ini bisa dibuka kembali melalui menu akun di kanan atas.
       </p>
     </div>
     <div
@@ -152,8 +133,7 @@
         Mulai sedikit, lanjutkan bersama.
       </h2>
       <p class="[&&]:leading-[1.6] [&&]:text-[14px] [&&]:text-[#587395] [&&]:m-[0px]">
-        Buka Beranda, periksa indikator yang perlu dilengkapi, lalu baca masukan admin. Jika ada
-        yang belum jelas, cari jawabannya di Pusat bantuan atau tanyakan melalui Forum Q&A.
+        Buka Pencairan Dana dan pilih dokumen yang belum ada atau perlu revisi. Baca catatan pemeriksa, pilih berkas, lalu tekan Kirim dokumen atau Kirim revisi. Dokumen yang sudah sesuai tidak perlu diunggah ulang. Jika ada yang belum jelas, gunakan Pusat bantuan atau Forum Q&A.
       </p>
     </div>
   </aside>

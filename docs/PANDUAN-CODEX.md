@@ -2,6 +2,20 @@
 
 Diperbarui: 18 September 2026. Baca bersama [AGENTS.md](../AGENTS.md). Aturan kerja di AGENTS.md berlaku juga jika dokumen atau skill lain menyarankan tes terminal, push, atau PR otomatis.
 
+## Pembaruan login mitra — 21 September 2026
+
+Pada branch revisi login mitra, basisnya adalah `gitlab/production`, menggunakan layanan HTTP/PocketBase dan modul `pencairan-deb`, **bukan demo IndexedDB** yang dijelaskan dalam bagian historis di bawah. Aturan demo Mentor/SoBI delapan tahap bukan acuan untuk perubahan ini.
+
+- Revisi terakhir: akun `campus` masuk ke `/campus/dashboard`, tanpa sidebar desktop maupun drawer mobile. Dropdown akun hanya berisi Beranda, Pencairan Dana, Keluar. Menu Dukungan dan bel notifikasi kampus sementara tidak ditampilkan; URL halaman kampus lain diarahkan ke Beranda.
+- Beranda sederhana berisi sapaan sesuai waktu WIB, pengantar monitoring/evaluasi/pencairan program DEB, dan tombol Buka Pencairan Dana. Ringkasan dashboard sebelumnya telah diganti; detail status dan unggah tetap pada pencairan. SK/RAB tetap hanya dipantau.
+- Menu kampus lain disembunyikan dan URL halamannya diarahkan ke Beranda. Akses admin tidak berubah.
+- Kampus melihat progres Tahap 1, status tiap dokumen, berkas/versi lama, dan catatan pemeriksa. Dokumen kosong atau perlu revisi dapat diunggah langsung, walau `fillMode` profil masih `admin`.
+- Unggah dibatasi server untuk kampus sendiri dan enam jenis: PKS, permohonan, kuitansi, invoice, rekening, surat kuasa. SK dan semua RAB hanya baca. Keputusan pemeriksaan tetap milik PF.
+- Dokumen sesuai/tidak diperlukan, menunggu pemeriksaan, bertanda tangan/final, atau pencairan yang sudah dibayar tidak menerima unggah revisi kampus. Riwayat versi tidak dihapus.
+- QA memakai salinan PocketBase lokal; jangan mengunggah contoh QA ke produksi. Lihat [checklist dan hasil QA revisi mitra](pencairan-deb/QA-LOGIN-MITRA-2026-09-21.md).
+
+## Panduan historis demo — 18 September 2026
+
 ## Tujuan proyek
 
 Dashboard Digitalisasi DEB membantu Pertamina Foundation memantau program kampus mitra: profil dan deskripsi program, indikator per periode, review admin, proposal PDF berversi, komentar, pencairan, forum, notifikasi, serta peta persebaran.
