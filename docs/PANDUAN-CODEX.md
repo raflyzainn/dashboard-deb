@@ -13,6 +13,7 @@ Pada branch revisi login mitra, basisnya adalah `gitlab/production`, menggunakan
 - Unggah dibatasi server untuk kampus sendiri dan enam jenis: PKS, permohonan, kuitansi, invoice, rekening, surat kuasa. SK dan semua RAB hanya baca. Keputusan pemeriksaan tetap milik PF.
 - Dokumen sesuai/tidak diperlukan, menunggu pemeriksaan, bertanda tangan/final, atau pencairan yang sudah dibayar tidak menerima unggah revisi kampus. Riwayat versi tidak dihapus.
 - QA memakai salinan PocketBase lokal; jangan mengunggah contoh QA ke produksi. Lihat [checklist dan hasil QA revisi mitra](pencairan-deb/QA-LOGIN-MITRA-2026-09-21.md).
+- Di tab Akun kampus, formulir Tambah akun memakai kampus dan peran Kampus yang sudah tetap. Nama dapat dipilih dari kontak Mentor/Koordinator SoBI/Local Hero pada profil atau ditulis sendiri; tombol Email SoBI/Mentor menyarankan alamat `inisial.sobiNN`/`inisial.mentorNN@deb.pertaminafoundation.org` tanpa mengunci kolom email. Simpan tetap melalui validasi dan pembatasan server `/api/users`.
 
 ## Panduan historis demo — 18 September 2026
 

@@ -9,6 +9,7 @@
   import Icon from '$lib/components/ui/Icon.svelte';
   import RiwayatPerubahan from '$lib/components/ui/RiwayatPerubahan.svelte';
   import AccountWhatsApp from './AccountWhatsApp.svelte';
+  import { parseContacts } from '$lib/contacts';
 
   let { campusId = '' }: { campusId?: string } = $props();
   const scope = $derived(campusId ? `?campus=${encodeURIComponent(campusId)}` : '');
@@ -31,6 +32,7 @@
   let newPassword = $state('');
   let creating = $state(false);
   let created = $state({ name: '', email: '', password: '', role: 'campus', campus: '' });
+  let nameChoice = $state('manual');
   let busy = $state(false);
   let formError = $state('');
   let sharing = $state<{ user: User; password: string } | null>(null);
@@ -40,6 +42,27 @@
   const roleLabel: Record<string, string> = { baru: 'Baru', campus: 'Kampus', admin: 'Admin', super_admin: 'Super admin' };
   const time = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' });
   const campusName = (id: string) => campuses.find(c => c.id === id)?.name || '';
+  const selectedCampus = $derived(campuses.find(c => c.id === created.campus));
+  const contactOptions = $derived.by(() => {
+    const labels = { mentor: 'Mentor', coordinator: 'SoBI (Koordinator PFS 12)', localHero: 'Local Hero' } as const;
+    const names = new Map<string, string>();
+    for (const key of ['mentor', 'coordinator', 'localHero'] as const) {
+      for (const contact of parseContacts(selectedCampus?.contacts?.[key])) {
+        const name = contact.name.trim();
+        if (name && !names.has(name)) names.set(name, labels[key]);
+      }
+    }
+    return [...names].map(([name, group]) => ({ name, group }));
+  });
+  function suggestedEmail(kind: 'sobi' | 'mentor') {
+    const prefix = (selectedCampus?.initials || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!prefix) return '';
+    const base = `${prefix}.${kind}`;
+    let number = 1;
+    while (users.some(user => user.email.toLowerCase() === `${base}${String(number).padStart(2, '0')}@deb.pertaminafoundation.org`)) number++;
+    return `${base}${String(number).padStart(2, '0')}@deb.pertaminafoundation.org`;
+  }
+  function chooseName(value: string) { nameChoice = value; created.name = value === 'manual' ? '' : value; }
 
   const visible = $derived(users.filter(u => {
     const q = query.trim().toLowerCase();
@@ -100,7 +123,7 @@
     } catch (e) { formError = e instanceof Error ? e.message : 'Kata sandi belum tersimpan.'; }
     finally { busy = false; }
   }
-  function openCreate() { if (busy) return; creating = true; created = { name: '', email: '', password: generatePassword(), role: 'campus', campus: campusId }; formError = ''; }
+  function openCreate() { if (busy) return; creating = true; nameChoice = 'manual'; created = { name: '', email: '', password: generatePassword(), role: 'campus', campus: campusId }; formError = ''; }
   function closeCreate() { if (!busy) { creating = false; created.password = ''; } }
   async function saveCreate() {
     if (busy) return;
@@ -234,16 +257,38 @@
 {#if creating}
   <Modal title="Tambah akun" onclose={closeCreate}>
     <form class="grid gap-4" onsubmit={(e) => { e.preventDefault(); void saveCreate(); }}>
-      <label class="grid gap-1.5 text-sm font-medium text-slate-700">Nama<input class="min-h-[42px] rounded-xl border border-slate-300 px-3 text-sm" bind:value={created.name} required /></label>
+      {#if created.role === 'campus' && created.campus && contactOptions.length}
+        <label class="grid gap-1.5 text-sm font-medium text-slate-700">Nama dari kontak kampus
+          <span class="relative block">
+            <select class="min-h-[42px] w-full appearance-none rounded-xl border border-slate-300 px-3 pr-10 text-sm text-transparent" value={nameChoice} onchange={(e) => chooseName(e.currentTarget.value)}>
+              <option class="text-slate-900" value="manual">Tulis Nama Lain</option>
+              {#each contactOptions as contact}<option class="text-slate-900" value={contact.name}>{contact.name} — {contact.group}</option>{/each}
+            </select>
+            <span class="pointer-events-none absolute left-3 right-8 top-1/2 -translate-y-1/2 truncate text-sm text-slate-700" aria-hidden="true">{nameChoice === 'manual' ? 'Tulis Nama Lain' : nameChoice}</span>
+            <svg class="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-700" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 7.5 5 5 5-5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </span>
+        </label>
+      {/if}
+      {#if nameChoice === 'manual' || !contactOptions.length || created.role !== 'campus'}
+        <label class="grid gap-1.5 text-sm font-medium text-slate-700">Nama<input class="min-h-[42px] rounded-xl border border-slate-300 px-3 text-sm" bind:value={created.name} required /></label>
+      {:else}<p class="text-sm text-slate-600">Nama akun: {created.name}</p>{/if}
       <label class="grid gap-1.5 text-sm font-medium text-slate-700">Email<input class="min-h-[42px] rounded-xl border border-slate-300 px-3 text-sm" type="email" bind:value={created.email} required /></label>
+      {#if created.role === 'campus' && created.campus && selectedCampus?.initials}
+        <div class="flex flex-wrap gap-2 text-xs"><span class="self-center text-slate-600">Isi cepat:</span>
+          <button type="button" class="rounded-lg border border-blue-200 px-3 py-2 text-[#0066B2] hover:bg-blue-50" onclick={() => (created.email = suggestedEmail('sobi'))}>Email SoBI</button>
+          <button type="button" class="rounded-lg border border-blue-200 px-3 py-2 text-[#0066B2] hover:bg-blue-50" onclick={() => (created.email = suggestedEmail('mentor'))}>Email Mentor</button>
+          <span class="self-center text-slate-500">Email tetap bisa ditulis sendiri.</span>
+        </div>
+      {/if}
+      {#if campusId}<p class="text-sm text-slate-600">Peran: Kampus · Kampus: {campusName(campusId)}</p>{:else}
       <label class="grid gap-1.5 text-sm font-medium text-slate-700">Peran
         <select class="min-h-[42px] rounded-xl border border-slate-300 px-3 text-sm" bind:value={created.role} disabled={!!campusId}>
           {#each roleOptions as role}<option value={role}>{roleLabel[role]}</option>{/each}
         </select>
-      </label>
-      {#if created.role === 'campus'}
+      </label>{/if}
+      {#if created.role === 'campus' && !campusId}
         <label class="grid gap-1.5 text-sm font-medium text-slate-700">Kampus
-          <select class="min-h-[42px] rounded-xl border border-slate-300 px-3 text-sm" bind:value={created.campus} required disabled={!!campusId}>
+          <select class="min-h-[42px] rounded-xl border border-slate-300 px-3 text-sm" bind:value={created.campus} onchange={() => { nameChoice = 'manual'; created.name = ''; }} required>
             <option value="">Pilih kampus</option>
             {#each campuses as c}<option value={c.id}>{c.name}</option>{/each}
           </select>
