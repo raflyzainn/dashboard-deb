@@ -23,6 +23,8 @@
   let notice = $state('');
   let query = $state('');
   let filter = $state<'semua' | 'baru' | 'admin' | 'campus' | 'nonaktif'>('semua');
+  let page = $state(1);
+  const pageSize = 10;
   let refresh = $state(0);
 
   let editing = $state<User | null>(null);
@@ -73,6 +75,9 @@
     return true;
   }));
   const waiting = $derived(users.filter(u => u.role === 'baru' && u.active).length);
+  const totalPages = $derived(Math.max(1, Math.ceil(visible.length / pageSize)));
+  const pagedUsers = $derived(visible.slice((page - 1) * pageSize, page * pageSize));
+  $effect(() => { if (page > totalPages) page = totalPages; });
 
   async function load() {
     loading = true; error = '';
@@ -160,11 +165,11 @@
     <label class="relative block">
       <span class="sr-only">Cari pengguna</span>
       <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><Icon name="search" size={16} /></span>
-      <input class="min-h-[42px] w-full rounded-xl border border-slate-300 pl-9 pr-3 text-sm outline-none focus:border-[#0066B2] focus:ring-2 focus:ring-blue-100" type="search" placeholder="Cari nama, email, atau kampus" bind:value={query} />
+      <input class="min-h-[42px] w-full rounded-xl border border-slate-300 pl-9 pr-3 text-sm outline-none focus:border-[#0066B2] focus:ring-2 focus:ring-blue-100" type="search" placeholder="Cari nama, email, atau kampus" bind:value={query} oninput={() => (page = 1)} />
     </label>
     {#if !campusId}<div class="flex flex-wrap gap-1.5" role="group" aria-label="Saring menurut peran">
       {#each [['semua', 'Semua'], ['baru', 'Menunggu peran'], ['admin', 'Admin'], ['campus', 'Kampus'], ['nonaktif', 'Nonaktif']] as [key, label]}
-        <button type="button" class="rounded-full border px-3 py-1.5 text-xs font-semibold transition {filter === key ? 'border-[#0066B2] bg-[#0066B2] text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}" aria-pressed={filter === key} onclick={() => (filter = key as typeof filter)}>{label}</button>
+        <button type="button" class="rounded-full border px-3 py-1.5 text-xs font-semibold transition {filter === key ? 'border-[#0066B2] bg-[#0066B2] text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}" aria-pressed={filter === key} onclick={() => { filter = key as typeof filter; page = 1; }}>{label}</button>
       {/each}
     </div>{/if}
   </div>
@@ -180,7 +185,7 @@
           <tr><th class="px-4 py-3">Nama</th><th class="px-4 py-3">Email</th><th class="px-4 py-3">Peran</th><th class="px-4 py-3">Kampus</th><th class="px-4 py-3">Masuk terakhir</th><th class="px-4 py-3">Status</th><th class="px-4 py-3" aria-label="Tindakan"></th></tr>
         </thead>
         <tbody>
-          {#each visible as u (u.id)}
+          {#each pagedUsers as u (u.id)}
             <tr class="border-t border-slate-100">
               <td class="px-4 py-3 font-semibold text-slate-800">{u.name || 'Tanpa nama'}</td>
               <td class="px-4 py-3 text-slate-600">{u.email}</td>
@@ -202,6 +207,16 @@
         </tbody>
       </table>
     </div>
+    {#if totalPages > 1}
+      <nav class="flex flex-wrap items-center justify-between gap-3" aria-label="Halaman pengguna">
+        <p class="text-sm text-slate-600">Menampilkan {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, visible.length)} dari {visible.length} pengguna</p>
+        <div class="flex items-center gap-2">
+          <Button size="sm" variant="secondary" disabled={page === 1} onclick={() => (page -= 1)}>Sebelumnya</Button>
+          <span class="min-w-20 text-center text-sm text-slate-600">Halaman {page} dari {totalPages}</span>
+          <Button size="sm" variant="secondary" disabled={page === totalPages} onclick={() => (page += 1)}>Berikutnya</Button>
+        </div>
+      </nav>
+    {/if}
   {/if}
 
   <RiwayatPerubahan context={campusId ? `pengguna:${campusId}` : 'pengguna'} {refresh} />
