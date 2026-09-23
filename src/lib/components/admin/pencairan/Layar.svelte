@@ -65,6 +65,9 @@
 
   const admin = $derived(mode === 'admin');
   const base = $derived(admin ? `/admin/pencairan/${campusId}` : '/campus/pencairan');
+  const belumAda = $derived(data ? KINDS.filter(k => data!.readiness.items[k] === 'belum_ada') : []);
+  const perluRevisi = $derived(data ? KINDS.filter(k => data!.readiness.items[k] === 'perlu_revisi') : []);
+  const menungguPf = $derived(data ? KINDS.filter(k => ['menunggu_review', 'perlu_konfirmasi'].includes(data!.readiness.items[k])) : []);
   const uploadBlocked = $derived(campusUploadBlockedReason(kind, state, doc, Boolean(data?.disbursement.paidAt)) || (doc?.versions.find(v => v.id === doc.currentVersionId)?.signed ? 'Berkas bertanda tangan tidak dapat diganti lewat unggah revisi.' : ''));
   const canUpload = $derived(admin || (Boolean(data) && !uploadBlocked));
   const time = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', timeZone: 'Asia/Jakarta' });
@@ -298,9 +301,11 @@
 
     {#if !admin}
       <section aria-label="Progres pencairan" class="my-2 grid gap-2 rounded-xl border border-blue-100 bg-blue-50/60 p-4 text-sm text-slate-700">
-        <div class="flex flex-wrap items-center justify-between gap-2"><h2 class="font-bold text-slate-900">Progres pencairan Tahap 1 · {CAMPUS_STATE_LABEL[data.readiness.state]}</h2><button type="button" class="font-semibold text-[#0066B2] disabled:opacity-50" disabled={busy} onclick={load}>Perbarui status</button></div>
-        <p>{data.readiness.done} dari {data.readiness.total} butir selesai · {data.readiness.belum} belum ada · {data.readiness.revisi} perlu revisi · {data.readiness.adminWait} menunggu pemeriksaan</p>
-        <p>{data.readiness.phrase}</p>
+        <div class="flex flex-wrap items-center justify-between gap-2"><h2 class="font-bold text-slate-900">Progres Tahap 1 · {data.readiness.done} dari {data.readiness.total} selesai</h2><button type="button" class="font-semibold text-[#0066B2] disabled:opacity-50" disabled={busy} onclick={load}>Perbarui status</button></div>
+        {#if belumAda.length}<p><strong class="text-slate-900">Belum ada ({belumAda.length}):</strong> {belumAda.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
+        {#if perluRevisi.length}<p><strong class="text-amber-900">Perlu revisi ({perluRevisi.length}):</strong> {perluRevisi.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
+        {#if menungguPf.length}<p><strong class="text-[#015a9a]">Menunggu PF ({menungguPf.length}):</strong> {menungguPf.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
+        {#if data.readiness.missing.length === 0}<p>{data.readiness.phrase}</p>{/if}
         <p class="text-xs text-slate-500">Pilih dokumen untuk melihat berkas dan catatan pemeriksa. SK dan RAB hanya dapat dilihat; unggah RAB belum dibuka.</p>
       </section>
     {/if}

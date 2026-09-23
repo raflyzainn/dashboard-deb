@@ -1,5 +1,17 @@
 # Login mitra: pencairan dan unggah revisi
 
+## Ringkasan progres kampus, 23 September 2026
+
+Ringkasan di atas halaman Pencairan Dana kini menyebut jumlah selesai dan nama butir yang **Belum ada**, **Perlu revisi**, atau **Menunggu PF** pada baris terpisah. Kalimat umum "Masih ... yang perlu dilengkapi" tidak ditampilkan saat masih ada butir terbuka, karena dapat mencampur berkas yang belum ada dengan kiriman yang sedang diperiksa. Keterangan setelah semua butir selesai tetap tampil.
+
+QA Playwright pada salinan PocketBase lokal: setelah unggah PKS contoh ITERA, ringkasan menampilkan "1 dari 10 selesai", delapan nama butir Belum ada, dan "Menunggu PF (1): PKS". Tampilan jendela 390 dan 1366 diperiksa; tidak ada gulir horizontal halaman. Bukti lokal: `.qa/progres-ringkasan-teks-mobile-20260923.png`. `npm run build` selesai dengan exit code 0; masih ada peringatan Svelte/a11y dan kunci duplikat yang sudah ada sebelumnya.
+
+Pemeriksaan lanjutan sebelum publikasi, 23 September 2026: QA Playwright ulang setelah "Perbarui status" tetap menampilkan daftar tersebut dan tidak ada overflow pada viewport mobile. `npm run check` gagal dengan 128 error dan 6 peringatan di 34 berkas; `npm test` menghasilkan 57 lulus dan 2 gagal (logout demo masih meminta backend; pesan penolakan akun kampus pada pembayaran tidak cocok dengan ekspektasi tes); `npm run format:check` gagal pada 118 berkas. Kunci duplikat di `src/lib/pencairan.ts` sudah ada di HEAD. Build yang berhasil saja belum cukup untuk menyatakan siap produksi. Tidak ada push atau deploy.
+
+Sebelum rencana push, `git fetch gitlab production` menunjukkan HEAD lokal dan `gitlab/production` sama di `50e9fbf` (divergensi 0/0). Kedua perilaku yang menyebabkan tes gagal juga ada di HEAD; perubahan ringkasan lokal terbatas pada `Layar.svelte` dan laporan ini. Karena gerbang verifikasi proyek masih gagal, push ditunda.
+
+Setelah mengetahui batas tersebut, pengguna meminta publikasi perubahan ringkasan tanpa memperbaiki kegagalan lama. Build diulang dan selesai dengan exit code 0 menggunakan adapter Cloudflare. Persetujuan ini tidak mengubah status `check`, tes, atau format yang masih gagal; QA runtime produksi belum dilakukan.
+
 ## Verifikasi sebelum publikasi yang diizinkan pengguna
 
 21 September 2026: pengguna mengizinkan push hanya revisi ini ke GitLab `production`. Fetch terbaru menunjukkan basis HEAD dan `gitlab/production` sama (0/0); branch backup perubahan lama tidak digabungkan. Berkas Excel pengguna, `.local`, `.env`, dan screenshot lokal tidak disertakan.
