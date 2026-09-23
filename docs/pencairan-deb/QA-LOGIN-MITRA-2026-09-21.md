@@ -1,5 +1,24 @@
 # Login mitra: pencairan dan unggah revisi
 
+## Aktivitas kampus di Beranda admin, 23 September 2026
+
+Kartu "Aktivitas terbaru" kini mengambil maksimal empat aksi akun kampus terbaru dari aktivitas lama, audit pencairan, dan login berhasil. Pembacaan audit dibatasi di server untuk admin dan hanya memproyeksikan aksi, kampus, serta waktu; keputusan admin dan isi/catatan dokumen tidak ditampilkan. Huruf pertama teks aksi dikapitalisasi saat dipetakan. Login lokal dicatat pada pemilihan akun pertama, bukan saat refresh; login kata sandi dan Microsoft mencatat akun kampus saja.
+
+QA Playwright lanjutan di salinan lokal: sebelum perubahan login akun kampus Universitas Negeri Yogyakarta tidak muncul dan teks "mengunggah" berawal huruf kecil. Sesudah perubahan, login kampus muncul sebagai "Masuk ke aplikasi" di urutan teratas, diikuti unggahan yang berawal "Mengunggah"; daftar tetap maksimal empat baris. Setelah refresh halaman kampus, audit `kampus:8ocdiaroriveglf/akses` tetap berisi tepat satu catatan login (`total: 1`). Login admin lokal tidak muncul di kartu. Alur login kata sandi dan Microsoft diperiksa dari kode, belum diuji lewat browser atau produksi. `npm run build` selesai exit 0 dengan adapter Cloudflare; masih ada peringatan lama terkait kunci duplikat di `src/lib/pencairan.ts`, reaktivitas/a11y Svelte, dan chunk besar. Tes dan `npm run check` tidak dijalankan untuk perubahan lanjutan ini.
+
+QA Playwright di aplikasi lokal `127.0.0.1:5176` dengan salinan PocketBase `127.0.0.1:8097`: sebelum perubahan kartu kosong meski riwayat ITERA berisi unggahan. Setelah perubahan, kartu menampilkan unggahan Permohonan versi 2 (10.26 WIB), versi 1 (10.23 WIB), dan Draft PKS (08.54 WIB), semuanya dengan nama Institut Teknologi Sumatera. Keputusan admin "Perlu revisi" dan "Sesuai" tidak muncul. Konsol browser 0 error. Cek regresi feed ditambahkan di `tests/page-reads.test.ts`, tetapi tes/check/build terminal tidak dijalankan untuk perubahan ini; tidak ada commit, push, atau verifikasi produksi.
+
+## QA alur unggah–revisi–persetujuan, 23 September 2026
+
+Playwright pada aplikasi `127.0.0.1:5176` dan salinan PocketBase lokal `127.0.0.1:8097` (`production-copy-1790039926295`), memakai akun preview kampus ITERA dan Admin PF lokal 1. Butir yang diuji: Permohonan pencairan dana. Berkas sintetis `.qa/qa-alur-revisi-v1.csv` dan `.qa/qa-alur-revisi-v2.csv` diberi label QA lokal; bukan dokumen kampus sesungguhnya. Tidak ada perubahan data produksi.
+
+- [x] Kampus mengirim versi 1 dari keadaan Belum ada; berkas tampil dan status berubah menjadi Menunggu pemeriksaan. Formulir unggah tidak tampil selama menunggu PF.
+- [x] Admin melihat versi 1 dan menandai Perlu revisi dengan catatan QA. Setelah login ulang, Beranda kampus menautkan langsung ke revisi Permohonan; catatan pemeriksa dan formulir Berkas revisi tampil.
+- [x] Kampus mengirim versi 2; status kembali Menunggu pemeriksaan, versi 1 tetap tersedia, dan admin melihat jawaban/catatan unggahan kampus pada versi 2.
+- [x] Admin menandai versi 2 Sesuai dengan catatan persetujuan QA. Setelah login ulang, kampus melihat status Sesuai tanpa formulir unggah ulang; versi 1 dan 2 dapat dipilih, dengan penjelasan bahwa status berlaku untuk dokumen terbaru saat versi lama dibuka.
+
+Konsol browser tidak menunjukkan error. Tes/check/build terminal tidak dijalankan ulang untuk QA ini. Data contoh dan keputusan QA tetap berada di salinan lokal; tidak ada commit, push, atau verifikasi runtime produksi pada tahap ini.
+
 ## Panduan Aplikasi kampus, 23 September 2026
 
 Panduan di `/campus/guide` kembali dapat dibuka melalui dropdown akun kampus. Isinya dibatasi pada Beranda, Pencairan Dana, dan kapan kampus perlu mengirim dokumen; tautan Forum Q&A, Pusat bantuan, serta Notifikasi lama dihapus. SK/RAB dijelaskan sebagai dokumen baca-saja, sedangkan dokumen yang menunggu PF atau sudah sesuai tidak perlu dikirim ulang. Rute kampus lain tetap diarahkan ke Beranda.

@@ -8,6 +8,7 @@ import { drainEmails, inspectEmailToken } from '$lib/server/deb/mail';
 import { security } from '$lib/server/deb/security';
 import { PreviewError } from '$lib/server/deb/preview-error';
 import { readJsonBody } from '$lib/server/deb/request-body';
+import { writeAudit } from '$lib/server/deb/audit';
 export const GET: RequestHandler = event => event.params.operation === 'me'
   ? json({ session: event.locals.pb ? mapSession(event.locals.pb.authStore.record!) : null })
   : json({ message: 'Tidak ditemukan.' }, { status: 404 });
@@ -46,6 +47,7 @@ export const POST: RequestHandler = async event => {
       const result = await pb.collection('users').authWithPassword(body.email.trim().toLowerCase(), body.password);
       if (!result.record.active || !result.record.verified || result.record.simulated) return json({ message: 'Email atau password tidak sesuai.' }, { status: 401 });
       await backend.pb.collection('users').update(result.record.id, { lastLoginAt: new Date().toISOString() }, { requestKey: null });
+      if (result.record.role === 'campus') await writeAudit(backend.pb, { actor: result.record, action: 'masuk ke aplikasi', context: `kampus:${result.record.campus}/akses`, collection: 'users', record: result.record.id, campus: result.record.campus });
       const cookie = security.createJWT({ kind: 'session', method: 'password', token: result.token, version: result.record.sessionVersion || '' }, backend.settings.DEB_INVITATION_KEY, 28800);
       event.cookies.delete('deb_local_preview', { path: '/' });
       event.cookies.set(SESSION_COOKIE, cookie, { path: '/', httpOnly: true, sameSite: 'lax', secure: event.url.protocol === 'https:', maxAge: 28800 });

@@ -72,7 +72,7 @@ export async function finishMicrosoft(event: RequestEvent) {
   if (!isNew && !record.active) throw new PreviewError(403, 'Akun ini dinonaktifkan. Hubungi admin program.');
   const updated = await backend.pb.collection('users').update(record.id, patch, { requestKey: null });
   const actor = { id: updated.id, name: updated.name || updated.email, email: updated.email };
-  await writeAudit(backend.pb, { actor, action: isNew ? 'membuat akun baru lewat Microsoft' : 'masuk lewat Microsoft', context: 'pengguna', collection: 'users', record: updated.id, after: isNew ? { role: updated.role, email: updated.email } : null });
+  await writeAudit(backend.pb, { actor, action: isNew ? 'membuat akun baru lewat Microsoft' : 'masuk lewat Microsoft', context: 'pengguna', collection: 'users', record: updated.id, campus: updated.role === 'campus' ? updated.campus : '', after: isNew ? { role: updated.role, email: updated.email } : null });
   const cookie = security.createJWT({ kind: 'session', method: 'oauth', token: result.token, version: updated.sessionVersion || '' }, sessionKey(settings), SESSION_SECONDS);
   event.cookies.delete('deb_local_preview', { path: '/' });
   event.cookies.set(SESSION_COOKIE, cookie, { path: '/', httpOnly: true, sameSite: 'lax', secure: event.url.protocol === 'https:', maxAge: SESSION_SECONDS });

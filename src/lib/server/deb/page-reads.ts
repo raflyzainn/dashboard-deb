@@ -37,8 +37,8 @@ const dependencies: Record<PageRequest['view'], Resource[]> = {
   faq: ['faq'], notifications: ['campuses', 'notifications'], review: ['campuses', 'definitions', 'indicators', 'feedback', 'submissions'], masters: []
 };
 
-/** Only requested page collections are read, using the authenticated user (never a superuser). */
-export async function readPage(pb: PocketBase, actor: AppSession, request: PageRequest): Promise<Partial<Snapshot>> {
+/** Only requested page collections are read; the admin activity feed uses a server client to read campus-authored audit rows. */
+export async function readPage(pb: PocketBase, actor: AppSession, request: PageRequest, feedPb?: PocketBase): Promise<Partial<Snapshot>> {
   const adminOnly = ['campuses', 'campus-detail', 'accounts', 'map', 'review', 'masters'];
   if (adminOnly.includes(request.view) && actor.role !== 'admin') throw new PreviewError(403, 'Halaman ini hanya untuk Admin.');
   if (request.campus && actor.role !== 'admin' && request.campus !== actor.campusId) throw new PreviewError(403, 'Kampus tidak dapat diakses.');
@@ -54,6 +54,7 @@ export async function readPage(pb: PocketBase, actor: AppSession, request: PageR
     else keys = stats;
   }
   const raw: Partial<Record<Resource, RecordModel[]>> = {};
+  const adminDashboard = request.view === 'dashboard' && actor.role === 'admin' && !!feedPb;
   const periodPage = keys.some(key => ['definitions','indicators','submissions'].includes(key));
   const periods = periodPage ? periodsFrom(await pb.collection('indicator_definitions').getFullList({ fields: 'id,period,periodState', filter: 'periodState != "draft"', sort: 'created,id' })) : [];
   const selected = request.period === undefined ? periods.find(p => p.state === 'active') : periods.find(p => p.id === request.period);
@@ -88,9 +89,10 @@ export async function readPage(pb: PocketBase, actor: AppSession, request: PageR
       if (['answers', 'likes'].includes(key)) filters.push(pb.filter('question = {:id}', { id: request.question }));
     }
     if (request.question && key === 'faq') filters.push(pb.filter('sourceQuestion = {:id}', { id: request.question }));
+    if (key === 'activities' && adminDashboard) filters.push('actor.role = "campus"');
     const options = { fields: fields[key], sort: key === 'faq' ? 'order,id' : 'id', ...(filters.length ? { filter: filters.join(' && ') } : {}) };
     // The dashboard only displays four activities. Other page collections are never queried here.
-    raw[key] = key === 'activities' ? (await pb.collection(collections[key]).getList(1, 4, { ...options, sort: '-created,-id' })).items : await pb.collection(collections[key]).getFullList(options);
+    raw[key] = key === 'activities' ? (await (adminDashboard ? feedPb! : pb).collection(collections[key]).getList(1, 4, { ...options, sort: '-created,-id' })).items : await pb.collection(collections[key]).getFullList(options);
   }));
   const data: Partial<Snapshot> = periodPage ? { periods, period: selected } : {};
   if (raw.campuses) data.campuses = raw.campuses.map(map.mapCampus);
@@ -107,6 +109,16 @@ export async function readPage(pb: PocketBase, actor: AppSession, request: PageR
   if (raw.likes) data.likes = raw.likes.map(map.mapLike);
   if (raw.faq) data.faq = raw.faq.map(map.mapFaq);
   if (raw.activities) data.activities = raw.activities.map(map.mapActivity);
+  if (adminDashboard) {
+    const audit = await feedPb!.collection('audit').getList(1, 4, {
+      filter: 'actor.role = "campus" && campus != ""',
+      sort: '-created,-id',
+      fields: 'id,campus,action,created'
+    });
+    data.activities = [...(data.activities || []), ...audit.items.map(r => map.mapActivity({ ...r, text: r.action }))]
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id))
+      .slice(0, 4);
+  }
   if (raw.notifications) data.notifications = raw.notifications.map(r => map.mapNotification(r, actor.role));
   if (raw.campuses && ['campuses', 'campus-detail', 'map'].includes(request.view)) data.locations = raw.campuses.map(map.mapLocation);
   if (actor.role === 'admin' && ['dashboard', 'campuses', 'map'].includes(request.view)) {

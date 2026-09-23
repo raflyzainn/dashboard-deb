@@ -287,7 +287,7 @@
         <h2 class="font-[600] text-[color:var(--navy)] text-[18px] tracking-[-0.01em] m-[0px]">
           Aktivitas terbaru
         </h2>
-        <p class="leading-[1.6] m-[0px]">Jejak langkah dalam ruang kerja.</p>
+        <p class="leading-[1.6] m-[0px]">Perubahan terbaru dari akun kampus.</p>
       </div>
       <Icon name="clock" size={19} />
     </div>
@@ -302,8 +302,8 @@
             <p class="leading-[1.6] m-[0px]">{a.text}</p>
             <small class="text-[13px] text-[color:var(--muted)] leading-[1.55]"
               >{isAdmin
-                ? `${app.data!.campuses.find((c) => c.id === a.campusId)?.name} · `
-                : ''}{date(a.createdAt)}</small
+                ? `${app.data!.campuses.find((c) => c.id === a.campusId)?.name || 'Kampus mitra'} · `
+                : ''}{new Date(a.createdAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' })}</small
             >
           </div>
         </div>{:else}<Empty

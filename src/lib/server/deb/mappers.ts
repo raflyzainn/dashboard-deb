@@ -25,5 +25,5 @@ export const mapQuestion = (r: RecordModel): Question => ({ id: r.id, campusId: 
 export const mapAnswer = (r: RecordModel): Answer => ({ id: r.id, questionId: r.question, body: r.body, updatedAt: date(r.updated) });
 export const mapLike = (r: RecordModel): QuestionLike => ({ id: r.id, questionId: r.question, campusId: r.campus });
 export const mapFaq = (r: RecordModel): FaqEntry => ({ id: r.id, questionId: r.sourceQuestion || undefined, question: r.question, answer: r.answer, order: r.order });
-export const mapActivity = (r: RecordModel): Activity => ({ id: r.id, campusId: r.campus, text: r.text, createdAt: date(r.created) });
+export const mapActivity = (r: RecordModel): Activity => ({ id: r.id, campusId: r.campus, text: String(r.text || '').replace(/\p{L}/u, letter => letter.toLocaleUpperCase('id-ID')), createdAt: date(r.created) });
 export const mapNotification = (r: RecordModel, role: Role): Notification => ({ id: r.id, campusId: r.campus, recipient: role, title: r.title, body: r.body, href: r.target, createdAt: date(r.created), readAt: r.readAt ? date(r.readAt) : null, simulated: r.simulated });
