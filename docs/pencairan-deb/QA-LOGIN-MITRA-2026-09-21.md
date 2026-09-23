@@ -1,5 +1,13 @@
 # Login mitra: pencairan dan unggah revisi
 
+## Beranda: langkah berikutnya, 23 September 2026
+
+Beranda kampus kini memakai data dari GET pencairan kampus sendiri untuk menampilkan progres Tahap 1 dan satu langkah berikutnya. Revisi yang masih boleh diunggah didahulukan, lalu dokumen kosong yang masih boleh diunggah; SK/RAB dan berkas final tidak ditawarkan. Jika tidak ada tindakan kampus, kartu mengarahkan pengguna untuk memantau progres. Keadaan tanpa kampus, tanpa penetapan, dan gagal memuat mendapat pesan terpisah.
+
+QA dan build ulang sebelum pengiriman: browser lokal menampilkan judul umum, penjelasan, saran unggah Permohonan, status PKS, dan petunjuk dropdown akun. Tombol "Buka Permohonan" membuka butir Permohonan yang benar. Lebar CSS 390 px dan 1280 px tidak overflow; konsol browser 0 error. `npm run build` selesai exit 0 dengan adapter Cloudflare; peringatan lama tetap ada pada `Shell.svelte`, `Proposals.svelte`, `pencairan.ts`, `Layar.svelte`, dan `RiwayatSheet.svelte`. Tes/check/format terminal tidak dijalankan ulang pada tahap ini; QA runtime produksi belum dilakukan.
+
+QA Playwright pada aplikasi dan salinan PocketBase lokal dengan akun ITERA: kartu mula-mula menampilkan "1 dari 10 selesai", "unggah Permohonan pencairan dana", dan "PKS sedang menunggu pemeriksaan PF". Tombol "Buka Permohonan" membuka `/campus/pencairan?butir=permohonan`, dan butir tersebut menampilkan status Belum ada beserta formulir unggah. Setelah masukan pengguna, judul hitungan diganti menjadi "Saat ini: proses pencairan dana"; penjelasan "Pantau status pencairan..." dan petunjuk dropdown akun dikembalikan. QA browser ulang menunjukkan ketiganya tampil bersama saran dokumen pada viewport CSS 390 px dan 1280 px tanpa overflow horizontal. Bukti lokal: `.qa/beranda-langkah-berikutnya-mobile-20260923.png` dan `.qa/beranda-penjelasan-mobile-20260923.png`. Tidak ada unggahan atau perubahan data dalam QA ini. Pada QA awal, tes terminal, check, dan build belum dijalankan; status build terbaru dicatat di atas. Produksi belum diperiksa.
+
 ## Ringkasan progres kampus, 23 September 2026
 
 Ringkasan di atas halaman Pencairan Dana kini menyebut jumlah selesai dan nama butir yang **Belum ada**, **Perlu revisi**, atau **Menunggu PF** pada baris terpisah. Kalimat umum "Masih ... yang perlu dilengkapi" tidak ditampilkan saat masih ada butir terbuka, karena dapat mencampur berkas yang belum ada dengan kiriman yang sedang diperiksa. Keterangan setelah semua butir selesai tetap tampil.
