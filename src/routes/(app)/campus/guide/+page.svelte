@@ -4,7 +4,7 @@
     {
       icon: 'dashboard',
       title: 'Beranda',
-      description: 'Mulai dari ringkasan progres, daftar dokumen yang perlu ditindaklanjuti, dan unggahan terbaru kampus.',
+      description: 'Lihat langkah berikutnya untuk kampus Anda. Jika ada dokumen yang perlu dilengkapi atau direvisi, buka langsung dari kartu utama.',
       href: 'dashboard',
       action: 'Buka Beranda'
     },
@@ -12,35 +12,14 @@
       icon: 'payments',
       title: 'Pencairan Dana',
       description:
-        'Lihat progres dan status dokumen. Unggah dokumen kosong atau revisi sesuai catatan PF, lalu tunggu pemeriksaan. SK dan RAB hanya dapat dilihat.',
+        'Pantau status tiap dokumen, baca catatan pemeriksa, dan lihat berkas yang pernah dikirim. Unggah hanya jika dokumen belum ada atau perlu revisi.',
       href: 'pencairan',
       action: 'Lihat pencairan'
-    },
-    {
-      icon: 'questions',
-      title: 'Forum Q&A',
-      description: 'Ajukan pertanyaan dan berdiskusi bersama admin serta kampus mitra lainnya.',
-      href: 'questions',
-      action: 'Buka forum'
-    },
-    {
-      icon: 'faq',
-      title: 'Pusat bantuan',
-      description: 'Cari jawaban atas pertanyaan yang sering diajukan seputar penggunaan DEB.',
-      href: 'faq',
-      action: 'Cari jawaban'
-    },
-    {
-      icon: 'notifications',
-      title: 'Notifikasi',
-      description: 'Periksa pemberitahuan terbaru agar informasi dan tindak lanjut tidak terlewat.',
-      href: 'notifications',
-      action: 'Lihat notifikasi'
     }
   ];
 </script>
 
-<svelte:head><title>Panduan aplikasi · Desa Energi Berdikari</title></svelte:head>
+<svelte:head><title>Panduan Aplikasi · Desa Energi Berdikari</title></svelte:head>
 <div
   class="[&&]:max-w-[1120px] [&&]:grid [&&]:gap-y-[30px] [&&]:gap-x-[30px] [&&]:mx-[auto] [&&]:my-[0px] max-[600.01px]:[&&]:gap-y-[24px] max-[600.01px]:[&&]:gap-x-[24px] app-guide"
 >
@@ -57,18 +36,18 @@
     />
     <span
       class="[&&]:block [&&]:text-[12px] [&&]:font-[600] [&&]:tracking-[0.06em] [&&]:text-[#d2e9ff] guide-eyebrow"
-      >KENALI RUANG KERJA ANDA</span
+      >PANDUAN AKUN KAMPUS</span
     >
     <h1
       class="[&&]:mt-[13px] [&&]:mb-[16px] font-[600] [&&]:text-[white] [&&]:text-[34px] [&&]:tracking-[-0.01em] [&&]:leading-[1.3] [&&]:mx-[0px] max-[600.01px]:[&&]:text-[27px]"
       id="guide-title"
     >
-      Langkah pertama menuju<br />dampak bersama.
+      Mulai dari sini.
     </h1>
     <p
       class="[&&]:mt-[0px] [&&]:mb-[24px] [&&]:leading-[1.6] [&&]:max-w-[620px] [&&]:text-[15px] [&&]:text-[#e0eeff] [&&]:mx-[0px] max-[600.01px]:[&&]:text-[14px]"
     >
-      Pantau pencairan dana, lengkapi dokumen, dan tindak lanjuti revisi bersama Pertamina Foundation dalam satu aplikasi.
+      Gunakan Beranda untuk melihat langkah berikutnya, lalu buka Pencairan Dana untuk memantau dan melengkapi dokumen kampus Anda.
     </p>
     <a
       class="[-webkit-tap-highlight-color:transparent] [&&]:text-[#1256b6] [&&]:[text-decoration-line:none] [&&]:[text-decoration-thickness:initial] [&&]:[text-decoration-style:initial] [&&]:[text-decoration-color:initial] [&&]:inline-flex [&&]:items-center [&&]:gap-y-[16px] [&&]:gap-x-[16px] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_255,_255)] [&&]:text-[14px] [&&]:font-[700] [&&]:px-[18px] [&&]:py-[13px] [&&]:rounded-[9px] [&:focus-visible]:[outline-color:rgb(244,_190,_64)] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[5px] guide-start"
@@ -82,16 +61,16 @@
         class="[&&]:mt-[0px] [&&]:mb-[9px] font-[600] [&&]:text-[#173963] [&&]:text-[21px] tracking-[-0.01em] [&&]:mx-[0px] max-[600.01px]:[&&]:text-[19px]"
         id="features-title"
       >
-        Apa yang bisa Anda lakukan?
+        Dua halaman utama
       </h2>
       <p
         class="[&&]:mt-[0px] [&&]:mb-[20px] [&&]:leading-[1.6] [&&]:text-[14px] [&&]:text-[#475569] [&&]:mx-[0px]"
       >
-        Pilih fitur yang ingin digunakan. Panduan ini bisa dibuka kembali melalui menu akun di kanan atas.
+        Panduan ini bisa dibuka kembali melalui menu akun di kanan atas.
       </p>
     </div>
     <div
-      class="[&&]:grid [&&]:grid-cols-[repeat(3,_minmax(0,_1fr))] [&&]:gap-y-[18px] [&&]:gap-x-[18px] max-[1050.01px]:[&&]:grid-cols-[repeat(2,_minmax(0,_1fr))] max-[600.01px]:[&&]:grid-cols-[1fr] max-[600.01px]:[&&]:gap-y-[14px] max-[600.01px]:[&&]:gap-x-[14px] feature-grid"
+      class="[&&]:grid [&&]:grid-cols-[repeat(2,_minmax(0,_1fr))] [&&]:gap-y-[18px] [&&]:gap-x-[18px] max-[600.01px]:[&&]:grid-cols-[1fr] max-[600.01px]:[&&]:gap-y-[14px] max-[600.01px]:[&&]:gap-x-[14px] feature-grid"
     >
       {#each features as feature}
         <article
@@ -130,10 +109,10 @@
       <h2
         class="[&&]:mt-[0px] [&&]:mb-[8px] font-[600] [&&]:text-[#173963] [&&]:text-[16px] tracking-[-0.01em] [&&]:mx-[0px]"
       >
-        Mulai sedikit, lanjutkan bersama.
+        Kapan perlu mengirim dokumen?
       </h2>
       <p class="[&&]:leading-[1.6] [&&]:text-[14px] [&&]:text-[#587395] [&&]:m-[0px]">
-        Buka Pencairan Dana dan pilih dokumen yang belum ada atau perlu revisi. Baca catatan pemeriksa, pilih berkas, lalu tekan Kirim dokumen atau Kirim revisi. Dokumen yang sudah sesuai tidak perlu diunggah ulang. Jika ada yang belum jelas, gunakan Pusat bantuan atau Forum Q&A.
+        Di Pencairan Dana, pilih dokumen yang belum ada atau perlu revisi. Baca catatan pemeriksa, pilih berkas, lalu kirim. Setelah itu, tunggu pemeriksaan PF; dokumen yang sedang diperiksa atau sudah sesuai tidak perlu dikirim ulang. SK dan RAB hanya dapat dilihat oleh kampus.
       </p>
     </div>
   </aside>

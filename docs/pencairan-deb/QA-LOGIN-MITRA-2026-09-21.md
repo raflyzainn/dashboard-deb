@@ -1,5 +1,11 @@
 # Login mitra: pencairan dan unggah revisi
 
+## Panduan Aplikasi kampus, 23 September 2026
+
+Panduan di `/campus/guide` kembali dapat dibuka melalui dropdown akun kampus. Isinya dibatasi pada Beranda, Pencairan Dana, dan kapan kampus perlu mengirim dokumen; tautan Forum Q&A, Pusat bantuan, serta Notifikasi lama dihapus. SK/RAB dijelaskan sebagai dokumen baca-saja, sedangkan dokumen yang menunggu PF atau sudah sesuai tidak perlu dikirim ulang. Rute kampus lain tetap diarahkan ke Beranda.
+
+QA Playwright pada aplikasi dan salinan PocketBase lokal dengan akun ITERA: sebelum perubahan, `/campus/guide` mengarah kembali ke Beranda; setelah perubahan, halaman Panduan terbuka. Menu akun memuat tautan Panduan Aplikasi dengan penanda halaman aktif. Tautan ke Beranda dan Pencairan Dana berhasil membuka halaman tujuan; dua kartu panduan tampil dan tidak ada tautan fitur lama. Pada lebar CSS 390 px dan 1280 px tidak ada overflow horizontal. Tampilan mobile dan desktop diperiksa secara visual. Tidak ada unggahan atau perubahan data. `npm run build` selesai dengan exit code 0 menggunakan adapter Cloudflare; peringatan lama pada komponen lain dan kunci duplikat `src/lib/pencairan.ts` masih muncul. Tes, check, dan format terminal tidak dijalankan pada perubahan panduan ini; produksi belum diperiksa.
+
 ## Beranda: langkah berikutnya, 23 September 2026
 
 Beranda kampus kini memakai data dari GET pencairan kampus sendiri untuk menampilkan progres Tahap 1 dan satu langkah berikutnya. Revisi yang masih boleh diunggah didahulukan, lalu dokumen kosong yang masih boleh diunggah; SK/RAB dan berkas final tidak ditawarkan. Jika tidak ada tindakan kampus, kartu mengarahkan pengguna untuk memantau progres. Keadaan tanpa kampus, tanpa penetapan, dan gagal memuat mendapat pesan terpisah.
