@@ -67,9 +67,10 @@
   function chooseName(value: string) { nameChoice = value; created.name = value === 'manual' ? '' : value; }
 
   const visible = $derived(users.filter(u => {
+    if (filter === 'nonaktif') return !u.active;
+    if (!u.active) return false;
     const q = query.trim().toLowerCase();
     if (q && !(u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || campusName(u.campusId).toLowerCase().includes(q))) return false;
-    if (filter === 'nonaktif') return !u.active;
     if (filter === 'admin') return u.role === 'admin' || u.role === 'super_admin';
     if (filter !== 'semua') return u.role === filter;
     return true;
@@ -196,7 +197,7 @@
               <td class="px-4 py-3 text-right">
                 {#if canEdit(u)}
                   <div class="flex justify-end gap-1">
-                    <Button size="sm" variant="secondary" onclick={() => openEdit(u)}>{u.role === 'baru' ? 'Beri peran' : 'Ubah'}</Button>
+                    <Button size="sm" variant="secondary" onclick={() => openEdit(u)}>{u.role === 'baru' ? 'Beri peran' : 'Detail'}</Button>
                     <Button size="sm" variant="ghost" onclick={() => openReset(u)}>Kata sandi</Button>
                     {#if u.role === 'campus' && (!u.active || !u.lastLoginAt || u.passwordChangeRequired)}<Button size="sm" variant="ghost" icon="phone" onclick={() => openReset(u, true)}>Siapkan &amp; kirim akses</Button>{/if}
                   </div>

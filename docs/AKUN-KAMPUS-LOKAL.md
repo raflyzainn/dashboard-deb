@@ -20,6 +20,8 @@ Riwayat tab hanya memuat perubahan akun dalam konteks kampus tersebut; riwayat P
 
 Tombol **Siapkan & kirim akses** tersedia untuk akun kampus yang belum pernah login, masih wajib ganti password, atau nonaktif. Status Aktif/Nonaktif berarti izin masuk, bukan riwayat login. Tombol tidak diperlukan untuk akun aktif yang sudah login dan selesai mengganti password. Admin melihat konfirmasi penggantian password/pencabutan sesi; akun nonaktif juga memiliki peringatan pengaktifan kembali. Hanya setelah konfirmasi, endpoint akun yang sama mengaktifkan akun bila perlu sekaligus menetapkan password sementara, lalu membuka dialog WhatsApp. Batal tidak mengubah akun. Tidak ada tautan aktivasi sekali pakai.
 
+Pada daftar **Pengguna**, akun nonaktif hanya muncul saat filter **Nonaktif** dipilih; filter peran dan **Semua** hanya menampilkan akun aktif.
+
 Pilih satu atau beberapa kontak Mentor, Koordinator PFS 12, atau Local hero; nomor kosong/tidak valid tidak bisa dipilih. Nomor manual juga dapat ditambahkan. Nomor yang sama digabung agar tidak muncul dua tautan penerima.
 
 Template berisi kampus, link login, email, dan arahan mengganti password. Admin dapat mengedit teks. Link awal mengikuti alamat aplikasi yang sedang dibuka; pada localhost ada peringatan untuk menggantinya sebelum mengirim sungguhan. Setiap penerima memiliki tautan WhatsApp sendiri; admin tetap memeriksa dan menekan Kirim di WhatsApp. Membuka tautan bukan bukti pesan terkirim.
