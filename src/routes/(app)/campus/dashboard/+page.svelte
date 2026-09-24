@@ -23,18 +23,18 @@
     }
   }
 
-  const nextAction = $derived.by(() => {
-    if (!data) return null;
+  const uploadActions = $derived.by(() => {
+    if (!data) return [];
+    const actions: { kind: (typeof KINDS)[number]; state: 'perlu_revisi' | 'belum_ada' }[] = [];
     for (const state of ['perlu_revisi', 'belum_ada'] as const) {
-      const kind = KINDS.find(k => {
-        if (data!.readiness.items[k] !== state) return false;
-        const doc = data!.documents.find(d => d.kind === k) || null;
+      for (const kind of KINDS) {
+        if (data.readiness.items[kind] !== state) continue;
+        const doc = data.documents.find(d => d.kind === kind) || null;
         const signed = doc?.versions.find(v => v.id === doc.currentVersionId)?.signed;
-        return !signed && !campusUploadBlockedReason(k, state, doc, Boolean(data!.disbursement.paidAt));
-      });
-      if (kind) return { kind, state };
+        if (!signed && !campusUploadBlockedReason(kind, state, doc, Boolean(data.disbursement.paidAt))) actions.push({ kind, state });
+      }
     }
-    return null;
+    return actions;
   });
   const waitingPf = $derived(data ? KINDS.filter(k => ['menunggu_review', 'perlu_konfirmasi'].includes(data!.readiness.items[k])) : []);
 
@@ -74,9 +74,8 @@
           <p class="mt-2 text-sm leading-6 text-slate-600" role="status">{error === 'Kampus ini tidak termasuk penerima gelombang pertama.' ? 'Belum ada penetapan pencairan untuk kampus Anda.' : 'Progres belum dapat dimuat. Buka Pencairan Dana untuk mencoba lagi.'}</p>
         {:else if !data}
           <p class="mt-2 text-sm leading-6 text-slate-600" role="status">Memuat progres pencairan…</p>
-        {:else if nextAction}
-          <p class="mt-2 text-sm leading-6 text-slate-600">Berikutnya: {nextAction.state === 'perlu_revisi' ? 'revisi' : 'unggah'} <strong class="text-slate-900">{KIND_LABEL[nextAction.kind]}</strong>.</p>
-          {#if waitingPf.length === 1}<p class="mt-1 text-sm text-slate-600">{KIND_SHORT[waitingPf[0]]} sedang menunggu pemeriksaan PF.</p>{:else if waitingPf.length > 1}<p class="mt-1 text-sm text-slate-600">{waitingPf.length} dokumen menunggu pemeriksaan PF.</p>{/if}
+        {:else if uploadActions.length}
+          <p class="mt-2 text-sm leading-6 text-slate-600">Selesaikan revisi lebih dulu, lalu lengkapi dokumen yang belum diunggah.</p>
         {:else if data.readiness.state === 'dibayar'}
           <p class="mt-2 text-sm leading-6 text-slate-600">Pencairan Tahap 1 telah dibayar. Lihat detail progres di Pencairan Dana.</p>
         {:else if data.readiness.lengkap}
@@ -86,8 +85,28 @@
         {/if}
       </div>
     </div>
-    {#if app.session?.campusId}
-      <a href={nextAction ? `/campus/pencairan?butir=${nextAction.kind}` : '/campus/pencairan'} class="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#0066B2] px-5 py-3 text-sm font-semibold text-white hover:bg-[#015a9a]">{nextAction ? `${nextAction.state === 'perlu_revisi' ? 'Buka revisi' : 'Buka'} ${KIND_SHORT[nextAction.kind]}` : 'Lihat progres'} <Icon name="arrow" size={16} /></a>
+    {#if uploadActions.length}
+      <div class="mt-5 grid gap-5">
+        {#each [{ state: 'perlu_revisi', title: 'Perlu revisi', action: 'Revisi' }, { state: 'belum_ada', title: 'Belum diunggah', action: 'Unggah' }] as group}
+          {@const items = uploadActions.filter(item => item.state === group.state)}
+          {#if items.length}
+            <section aria-label={`${group.title}, ${items.length} dokumen`}>
+              <h3 class="mb-2 text-sm font-semibold text-slate-700">{group.title} <span class="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">{items.length}</span></h3>
+              <ul class="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-slate-50" aria-label={`${group.title}`}>
+                {#each items as action (action.kind)}
+                  <li class="flex min-h-14 items-center justify-between gap-3 px-4 py-2.5">
+                    <p class="text-sm font-medium text-slate-900">{KIND_LABEL[action.kind]}</p>
+                    <a href={`/campus/pencairan?butir=${action.kind}`} aria-label={`${group.action} ${KIND_LABEL[action.kind]}`} class="inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-blue-200 bg-white px-3 py-1.5 text-sm font-semibold text-[#0066B2] hover:bg-blue-50">{group.action} <Icon name="arrow" size={14} /></a>
+                  </li>
+                {/each}
+              </ul>
+            </section>
+          {/if}
+        {/each}
+      </div>
+      {#if waitingPf.length === 1}<p class="mt-3 text-sm text-slate-600">{KIND_SHORT[waitingPf[0]]} sedang menunggu pemeriksaan PF.</p>{:else if waitingPf.length > 1}<p class="mt-3 text-sm text-slate-600">{waitingPf.length} dokumen menunggu pemeriksaan PF.</p>{/if}
+    {:else if app.session?.campusId}
+      <a href="/campus/pencairan" class="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#0066B2] px-5 py-3 text-sm font-semibold text-white hover:bg-[#015a9a]">Lihat progres <Icon name="arrow" size={16} /></a>
     {/if}
     <p class="mt-4 text-xs leading-relaxed text-slate-500">Untuk kembali ke Beranda atau keluar, buka dropdown akun di kanan atas.</p>
   </section>
