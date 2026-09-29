@@ -2,6 +2,9 @@ import { json, type Handle } from '@sveltejs/kit';
 import { sameOrigin, sessionClient } from '$lib/server/deb/auth';
 export const handle: Handle = async ({ event, resolve }) => {
   event.locals.pb = null;
+  if (import.meta.env.MODE === 'mockup' && event.url.pathname.startsWith('/api/')) {
+    return json({ message: 'Mode dummy: layanan tersedia di penyimpanan browser, tanpa PocketBase.' }, { status: 404 });
+  }
   if (event.url.pathname.startsWith('/api/')) {
     if (!['GET', 'HEAD', 'OPTIONS'].includes(event.request.method) && !sameOrigin(event)) return json({ message: 'Request lintas origin ditolak.' }, { status: 403 });
     try { event.locals.pb = await sessionClient(event); } catch { return json({ message: 'Layanan sesi belum tersedia. Coba lagi.' }, { status: 503 }); }

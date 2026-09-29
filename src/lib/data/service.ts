@@ -1,4 +1,5 @@
 import { createDemoService } from './demo/service';
+import { createFullDemoService } from '../../../mockups/app/service';
 import type { DataService, PreviewAccount } from '../types';
 import type { PageRequest, PageResponse, SessionResponse, NavigationData } from '../page-data';
 
@@ -132,5 +133,5 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
     return request('/api/dev/accounts', async response => (await response.json()).accounts);
   } };
 }
-export const dataService = createHttpService();
+export const dataService = import.meta.env.MODE === 'mockup' ? createFullDemoService() : createHttpService();
 export { createDemoService };

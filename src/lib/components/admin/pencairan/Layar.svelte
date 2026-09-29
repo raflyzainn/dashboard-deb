@@ -1,5 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
+  import DummyRabUpload from '../../../../../mockups/app/RabUpload.svelte';
+  const fullDummy = import.meta.env.MODE === 'mockup';
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { dataService } from '$lib/data/service';
@@ -72,6 +74,10 @@
   const campusStage = $derived(data?.disbursement.paidAt ? campusStages.length : Math.max(1, Math.min(STAGES.length, data?.disbursement.stage || 1)));
   const nextCampusUpload = $derived.by(() => {
     if (!data) return null;
+    if (fullDummy) {
+      const rabNeedsRevision = perluRevisi.some(isRabKind);
+      if (rabNeedsRevision || belumAda.some(isRabKind)) return { kind: 'rab_penuh' as Kind, state: rabNeedsRevision ? 'perlu_revisi' : 'belum_ada' };
+    }
     const kind = [...perluRevisi, ...belumAda].find(k => {
       const doc = data!.documents.find(d => d.kind === k);
       const version = doc?.versions.find(v => v.id === doc.currentVersionId);
@@ -323,11 +329,11 @@
     {#if !admin}
       <section aria-label="Progres pencairan" class="my-2 grid gap-2 rounded-xl border border-blue-100 bg-blue-50/60 p-4 text-sm text-slate-700">
         <div class="flex flex-wrap items-center justify-between gap-2"><h2 class="font-bold text-slate-900">Progres Tahap 1 · {data.readiness.done} dari {data.readiness.total} selesai</h2><button type="button" class="font-semibold text-[#0066B2] disabled:opacity-50" disabled={busy} onclick={load}>Perbarui status</button></div>
-        {#if belumAda.length}<p><strong class="text-slate-900">Belum ada ({belumAda.length}):</strong> {belumAda.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
+        {#if belumAda.length}<p><strong class="text-slate-900">{fullDummy && data.rab ? 'Belum diajukan' : 'Belum ada'} ({belumAda.length}):</strong> {belumAda.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
         {#if perluRevisi.length}<p><strong class="text-amber-900">Perlu revisi ({perluRevisi.length}):</strong> {perluRevisi.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
         {#if menungguPf.length}<p><strong class="text-[#015a9a]">Menunggu PF ({menungguPf.length}):</strong> {menungguPf.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
         {#if data.readiness.missing.length === 0}<p>{data.readiness.phrase}</p>{/if}
-        <p class="text-xs text-slate-500">Pilih dokumen untuk melihat berkas dan catatan pemeriksa. SK dan RAB hanya dapat dilihat; unggah RAB belum dibuka.</p>
+        <p class="text-xs text-slate-500">{fullDummy ? 'Unggah RAB 100%, pilih jumlah tiap item untuk tahap 70% dan 30%, lalu ajukan untuk pemeriksaan PF.' : 'Pilih dokumen untuk melihat berkas dan catatan pemeriksa. SK dan RAB hanya dapat dilihat; unggah RAB belum dibuka.'}</p>
       </section>
       <section aria-labelledby="timeline-title" class="grid min-w-0 gap-3 rounded-xl border border-slate-200 bg-white p-4">
         <div>
@@ -348,7 +354,7 @@
         <div class="grid gap-2 rounded-lg bg-slate-50 p-3 text-sm sm:grid-cols-2">
           <p><strong class="text-slate-900">Yang bertindak:</strong> {nextCampusUpload ? 'Kampus' : data.disbursement.paidAt ? 'Selesai' : 'Pertamina Foundation'}</p>
           <div>
-            <p><strong class="text-slate-900">Langkah selanjutnya:</strong> {#if nextCampusUpload}{nextCampusUpload.state === 'perlu_revisi' ? 'Kirim revisi' : 'Lengkapi dokumen'} {KIND_SHORT[nextCampusUpload.kind]}{:else if data.disbursement.paidAt}Tidak ada tindakan lagi untuk Tahap 1.{:else if menungguPf.length}Tunggu pemeriksaan PF untuk {menungguPf.map(k => KIND_SHORT[k]).join(', ')}.{:else if data.readiness.lengkap}PF melanjutkan penyelesaian proses.{:else}PF melanjutkan pemeriksaan dokumen.{/if}</p>
+            <p><strong class="text-slate-900">Langkah selanjutnya:</strong> {#if nextCampusUpload}{fullDummy && data.rab && isRabKind(nextCampusUpload.kind) ? 'Periksa lalu ajukan' : nextCampusUpload.state === 'perlu_revisi' ? 'Kirim revisi' : 'Lengkapi dokumen'} {KIND_SHORT[nextCampusUpload.kind]}{:else if data.disbursement.paidAt}Tidak ada tindakan lagi untuk Tahap 1.{:else if menungguPf.length}Tunggu pemeriksaan PF untuk {menungguPf.map(k => KIND_SHORT[k]).join(', ')}.{:else if data.readiness.lengkap}PF melanjutkan penyelesaian proses.{:else}PF melanjutkan pemeriksaan dokumen.{/if}</p>
             {#if nextCampusUpload}<a class="mt-1 inline-flex font-semibold text-[#0066B2] hover:underline" href={`/campus/pencairan?butir=${nextCampusUpload.kind}`}>Buka langkah ini <Icon name="arrow" size={14} /></a>{/if}
           </div>
         </div>
@@ -362,7 +368,7 @@
         {#each KINDS as k}
           {@const s = data.readiness.items[k]}
           <button type="button" class="flex shrink-0 items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] transition {selected === k ? 'bg-white font-bold text-slate-900 shadow-[0_4px_12px_#0b254514]' : 'text-slate-700 hover:bg-white/70'}" onclick={() => open(k)} aria-current={selected === k ? 'true' : undefined} title={ITEM_STATE_LABEL[s]}>
-            <i class="size-2.5 shrink-0 rounded-full {dot[s]}"></i><span class="whitespace-nowrap">{KIND_SHORT[k]}</span><span class="ml-auto whitespace-nowrap pl-2 text-[11px] font-medium text-slate-500">{admin ? RAIL_WORD[s] : s === 'perlu_revisi' ? 'Perlu revisi' : s === 'belum_ada' ? 'Belum ada' : s === 'sesuai' ? 'Sesuai' : s === 'tidak_perlu' ? 'Tidak perlu' : 'Menunggu PF'}</span>
+            <i class="size-2.5 shrink-0 rounded-full {dot[s]}"></i><span class="whitespace-nowrap">{KIND_SHORT[k]}</span><span class="ml-auto whitespace-nowrap pl-2 text-[11px] font-medium text-slate-500">{fullDummy && isRabKind(k) && data.rab?.status === 'draf' && s === 'belum_ada' ? 'Draf' : admin ? RAIL_WORD[s] : s === 'perlu_revisi' ? 'Perlu revisi' : s === 'belum_ada' ? 'Belum ada' : s === 'sesuai' ? 'Sesuai' : s === 'tidak_perlu' ? 'Tidak perlu' : 'Menunggu PF'}</span>
           </button>
         {/each}
         {#if admin}
@@ -392,8 +398,8 @@
             {#if data.summary.skFile}<a class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300" href="/api/pencairan/sk" target="_blank" rel="noopener">Buka SK lengkap</a>{/if}
           {:else if isItem && isRab}
             <button type="button" class="rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold {rabTab === 'digital' ? 'bg-[#0066B2] text-white' : 'border border-slate-200 bg-white text-slate-600'}" onclick={() => (rabTab = 'digital')}>RAB terkelola</button>
-            <button type="button" class="rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold {rabTab === 'asli' ? 'bg-[#0066B2] text-white' : 'border border-slate-200 bg-white text-slate-600'}" onclick={() => (rabTab = 'asli')}>Berkas asli{fileDoc?.versions.length ? '' : ' (belum ada)'}</button>
-            {#if admin}
+{#if !fullDummy}            <button type="button" class="rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold {rabTab === 'asli' ? 'bg-[#0066B2] text-white' : 'border border-slate-200 bg-white text-slate-600'}" onclick={() => (rabTab = 'asli')}>Berkas asli{fileDoc?.versions.length ? '' : ' (belum ada)'}</button>{/if}
+            {#if admin && !fullDummy}
               <label class="cursor-pointer rounded-full border border-dashed border-slate-300 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-[#0066B2] hover:border-[#0066B2]" title="Excel tiga lembar dari templat: RAB 100%, RAB 70%, RAB 30%. Menjadi versi RAB berikutnya.">Impor Excel<input type="file" class="sr-only" accept=".xlsx,.xlsm,.xls" onchange={(e) => importRab((e.currentTarget as HTMLInputElement).files?.[0] || null)} /></label>
               <button type="button" class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300 disabled:opacity-50" disabled={busy} onclick={exportRab}>Ekspor Excel</button>
               <a class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300" href="/templat/RAB_DEB.xlsx" download>Templat</a>
@@ -412,7 +418,8 @@
           {#if admin}<button type="button" class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300" onclick={() => (showRiwayat = true)}>Riwayat</button>{/if}
         </div>
 
-        {#if !admin && isItem}
+        {#if isRab && fullDummy}<DummyRabUpload {campusId} {kind} {admin} onloaded={() => void load()} />{/if}
+        {#if !admin && isItem && !(isRab && fullDummy)}
           <section aria-label="Status dokumen" class="grid gap-3 border-b border-slate-200 p-3 text-sm">
             <div class="grid gap-1 rounded-lg border border-l-4 p-3 {campusStatusClass[state]}" role="status">
               <strong>{ITEM_STATE_LABEL[state]}</strong>
@@ -464,7 +471,11 @@
                     {#if bukti.note}<p class="mt-1 text-[13px] leading-relaxed text-slate-700">{bukti.note}</p>{/if}
                   </div>
                 {/if}
-                <RabTable {campusId} compact {refresh} canEdit={admin} share={RAB_SHARE[kind as keyof typeof RAB_SHARE]} />
+                {#if fullDummy && !data.rab}
+                  <p class="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">{admin ? 'Belum ada unggahan RAB dari kampus.' : 'Hasil pembacaan Excel akan muncul di sini setelah file berhasil diunggah.'}</p>
+                {:else}
+                  <RabTable {campusId} compact {refresh} canEdit={admin && !fullDummy} share={RAB_SHARE[kind as keyof typeof RAB_SHARE]} />
+                {/if}
               </div>
             {:else if version}
               <FileViewer src={fileUrl} mime={version.mime} name={version.originalName} height={docHeight} />

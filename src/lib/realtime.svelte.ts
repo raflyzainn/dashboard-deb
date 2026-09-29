@@ -22,6 +22,11 @@ const RENEW_MS = 90 * 60 * 1000;
 export function startRealtime(userId: string) {
   if (started || typeof window === 'undefined') return;
   started = true;
+  if (import.meta.env.MODE === 'mockup') {
+    live.connected = true;
+    window.addEventListener('deb-dummy-change', () => notify(null));
+    return;
+  }
   selfId = userId;
   void connect();
   setInterval(() => void connect(true), RENEW_MS);

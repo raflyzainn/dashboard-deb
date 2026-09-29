@@ -188,7 +188,7 @@
           ></span>{/if}</a
       ><span
         class="inline-flex items-center gap-y-[7px] gap-x-[7px] text-[11px] text-[#4274ad] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [&>span]:w-[5px] [&>span]:h-[5px] [&>span]:[background-image:initial] [&>span]:[background-color:rgb(21,_130,_232)] [&>span]:rounded-[100%] demo-label"
-        ><span></span>Tersambung ke server</span
+        ><span></span>{import.meta.env.MODE === 'mockup' ? 'Data dummy' : 'Tersambung ke server'}</span
       >
       <div
         class="w-[1px] h-[26px] [background-image:initial] [background-color:var(--line)] mx-[3px] my-[0px] max-[700.01px]:hidden header-divider"
