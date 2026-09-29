@@ -6,7 +6,7 @@
   import { onChange } from '$lib/realtime.svelte';
   import { pollVisible } from '$lib/polling';
   import { campusUploadBlockedReason, CAMPUS_STATE_LABEL } from '$lib/pencairan';
-  import { KINDS, KIND_LABEL, KIND_SHORT, KIND_FILE, LOOK_AT, FIELDS, DECISION_LABEL, RAIL_WORD, ITEM_STATE_LABEL, RAB_SHARE, isRabKind, formatSen, parseSen, type Kind, type ItemState } from '$lib/pencairan';
+  import { KINDS, STAGES, KIND_LABEL, KIND_SHORT, KIND_FILE, LOOK_AT, FIELDS, DECISION_LABEL, RAIL_WORD, ITEM_STATE_LABEL, RAB_SHARE, isRabKind, formatSen, parseSen, type Kind, type ItemState } from '$lib/pencairan';
   import type { KartuData, Version, Check } from './kartu-types';
   import Icon from '$lib/components/ui/Icon.svelte';
   import CampusLogo from '$lib/components/ui/CampusLogo.svelte';
@@ -68,6 +68,27 @@
   const belumAda = $derived(data ? KINDS.filter(k => data!.readiness.items[k] === 'belum_ada') : []);
   const perluRevisi = $derived(data ? KINDS.filter(k => data!.readiness.items[k] === 'perlu_revisi') : []);
   const menungguPf = $derived(data ? KINDS.filter(k => ['menunggu_review', 'perlu_konfirmasi'].includes(data!.readiness.items[k])) : []);
+  const campusStages = $derived(data?.disbursement.paidAt ? [...STAGES, 'Dana dibayar'] : [...STAGES]);
+  const campusStage = $derived(data?.disbursement.paidAt ? campusStages.length : Math.max(1, Math.min(STAGES.length, data?.disbursement.stage || 1)));
+  const nextCampusUpload = $derived.by(() => {
+    if (!data) return null;
+    const kind = [...perluRevisi, ...belumAda].find(k => {
+      const doc = data!.documents.find(d => d.kind === k);
+      const version = doc?.versions.find(v => v.id === doc.currentVersionId);
+      return !version?.signed && !campusUploadBlockedReason(k, data!.readiness.items[k], doc || null, Boolean(data!.disbursement.paidAt));
+    });
+    return kind ? { kind, state: data.readiness.items[kind] } : null;
+  });
+  const nextRevision = $derived.by(() => {
+    const kind = nextCampusUpload?.state === 'perlu_revisi' ? nextCampusUpload.kind : null;
+    if (!kind) return null;
+    const doc = data?.documents.find(d => d.kind === kind);
+    const version = doc?.versions.find(v => v.id === doc.currentVersionId);
+    const review = [...(doc?.reviews || []), ...(version?.reviews || [])]
+      .filter(r => r.decision === 'perlu_revisi' && r.note)
+      .sort((a, b) => b.created.localeCompare(a.created))[0];
+    return review ? { kind, note: review.note } : null;
+  });
   const uploadBlocked = $derived(campusUploadBlockedReason(kind, state, doc, Boolean(data?.disbursement.paidAt)) || (doc?.versions.find(v => v.id === doc.currentVersionId)?.signed ? 'Berkas bertanda tangan tidak dapat diganti lewat unggah revisi.' : ''));
   const canUpload = $derived(admin || (Boolean(data) && !uploadBlocked));
   const time = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', timeZone: 'Asia/Jakarta' });
@@ -307,6 +328,31 @@
         {#if menungguPf.length}<p><strong class="text-[#015a9a]">Menunggu PF ({menungguPf.length}):</strong> {menungguPf.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
         {#if data.readiness.missing.length === 0}<p>{data.readiness.phrase}</p>{/if}
         <p class="text-xs text-slate-500">Pilih dokumen untuk melihat berkas dan catatan pemeriksa. SK dan RAB hanya dapat dilihat; unggah RAB belum dibuka.</p>
+      </section>
+      <section aria-labelledby="timeline-title" class="grid min-w-0 gap-3 rounded-xl border border-slate-200 bg-white p-4">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Tahap saat ini</p>
+          <h2 id="timeline-title" class="mt-1 font-bold text-slate-900">{campusStages[campusStage - 1]}</h2>
+        </div>
+        <div>
+          <ol class="grid gap-0 sm:grid-cols-7" aria-label="Linimasa proses pencairan">
+            {#each campusStages as stage, index}
+              <li aria-current={index + 1 === campusStage ? 'step' : undefined} class="relative flex min-h-14 items-center gap-3 text-sm sm:min-h-24 sm:flex-col sm:items-center sm:gap-2">
+                {#if index < campusStages.length - 1}<span aria-hidden="true" class="absolute left-4 top-7 h-14 w-0.5 {index + 1 < campusStage ? 'bg-green-300' : 'bg-slate-200'} sm:bottom-auto sm:left-1/2 sm:top-4 sm:h-0.5 sm:w-full"></span>{/if}
+                <span class="z-10 grid size-8 shrink-0 place-items-center rounded-full border-2 bg-white font-bold {index + 1 === campusStage ? 'border-[#0066B2] text-[#0066B2]' : index + 1 < campusStage ? 'border-green-600 text-green-700' : 'border-slate-300 text-slate-500'}">{index + 1 < campusStage ? '✓' : index + 1}</span>
+                <span class="z-10 leading-5 {index + 1 === campusStage ? 'font-bold text-[#015a9a]' : index + 1 < campusStage ? 'font-medium text-green-800' : 'text-slate-600'} sm:px-1 sm:text-center sm:text-xs">{stage}</span>
+              </li>
+            {/each}
+          </ol>
+        </div>
+        <div class="grid gap-2 rounded-lg bg-slate-50 p-3 text-sm sm:grid-cols-2">
+          <p><strong class="text-slate-900">Yang bertindak:</strong> {nextCampusUpload ? 'Kampus' : data.disbursement.paidAt ? 'Selesai' : 'Pertamina Foundation'}</p>
+          <div>
+            <p><strong class="text-slate-900">Langkah selanjutnya:</strong> {#if nextCampusUpload}{nextCampusUpload.state === 'perlu_revisi' ? 'Kirim revisi' : 'Lengkapi dokumen'} {KIND_SHORT[nextCampusUpload.kind]}{:else if data.disbursement.paidAt}Tidak ada tindakan lagi untuk Tahap 1.{:else if menungguPf.length}Tunggu pemeriksaan PF untuk {menungguPf.map(k => KIND_SHORT[k]).join(', ')}.{:else if data.readiness.lengkap}PF melanjutkan penyelesaian proses.{:else}PF melanjutkan pemeriksaan dokumen.{/if}</p>
+            {#if nextCampusUpload}<a class="mt-1 inline-flex font-semibold text-[#0066B2] hover:underline" href={`/campus/pencairan?butir=${nextCampusUpload.kind}`}>Buka langkah ini <Icon name="arrow" size={14} /></a>{/if}
+          </div>
+        </div>
+        {#if nextRevision}<p class="rounded-lg border-l-4 border-amber-400 bg-amber-50 px-3 py-2 text-sm text-amber-950"><strong>Catatan pemeriksa · {KIND_SHORT[nextRevision.kind]}:</strong> {nextRevision.note}</p>{/if}
       </section>
     {/if}
     <div class="document-frame grid grid-cols-[minmax(0,1fr)] overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_10px_30px_#0b254508] lg:grid-cols-[240px_minmax(0,1fr)]">

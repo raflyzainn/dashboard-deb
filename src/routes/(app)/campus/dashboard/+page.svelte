@@ -85,8 +85,9 @@
         {/if}
       </div>
     </div>
+    {#if app.session?.campusId && data}<h3 class="mt-5 text-sm font-semibold text-slate-800">Yang perlu dilakukan</h3>{/if}
     {#if uploadActions.length}
-      <div class="mt-5 grid gap-5">
+      <div class="mt-3 grid gap-5">
         {#each [{ state: 'perlu_revisi', title: 'Perlu revisi', action: 'Revisi' }, { state: 'belum_ada', title: 'Belum diunggah', action: 'Unggah' }] as group}
           {@const items = uploadActions.filter(item => item.state === group.state)}
           {#if items.length}
@@ -106,7 +107,11 @@
       </div>
       {#if waitingPf.length === 1}<p class="mt-3 text-sm text-slate-600">{KIND_SHORT[waitingPf[0]]} sedang menunggu pemeriksaan PF.</p>{:else if waitingPf.length > 1}<p class="mt-3 text-sm text-slate-600">{waitingPf.length} dokumen menunggu pemeriksaan PF.</p>{/if}
     {:else if app.session?.campusId}
-      <a href="/campus/pencairan" class="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#0066B2] px-5 py-3 text-sm font-semibold text-white hover:bg-[#015a9a]">Lihat progres <Icon name="arrow" size={16} /></a>
+      {#if data?.disbursement.paidAt}<p class="mt-2 text-sm text-slate-600">Tahap 1 sudah dibayar. Tidak ada dokumen yang perlu Anda kirim.</p>
+      {:else if waitingPf.length}<p class="mt-2 text-sm text-slate-600">Menunggu pemeriksaan PF untuk {waitingPf.map(k => KIND_SHORT[k]).join(', ')}. Tidak perlu mengunggah ulang.</p>
+      {:else if data?.readiness.lengkap}<p class="mt-2 text-sm text-slate-600">Dokumen Tahap 1 sudah lengkap. PF melanjutkan prosesnya.</p>
+      {:else}<p class="mt-2 text-sm text-slate-600">Belum ada dokumen yang perlu Anda kirim. Pantau langkah yang dikelola PF di Pencairan Dana.</p>{/if}
+      <a href="/campus/pencairan" class="mt-3 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#0066B2] px-5 py-3 text-sm font-semibold text-white hover:bg-[#015a9a]">Lihat progres <Icon name="arrow" size={16} /></a>
     {/if}
     <p class="mt-4 text-xs leading-relaxed text-slate-500">Untuk kembali ke Beranda atau keluar, buka dropdown akun di kanan atas.</p>
   </section>

@@ -1,5 +1,21 @@
 # Login mitra: pencairan dan unggah revisi
 
+## Ringkasan tindakan dan linimasa kampus, 28 September 2026
+
+Beranda kampus memberi judul "Yang perlu dilakukan" untuk daftar revisi/berkas kosong, dan menjelaskan status menunggu PF atau sudah dibayar saat tidak ada unggahan kampus. Pencairan Dana menampilkan linimasa tujuh tahap (ditambah "Dana dibayar" setelah pembayaran), pihak yang bertindak, langkah berikutnya dengan tautan ke butir terkait, dan catatan revisi aktif. Checklist sepuluh butir dihapus. Linimasa kini menghubungkan penanda tahap selesai, aktif, dan berikutnya; tampil mendatar di desktop dan vertikal di layar kecil.
+
+QA Playwright memakai akun lokal ITERA dan Politeknik Negeri Kupang pada salinan PocketBase lokal `127.0.0.1:8097`. Beranda memperlihatkan kelompok butir kosong; CTA linimasa membuka Kuitansi. Untuk PNK, langkah berikutnya menunjuk revisi Permohonan dan menampilkan catatan pemeriksa. Baris checklist Permohonan sebelumnya membuka butir revisi yang benar; interaksi itu tidak lagi berlaku karena checklist dihapus. Pada viewport kecil, tahap linimasa tersusun vertikal dan halaman tidak melebar horizontal. QA awal menangkap referensi `uploadActions` yang tidak tersedia di komponen Pencairan; referensi diganti dengan daftar status yang dimiliki komponen, lalu layar tampil dan interaksi kembali berfungsi. Tidak ada berkas dipilih atau diunggah, dan tidak ada keputusan/catatan dikirim. Tidak menjalankan tes/check/build terminal, tidak mengubah data production, dan tidak push/deploy.
+
+Pemeriksaan ulang Playwright 28 September pada akun lokal PNK: linimasa desktop mendatar (tujuh tahap), sementara lebar 390 px menampilkan tahap vertikal; tidak ada overflow horizontal dan judul "Checklist dokumen" tidak ditemukan. Tampilan layar diperiksa langsung. Tidak ada dokumen dipilih/diunggah. Tes/check/build terminal tidak dijalankan; tidak ada push/deploy.
+
+## QA cakupan kampus, 28 September 2026
+
+Playwright pada frontend `127.0.0.1:5176` dan PocketBase salinan QA lokal `127.0.0.1:8097`, memakai sesi Politeknik Negeri Kupang. Beranda menampilkan empat revisi dan satu dokumen kosong; tautan Revisi Permohonan membuka butir Permohonan. Halaman Pencairan memuat sepuluh butir; status selesai, revisi, kosong, dan RAB yang dikelola PF tampil sesuai data yang tersedia. Tautan langkah berikutnya membuka Permohonan. Tombol Perbarui status dapat digunakan.
+
+Menu akun membuka Beranda, Pencairan Dana, dan Panduan Aplikasi. Tautan Panduan ke halaman utama berfungsi. `/campus/questions` dan `/admin/users` mengarahkan akun kampus kembali ke Beranda. Di viewport mobile (Playwright diminta 390 px; browser melaporkan inner width 434 px), timeline tampil vertikal, menu akun dapat dibuka, dan halaman tidak overflow. Desktop juga tidak overflow. Pemeriksaan konsol browser mencatat 0 error dan 0 warning.
+
+Formulir revisi dan dokumen kosong tersedia; tombol kirim nonaktif tanpa pilihan berkas. Input berkas tetap kosong (`files: 0`) sepanjang QA. Tidak ada unggahan, pengiriman catatan, keputusan, atau perubahan data. Temuan data: catatan pemeriksa Permohonan menyebut batas Rp52.499.999 dan unggahan Rp52.500.000, sedangkan ringkasan halaman menghitung batas Rp52.499.300 dari Nilai SK Rp74.999.000. Validasi catatan/asumsi bisnis diperlukan; QA ini tidak mengubahnya. Alur login/logout, aksi kirim, layar admin, tes/check/build terminal, dan production tidak diuji.
+
 ## Aktivitas kampus di Beranda admin, 23 September 2026
 
 Kartu "Aktivitas terbaru" kini mengambil maksimal empat aksi akun kampus terbaru dari aktivitas lama, audit pencairan, dan login berhasil. Pembacaan audit dibatasi di server untuk admin dan hanya memproyeksikan aksi, kampus, serta waktu; keputusan admin dan isi/catatan dokumen tidak ditampilkan. Huruf pertama teks aksi dikapitalisasi saat dipetakan. Login lokal dicatat pada pemilihan akun pertama, bukan saat refresh; login kata sandi dan Microsoft mencatat akun kampus saja.
