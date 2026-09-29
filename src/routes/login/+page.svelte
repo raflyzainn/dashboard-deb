@@ -14,11 +14,12 @@
   let previewAccount = $state('');
   let error = $state(page.url.searchParams.get('error') || '');
   const localAccounts = $derived(app.accounts.filter((account) => account.role === 'campus' || account.role === 'admin'));
+  const showLocalAccounts = dev || import.meta.env.MODE === 'mockup';
 
   $effect(() => {
     untrack(() => {
       void app.init();
-      if (dev) void app.loadAccounts();
+      if (showLocalAccounts) void app.loadAccounts();
     });
   });
   $effect(() => {
@@ -105,7 +106,7 @@
         <Button type="submit" full loading={busy}>Masuk</Button>
       </form>
 
-      {#if dev && localAccounts.length}
+      {#if showLocalAccounts && localAccounts.length}
         <div class="mt-6 grid gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
           <label class="grid gap-1.5 text-sm font-medium text-slate-700">
             Masuk sebagai akun lokal

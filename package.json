@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "vite --config mockups/app/vite.config.ts --mode mockup",
     "dev:rab-mockup": "vite --config mockups/app/vite.config.ts --mode mockup",
-    "build": "vite build",
+    "build": "vite build --config mockups/app/vite.config.ts --mode mockup",
     "preview": "vite preview --host 127.0.0.1",
     "preview:cloudflare": "wrangler pages dev .svelte-kit/cloudflare --ip 127.0.0.1 --port 4177",
     "prepare": "svelte-kit sync",

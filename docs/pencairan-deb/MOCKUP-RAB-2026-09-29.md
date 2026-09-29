@@ -11,7 +11,7 @@ Pilih **Masuk sebagai akun lokal**. Tersedia 2 admin dan 80 akun kampus untuk 40
 
 Memakai route, layout, dan komponen SvelteKit aplikasi asli. Adapter `mockups/app` melengkapi layanan demo yang sudah ada untuk pencairan, pengguna, audit, dan pengaturan. Data disimpan di IndexedDB `deb-full-app-dummy-v1`, terpisah per kampus. Nama/logo kampus berasal dari roster aplikasi; transaksi, akun, dan dokumen adalah simulasi.
 
-Mode Vite `mockup` mengganti layanan data dan realtime. Hooks menolak API backend sebelum membuat klien PocketBase; SK contoh dilayani middleware lokal. Tidak memakai koneksi PocketBase. Konfigurasi adapter pengembangan masih dapat membaca env; ini bukan bukti koneksi backend. Build/deploy tidak dikerjakan.
+Mode Vite `mockup` mengganti layanan data dan realtime. Hooks menolak API backend sebelum membuat klien PocketBase; SK dan Excel contoh tersedia sebagai file statis. Tidak memakai koneksi PocketBase. Branch ini menggunakan adapter-static. Build tidak menyertakan layanan backend; seluruh data simulasi dikelola di browser.
 
 ## Alur RAB terbaru
 
@@ -56,3 +56,15 @@ Pada browser lokal saat penyerahan, keenam kampus berikut belum memiliki RAB 100
 | campus-036 | ITPB |
 
 Pilih akun kampus tersebut lewat **Masuk sebagai akun lokal**, buka Pencairan Dana, lalu RAB 100%. Keenam kampus tidak dipakai untuk unggah QA sehingga pengguna dapat mencoba dari kosong. Data uji pengguna akan tetap tersimpan setelah unggah; tidak direset otomatis. Pada browser baru, seed juga menyediakan campus-001 dan campus-006 dalam keadaan kosong. Data IndexedDB browser tidak ikut Git; skenario awalnya berasal dari kode.
+
+## Vercel — perbaikan output build
+
+Konfigurasi lama memakai adapter Cloudflare yang menghasilkan `.svelte-kit/cloudflare`, sedangkan Vercel mengharapkan `build`. Branch dummy sekarang memakai `@sveltejs/adapter-static` yang sudah terpasang, dengan output `build` dan fallback `index.html`, sesuai `vercel.json`.
+
+- Repository: GitHub `raflyzainn/dashboard-deb`, branch `feat/rab-dummy-all-campuses`.
+- Framework preset: Other; build command: `npm run build`; output directory: `build`.
+- Build memakai mode `mockup`, termasuk pilihan akun lokal yang tetap tampil pada hasil deployment.
+- Excel contoh berada di `static/contoh-rab.xlsx`; SK contoh di `static/sk-dummy.pdf`. Keduanya tidak bergantung pada middleware dev.
+- Tidak membutuhkan environment variable PocketBase untuk simulasi ini. Data antarbrowser tidak tersinkron karena memakai IndexedDB lokal.
+- Referensi: https://svelte.dev/docs/kit/single-page-apps dan https://svelte.dev/docs/kit/adapter-static.
+- Build terminal tidak dijalankan sesuai instruksi repository. Keberhasilan build/deploy Vercel belum diverifikasi; perbaikan ini berdasarkan konfigurasi output adapter dan error yang dilaporkan pengguna.

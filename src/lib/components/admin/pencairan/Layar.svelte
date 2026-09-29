@@ -395,7 +395,7 @@
           <b class="text-[15px] text-slate-900">{isItem ? KIND_LABEL[kind] : CLOSING.find(c => c.key === selected)?.label}</b>
           {#if isItem && kind === 'sk'}
             <span class="rounded-full bg-[#0066B2] px-2.5 py-0.5 text-[11.5px] font-semibold text-white">{data.summary.skNumber}{data.summary.skDate ? ` · ${time.format(new Date(data.summary.skDate))} ${new Date(data.summary.skDate).getFullYear()}` : ''}</span>
-            {#if data.summary.skFile}<a class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300" href="/api/pencairan/sk" target="_blank" rel="noopener">Buka SK lengkap</a>{/if}
+            {#if data.summary.skFile}<a class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300" href={fullDummy ? '/sk-dummy.pdf' : '/api/pencairan/sk'} target="_blank" rel="noopener">Buka SK lengkap</a>{/if}
           {:else if isItem && isRab}
             <button type="button" class="rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold {rabTab === 'digital' ? 'bg-[#0066B2] text-white' : 'border border-slate-200 bg-white text-slate-600'}" onclick={() => (rabTab = 'digital')}>RAB terkelola</button>
 {#if !fullDummy}            <button type="button" class="rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold {rabTab === 'asli' ? 'bg-[#0066B2] text-white' : 'border border-slate-200 bg-white text-slate-600'}" onclick={() => (rabTab = 'asli')}>Berkas asli{fileDoc?.versions.length ? '' : ' (belum ada)'}</button>{/if}
@@ -455,7 +455,7 @@
             {/if}
             {#if kind === 'sk'}
               {#if data.summary.skFile}
-                <iframe title="SK" src={`/api/pencairan/sk#page=${data.summary.skLampiranPage || 1}`} class="h-full w-full border-0 bg-white"></iframe>
+                <iframe title="SK" src={`${fullDummy ? '/sk-dummy.pdf' : '/api/pencairan/sk'}#page=${data.summary.skLampiranPage || 1}`} class="h-full w-full border-0 bg-white"></iframe>
               {:else}
                 <div class="flex h-full items-center justify-center text-sm text-slate-600">Berkas SK belum dimuat.</div>
               {/if}
