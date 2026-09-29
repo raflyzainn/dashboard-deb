@@ -3,6 +3,9 @@ import { parseGridSheet } from '../../src/lib/rab-grid';
 
 export const BUDGET = 2_000_000_000; // Rp20 juta, stored in integer sen.
 export const LIMIT = BUDGET * 7 / 10;
+export const validQuantity = (quantity: unknown, volume: number): quantity is number =>
+  typeof quantity === 'number' && Number.isFinite(quantity) && quantity >= 0 && quantity <= volume &&
+  (Number.isInteger(volume) ? Number.isInteger(quantity) : Math.abs(quantity * 10000 - Math.round(quantity * 10000)) < 0.00001);
 export const STORE_KEY = 'deb-rab-mockup-v1';
 export type Item = { id: string; group: string; activity: string; section: string; title: string; volume: number; unit: string; priceSen: number; amountSen: number; term1Sen: number | null };
 export type Status = 'draft' | 'pending' | 'revision' | 'approved';

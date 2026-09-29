@@ -18,7 +18,7 @@ Mode Vite `mockup` mengganti layanan data dan realtime. Hooks menolak API backen
 1. Kampus mengunduh Excel `.xlsx` contoh, mengisi RAB 100%, lalu mengunggahnya pada butir RAB 100%.
 2. Seluruh rincian terbaca dan tampil. Alokasi unggahan baru kosong, belum otomatis dibagi berdasarkan persentase.
 3. Kampus memilih jumlah tiap item untuk tahap 70%. Tombol 70% memindahkan seluruh jumlah ke tahap pertama; tombol 30% memindahkan seluruhnya ke tahap kedua. Input jumlah memungkinkan pembagian, misalnya 10 unit menjadi 7 dan 3 unit. Sisa jumlah otomatis masuk tahap kedua.
-4. Nominal dihitung dari jumlah dikali harga satuan. Jumlah tidak boleh negatif atau melebihi volume sumber; maksimal empat desimal. Total tahap pertama harus positif dan maksimal 70% nilai SK, mengikuti aturan aplikasi sekarang. Persentase bukan kewajiban pembagian setiap item.
+4. Nominal dihitung dari jumlah dikali harga satuan. Jumlah tidak boleh negatif atau melebihi volume sumber. Jika volume sumber bulat, alokasi wajib bulat. Pecahan maksimal empat desimal hanya untuk volume sumber yang memang pecahan. Total tahap pertama harus positif dan maksimal 70% nilai SK, mengikuti aturan aplikasi sekarang. Persentase bukan kewajiban pembagian setiap item.
 5. Simpan pembagian menyimpan draf, termasuk yang belum lengkap. Tombol lanjut hanya aktif saat seluruh item terbagi dan total memenuhi batas. Perubahan input belum tersimpan sampai tombol simpan ditekan.
 6. Periksa RAB 70% dan RAB 30%; tabel menampilkan jumlah unit sesuai tahap. Konfirmasi dan ajukan ke PF. Draf terkunci saat menunggu pemeriksaan.
 7. Admin memakai halaman dan tombol keputusan yang ada. Ketiga butir RAB harus sesuai sebelum disetujui.
@@ -68,3 +68,11 @@ Konfigurasi lama memakai adapter Cloudflare yang menghasilkan `.svelte-kit/cloud
 - Tidak membutuhkan environment variable PocketBase untuk simulasi ini. Data antarbrowser tidak tersinkron karena memakai IndexedDB lokal.
 - Referensi: https://svelte.dev/docs/kit/single-page-apps dan https://svelte.dev/docs/kit/adapter-static.
 - Build terminal tidak dijalankan sesuai instruksi repository. Keberhasilan build/deploy Vercel belum diverifikasi; perbaikan ini berdasarkan konfigurasi output adapter dan error yang dilaporkan pengguna.
+
+## Penanda pilihan alokasi
+
+Tombol 70% atau 30% terpilih menggunakan latar biru, tanda centang, dan `aria-pressed`. Label di bawahnya membedakan Belum dipilih, Semua ke tahap 70%, Semua ke tahap 30%, Dibagi ke dua tahap, dan Jumlah tidak valid. Status mengikuti jumlah item saat ini, termasuk perubahan input manual. QA browser pada campus-004: memilih 70%, berpindah ke 30%, lalu membagi 2 paket menjadi 1+1 menghasilkan tampilan dan status aksesibilitas yang sesuai. Tidak menyimpan perubahan data QA; enam kampus kosong tetap disisakan.
+
+## Validasi jumlah bulat
+
+Volume sumber bulat (misalnya 2 paket) hanya menerima alokasi bulat (0, 1, 2). Input menggunakan step 1 dan penanda tidak valid; validasi yang sama digunakan saat simpan, pengajuan, dan persetujuan. Data pecahan lama tidak dibulatkan diam-diam, tetapi harus diperbaiki kampus. QA browser perubahan ini belum selesai: tool melaporkan dialog pemilih file masih terbuka. Tes terminal tidak dijalankan.

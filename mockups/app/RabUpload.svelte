@@ -1,4 +1,4 @@
-﻿<script lang="ts">
+<script lang="ts">
  import { onMount } from 'svelte';
  import { goto } from '$app/navigation';
  import { dataService } from '$lib/data/service';
@@ -6,6 +6,7 @@
  import { formatSen } from '$lib/pencairan';
  import type { RabOverview } from '$lib/rab';
  import { formatVolume } from '$lib/rab';
+ import { validQuantity } from '../rab/model';
  let {campusId,kind,admin,onloaded}:{campusId:string;kind:string;admin:boolean;onloaded:()=>void}=$props();
  let data=$state<RabOverview|null>(null),error=$state(''),busy=$state(false),replace=$state(false),confirmed=$state(false),success=$state(false);
  const v=$derived(data?.version),editable=$derived(!admin&&(!v||v.status==='draf'));
@@ -14,7 +15,7 @@
  const allocated=$derived(items.filter(l=>quantities[l.id]!==null&&quantities[l.id]!==undefined).length);
  const first=$derived(items.reduce((sum,l)=>sum+Math.round((quantities[l.id]??0)*l.unitPriceSen),0));
  const second=$derived(items.reduce((sum,l)=>sum+(quantities[l.id]==null?0:l.amountSen-Math.round(quantities[l.id]!*l.unitPriceSen)),0));
- const invalid=$derived(items.some(l=>quantities[l.id]!=null&&(!Number.isFinite(quantities[l.id])||quantities[l.id]!<0||quantities[l.id]!>l.volume)));
+ const invalid=$derived(items.some(l=>quantities[l.id]!=null&&!validQuantity(quantities[l.id],l.volume)));
  const ready=$derived(allocated===items.length&&items.length>0&&!invalid&&first>0&&first<=(data?.summary.limitSen||0));
  function sync(){quantities=Object.fromEntries((data?.version?.lines||[]).filter(l=>l.level===4).map(l=>[l.id,typeof l.flags?.term1Volume==='number'?l.flags.term1Volume:null]));dirty=false;}
  function setQuantity(id:string,q:number|null){quantities[id]=q;dirty=true;confirmed=false;error='';}
@@ -43,11 +44,11 @@
     <div class="overflow-x-auto rounded-lg border border-slate-200"><table class="w-full min-w-[850px] text-left text-sm" aria-label="Pembagian jumlah item RAB"><thead class="bg-slate-50 text-xs text-slate-500"><tr><th class="p-2">Item / harga satuan</th><th class="p-2">Jumlah 100%</th><th class="p-2">Pilihan tahap</th><th class="p-2">Jumlah 70%</th><th class="p-2">Jumlah 30%</th><th class="p-2">Nominal 70% / 30%</th></tr></thead><tbody>
     {#each items as line (line.id)}
      {@const q=quantities[line.id]}
-     <tr class="border-t border-slate-200"><td class="p-2"><b>{line.code} {line.title}</b><small class="block text-slate-500">{formatSen(line.unitPriceSen)} / {line.unit}</small></td><td class="p-2">{formatVolume(line.volume)} {line.unit}</td><td class="p-2"><div class="flex gap-1"><button class={btn} disabled={busy} onclick={()=>setQuantity(line.id,line.volume)} aria-label={`Semua ke 70%: ${line.title}`}>70%</button><button class={btn} disabled={busy} onclick={()=>setQuantity(line.id,0)} aria-label={`Semua ke 30%: ${line.title}`}>30%</button></div></td><td class="p-2"><input class="w-24 rounded border border-slate-300 p-2" type="number" min="0" max={line.volume} step="0.0001" value={q??''} placeholder="Isi jumlah" aria-label={`Jumlah 70%: ${line.title}`} disabled={busy} oninput={e=>setQuantity(line.id,e.currentTarget.value===''?null:e.currentTarget.valueAsNumber)}/></td><td class="p-2">{q==null?'Belum dipilih':formatVolume(Math.round((line.volume-q)*10000)/10000)} {q==null?'':line.unit}</td><td class="p-2 tabular-nums">{q==null?'Belum dipilih':formatSen(Math.round(q*line.unitPriceSen))}<span class="block text-slate-500">{q==null?'':formatSen(line.amountSen-Math.round(q*line.unitPriceSen))}</span></td></tr>
+     <tr class="border-t border-slate-200"><td class="p-2"><b>{line.code} {line.title}</b><small class="block text-slate-500">{formatSen(line.unitPriceSen)} / {line.unit}</small></td><td class="p-2">{formatVolume(line.volume)} {line.unit}</td><td class="p-2"><div class="flex gap-1"><button class={q===line.volume ? blue : btn} aria-pressed={q===line.volume} disabled={busy} onclick={()=>setQuantity(line.id,line.volume)} aria-label={`Semua ke 70%: ${line.title}`}>{q===line.volume ? '✓ 70%' : '70%'}</button><button class={q===0 ? blue : btn} aria-pressed={q===0} disabled={busy} onclick={()=>setQuantity(line.id,0)} aria-label={`Semua ke 30%: ${line.title}`}>{q===0 ? '✓ 30%' : '30%'}</button></div><span class="mt-1 block text-xs font-medium text-slate-600" aria-live="polite">{q==null ? 'Belum dipilih' : q===line.volume ? 'Semua ke tahap 70%' : q===0 ? 'Semua ke tahap 30%' : validQuantity(q,line.volume) ? 'Dibagi ke dua tahap' : 'Jumlah tidak valid'}</span></td><td class="p-2"><input class="w-24 rounded border border-slate-300 p-2" type="number" min="0" max={line.volume} step={Number.isInteger(line.volume) ? 1 : 0.0001} aria-invalid={q!=null&&!validQuantity(q,line.volume)} value={q??''} placeholder="Isi jumlah" aria-label={`Jumlah 70%: ${line.title}`} disabled={busy} oninput={e=>setQuantity(line.id,e.currentTarget.value===''?null:e.currentTarget.valueAsNumber)}/></td><td class="p-2">{q==null?'Belum dipilih':formatVolume(Math.round((line.volume-q)*10000)/10000)} {q==null?'':line.unit}</td><td class="p-2 tabular-nums">{q==null?'Belum dipilih':formatSen(Math.round(q*line.unitPriceSen))}<span class="block text-slate-500">{q==null?'':formatSen(line.amountSen-Math.round(q*line.unitPriceSen))}</span></td></tr>
     {/each}
     </tbody></table></div>
     <div class="rounded-lg bg-slate-50 p-3" aria-live="polite">{allocated} dari {items.length} item dialokasikan · Tahap 70%: <b>{formatSen(first)}</b> / batas {formatSen(data?.summary.limitSen||0)} · Tahap 30%: <b>{formatSen(second)}</b>{#if dirty}<p>Perubahan belum disimpan.</p>{/if}</div>
-    {#if invalid}<p class="text-red-700" role="alert">Jumlah harus antara 0 dan jumlah asli item.</p>{:else if first>(data?.summary.limitSen||0)}<p class="text-red-700" role="alert">Total tahap 70% melebihi batas sebesar {formatSen(first-(data?.summary.limitSen||0))}. Kurangi jumlah item pada tahap ini.</p>{/if}
+    {#if invalid}<p class="text-red-700" role="alert">Jumlah harus antara 0 dan jumlah asli item. Item dengan jumlah bulat wajib dialokasikan dalam bilangan bulat (contoh: 0, 1, atau 2 paket).</p>{:else if first>(data?.summary.limitSen||0)}<p class="text-red-700" role="alert">Total tahap 70% melebihi batas sebesar {formatSen(first-(data?.summary.limitSen||0))}. Kurangi jumlah item pada tahap ini.</p>{/if}
     <div class="flex flex-wrap gap-3"><button class={btn} disabled={busy||invalid||!dirty} onclick={()=>save()}>Simpan pembagian</button><button class={blue} disabled={busy||!ready} onclick={()=>save(true)}>Simpan & periksa RAB 70%</button><button class={btn} disabled={busy} onclick={()=>replace=true}>Ganti file</button></div>
    {:else if kind==='rab'}<button class={blue+' justify-self-start'} onclick={()=>goto('/campus/pencairan?butir=rab_tahap2')}>Lanjut: periksa RAB 30%</button>
    {:else}<label class="flex items-center gap-2"><input type="checkbox" bind:checked={confirmed}/>Saya sudah memeriksa ketiga RAB.</label><button class={blue+' justify-self-start'} disabled={!confirmed||busy} onclick={submit}>Ajukan RAB ke PF</button>{/if}

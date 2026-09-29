@@ -1,8 +1,8 @@
-﻿import { transaction } from '../../src/lib/data/demo/store';
+import { transaction } from '../../src/lib/data/demo/store';
 import { samplePdf } from '../../src/lib/data/demo/fixtures/pdf';
 import { KINDS, KIND_LABEL, assess, isRabKind, parseSen } from '../../src/lib/pencairan';
 import { arrange, type LineInput } from '../../src/lib/rab';
-import { BUDGET, LIMIT, sampleItems, readExcel } from '../rab/model';
+import { BUDGET, LIMIT, sampleItems, readExcel, validQuantity } from '../rab/model';
 import type { AppSession } from '../../src/lib/types';
 const now=()=>new Date().toISOString(),id=()=>crypto.randomUUID();
 const clone=<T,>(v:T):T=>structuredClone(v);
@@ -16,7 +16,7 @@ export function itemLines(items:ReturnType<typeof sampleItems>) {
 function lines(input:LineInput[]) {return arrange(input).map(n=>({id:n.key,parentId:n.parentKey,level:n.level,order:n.order,code:n.code,title:n.title,calculation:n.calculation,volume:n.volume,unit:n.unit,unitPriceSen:n.unitPriceSen,amountSen:n.sumSen,term1Sen:n.sumTerm1Sen,term2Sen:n.sumTerm2Sen,flags:n.flags||{}}));}
 function totals(v:any){const roots=v.lines.filter((l:any)=>l.level===1);v.totalSen=roots.reduce((s:number,l:any)=>s+l.amountSen,0);v.term1Sen=roots.reduce((s:number,l:any)=>s+l.term1Sen,0);v.term2Sen=roots.reduce((s:number,l:any)=>s+l.term2Sen,0);return v;}
 function version(number:number,items:any[]=sampleItems()) {return totals({id:id(),number,status:'draf',source:'import',share:'gabungan',sourceFile:'RAB_CONTOH.xlsx',note:'Data dummy',approvedByName:'',approvedAt:'',created:now(),updated:now(),active:false,lines:itemLines(items)});}
-function check(v:any){if(!v||!v.lines.length)throw Error('Isi RAB terlebih dahulu.');if(v.totalSen!==BUDGET||v.term1Sen>LIMIT||v.term1Sen<=0||v.term1Sen+v.term2Sen!==v.totalSen||v.lines.some((l:any)=>l.term1Sen<0||l.term2Sen<0))throw Error('Total RAB harus sesuai SK dan alokasi Tahap 1 maksimal 70%.');}
+function check(v:any){if(!v||!v.lines.length)throw Error('Isi RAB terlebih dahulu.');if(v.quantityAllocation&&v.lines.some((l:any)=>l.level===4&&!validQuantity(l.flags?.term1Volume,l.volume)))throw Error('Periksa pembagian jumlah: item dengan volume bulat harus dibagi dalam bilangan bulat.');if(v.totalSen!==BUDGET||v.term1Sen>LIMIT||v.term1Sen<=0||v.term1Sen+v.term2Sen!==v.totalSen||v.lines.some((l:any)=>l.term1Sen<0||l.term2Sen<0))throw Error('Total RAB harus sesuai SK dan alokasi Tahap 1 maksimal 70%.');}
 function documentVersion(kind:string,name:string,number=1){return {id:id(),number,originalName:name,size:1500,mime:'application/pdf',origin:'upload',uploadedByName:'Kampus Dummy',created:now(),note:'Dokumen simulasi',signed:false,scan:null,fields:{amountSen:LIMIT,name:'Rektor Dummy',bankName:'Bank Contoh',accountName:'Kampus Dummy',accountNumber:'0000000000'},fieldsByName:'Admin Dummy',fieldsAt:now(),fieldsCheckedByName:'Admin Dummy',fieldsCheckedAt:now(),fieldsSamePerson:false,reviews:[]};}
 function init(c:any,index:number){
  const scenario=index%5;
@@ -70,7 +70,7 @@ export function createApi(actor:()=>Promise<AppSession>){
       for(const l of next.lines.filter((l:any)=>l.level===4)){
        const q=body.quantities?.[l.id];
        if(q===null||q===undefined){l.flags={...l.flags,term1Volume:null,term2Volume:null};l.term1Sen=0;l.term2Sen=0;continue;}
-       if(typeof q!=='number'||!Number.isFinite(q)||q<0||q>l.volume||Math.abs(q*10000-Math.round(q*10000))>0.00001)throw Error('Jumlah alokasi harus antara 0 dan volume item, maksimal 4 desimal.');
+       if(!validQuantity(q,l.volume))throw Error(`${l.title}: jumlah harus antara 0 dan ${l.volume}${Number.isInteger(l.volume)?' dan berupa bilangan bulat':' dengan maksimal 4 desimal'}.`);
        l.flags={...l.flags,term1Volume:q,term2Volume:Math.round((l.volume-q)*10000)/10000};l.term1Sen=Math.round(q*l.unitPriceSen);l.term2Sen=l.amountSen-l.term1Sen;
       }
       for(const l of [...next.lines].reverse().filter((l:any)=>l.level<4)){const children=next.lines.filter((c:any)=>c.parentId===l.id);l.term1Sen=children.reduce((s:number,c:any)=>s+c.term1Sen,0);l.term2Sen=children.reduce((s:number,c:any)=>s+c.term2Sen,0);}
