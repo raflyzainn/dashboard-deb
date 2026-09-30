@@ -76,7 +76,8 @@
     if (!data) return null;
     if (fullDummy) {
       const rabNeedsRevision = perluRevisi.some(isRabKind);
-      if (rabNeedsRevision || belumAda.some(isRabKind)) return { kind: 'rab_penuh' as Kind, state: rabNeedsRevision ? 'perlu_revisi' : 'belum_ada' };
+      const current = page.url.searchParams.get('butir');
+      if (data.rab?.status === 'draf' || rabNeedsRevision || belumAda.some(isRabKind)) return { kind: data.rab && current && isRabKind(current as Kind) ? current as Kind : 'rab_penuh' as Kind, state: rabNeedsRevision ? 'perlu_revisi' : 'belum_ada' };
     }
     const kind = [...perluRevisi, ...belumAda].find(k => {
       const doc = data!.documents.find(d => d.kind === k);
@@ -161,7 +162,7 @@
   const decisionLabel = $derived(state === 'perlu_revisi' ? DECISION_LABEL[kind].bad : state === 'tidak_perlu' ? 'Tanpa surat kuasa' : DECISION_LABEL[kind].ok);
   /** A surat kuasa counted as not needed because the account holder signs the PKS has no decision to take back. */
   const computedOnly = $derived(state === 'tidak_perlu' && doc?.status !== 'tidak_perlu');
-  const canDecide = $derived(admin && data !== null && (kind === 'sk' || isRab || Boolean(version)));
+  const canDecide = $derived(admin && data !== null && (kind === 'sk' || (isRab ? !fullDummy || data.rab?.status === 'menunggu' : Boolean(version))));
   /** What the campus file really contains, marked after checking the file itself (decision 47). */
   const bukti = $derived.by(() => {
     const p = data?.disbursement.properties || {};
@@ -333,15 +334,16 @@
         {#if perluRevisi.length}<p><strong class="text-amber-900">Perlu revisi ({perluRevisi.length}):</strong> {perluRevisi.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
         {#if menungguPf.length}<p><strong class="text-[#015a9a]">Menunggu PF ({menungguPf.length}):</strong> {menungguPf.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
         {#if data.readiness.missing.length === 0}<p>{data.readiness.phrase}</p>{/if}
-        <p class="text-xs text-slate-500">{fullDummy ? 'Unggah RAB 100%, pilih jumlah tiap item untuk tahap 70% dan 30%, lalu ajukan untuk pemeriksaan PF.' : 'Pilih dokumen untuk melihat berkas dan catatan pemeriksa. SK dan RAB hanya dapat dilihat; unggah RAB belum dibuka.'}</p>
+        <p class="text-xs text-slate-500">{fullDummy ? !data.rab ? 'Mulai dengan satu file RAB 100%. Pembagian kedua tahap dilakukan di aplikasi.' : data.rab.status === 'menunggu' ? 'RAB telah dikirim. Tunggu keputusan PF; pembagian terkunci selama pemeriksaan.' : data.rab.status === 'disetujui' ? 'RAB telah disetujui. Pantau langkah pencairan berikutnya.' : 'Draf RAB belum diajukan. Lengkapi pembagian, periksa kedua tahap, lalu kirim seluruh RAB ke PF.' : 'Pilih dokumen untuk melihat berkas dan catatan pemeriksa. SK dan RAB hanya dapat dilihat; unggah RAB belum dibuka.'}</p>
       </section>
       <section aria-labelledby="timeline-title" class="grid min-w-0 gap-3 rounded-xl border border-slate-200 bg-white p-4">
         <div>
           <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Tahap saat ini</p>
           <h2 id="timeline-title" class="mt-1 font-bold text-slate-900">{campusStages[campusStage - 1]}</h2>
         </div>
-        <div>
-          <ol class="grid gap-0 sm:grid-cols-7" aria-label="Linimasa proses pencairan">
+        <details>
+          <summary class="cursor-pointer text-sm font-semibold text-[#0066B2]">Lihat seluruh proses pencairan</summary>
+          <ol class="mt-3 grid gap-0 sm:grid-cols-7" aria-label="Linimasa proses pencairan">
             {#each campusStages as stage, index}
               <li aria-current={index + 1 === campusStage ? 'step' : undefined} class="relative flex min-h-14 items-center gap-3 text-sm sm:min-h-24 sm:flex-col sm:items-center sm:gap-2">
                 {#if index < campusStages.length - 1}<span aria-hidden="true" class="absolute left-4 top-7 h-14 w-0.5 {index + 1 < campusStage ? 'bg-green-300' : 'bg-slate-200'} sm:bottom-auto sm:left-1/2 sm:top-4 sm:h-0.5 sm:w-full"></span>{/if}
@@ -350,11 +352,11 @@
               </li>
             {/each}
           </ol>
-        </div>
+        </details>
         <div class="grid gap-2 rounded-lg bg-slate-50 p-3 text-sm sm:grid-cols-2">
           <p><strong class="text-slate-900">Yang bertindak:</strong> {nextCampusUpload ? 'Kampus' : data.disbursement.paidAt ? 'Selesai' : 'Pertamina Foundation'}</p>
           <div>
-            <p><strong class="text-slate-900">Langkah selanjutnya:</strong> {#if nextCampusUpload}{fullDummy && data.rab && isRabKind(nextCampusUpload.kind) ? 'Periksa lalu ajukan' : nextCampusUpload.state === 'perlu_revisi' ? 'Kirim revisi' : 'Lengkapi dokumen'} {KIND_SHORT[nextCampusUpload.kind]}{:else if data.disbursement.paidAt}Tidak ada tindakan lagi untuk Tahap 1.{:else if menungguPf.length}Tunggu pemeriksaan PF untuk {menungguPf.map(k => KIND_SHORT[k]).join(', ')}.{:else if data.readiness.lengkap}PF melanjutkan penyelesaian proses.{:else}PF melanjutkan pemeriksaan dokumen.{/if}</p>
+            <p><strong class="text-slate-900">Langkah selanjutnya:</strong> {#if nextCampusUpload}{fullDummy && data.rab && isRabKind(nextCampusUpload.kind) ? kind === 'rab' ? 'Periksa pembagian Tahap 1' : kind === 'rab_tahap2' ? 'Periksa Tahap 2 lalu ajukan seluruh RAB' : 'Lengkapi pembagian jumlah item' : nextCampusUpload.state === 'perlu_revisi' ? 'Kirim revisi' : 'Lengkapi dokumen'} {fullDummy && data.rab && isRabKind(nextCampusUpload.kind) ? '' : KIND_SHORT[nextCampusUpload.kind]}{:else if data.disbursement.paidAt}Tidak ada tindakan lagi untuk Tahap 1.{:else if menungguPf.length}Tunggu pemeriksaan PF untuk {menungguPf.map(k => KIND_SHORT[k]).join(', ')}.{:else if data.readiness.lengkap}PF melanjutkan penyelesaian proses.{:else}PF melanjutkan pemeriksaan dokumen.{/if}</p>
             {#if nextCampusUpload}<a class="mt-1 inline-flex font-semibold text-[#0066B2] hover:underline" href={`/campus/pencairan?butir=${nextCampusUpload.kind}`}>Buka langkah ini <Icon name="arrow" size={14} /></a>{/if}
           </div>
         </div>
@@ -412,9 +414,9 @@
           {#if admin && isItem && kind !== 'sk' && (!isRab || rabTab === 'asli')}
             <label class="cursor-pointer rounded-full border border-dashed border-slate-300 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-[#0066B2] hover:border-[#0066B2]">+ versi baru<input type="file" class="sr-only" bind:this={fileInput} accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.doc,.xlsx,.xls" onchange={(e) => upload((e.currentTarget as HTMLInputElement).files?.[0] || null)} /></label>
           {/if}
-          <span class="ml-auto hidden xl:inline">Nilai SK <b class="tabular-nums text-slate-800">{formatSen(data.summary.amountSen)}</b> · Batas <b class="tabular-nums text-slate-800">{formatSen(data.summary.limitSen)}</b> · Diajukan <b class="tabular-nums text-slate-800">{data.summary.requestedSen ? formatSen(data.summary.requestedSen) : 'belum'}</b></span>
+          {#if !(isRab && fullDummy)}<span class="ml-auto hidden xl:inline">Nilai SK <b class="tabular-nums text-slate-800">{formatSen(data.summary.amountSen)}</b> · Batas <b class="tabular-nums text-slate-800">{formatSen(data.summary.limitSen)}</b> · Diajukan <b class="tabular-nums text-slate-800">{data.summary.requestedSen ? formatSen(data.summary.requestedSen) : 'belum'}</b></span>{/if}
           <span class="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11.5px] font-semibold text-[#015a9a] {'xl:ml-0 ml-auto'}">{data.readiness.done} dari {data.readiness.total}</span>
-          {#if admin && isItem}<button type="button" class="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11.5px] font-bold text-slate-500 hover:border-slate-300" onclick={() => (showLook = !showLook)} aria-label="Yang dilihat" title="Yang dilihat">?</button>{/if}
+          {#if admin && isItem && !(isRab && fullDummy)}<button type="button" class="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11.5px] font-bold text-slate-500 hover:border-slate-300" onclick={() => (showLook = !showLook)} aria-label="Yang dilihat" title="Yang dilihat">?</button>{/if}
           {#if admin}<button type="button" class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300" onclick={() => (showRiwayat = true)}>Riwayat</button>{/if}
         </div>
 
@@ -446,6 +448,7 @@
             {:else}<PembayaranView {campusId} {data} onchange={apply} />{/if}
           </div>
         {:else}
+          {#if !(isRab && fullDummy)}
           <div class="relative min-h-0 min-w-0 overflow-hidden bg-[#e5e9f0]" style={`height:${docHeight}px`}>
             {#if showLook}
               <div class="absolute right-3 top-3 z-10 w-[min(360px,90%)] rounded-xl border border-slate-200 bg-white p-3 text-sm shadow-[0_12px_32px_#0b254522]">
@@ -484,6 +487,8 @@
             {/if}
           </div>
 
+          {/if}
+          {#if admin && isRab && fullDummy && data.rab?.status === 'draf'}<p class="bg-amber-50 px-4 py-3 text-sm text-amber-900">Draf belum diajukan: kampus harus mengajukan versi ini sebelum admin memberi keputusan.</p>{/if}
           {#if admin || kind === 'sk' || spec.some(f => version?.fields?.[f.key] !== null && version?.fields?.[f.key] !== undefined && version?.fields?.[f.key] !== '')}
           <div class="document-review grid gap-2.5 border-t border-slate-200/70 bg-white px-3 py-3">
             {#if kind === 'sk'}
@@ -525,6 +530,14 @@
                 <p><span class="font-bold">Jawaban kampus</span> · versi {answered.version.number} · {answered.version.uploadedByName || 'pengunggah tidak tercatat'} · {full.format(new Date(answered.version.created))}{answered.version.note ? `: ${answered.version.note}` : ''}</p>
               </div>
             {/if}
+            {#if admin && isRab && data.rab}
+              <dl class="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm tabular-nums lg:grid-cols-4" aria-label="Ringkasan nilai sebelum keputusan">
+                <div class="rounded-lg p-2"><dt class="text-xs text-slate-500">Nilai SK</dt><dd class="mt-1 font-bold text-slate-900">{formatSen(data.summary.amountSen)}</dd></div>
+                <div class="rounded-lg p-2 {kind === 'rab_penuh' ? 'bg-blue-100 ring-1 ring-blue-200' : ''}"><dt class="text-xs text-slate-600">Total RAB 100%</dt><dd class="mt-1 font-bold text-slate-900">{formatSen(data.rab.totalSen)}</dd></div>
+                <div class="rounded-lg p-2 {kind === 'rab' ? 'bg-blue-100 ring-1 ring-blue-200' : ''}"><dt class="text-xs text-slate-600">Termin 1 - RAB 70%</dt><dd class="mt-1 font-bold text-slate-900">{formatSen(data.rab.term1Sen)}</dd><dd class="mt-1 text-xs text-slate-500">Batas {formatSen(data.summary.limitSen)}</dd></div>
+                <div class="rounded-lg p-2 {kind === 'rab_tahap2' ? 'bg-blue-100 ring-1 ring-blue-200' : ''}"><dt class="text-xs text-slate-600">Termin 2 - RAB 30%</dt><dd class="mt-1 font-bold text-slate-900">{formatSen(data.rab.term2Sen ?? data.rab.totalSen - data.rab.term1Sen)}</dd><dd class="mt-1 text-xs text-slate-500">Sisa alokasi dari RAB 100%</dd></div>
+              </dl>
+            {/if}
             <div class="review-actions flex flex-wrap items-end gap-2">
               {#if admin && showDecision}
                 <div class="flex w-full flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border px-3.5 py-2.5 {state === 'perlu_revisi' ? 'border-amber-300 bg-amber-50' : 'border-green-200 bg-green-50'}" role="status">
@@ -535,20 +548,22 @@
                     {#if latestNote && !computedOnly && latestNote.trim().toLowerCase() !== decisionLabel.toLowerCase()}<p class="mt-1 whitespace-pre-wrap text-[14px] leading-relaxed text-slate-800">{latestNote}</p>{/if}
                   </div>
                   <div class="flex flex-wrap gap-2">
-                    <button type="button" class="min-h-[38px] rounded-lg border border-slate-300 bg-white px-3.5 text-[13px] font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-40" disabled={busy} onclick={() => (editing = true)}>{computedOnly ? 'Periksa juga' : 'Ubah keputusan'}</button>
-                    {#if !computedOnly}<button type="button" class="min-h-[38px] rounded-lg border border-red-200 bg-white px-3.5 text-[13px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-40" disabled={busy} title="Butir kembali ke Periksa; riwayat tetap tersimpan" onclick={() => void undo()}>Batalkan keputusan</button>{/if}
+                    <button type="button" class="min-h-[44px] rounded-lg border border-slate-300 bg-white px-3.5 text-[13px] font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-40" disabled={busy} onclick={() => (editing = true)}>{computedOnly ? 'Periksa juga' : 'Ubah keputusan'}</button>
+                    {#if !computedOnly}<button type="button" class="min-h-[44px] rounded-lg border border-red-200 bg-white px-3.5 text-[13px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-40" disabled={busy} title="Butir kembali ke Periksa; riwayat tetap tersimpan" onclick={() => void undo()}>Batalkan keputusan</button>{/if}
                   </div>
                 </div>
               {:else if admin}
-                {#if kind === 'rekening'}<label class="grid min-w-0 gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">Nama di bank<input class="min-h-[38px] w-[170px] max-w-full rounded-lg border border-slate-300 px-2 text-[13px] font-medium normal-case tracking-normal text-slate-900" bind:value={bankNameSeen} placeholder="Bila berbeda" /></label>{/if}
-                <label class="grid basis-full gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400 sm:min-w-[220px] sm:flex-1 sm:basis-auto">
+                {#if kind === 'rekening'}<label class="grid min-w-0 gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">Nama di bank<input class="min-h-[44px] w-[170px] max-w-full rounded-lg border border-slate-300 px-2 text-[13px] font-medium normal-case tracking-normal text-slate-900" bind:value={bankNameSeen} placeholder="Bila berbeda" /></label>{/if}
+                <label class="grid w-full min-w-0 gap-1 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">
                   <span>Catatan keputusan{#if doc?.decidedByName}<span class="ml-2 font-medium normal-case tracking-normal text-slate-400">{state === 'perlu_revisi' ? DECISION_LABEL[kind].bad : decided ? DECISION_LABEL[kind].ok : ITEM_STATE_LABEL[state]} · {doc.decidedByName}{doc.decidedAt ? ` · ${time.format(new Date(doc.decidedAt))}` : ''}</span>{/if}</span>
-                  <textarea bind:this={noteInput} rows="2" class="min-h-[46px] w-full rounded-lg border px-3 py-2 text-[14px] font-medium leading-relaxed normal-case tracking-normal text-slate-900 {state === 'perlu_revisi' ? 'border-amber-300 bg-amber-50/40' : 'border-slate-300'}" bind:value={reviewNote} oninput={grow} placeholder={kind === 'sk' ? 'Bila berbeda: nilai yang tercetak di SK' : 'Catatan keputusan: alasan revisi atau keterangan lolos, dikirim ke kampus'}></textarea>
+                  <textarea bind:this={noteInput} rows="2" class="min-h-[64px] w-full rounded-lg border px-3 py-2 text-[14px] font-medium leading-relaxed normal-case tracking-normal text-slate-900 {state === 'perlu_revisi' ? 'border-amber-300 bg-amber-50/40' : 'border-slate-300'}" bind:value={reviewNote} oninput={grow} placeholder={kind === 'sk' ? 'Bila berbeda: nilai yang tercetak di SK' : 'Catatan keputusan: alasan revisi atau keterangan lolos, dikirim ke kampus'}></textarea>
                 </label>
-                {#if DECISION_LABEL[kind].none}<button type="button" class="min-h-[38px] rounded-lg border border-slate-300 bg-white px-3.5 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-40" disabled={busy} onclick={() => decide('none')}>{DECISION_LABEL[kind].none}</button>{/if}
-                <button type="button" class="min-h-[38px] rounded-lg border px-3.5 text-[13px] font-semibold transition disabled:opacity-40 {state === 'perlu_revisi' ? 'border-amber-400 bg-amber-100 text-amber-900' : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50'}" disabled={busy || !canDecide} title={canDecide ? '' : 'Unggah berkas dulu'} onclick={() => decide('bad')}>{DECISION_LABEL[kind].bad}</button>
-                <button type="button" class="min-h-[38px] rounded-lg px-4 text-[13px] font-bold text-white shadow-[0_8px_18px_#15803d33] transition active:scale-[0.98] disabled:opacity-40 {decided ? 'bg-green-800 ring-2 ring-green-300' : 'bg-green-700 hover:bg-green-800'}" disabled={busy || !canDecide} title={canDecide ? 'Enter' : 'Unggah berkas dulu'} onclick={() => decide('ok')}>{decided ? '✓ ' : ''}{DECISION_LABEL[kind].ok}</button>
-                {#if editing}<button type="button" class="min-h-[38px] px-2 text-[13px] font-semibold text-slate-500 hover:underline" onclick={() => (editing = false)}>Tutup</button>{/if}
+                <div class="flex w-full flex-wrap items-center justify-end gap-2">
+                {#if DECISION_LABEL[kind].none}<button type="button" class="min-h-[44px] rounded-lg border border-slate-300 bg-white px-3.5 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-40" disabled={busy} onclick={() => decide('none')}>{DECISION_LABEL[kind].none}</button>{/if}
+                <button type="button" class="min-h-[44px] rounded-lg border px-3.5 text-[13px] font-semibold transition disabled:opacity-40 {state === 'perlu_revisi' ? 'border-amber-400 bg-amber-100 text-amber-900' : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50'}" disabled={busy || !canDecide} title={canDecide ? '' : 'Unggah berkas dulu'} onclick={() => decide('bad')}>{DECISION_LABEL[kind].bad}</button>
+                <button type="button" class="min-h-[44px] rounded-lg px-4 text-[13px] font-bold text-white shadow-[0_8px_18px_#15803d33] transition active:scale-[0.98] disabled:opacity-40 {decided ? 'bg-green-800 ring-2 ring-green-300' : 'bg-green-700 hover:bg-green-800'}" disabled={busy || !canDecide} title={canDecide ? 'Enter' : 'Unggah berkas dulu'} onclick={() => decide('ok')}>{decided ? '✓ ' : ''}{DECISION_LABEL[kind].ok}</button>
+                {#if editing}<button type="button" class="min-h-[44px] px-2 text-[13px] font-semibold text-slate-500 hover:underline" onclick={() => (editing = false)}>Tutup</button>{/if}
+                </div>
               {/if}
             </div>
           </div>
@@ -564,17 +579,19 @@
               {/each}
               {#if !conversation.length}<p class="text-[13px] text-slate-500">Belum ada catatan pada butir ini.</p>{/if}
             </div>
-            <form class="mt-2 flex flex-wrap items-end gap-2" onsubmit={(e) => { e.preventDefault(); void sendNote(); }}>
-              <textarea rows="2" class="min-h-[46px] min-w-[220px] flex-1 rounded-lg border border-slate-300 px-3 py-2 text-[14px] leading-relaxed text-slate-900" bind:value={noteBody} oninput={grow} placeholder={admin ? 'Tulis catatan untuk kampus atau untuk tim' : 'Tulis catatan untuk Pertamina Foundation'} onkeydown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void sendNote(); } }}></textarea>
-              {#if admin}<label class="flex min-h-[38px] items-center gap-1.5 rounded-lg border px-2.5 text-[12.5px] font-semibold {noteInternal ? 'border-amber-300 bg-amber-50 text-amber-900' : 'border-slate-200 text-slate-600'}"><input type="checkbox" bind:checked={noteInternal} />Catatan internal</label>{/if}
-              <button type="submit" class="min-h-[38px] rounded-lg bg-[#0066B2] px-4 text-[13px] font-semibold text-white shadow-[0_8px_18px_#0066b233] hover:bg-[#015a9a] disabled:opacity-40" disabled={busy || !noteBody.trim()}>Kirim</button>
+            <form class="mt-2 grid gap-2" onsubmit={(e) => { e.preventDefault(); void sendNote(); }}>
+              <textarea rows="2" class="min-h-[64px] w-full min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-[14px] leading-relaxed text-slate-900" bind:value={noteBody} oninput={grow} placeholder={admin ? 'Tulis catatan untuk kampus atau untuk tim' : 'Tulis catatan untuk Pertamina Foundation'} onkeydown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void sendNote(); } }}></textarea>
+              <div class="flex flex-wrap items-center justify-end gap-2">
+              {#if admin}<label class="flex min-h-[44px] items-center gap-1.5 rounded-lg border px-2.5 text-[12.5px] font-semibold {noteInternal ? 'border-amber-300 bg-amber-50 text-amber-900' : 'border-slate-200 text-slate-600'}"><input type="checkbox" bind:checked={noteInternal} />Catatan internal</label>{/if}
+              <button type="submit" class="min-h-[44px] rounded-lg bg-[#0066B2] px-4 text-[13px] font-semibold text-white shadow-[0_8px_18px_#0066b233] hover:bg-[#015a9a] disabled:opacity-40" disabled={busy || !noteBody.trim()}>Kirim</button>
+              </div>
             </form>
           </div>
 
         {/if}
       </div>
     </div>
-    {#if isItem}<p class="text-[11.5px] text-slate-400">{KIND_FILE[kind]}{admin ? ' · Enter untuk tombol hijau, Esc kembali ke Tahap 1' : ''}</p>{/if}
+    {#if isItem}<p class="text-[11.5px] text-slate-400">{isRab && fullDummy ? 'Satu RAB 100% dengan pembagian Tahap 1 dan Tahap 2.' : KIND_FILE[kind]}{admin ? ' · Enter untuk tombol hijau, Esc kembali ke Tahap 1' : ''}</p>{/if}
   </div>
   {#if showRiwayat}<RiwayatSheet context={`kampus:${campusId}/pencairan/t1`} title="Riwayat perubahan kampus ini" onclose={() => (showRiwayat = false)} />{/if}
 {/if}

@@ -13,7 +13,7 @@ export interface KartuData {
   disbursement: { id: string; stage: number; requestedSen: number; paidSen: number; paidAt: string; paidRef: string; paidByName: string; properties: Record<string, unknown>; clauseChecked: boolean; templateMode: string };
   documents: Doc[];
   bankCheck: { id: string; bankResult: string; bankNameSeen: string; checkedAt: string; evidence: boolean } | null;
-  rab: { id: string; number: number; status: string; totalSen: number; term1Sen: number } | null;
+  rab: { id: string; number: number; status: string; totalSen: number; term1Sen: number; term2Sen?: number } | null;
   lampiranCount: number;
   checks: Check[];
   readiness: Assessment;

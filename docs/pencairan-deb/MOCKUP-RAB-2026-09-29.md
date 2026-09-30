@@ -76,3 +76,52 @@ Tombol 70% atau 30% terpilih menggunakan latar biru, tanda centang, dan `aria-pr
 ## Validasi jumlah bulat
 
 Volume sumber bulat (misalnya 2 paket) hanya menerima alokasi bulat (0, 1, 2). Input menggunakan step 1 dan penanda tidak valid; validasi yang sama digunakan saat simpan, pengajuan, dan persetujuan. Data pecahan lama tidak dibulatkan diam-diam, tetapi harus diperbaiki kampus. QA browser perubahan ini belum selesai: tool melaporkan dialog pemilih file masih terbuka. Tes terminal tidak dijalankan.
+
+
+## Pembaruan UI/UX lokal ? 30 September 2026
+
+Bagian ini menjadi acuan perilaku terbaru untuk label dan alur RAB di atas. Belum dipublikasikan.
+
+- Label alokasi sekarang **Tahap 1 (maksimal 70%)** dan **Tahap 2 (sisa)**. Tombol **Semua ke Tahap 1/2** mengalokasikan seluruh jumlah; input tetap memungkinkan pembagian 10 unit menjadi 7+3.
+- Kartu item menggantikan tabel input lebar. Ringkasan nominal langsung mengikuti input; pesan kesalahan muncul dekat jumlah. Review kampus/admin menampilkan sumber dan kedua tahap bersama, termasuk alokasi nol.
+- Simpan draf boleh dilakukan saat pembagian belum lengkap. Simpan & periksa hanya aktif setelah lengkap dan valid. Konfirmasi/pengajuan dilakukan setelah pemeriksaan kedua tahap.
+- Perubahan belum disimpan dilindungi dialog saat berpindah, reload, dan keluar akun. Ganti file dapat dibatalkan; file baru memulai alokasi kosong.
+- Draf perbaikan memiliki status dan progres sendiri. Versi yang sebelumnya disetujui tetap ditandai terpisah. Admin baru dapat memutuskan setelah pengajuan; permintaan revisi membuka kembali ketiga RAB.
+- Linimasa panjang dan rincian sumber dapat dibuka saat diperlukan. Petunjuk mengikuti langkah/status aktual.
+- Campus-026 telah dipakai untuk QA ini; daftar kampus kosong sebelumnya merupakan keadaan historis. Lihat [laporan QA ulang](QA-UX-RAB-2026-09-30.md) untuk hasil dan keadaan browser saat penyerahan.
+
+
+## Riwayat draf dan popup perubahan belum disimpan
+
+Pada akun kampus, buka Pencairan Dana > RAB 100% > **Riwayat versi RAB**. Pilihan menampilkan nomor versi, nama file, status, waktu penyimpanan, dan penanda terbaru. Versi yang dipilih tetap terbuka setelah reload.
+
+Versi lama dapat dilihat beserta rincian dan pembagian tersimpannya. Untuk melanjutkan, pilih **Gunakan versi ini sebagai draf terbaru**. Aplikasi membuat salinan dengan pembagian yang sama; seluruh versi sebelumnya tetap tersimpan. Selama versi terbaru menunggu PF, pembuatan draf salinan dinonaktifkan. Gunakan **Kembali ke versi terbaru** untuk kembali mengisi.
+
+Pindah versi, pindah halaman, ganti file, dan keluar akun ketika input belum disimpan memakai popup aplikasi: **Tetap di sini** atau **Buang perubahan**. Tombol tutup dan Escape membatalkan tindakan. Reload/menutup tab tetap memakai dialog bawaan browser karena tampilannya dikendalikan browser.
+
+
+## Rincian sumber RAB 100% pada admin
+
+Perbandingan RAB dan pembagian tetap memakai kartu sebelumnya. Hanya bagian **Lihat rincian RAB 100% dari Excel** pada admin yang memakai tabel ringkas: kode/item, jumlah, harga satuan, dan total sumber. Rincian dibuka sesuai kebutuhan; pencarian nama/kode dan checkbox kelompok kegiatan tersedia di dalamnya. Header dan total tetap terlihat saat area rincian digulir. Filter tidak mengubah total seluruh RAB 100%.
+
+
+## Fokus pemeriksaan tiap butir admin
+
+Pilihan RAB 100%, 70%, dan 30% memiliki judul Sedang memeriksa serta petunjuk berbeda. RAB 100% memeriksa seluruh sumber sesuai SK; RAB 70% memeriksa alokasi Tahap 1 yang maksimal 70% SK; RAB 30% memeriksa sisa Tahap 2. Bagian terkait pada setiap kartu diberi label Sedang diperiksa dan latar biru. Bagian lainnya tetap tersedia sebagai pembanding. Sisa Tahap 2 tidak wajib tepat 30% jika Tahap 1 di bawah batas.
+
+
+## Perbandingan admin terbaru sesuai permintaan lanjutan
+
+Setelah pengguna meminta tabel perbandingan ketiga RAB, area perbandingan admin sekarang memakai satu tabel empat kolom: kode/item/harga satuan, RAB 100%, RAB 70%, dan RAB 30%. Setiap kolom RAB memuat nominal dan jumlah item. Klik butir mengubah judul, petunjuk, serta label Sedang diperiksa pada kolom terkait; dua kolom lain tetap menjadi pembanding. Pencarian hanya memfilter item, tidak mengubah total. Header dan total melekat saat tabel digulir. Rincian sumber RAB 100% tetap pada bagian tersendiri; kartu pengisian/review kampus tidak diubah.
+
+Panel penjelasan Sedang memeriksa di atas ringkasan dihapus atas permintaan pengguna. Fokus pemeriksaan ditunjukkan oleh label pada header tabel.
+
+
+## Jumlah pada data contoh
+
+Enam item bawaan RAB_CONTOH.xlsx sekarang memiliki alokasi jumlah bulat, dengan Tahap 1 Rp14 juta dan Tahap 2 Rp6 juta. Versi contoh lama tanpa quantityAllocation dilengkapi saat layanan mockup dibuka. Perubahan hanya berlaku untuk struktur enam item contoh bawaan, bukan unggahan pengguna. Versi baru dari unggahan tetap dimulai dengan alokasi kosong agar kampus memilih pembagiannya.
+
+
+## Ringkasan nominal dan catatan keputusan
+
+Dekat tombol keputusan admin tersedia nilai SK, total RAB 100%, Termin 1 (RAB 70%) beserta batasnya, dan Termin 2 (RAB 30%) dari versi yang sedang diajukan. Nilai terkait butir dipilih diberi penanda. Kotak catatan keputusan dan percakapan memiliki lebar/tinggi awal yang sama; tombol berada pada baris tersendiri dan rata kanan.

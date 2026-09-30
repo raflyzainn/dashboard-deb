@@ -60,6 +60,7 @@
     drawer.showModal();
   }
   async function logout() {
+    if (!window.dispatchEvent(new CustomEvent('beforelogout', { cancelable: true, detail: { resume: () => void logout() } }))) return;
     closeDrawer();
     accountMenu = false;
     if (await app.logout()) goto('/login');
