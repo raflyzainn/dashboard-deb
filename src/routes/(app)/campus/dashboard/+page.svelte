@@ -74,6 +74,9 @@
           <p class="mt-2 text-sm leading-6 text-slate-600" role="status">{error === 'Kampus ini tidak termasuk penerima gelombang pertama.' ? 'Belum ada penetapan pencairan untuk kampus Anda.' : 'Progres belum dapat dimuat. Buka Pencairan Dana untuk mencoba lagi.'}</p>
         {:else if !data}
           <p class="mt-2 text-sm leading-6 text-slate-600" role="status">Memuat progres pencairan…</p>
+        {:else if import.meta.env.MODE==='mockup'}
+          <p class="mt-3 text-sm text-slate-600">{(data as any)?.journey?.status==='menunggu'?'Pengajuan sedang diperiksa PF. Anda dapat melihat data dan dokumen yang dikirim.':(data as any)?.journey?.status==='revisi'?'Ada catatan perbaikan dari PF. Lanjutkan pada bagian yang perlu direvisi.':(data as any)?.journey?.status==='selesai'?'Pengajuan disetujui. Lanjutkan dokumen bertanda tangan.':'Lengkapi SK, data program, RAB, administrasi, dan PKS. Draf dapat dilanjutkan kapan saja.'}</p>
+          <a href="/campus/pencairan" class="mt-4 inline-flex min-h-11 items-center rounded-lg bg-[#0066B2] px-5 py-3 text-sm font-semibold text-white">{(data as any)?.journey?.status==='menunggu'?'Lihat pengajuan':(data as any)?.journey?.status==='revisi'?'Perbaiki pengajuan':(data as any)?.journey?'Lanjutkan pengajuan':'Mulai pengajuan'}</a>
         {:else if uploadActions.length}
           <p class="mt-2 text-sm leading-6 text-slate-600">Selesaikan revisi lebih dulu, lalu lengkapi dokumen yang belum diunggah.</p>
         {:else if data.readiness.state === 'dibayar'}

@@ -13,36 +13,47 @@
   let zoom = $state(1);
   let sheets = $state<{ name: string; html: string; limited: boolean }[]>([]);
   let sheet = $state(0);
+  let renderGeneration = 0;
+  let nativeSource = $state('');
 
   async function render() {
     if (!container) return;
+    const host = container, source = src, type = kind, generation = ++renderGeneration;
     loading = true; error = ''; sheets = [];
-    container.innerHTML = '';
+    host.innerHTML = '';
     try {
-      const response = await fetch(src, { cache: 'no-store' });
+      const response = await fetch(source, { cache: 'no-store' });
+      if (generation !== renderGeneration) return;
       if (!response.ok) throw new Error('Berkas belum dapat dibuka.');
-      if (kind === 'docx') {
+      if (type === 'pdf' || type === 'image') {
+        const blob = await response.blob();
+        if (generation !== renderGeneration) return;
+        nativeSource = URL.createObjectURL(blob);
+      } else if (type === 'docx') {
         const { renderAsync } = await import('docx-preview');
-        await renderAsync(await response.blob(), container, undefined, { className: 'docx', inWrapper: true, ignoreWidth: false, breakPages: true, useBase64URL: true });
+        if (generation !== renderGeneration) return;
+        await renderAsync(await response.blob(), host, undefined, { className: 'docx', inWrapper: true, ignoreWidth: false, breakPages: true, useBase64URL: true });
+        if (generation !== renderGeneration) return;
         // A Word page is about 816px wide; on a narrow screen start zoomed out so the whole page shows.
-        const pageWidth = container.querySelector<HTMLElement>('.docx')?.offsetWidth || 816;
-        const available = container.parentElement?.clientWidth || container.clientWidth;
+        const pageWidth = host.querySelector<HTMLElement>('.docx')?.offsetWidth || 816;
+        const available = host.parentElement?.clientWidth || host.clientWidth;
         if (available && pageWidth > available) zoom = Math.max(0.4, Math.floor(((available - 16) / pageWidth) * 100) / 100);
-      } else if (kind === 'xlsx') {
+      } else if (type === 'xlsx') {
         const XLSX = await import('xlsx');
         const { excelSheetPreview } = await import('$lib/excel-preview');
         const book = XLSX.read(await response.arrayBuffer(), { type: 'array', cellStyles: false, sheetRows: 500 });
+        if (generation !== renderGeneration) return;
         sheets = book.SheetNames.map(sheetName => ({ name: sheetName, ...excelSheetPreview(book.Sheets[sheetName]) }));
         sheet = 0;
       }
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Berkas belum dapat dibuka.';
-    } finally { loading = false; }
+      if (generation === renderGeneration) error = e instanceof Error ? e.message : 'Berkas belum dapat dibuka.';
+    } finally { if (generation === renderGeneration) loading = false; }
   }
   $effect(() => {
     const current = src + kind;
-    if (kind === 'docx' || kind === 'xlsx') untrack(() => { void render(); });
-    return () => { void current; };
+    if (kind !== 'other') untrack(() => { void render(); });
+    return () => { void current; renderGeneration++; if (nativeSource) URL.revokeObjectURL(nativeSource); nativeSource = ''; };
   });
 </script>
 
@@ -60,9 +71,9 @@
   </div>
   <div class="relative min-h-0 flex-1 overflow-auto">
     {#if kind === 'pdf'}
-      <iframe title={name} src={src} class="h-full w-full border-0 bg-white"></iframe>
+      {#if nativeSource}<iframe title={name} src={nativeSource} class="h-full w-full border-0 bg-white"></iframe>{/if}
     {:else if kind === 'image'}
-      <div class="flex min-h-full items-start justify-center p-4"><img src={src} alt={name} style={`transform:scale(${zoom});transform-origin:top center`} class="max-w-full rounded shadow" /></div>
+      {#if nativeSource}<div class="flex min-h-full items-start justify-center p-4"><img src={nativeSource} alt={name} style={`transform:scale(${zoom});transform-origin:top center`} class="max-w-full rounded shadow" /></div>{/if}
     {:else if kind === 'xlsx'}
       {#if sheets.length > 1}
         <div class="sticky top-0 z-10 flex gap-1 overflow-x-auto border-b border-slate-200 bg-white px-2 py-1">

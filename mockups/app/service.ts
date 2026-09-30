@@ -42,7 +42,7 @@ export function createFullDemoService() {
     const blob = await api.blob(url.pathname + url.search);
     const href = URL.createObjectURL(blob);
     if (anchor.target === '_blank') window.open(href, '_blank', 'noopener');
-    else { const link = document.createElement('a'); link.href = href; link.download = 'Dokumen_DUMMY.pdf'; link.click(); }
+    else { const link = document.createElement('a'); link.href = href; link.download = anchor.download || (blob.type.includes('wordprocessingml') ? 'Dokumen_DUMMY.docx' : blob.type.startsWith('image/') ? 'Dokumen_DUMMY.' + blob.type.split('/')[1] : 'Dokumen_DUMMY.pdf'); link.click(); }
     setTimeout(() => URL.revokeObjectURL(href), 60000);
    } catch (error) { window.alert(error instanceof Error ? error.message : 'Berkas dummy belum tersedia.'); }
   };

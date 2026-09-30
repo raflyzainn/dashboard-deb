@@ -146,3 +146,41 @@ Editor admin sekarang mengikuti butir terpilih: RAB 100% membuka jumlah awal/har
 
 
 Saat mode edit, Reset ke awal memulihkan seluruh input ke versi tersimpan yang sedang dibuka, tanpa menyimpan atau membuat versi baru. Mode edit tetap terbuka. Tombol ini tidak mengembalikan koreksi yang sudah tersimpan ke unggahan Excel pertama.
+
+## Alur pengajuan kampus dan mail merge (30 September 2026)
+
+Perubahan ini masih lokal dan memakai penyimpanan dummy browser. Alur kampus: SK → Data Program → Pengajuan RAB → Administrasi → PKS → Ringkasan. Pengguna dapat menyimpan draf dan melanjutkan bagian terakhir. Pengajuan dikirim satu kali dari ringkasan setelah data dan dokumen siap.
+
+- RAB memiliki empat langkah: unggah Excel, periksa tabel RAB 100%, tentukan jumlah Termin 1 maksimal 70% nilai SK, lalu periksa Termin 2 dari sisa jumlah. Riwayat file/versi tetap tersedia. Volume sumber bulat tetap dibagi dengan bilangan bulat.
+- Administrasi menampung rekening, bukti rekening, kop surat PNG/JPG, penandatangan, serta nomor/tanggal surat. Rekening pihak yang diberi kuasa mewajibkan identitas pemberi/penerima dan unggahan surat kuasa. Berkas administrasi dibatasi 2 MB.
+- PKS memakai data program, administrasi, dan pembagian RAB. Tombol Siapkan semua dokumen membuat PKS, permohonan, invois, dan kuitansi dari template DOCX yang sudah ada. Pratinjau dan unduhan memuat data pengajuan; persentase mengikuti nominal aktual, termasuk pembagian di bawah 70%. Tahun contoh mengikuti SK dummy 2026.
+- Perubahan sumber menandai dokumen perlu dibuat ulang. Riwayat versi dan snapshot pengajuan dipertahankan. Saat menunggu PF, isian terkunci. Revisi admin membuka kembali bagian terkait; koreksi RAB admin juga mengharuskan dokumen diperbarui dan paket diajukan ulang.
+- Setelah semua butir sesuai, kampus mengunduh dokumen final simulasi tanpa penanda DRAF, lalu mengunggah hasil tanda tangan. Berkas bertanda tangan yang diterima tidak dapat diganti lewat formulir kampus.
+
+Sesuai arahan terakhir pengguna, susunan header/progres dan gaya tombol lama dipertahankan. Nilai SK ditambahkan pada bagian progres kampus. Daftar langkah kampus memakai gaya butir lama; daftar butir admin dan tabel perbandingan RAB tetap. Panel besar tambahan Pengajuan kampus pada admin dihapus. Metadata dokumen pengajuan mengikuti data sumber kampus dan tidak diedit terpisah pada admin.
+
+Backend produksi, pembayaran, dan integrasi surat resmi tidak diubah oleh alur mockup ini.
+
+### Pelengkapan poin rapat 2–14 dan tabel kampus
+
+Poin 1 tetap memakai urutan SK, Data Program, lalu RAB sesuai instruksi pengguna. Poin 15–16 belum dikerjakan. Implementasi berikut berlaku pada mockup lokal:
+
+- Tiga unduhan Excel terpisah: RAB penuh, Termin 1, dan Termin 2. Jumlah dan nominal mengikuti alokasi tersimpan; unduhan pembagian terkunci saat input belum disimpan atau belum lengkap. Tombol unduh memakai teks Indonesia dan ikon unduh di sebelah kanan.
+- Tanggal PKS untuk draf baru/revisi ditetapkan 17 Juni 2026. Tanggal permohonan, invoice, kuitansi, dan surat kuasa harus setelah tanggal tersebut. Paket historis yang sudah menunggu/disetujui tidak ditulis ulang diam-diam. Metadata tanggal SK contoh menjadi 1 Juni 2026.
+- PKS menjelaskan pembagian field kampus, PF, otomatis, dan tetap. Nomor PKS PF diubah admin melalui bagian ringkas dalam panel PKS; identitas penandatangan PF memakai pengaturan program yang ada. Perubahan data PF menandai dokumen terkait perlu diperbarui. Kampus memakai satu perwakilan penandatangan.
+- PKS, permohonan, invoice, dan kuitansi memakai data pengajuan yang sama serta kop kampus. Persentase PKS mengikuti pembagian aktual, termasuk 30%/70%. Rekening universitas menghilangkan kebutuhan dan penyebutan lampiran surat kuasa pada dokumen yang relevan.
+- Rekening kuasa menyediakan template DOCX terisi untuk diunduh, ditandatangani, lalu diunggah. Template surat kuasa ini contoh simulasi, bukan template resmi PF yang telah disahkan. Perubahan identitas/rekening/tanggal terkait membuat unggahan kuasa lama perlu diperbarui.
+- Panduan dan checklist tersimpan per dokumen mencakup dua rangkap PKS, meterai, tanda tangan, tanggal, dan lampiran. Checklist merupakan persiapan dokumen, bukan pengganti keputusan PF.
+- Rincian Excel yang dapat dibuka/tutup memakai tabel kode, uraian, jumlah, satuan, harga satuan, dan total; tersedia pencarian serta pilihan kelompok kegiatan.
+- Sesuai pembatalan revisi tabel oleh pengguna, pembagian dan perbandingan termin kampus kembali memakai kartu per item. Termin 1 dapat diubah pada kartu; Termin 2 dihitung dari sisa. Tabel perbandingan admin tetap tersedia. Rincian Excel yang dapat dibuka/tutup tetap berbentuk tabel.
+- Langkah RAB di atas dapat diklik untuk kembali memeriksa tahap sebelumnya. Tombol bawah memakai Kembali dan Lanjut. Lanjut dari Termin 1 menyimpan pembagian sebelum membuka Termin 2; kembali ke unggah tanpa memilih file tidak menghapus draf. Perubahan belum tersimpan tetap meminta konfirmasi saat hendak dibuang.
+
+
+### Pagination kartu RAB kampus
+
+Pembagian Termin 1 dan perbandingan Termin 2 menampilkan lima item per halaman. Jika item lebih dari lima, navigasi Sebelumnya/Berikutnya tersedia di atas dan bawah daftar, dengan rentang item dan nomor halaman. Pindah halaman mempertahankan input tanpa menyimpan otomatis. Total, status kelengkapan, dan validasi tetap menghitung seluruh item, termasuk halaman lain. Kembali ke tahap atau versi lain memulai daftar dari halaman pertama.
+
+
+### Simpan draf otomatis
+
+Pembagian Termin 1 disimpan otomatis 800 ms setelah perubahan terakhir. Tombol simpan di tengah navigasi dihapus; Kembali dan Lanjut tetap di sisi kiri/kanan. Snackbar Draf RAB tersimpan muncul selama tiga detik setelah penyimpanan berhasil, dapat ditutup, dan hilang saat pengguna mulai mengubah input lagi. Jumlah invalid tidak disimpan. Jika penyimpanan gagal, input dipertahankan dan tersedia Coba simpan lagi. Lanjut menyimpan perubahan yang masih tertunda sebelum berpindah; jika sudah tersimpan, tidak membuat pembaruan tambahan. Autosave tidak mengubah halaman pagination.
