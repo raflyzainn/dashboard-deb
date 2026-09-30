@@ -137,3 +137,12 @@ Penyimpanan membuat satu versi baru untuk seluruh perubahan, mempertahankan arsi
 ## Ringkasan perhatian per kampus
 
 Panel Mode edit RAB dan input alasan perubahan dihapus atas arahan pengguna. Tombol Simpan perubahan dan Batal tetap tersedia saat edit. Ringkasan Yang perlu diperhatikan menampilkan nama kampus dan kondisi RAB yang sebenarnya: belum diunggah, item/pembagian belum lengkap, selisih total dengan SK, Tahap 1 melebihi batas, status draf, atau data lengkap yang siap diperiksa. Ringkasan berubah mengikuti input saat edit; tidak membuat kekurangan fiktif hanya agar tiap kampus berbeda. Catatan koreksi/nama admin tetap disimpan otomatis dalam versi baru.
+
+
+Jumlah awal pada editor admin mengikuti jenis volume sebelum koreksi: item dengan volume bulat hanya menerima bilangan bulat positif, termasuk validasi layanan mockup. Input memakai step 1. Item sumber yang memang memiliki volume pecahan tetap mendukung maksimal empat desimal.
+
+
+Editor admin sekarang mengikuti butir terpilih: RAB 100% membuka jumlah awal/harga satuan; RAB 70% membuka jumlah Tahap 1; RAB 30% membuka jumlah Tahap 2. Kolom lain terkunci dan nilai tahap pasangannya mengikuti sisa. Layanan koreksi juga menolak perubahan pada kolom yang terkunci. Tombol Sesuai dan shortcut Enter terkunci jika total tidak sesuai SK, Tahap 1 melampaui batas/tidak positif, atau total kedua tahap tidak sesuai. Peringatan merah muncul dekat ringkasan keputusan; Perlu revisi tetap tersedia.
+
+
+Saat mode edit, Reset ke awal memulihkan seluruh input ke versi tersimpan yang sedang dibuka, tanpa menyimpan atau membuat versi baru. Mode edit tetap terbuka. Tombol ini tidak mengembalikan koreksi yang sudah tersimpan ke unggahan Excel pertama.

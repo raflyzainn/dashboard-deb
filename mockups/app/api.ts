@@ -2,7 +2,7 @@ import { transaction } from '../../src/lib/data/demo/store';
 import { samplePdf } from '../../src/lib/data/demo/fixtures/pdf';
 import { KINDS, KIND_LABEL, assess, isRabKind, parseSen } from '../../src/lib/pencairan';
 import { arrange, type LineInput } from '../../src/lib/rab';
-import { BUDGET, LIMIT, sampleItems, readExcel, validQuantity } from '../rab/model';
+import { BUDGET, LIMIT, sampleItems, readExcel, validQuantity, validEditedVolume } from '../rab/model';
 import type { AppSession } from '../../src/lib/types';
 const now=()=>new Date().toISOString(),id=()=>crypto.randomUUID();
 const clone=<T,>(v:T):T=>structuredClone(v);
@@ -76,13 +76,15 @@ export function createApi(actor:()=>Promise<AppSession>){
      if(parts[6]==='correction'){
       admin();if(method!=='POST')throw Error('Gunakan POST untuk koreksi.');
       if(r.payment.paidAt)throw Error('RAB yang sudah dibayar tidak dapat diubah.');
+      if(!rabKinds.includes(body.kind))throw Error('Pilih kolom RAB yang akan diedit.');
       const leaves=v.lines.filter((l:any)=>l.level===4);
       if(!Array.isArray(body.items)||body.items.length!==leaves.length||new Set(body.items.map((i:any)=>i.lineId)).size!==leaves.length)throw Error('Kirim seluruh item RAB tanpa duplikasi.');
       const next={...clone(v),id:id(),number:r.versions.length+1,status:v.status==='draf'?'draf':'menunggu',active:false,approvedAt:'',approvedByName:'',created:now(),updated:now(),note:`Koreksi admin ${user.name}: ${body.note?.trim()||'Jumlah, harga satuan, atau pembagian diperbarui melalui tabel RAB.'}`};
       for(const input of body.items){
        const changed=next.lines.find((l:any)=>l.id===input.lineId&&l.level===4);
        const {volume,unitPriceSen,term1Volume}=input;
-       if(!changed||typeof volume!=='number'||volume<=0||!validQuantity(volume,volume)||!Number.isSafeInteger(unitPriceSen)||unitPriceSen<=0||!Number.isSafeInteger(Math.round(volume*unitPriceSen))||!validQuantity(term1Volume,volume))throw Error('Isi jumlah positif, harga satuan positif, dan pembagian jumlah yang valid.');
+       if(!changed||!validEditedVolume(volume,changed.volume)||!Number.isSafeInteger(unitPriceSen)||unitPriceSen<=0||!Number.isSafeInteger(Math.round(volume*unitPriceSen))||!validQuantity(term1Volume,volume))throw Error('Isi jumlah positif, harga satuan positif, dan pembagian jumlah yang valid.');
+       if(body.kind!=='rab_penuh'&&(volume!==changed.volume||unitPriceSen!==changed.unitPriceSen)||body.kind==='rab_penuh'&&term1Volume!==changed.flags?.term1Volume)throw Error('Hanya kolom RAB yang dipilih boleh diubah.');
        Object.assign(changed,{volume,unitPriceSen,amountSen:Math.round(volume*unitPriceSen),term1Sen:Math.round(term1Volume*unitPriceSen),term2Sen:Math.round(volume*unitPriceSen)-Math.round(term1Volume*unitPriceSen),flags:{...changed.flags,term1Volume,term2Volume:Math.round((volume-term1Volume)*10000)/10000}});
       }
       next.quantityAllocation=true;

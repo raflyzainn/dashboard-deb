@@ -1,35 +1,42 @@
-// Jalankan melalui tool browser_run_code_unsafe, pada admin RAB mockup belum dibayar.
-// Membuat dua versi koreksi dummy; koreksi kedua mengembalikan nilai awal.
-async (page) => {
- const table=page.getByRole('region',{name:'Tabel perbandingan tiga RAB'});
- const title=await table.locator('tbody th p').nth(1).innerText();
- const originalRow=await table.locator('tbody tr').first().innerText();
- const originalTotal=await table.locator('tfoot').innerText();
- const decision=page.getByRole('button',{name:'Sesuai: jadikan nominal Tahap 1',exact:true});
- await page.getByRole('button',{name:'Edit RAB',exact:true}).click();
- if(await page.getByRole('dialog').count())throw Error('Mode edit membuka popup.');
- if(await decision.isEnabled())throw Error('Keputusan masih aktif saat edit.');
- const volume=page.getByLabel('Jumlah awal: '+title,{exact:true});
- const price=page.getByLabel('Harga satuan: '+title,{exact:true});
- const first=page.getByLabel('Jumlah Tahap 1: '+title,{exact:true});
- const values={volume:await volume.inputValue(),price:await price.inputValue(),first:await first.inputValue()};
- await first.fill(String(Number(values.volume)+1));
- if(await page.getByRole('button',{name:'Simpan perubahan',exact:true}).isEnabled())throw Error('Jumlah di atas volume diterima.');
- await volume.fill('2');await first.fill('0.5');
- if(await page.getByRole('button',{name:'Simpan perubahan',exact:true}).isEnabled())throw Error('Pecahan pada volume bulat diterima.');
- await page.getByRole('button',{name:'Batal',exact:true}).click();
- if(await table.locator('tbody tr').first().innerText()!==originalRow)throw Error('Batal mengubah data.');
- for(const restore of [false,true]){
+// Tool browser_run_code_unsafe; admin pada RAB mockup lengkap, belum dibayar.
+// Menguji kunci kolom, warning/larangan persetujuan, lalu memulihkan harga.
+async(page)=>{
+ const base=page.url().split('?')[0];
+ for(const kind of ['rab_penuh','rab','rab_tahap2']){
+  await page.goto(base+'?butir='+kind);
   await page.getByRole('button',{name:'Edit RAB',exact:true}).click();
-  await volume.fill(restore?values.volume:String(Number(values.volume)*2));
-  await price.fill(restore?values.price:String(Number(values.price)/2));
-  await first.fill(restore?values.first:String(Number(values.first)*2));
-  if(await table.locator('tfoot').innerText()!==originalTotal)throw Error('Total preview tidak konsisten.');
-  await page.getByRole('button',{name:'Simpan perubahan',exact:true}).click();
-  await page.getByRole('button',{name:'Edit RAB',exact:true}).waitFor();
-  await page.reload();await page.getByRole('button',{name:'Edit RAB',exact:true}).waitFor();
-  if(await table.locator('tfoot').innerText()!==originalTotal)throw Error('Total tersimpan berbeda.');
+  const price=page.getByLabel('Harga satuan: Panel surya dan baterai',{exact:true});
+  const volume=page.getByLabel('Jumlah awal: Panel surya dan baterai',{exact:true});
+  const first=page.getByLabel('Jumlah Tahap 1: Panel surya dan baterai',{exact:true});
+  if(await price.isEnabled()!==(kind==='rab_penuh')||await volume.isEnabled()!==(kind==='rab_penuh')||await first.isEnabled()!==(kind==='rab'))throw Error('Kunci kolom tidak mengikuti tab.');
+  if(kind==='rab_tahap2'){
+   const second=page.getByLabel('Jumlah Tahap 2: Panel surya dan baterai',{exact:true});
+   if(!await second.isEnabled())throw Error('Tahap 2 terkunci pada tabnya sendiri.');
+   await second.fill('0');
+   if(await first.inputValue()!=='2')throw Error('Tahap 1 tidak mengikuti sisa Tahap 2.');
+  }
+  if(kind==='rab_penuh'){
+   await volume.fill('1.992');
+   if(await page.getByRole('button',{name:'Simpan perubahan',exact:true}).isEnabled())throw Error('Pecahan jumlah awal diterima.');
+  }
+  await page.getByRole('button',{name:'Batal',exact:true}).click();
  }
- if(await table.locator('tbody tr').first().innerText()!==originalRow)throw Error('Nilai awal gagal dipulihkan.');
- return 'Edit langsung tanpa popup; keputusan terkunci; jumlah invalid ditolak; batal, preview, simpan, dan reload sesuai.';
+ await page.goto(base+'?butir=rab_penuh');
+ await page.getByRole('button',{name:'Edit RAB',exact:true}).click();
+ const price=page.getByLabel('Harga satuan: Panel surya dan baterai',{exact:true});
+ const original=await price.inputValue();
+ await price.fill(String(Number(original)+4000000));
+ await page.getByRole('button',{name:'Simpan perubahan',exact:true}).click();
+ await page.getByRole('button',{name:'Edit RAB',exact:true}).waitFor();
+ const approval=page.getByRole('button',{name:'Sesuai dengan Nilai SK',exact:true});
+ await page.getByText(/Total RAB .* belum sesuai nilai SK .* Sesuaikan RAB sebelum menyetujui/).waitFor();
+ if(await approval.isEnabled())throw Error('RAB melebihi SK masih dapat disetujui.');
+ if(!await page.getByRole('button',{name:'Perlu revisi',exact:true}).isEnabled())throw Error('Permintaan revisi ikut terkunci.');
+ await page.getByRole('button',{name:'Edit RAB',exact:true}).click();
+ await price.fill(original);
+ await page.getByRole('button',{name:'Simpan perubahan',exact:true}).click();
+ await page.getByRole('button',{name:'Edit RAB',exact:true}).waitFor();
+ await page.reload();await page.getByRole('button',{name:'Edit RAB',exact:true}).waitFor();
+ if(!await approval.isEnabled())throw Error('Persetujuan tetap terkunci setelah total dipulihkan.');
+ return 'Kunci kolom ketiga tab, jumlah bulat, hitungan sisa Tahap 2, peringatan SK, larangan persetujuan, dan pemulihan setelah reload berhasil.';
 }

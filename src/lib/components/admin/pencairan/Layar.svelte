@@ -163,6 +163,7 @@
   const decisionLabel = $derived(state === 'perlu_revisi' ? DECISION_LABEL[kind].bad : state === 'tidak_perlu' ? 'Tanpa surat kuasa' : DECISION_LABEL[kind].ok);
   /** A surat kuasa counted as not needed because the account holder signs the PKS has no decision to take back. */
   const computedOnly = $derived(state === 'tidak_perlu' && doc?.status !== 'tidak_perlu');
+  const rabApprovalWarning = $derived(isRab && fullDummy && data?.rab ? data.rab.totalSen !== data.summary.amountSen ? `Total RAB ${formatSen(data.rab.totalSen)} belum sesuai nilai SK ${formatSen(data.summary.amountSen)}. Sesuaikan RAB sebelum menyetujui.` : data.rab.term1Sen > data.summary.limitSen ? 'Total Tahap 1 melebihi batas 70% SK. Perbaiki pembagian sebelum menyetujui.' : data.rab.term1Sen <= 0 ? 'Total Tahap 1 harus lebih dari Rp0 sebelum menyetujui.' : data.rab.term1Sen + (data.rab.term2Sen ?? 0) !== data.rab.totalSen ? 'Jumlah nominal kedua tahap belum sama dengan total RAB.' : '' : '');
   const canDecide = $derived(admin && !rabEditing && data !== null && (kind === 'sk' || (isRab ? !fullDummy || data.rab?.status === 'menunggu' : Boolean(version))));
   /** What the campus file really contains, marked after checking the file itself (decision 47). */
   const bukti = $derived.by(() => {
@@ -208,7 +209,7 @@
       const t = e.target as HTMLElement | null;
       const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT');
       if (e.key === 'Escape') { if (showRiwayat || showLook) { showRiwayat = false; showLook = false; } else if (admin) void goto('/admin/pencairan/tahap-1'); }
-      if (e.key === 'Enter' && !typing && admin && isItem && canDecide && !decided && !showDecision) void decide('ok');
+      if (e.key === 'Enter' && !typing && admin && isItem && canDecide && !rabApprovalWarning && !decided && !showDecision) void decide('ok');
     };
     window.addEventListener('resize', fit); window.addEventListener('keydown', onKey);
     return () => { window.removeEventListener('resize', fit); window.removeEventListener('keydown', onKey); };
@@ -249,7 +250,7 @@
   }
   async function decide(which: 'ok' | 'bad' | 'none') {
     if (!data || !admin) return;
-    if (which !== 'none' && !canDecide) return;
+    if (which !== 'none' && !canDecide || which === 'ok' && rabApprovalWarning) return;
     await saveIfChanged();
     const note = reviewNote.trim();
     if (which === 'bad' && !note) { error = kind === 'sk' ? 'Tulis nilai yang tercetak di SK di kolom catatan.' : 'Tulis catatan untuk kampus dulu.'; noteInput?.focus(); return; }
@@ -539,6 +540,7 @@
                 <div class="rounded-lg p-2 {kind === 'rab_tahap2' ? 'bg-blue-100 ring-1 ring-blue-200' : ''}"><dt class="text-xs text-slate-600">Termin 2 - RAB 30%</dt><dd class="mt-1 font-bold text-slate-900">{formatSen(data.rab.term2Sen ?? data.rab.totalSen - data.rab.term1Sen)}</dd><dd class="mt-1 text-xs text-slate-500">Sisa alokasi dari RAB 100%</dd></div>
               </dl>
             {/if}
+            {#if rabApprovalWarning}<p class="mb-3 text-sm font-semibold text-red-700" role="alert">{rabApprovalWarning}</p>{/if}
             <div class="review-actions flex flex-wrap items-end gap-2">
               {#if admin && showDecision}
                 <div class="flex w-full flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border px-3.5 py-2.5 {state === 'perlu_revisi' ? 'border-amber-300 bg-amber-50' : 'border-green-200 bg-green-50'}" role="status">
@@ -562,7 +564,7 @@
                 <div class="flex w-full flex-wrap items-center justify-end gap-2">
                 {#if DECISION_LABEL[kind].none}<button type="button" class="min-h-[44px] rounded-lg border border-slate-300 bg-white px-3.5 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-40" disabled={busy} onclick={() => decide('none')}>{DECISION_LABEL[kind].none}</button>{/if}
                 <button type="button" class="min-h-[44px] rounded-lg border px-3.5 text-[13px] font-semibold transition disabled:opacity-40 {state === 'perlu_revisi' ? 'border-amber-400 bg-amber-100 text-amber-900' : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50'}" disabled={busy || !canDecide} title={canDecide ? '' : 'Unggah berkas dulu'} onclick={() => decide('bad')}>{DECISION_LABEL[kind].bad}</button>
-                <button type="button" class="min-h-[44px] rounded-lg px-4 text-[13px] font-bold text-white shadow-[0_8px_18px_#15803d33] transition active:scale-[0.98] disabled:opacity-40 {decided ? 'bg-green-800 ring-2 ring-green-300' : 'bg-green-700 hover:bg-green-800'}" disabled={busy || !canDecide} title={canDecide ? 'Enter' : 'Unggah berkas dulu'} onclick={() => decide('ok')}>{decided ? '✓ ' : ''}{DECISION_LABEL[kind].ok}</button>
+                <button type="button" class="min-h-[44px] rounded-lg px-4 text-[13px] font-bold text-white shadow-[0_8px_18px_#15803d33] transition active:scale-[0.98] disabled:opacity-40 {decided ? 'bg-green-800 ring-2 ring-green-300' : 'bg-green-700 hover:bg-green-800'}" disabled={busy || !canDecide || Boolean(rabApprovalWarning)} title={rabApprovalWarning || (canDecide ? 'Enter' : 'Unggah berkas dulu')} onclick={() => decide('ok')}>{decided ? '✓ ' : ''}{DECISION_LABEL[kind].ok}</button>
                 {#if editing}<button type="button" class="min-h-[44px] px-2 text-[13px] font-semibold text-slate-500 hover:underline" onclick={() => (editing = false)}>Tutup</button>{/if}
                 </div>
               {/if}
