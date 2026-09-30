@@ -156,10 +156,10 @@ export function createApi(actor:()=>Promise<AppSession>){
     let v=r.versions.find((v:any)=>v.id===parts[5])||r.versions.at(-1);
     if(parts[4]==='import'&&imported){const next=version((v?.number||0)+1,imported);next.sourceFile=file!.name;
      if(body.get('mode')==='preview')return {preview:{rows:imported.length,kind:'penuh',totalSen:next.totalSen,term1Sen:next.term1Sen,term2Sen:next.term2Sen,problems:[],problemCount:0,fileName:file!.name}};
-     if(next.totalSen!==BUDGET)throw Error('Total RAB harus sama dengan nilai SK.');next.quantityAllocation=true;next.lines.forEach((l:any)=>{l.term1Sen=0;l.term2Sen=0;});totals(next);r.versions.push(next);touchJourney(c,r);rabKinds.forEach(k=>{r.documents.find((d:any)=>d.kind===k).status='belum_ada';});s.files[next.id]=file!;return overview(c,r);
+     if(next.totalSen!==BUDGET)throw Error('Total RAB harus sama dengan nilai SK.');next.quantityAllocation=true;next.campusStep=1;next.lines.forEach((l:any)=>{l.term1Sen=0;l.term2Sen=0;});totals(next);r.versions.push(next);touchJourney(c,r);rabKinds.forEach(k=>{r.documents.find((d:any)=>d.kind===k).status='belum_ada';});s.files[next.id]=file!;return overview(c,r);
     }
     if(parts[4]==='versions'&&write){
-     if(!parts[5]){if(r.versions.at(-1)?.status==='menunggu')throw Error('Tunggu keputusan PF sebelum membuat draf baru.');if(body.from&&!r.versions.some((v:any)=>v.id===body.from))throw Error('Versi sumber tidak ditemukan.');const source=r.versions.find((v:any)=>v.id===body.from);const next=source?{...clone(source),id:id(),number:r.versions.length+1,status:'draf',active:false,approvedAt:'',approvedByName:'',note:'',created:now(),updated:now()}:version(r.versions.length+1,[]);r.versions.push(next);touchJourney(c,r);r.documents.filter((d:any)=>isRabKind(d.kind)).forEach((d:any)=>d.status='belum_ada');return overview(c,r);}
+     if(!parts[5]){if(r.versions.at(-1)?.status==='menunggu')throw Error('Tunggu keputusan PF sebelum membuat draf baru.');if(body.from&&!r.versions.some((v:any)=>v.id===body.from))throw Error('Versi sumber tidak ditemukan.');const source=r.versions.find((v:any)=>v.id===body.from);const next=source?{...clone(source),id:id(),number:r.versions.length+1,status:'draf',active:false,approvedAt:'',approvedByName:'',note:'',created:now(),updated:now()}:version(r.versions.length+1,[]);next.campusStep=1;r.versions.push(next);touchJourney(c,r);r.documents.filter((d:any)=>isRabKind(d.kind)).forEach((d:any)=>d.status='belum_ada');return overview(c,r);}
      if(!v||!r.versions.some((version:any)=>version.id===parts[5]))throw Error('Versi tidak ditemukan.');if(v.id!==r.versions.at(-1)?.id)throw Error('Versi lama hanya dapat dilihat. Buat draf terbaru untuk melanjutkan.');
      if(parts[6]==='correction'){
       admin();if(method!=='POST')throw Error('Gunakan POST untuk koreksi.');
@@ -180,6 +180,13 @@ export function createApi(actor:()=>Promise<AppSession>){
       next.lines=lines(next.lines.map((l:any)=>({...l,key:l.id,parentKey:l.parentId})));totals(next);
       r.versions.push(next);touchJourney(c,r);r.documents.filter((d:any)=>isRabKind(d.kind)).forEach((d:any)=>d.status=next.status==='draf'?(r.journey?'perlu_revisi':'belum_ada'):'menunggu_review');
       return overview(c,r,next.id);
+     }
+     if(parts[6]==='progress'){
+      const current=v.campusStep??1,target=body.step;
+      if(method!=='POST'||v.status!=='draf'||!Number.isInteger(target)||target<1||target>3||target>current+1)throw Error('Selesaikan tahap sebelumnya melalui tombol Lanjut.');
+      if(target>=2&&v.totalSen!==BUDGET)throw Error('Total RAB harus sama dengan nilai SK.');
+      if(target===3)check(v);
+      v.campusStep=Math.max(current,target);return overview(c,r,v.id);
      }
      if(parts[6]==='allocation'){
       if(v.status!=='draf')throw Error('Versi terkunci.');

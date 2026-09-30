@@ -565,14 +565,14 @@
             {#if rabApprovalWarning}<p class="mb-3 text-sm font-semibold text-red-700" role="alert">{rabApprovalWarning}</p>{/if}
             <div class="review-actions flex flex-wrap items-end gap-2">
               {#if admin && showDecision}
-                <div class="flex w-full flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border px-3.5 py-2.5 {state === 'perlu_revisi' ? 'border-amber-300 bg-amber-50' : 'border-green-200 bg-green-50'}" role="status">
+                <div class="grid w-full grid-cols-[auto_minmax(0,1fr)] items-start gap-3 rounded-xl border px-3.5 py-2.5 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center {state === 'perlu_revisi' ? 'border-amber-300 bg-amber-50' : 'border-green-200 bg-green-50'}" role="status" aria-label="Hasil pemeriksaan">
                   <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[17px] font-bold text-white {state === 'perlu_revisi' ? 'bg-amber-500' : 'bg-green-700'}" aria-hidden="true">{state === 'perlu_revisi' ? '!' : '✓'}</span>
-                  <div class="min-w-0 flex-1">
+                  <div class="min-w-0 break-words">
                     <p class="text-[15px] font-bold {state === 'perlu_revisi' ? 'text-amber-900' : 'text-green-900'}">{decisionLabel}</p>
                     <p class="text-[12.5px] text-slate-600">{computedOnly ? 'Pemilik rekening adalah penandatangan PKS, surat kuasa tidak diperlukan.' : `${doc?.decidedByName || (thread[0]?.imported ? 'Lembar review' : 'Sistem')}${doc?.decidedAt ? ` · ${full.format(new Date(doc.decidedAt))}` : ''}`}</p>
                     {#if latestNote && !computedOnly && latestNote.trim().toLowerCase() !== decisionLabel.toLowerCase()}<p class="mt-1 whitespace-pre-wrap text-[14px] leading-relaxed text-slate-800">{latestNote}</p>{/if}
                   </div>
-                  <div class="flex flex-wrap gap-2">
+                  <div class="col-span-2 flex flex-wrap justify-end gap-2 lg:col-span-1">
                     <button type="button" class="min-h-[44px] rounded-lg border border-slate-300 bg-white px-3.5 text-[13px] font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-40" disabled={busy} onclick={() => (editing = true)}>{computedOnly ? 'Periksa juga' : 'Ubah keputusan'}</button>
                     {#if !computedOnly}<button type="button" class="min-h-[44px] rounded-lg border border-red-200 bg-white px-3.5 text-[13px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-40" disabled={busy} title="Butir kembali ke Periksa; riwayat tetap tersimpan" onclick={() => void undo()}>Batalkan keputusan</button>{/if}
                   </div>

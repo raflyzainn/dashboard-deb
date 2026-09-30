@@ -178,9 +178,18 @@ Poin 1 tetap memakai urutan SK, Data Program, lalu RAB sesuai instruksi pengguna
 
 ### Pagination kartu RAB kampus
 
-Pembagian Termin 1 dan perbandingan Termin 2 menampilkan lima item per halaman. Jika item lebih dari lima, navigasi Sebelumnya/Berikutnya tersedia di atas dan bawah daftar, dengan rentang item dan nomor halaman. Pindah halaman mempertahankan input tanpa menyimpan otomatis. Total, status kelengkapan, dan validasi tetap menghitung seluruh item, termasuk halaman lain. Kembali ke tahap atau versi lain memulai daftar dari halaman pertama.
+Pembagian Termin 1 dan perbandingan Termin 2 menampilkan lima item per halaman. Jika item lebih dari lima, navigasi ikon panah sebelumnya/berikutnya tersedia hanya di bawah daftar, dengan rentang item dan nomor halaman. Tombol memiliki label aksesibel dan tooltip. Pindah halaman mempertahankan input; autosave tetap mengikuti debounce perubahan. Total, status kelengkapan, dan validasi tetap menghitung seluruh item, termasuk halaman lain. Kembali ke tahap atau versi lain memulai daftar dari halaman pertama.
 
 
 ### Simpan draf otomatis
 
 Pembagian Termin 1 disimpan otomatis 800 ms setelah perubahan terakhir. Tombol simpan di tengah navigasi dihapus; Kembali dan Lanjut tetap di sisi kiri/kanan. Snackbar Draf RAB tersimpan muncul selama tiga detik setelah penyimpanan berhasil, dapat ditutup, dan hilang saat pengguna mulai mengubah input lagi. Jumlah invalid tidak disimpan. Jika penyimpanan gagal, input dipertahankan dan tersedia Coba simpan lagi. Lanjut menyimpan perubahan yang masih tertunda sebelum berpindah; jika sudah tersimpan, tidak membuat pembaruan tambahan. Autosave tidak mengubah halaman pagination.
+
+
+### Navigasi RAB dan pemeriksaan admin
+
+- Empat langkah RAB kampus terbuka berurutan lewat Lanjut. Unggah membuka pemeriksaan RAB 100%; Lanjut membuka Termin 1, lalu pembagian valid dan Lanjut membuka Termin 2. Autosave tidak membuka langkah berikutnya.
+- Langkah yang pernah dicapai tetap dapat dikunjungi kembali, termasuk setelah refresh. Progres tersimpan per versi; unggahan/draf baru dimulai dari pemeriksaan RAB 100%. Draf lama tanpa catatan progres juga mulai dari pemeriksaan RAB 100%, tanpa menghapus pembagiannya. Versi yang telah diajukan dapat ditinjau seluruhnya.
+- URL yang mengarah ke langkah belum terbuka dikembalikan ke langkah terakhir. Validasi SK dan batas 70% tetap berlaku saat melanjutkan.
+- Admin dapat memilih RAB melalui header, isi, atau total kolom. Seluruh kolom aktif/hover berwarna biru dan memakai kursor pointer. Input edit tetap berfungsi; konfirmasi perubahan belum tersimpan tetap berlaku.
+- Panel hasil pemeriksaan menempatkan tombol di bawah teks pada layar kecil agar catatan tidak terjepit.

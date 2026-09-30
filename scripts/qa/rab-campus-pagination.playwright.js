@@ -1,7 +1,7 @@
 // Tool Playwright, draf kampus dengan 03_RAB_Banyak_Item.xlsx (10 item).
 async page => {
  const assert=(ok,message)=>{if(!ok)throw Error(message);};
- const pager=page.getByRole('navigation',{name:'Halaman item RAB atas',exact:true});
+ const pager=page.getByRole('navigation',{name:'Halaman item RAB bawah',exact:true});
  const inputs=page.getByRole('spinbutton');
  const next=page.getByRole('button',{name:'Lanjut',exact:true});
  const summary=page.locator('[aria-label="Ringkasan pembagian RAB"]');
