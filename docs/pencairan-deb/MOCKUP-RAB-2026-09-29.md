@@ -125,3 +125,15 @@ Enam item bawaan RAB_CONTOH.xlsx sekarang memiliki alokasi jumlah bulat, dengan 
 ## Ringkasan nominal dan catatan keputusan
 
 Dekat tombol keputusan admin tersedia nilai SK, total RAB 100%, Termin 1 (RAB 70%) beserta batasnya, dan Termin 2 (RAB 30%) dari versi yang sedang diajukan. Nilai terkait butir dipilih diberi penanda. Kotak catatan keputusan dan percakapan memiliki lebar/tinggi awal yang sama; tombol berada pada baris tersendiri dan rata kanan.
+
+
+## Koreksi RAB oleh admin langsung di tabel
+
+Tombol Edit RAB di atas tabel mengaktifkan input jumlah awal, harga satuan dalam rupiah, dan jumlah Tahap 1 pada semua baris. Jumlah dan nominal Tahap 2 otomatis mengikuti sisa. Total tabel berubah saat mengetik, termasuk baris yang disembunyikan pencarian. Batal membuang perubahan yang belum disimpan; Simpan perubahan mencatat koreksi admin secara otomatis.
+
+Penyimpanan membuat satu versi baru untuk seluruh perubahan, mempertahankan arsip sebelumnya dan alasan/nama admin. Pengajuan yang sedang diperiksa atau sebelumnya disetujui kembali menunggu pemeriksaan ketiga RAB; draf tetap draf. Nominal pencairan berubah setelah persetujuan selesai. Total yang belum sesuai SK dapat disimpan untuk dikoreksi berikutnya, tetapi tidak dapat disetujui. Selama mode edit, tombol keputusan terkunci. RAB yang telah dibayar dan versi arsip tidak dapat diedit. Fitur berlaku pada layanan mockup browser lokal.
+
+
+## Ringkasan perhatian per kampus
+
+Panel Mode edit RAB dan input alasan perubahan dihapus atas arahan pengguna. Tombol Simpan perubahan dan Batal tetap tersedia saat edit. Ringkasan Yang perlu diperhatikan menampilkan nama kampus dan kondisi RAB yang sebenarnya: belum diunggah, item/pembagian belum lengkap, selisih total dengan SK, Tahap 1 melebihi batas, status draf, atau data lengkap yang siap diperiksa. Ringkasan berubah mengikuti input saat edit; tidak membuat kekurangan fiktif hanya agar tiap kampus berbeda. Catatan koreksi/nama admin tetap disimpan otomatis dalam versi baru.

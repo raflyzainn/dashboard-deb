@@ -44,6 +44,7 @@
   let bankNameSeen = $state('');
   /** True while the admin reopens the buttons on an item that already has a decision. */
   let editing = $state(false);
+  let rabEditing = $state(false);
   let showLook = $state(false);
   let showRiwayat = $state(false);
   let rabTab = $state<'digital' | 'asli'>('digital');
@@ -162,7 +163,7 @@
   const decisionLabel = $derived(state === 'perlu_revisi' ? DECISION_LABEL[kind].bad : state === 'tidak_perlu' ? 'Tanpa surat kuasa' : DECISION_LABEL[kind].ok);
   /** A surat kuasa counted as not needed because the account holder signs the PKS has no decision to take back. */
   const computedOnly = $derived(state === 'tidak_perlu' && doc?.status !== 'tidak_perlu');
-  const canDecide = $derived(admin && data !== null && (kind === 'sk' || (isRab ? !fullDummy || data.rab?.status === 'menunggu' : Boolean(version))));
+  const canDecide = $derived(admin && !rabEditing && data !== null && (kind === 'sk' || (isRab ? !fullDummy || data.rab?.status === 'menunggu' : Boolean(version))));
   /** What the campus file really contains, marked after checking the file itself (decision 47). */
   const bukti = $derived.by(() => {
     const p = data?.disbursement.properties || {};
@@ -420,7 +421,7 @@
           {#if admin}<button type="button" class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300" onclick={() => (showRiwayat = true)}>Riwayat</button>{/if}
         </div>
 
-        {#if isRab && fullDummy}<DummyRabUpload {campusId} {kind} {admin} onloaded={() => void load()} />{/if}
+        {#if isRab && fullDummy}<DummyRabUpload {campusId} {kind} {admin} onediting={value => rabEditing = value} onloaded={() => void load()} />{/if}
         {#if !admin && isItem && !(isRab && fullDummy)}
           <section aria-label="Status dokumen" class="grid gap-3 border-b border-slate-200 p-3 text-sm">
             <div class="grid gap-1 rounded-lg border border-l-4 p-3 {campusStatusClass[state]}" role="status">

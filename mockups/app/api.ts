@@ -72,7 +72,24 @@ export function createApi(actor:()=>Promise<AppSession>){
     }
     if(parts[4]==='versions'&&write){
      if(!parts[5]){if(r.versions.at(-1)?.status==='menunggu')throw Error('Tunggu keputusan PF sebelum membuat draf baru.');if(body.from&&!r.versions.some((v:any)=>v.id===body.from))throw Error('Versi sumber tidak ditemukan.');const source=r.versions.find((v:any)=>v.id===body.from);const next=source?{...clone(source),id:id(),number:r.versions.length+1,status:'draf',active:false,approvedAt:'',approvedByName:'',note:'',created:now(),updated:now()}:version(r.versions.length+1,[]);r.versions.push(next);r.documents.filter((d:any)=>isRabKind(d.kind)).forEach((d:any)=>d.status='belum_ada');return overview(c,r);}
-     if(!v)throw Error('Versi tidak ditemukan.');if(v.id!==r.versions.at(-1)?.id)throw Error('Versi lama hanya dapat dilihat. Buat draf terbaru untuk melanjutkan.');
+     if(!v||!r.versions.some((version:any)=>version.id===parts[5]))throw Error('Versi tidak ditemukan.');if(v.id!==r.versions.at(-1)?.id)throw Error('Versi lama hanya dapat dilihat. Buat draf terbaru untuk melanjutkan.');
+     if(parts[6]==='correction'){
+      admin();if(method!=='POST')throw Error('Gunakan POST untuk koreksi.');
+      if(r.payment.paidAt)throw Error('RAB yang sudah dibayar tidak dapat diubah.');
+      const leaves=v.lines.filter((l:any)=>l.level===4);
+      if(!Array.isArray(body.items)||body.items.length!==leaves.length||new Set(body.items.map((i:any)=>i.lineId)).size!==leaves.length)throw Error('Kirim seluruh item RAB tanpa duplikasi.');
+      const next={...clone(v),id:id(),number:r.versions.length+1,status:v.status==='draf'?'draf':'menunggu',active:false,approvedAt:'',approvedByName:'',created:now(),updated:now(),note:`Koreksi admin ${user.name}: ${body.note?.trim()||'Jumlah, harga satuan, atau pembagian diperbarui melalui tabel RAB.'}`};
+      for(const input of body.items){
+       const changed=next.lines.find((l:any)=>l.id===input.lineId&&l.level===4);
+       const {volume,unitPriceSen,term1Volume}=input;
+       if(!changed||typeof volume!=='number'||volume<=0||!validQuantity(volume,volume)||!Number.isSafeInteger(unitPriceSen)||unitPriceSen<=0||!Number.isSafeInteger(Math.round(volume*unitPriceSen))||!validQuantity(term1Volume,volume))throw Error('Isi jumlah positif, harga satuan positif, dan pembagian jumlah yang valid.');
+       Object.assign(changed,{volume,unitPriceSen,amountSen:Math.round(volume*unitPriceSen),term1Sen:Math.round(term1Volume*unitPriceSen),term2Sen:Math.round(volume*unitPriceSen)-Math.round(term1Volume*unitPriceSen),flags:{...changed.flags,term1Volume,term2Volume:Math.round((volume-term1Volume)*10000)/10000}});
+      }
+      next.quantityAllocation=true;
+      next.lines=lines(next.lines.map((l:any)=>({...l,key:l.id,parentKey:l.parentId})));totals(next);
+      r.versions.push(next);r.documents.filter((d:any)=>isRabKind(d.kind)).forEach((d:any)=>d.status=next.status==='draf'?'belum_ada':'menunggu_review');
+      return overview(c,r,next.id);
+     }
      if(parts[6]==='allocation'){
       if(v.status!=='draf')throw Error('Versi terkunci.');
       const next=clone(v);next.quantityAllocation=true;
