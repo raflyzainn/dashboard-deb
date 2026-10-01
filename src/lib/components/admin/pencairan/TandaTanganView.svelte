@@ -1,4 +1,6 @@
 <script lang="ts">
+  import ErrorSnackbar from '$lib/components/ui/ErrorSnackbar.svelte';
+  import { reportError } from '$lib/feedback';
   import { untrack } from 'svelte';
   import { dataService } from '$lib/data/service';
   import { MERGE_KINDS, PROPERTY_FIELDS, PREVIEW_MARK, type MergeKind, type Missing } from '$lib/merge';
@@ -89,7 +91,7 @@
     return '';
   });
 
-  function fail(e: unknown, fallback: string) { error = e instanceof Error ? e.message : fallback; }
+  function fail(e: unknown, fallback: string) { error = reportError(e instanceof Error ? e.message : fallback); }
   async function loadInfo() {
     try { info = await dataService.api.get<Info>(`${base}/buat`); }
     catch (e) { fail(e, 'Data dokumen belum dapat dimuat.'); }
@@ -185,7 +187,7 @@
       const width = previewScroller?.clientWidth || 0;
       zoom = page && width ? Math.min(1, Math.max(0.35, (width - 16) / page.offsetWidth)) : 1;
     } catch (e) {
-      if (seq === renderSeq) previewError = e instanceof Error ? e.message : 'Pratinjau belum dapat dibuat.';
+      if (seq === renderSeq) previewError = reportError(e instanceof Error ? e.message : 'Pratinjau belum dapat dibuat.');
     } finally { if (seq === renderSeq) previewLoading = false; }
   }
   /** Turns the marks around merged values into coloured spans: soft blue for merged values, red for what is still missing. */
@@ -359,7 +361,7 @@
             <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {#each PROPERTY_FIELDS as f (f.key)}
                 <label class="grid gap-1 text-xs font-semibold text-slate-600">{f.label}
-                  {#if f.type === 'date'}<input type="date" class={input} bind:value={propsDraft[f.key]} />{:else}<input class={input} bind:value={propsDraft[f.key]} />{/if}
+                  {#if f.type === 'date'}<input type="date" class={input} aria-required="true" bind:value={propsDraft[f.key]} />{:else}<input class={input} aria-required="true" bind:value={propsDraft[f.key]} />{/if}
                 </label>
               {/each}
               <div class="grid gap-1 text-xs font-semibold text-slate-600">Terbilang Termin 1<span class="text-sm font-normal text-slate-700">{info?.data.termin1Terbilang || 'Ditetapkan saat RAB disetujui'}</span></div>
@@ -411,7 +413,7 @@
         {#if error}<p class="text-xs font-medium text-red-700" role="alert">{error}</p>{/if}
       </div>
     {/if}
-  </dialog>
+  <ErrorSnackbar /></dialog>
 {/if}
 
 <style>

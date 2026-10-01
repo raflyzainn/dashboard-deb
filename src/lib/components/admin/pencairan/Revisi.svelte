@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   import { untrack } from 'svelte';
   import { dataService } from '$lib/data/service';
   import { onChange } from '$lib/realtime.svelte';
@@ -51,7 +52,7 @@
   async function saveContact(values: Record<string, string>) {
     savingContact = true;
     try { data = await dataService.api.patch<KartuData>(`/api/pencairan/${campusId}`, { properties: values }); error = ''; }
-    catch (e) { error = e instanceof Error ? e.message : 'Belum tersimpan.'; }
+    catch (e) { error = reportError(e instanceof Error ? e.message : 'Belum tersimpan.'); }
     finally { savingContact = false; }
   }
   const toggleContacted = () => saveContact({ kampusDihubungiPada: contactedAt ? '' : new Date().toISOString() });
@@ -68,12 +69,12 @@
 
   async function load() {
     try { data = await dataService.api.get<KartuData>(`/api/pencairan/${campusId}`); error = ''; }
-    catch (e) { error = e instanceof Error ? e.message : 'Halaman belum dapat dimuat.'; }
+    catch (e) { error = reportError(e instanceof Error ? e.message : 'Halaman belum dapat dimuat.'); }
   }
   $effect(() => { untrack(() => { void load(); }); });
   $effect(() => onChange(() => void load(), { campus: campusId }));
   async function copy() {
-    try { await navigator.clipboard.writeText(summary); copied = true; setTimeout(() => (copied = false), 3000); } catch { error = 'Salin tidak berhasil. Pilih teks lalu salin.'; }
+    try { await navigator.clipboard.writeText(summary); copied = true; setTimeout(() => (copied = false), 3000); } catch { error = reportError('Salin tidak berhasil. Pilih teks lalu salin.'); }
   }
 </script>
 

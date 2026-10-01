@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ErrorSnackbar from '$lib/components/ui/ErrorSnackbar.svelte';
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { app } from '$lib/state.svelte';
@@ -151,7 +152,7 @@
     aria-label="Tutup navigasi"
     onclick={closeDrawer}><Icon name="close" /></button
   >{@render navigation()}
-</dialog>
+<ErrorSnackbar /></dialog>
 {/if}
 <div
   style:margin-left={campus ? '0px' : undefined}
@@ -189,7 +190,7 @@
           ></span>{/if}</a
       ><span
         class="inline-flex items-center gap-y-[7px] gap-x-[7px] text-[11px] text-[#4274ad] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [&>span]:w-[5px] [&>span]:h-[5px] [&>span]:[background-image:initial] [&>span]:[background-color:rgb(21,_130,_232)] [&>span]:rounded-[100%] demo-label"
-        ><span></span>{import.meta.env.MODE === 'mockup' ? 'Data dummy' : 'Tersambung ke server'}</span
+        ><span></span>{import.meta.env.MODE === 'mockup' ? 'Ruang kerja' : 'Tersambung ke server'}</span
       >
       <div
         class="w-[1px] h-[26px] [background-image:initial] [background-color:var(--line)] mx-[3px] my-[0px] max-[700.01px]:hidden header-divider"
@@ -205,7 +206,7 @@
             {app.session?.role === 'admin' ? 'PF' : campusProfile?.initials}
           </span>
           <span class="max-[700px]:hidden">
-            <strong class="block text-[12px] leading-4">{app.session?.name}</strong>
+            <strong class="block text-[12px] leading-4">{app.session?.name?.replace(/\b(lokal|local|dummy|demo|simulasi)\b/gi, '').replace(/\s+/g, ' ').trim()}</strong>
             <small class="block text-[11px] text-[#475569]"
               >{app.session?.role === 'admin'
                 ? app.session?.superAdmin
@@ -221,7 +222,7 @@
           role="menu"
         >
           <div class="border-b border-[#edf2f8] px-5 py-4">
-            <strong class="block text-sm text-[#17365f]">{app.session?.name}</strong>
+            <strong class="block text-sm text-[#17365f]">{app.session?.name?.replace(/\b(lokal|local|dummy|demo|simulasi)\b/gi, '').replace(/\s+/g, ' ').trim()}</strong>
             <span class="mt-1 block text-xs text-[#475569]"
               >{app.session?.role === 'admin'
                 ? 'Tim DEB Pertamina Foundation'

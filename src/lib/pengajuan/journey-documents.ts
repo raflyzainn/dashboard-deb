@@ -66,7 +66,7 @@ export function journeyDocx(kind:MergeKind|'surat_kuasa',c:any,r:any,settings:an
  }
  const output=new PizZip(renderDocx(zip.generate({type:'arraybuffer'}),{...buildMergeData(input),pemberiKuasa:r.journey.fields.pemberiKuasa,penerimaKuasa:r.journey.fields.penerimaKuasa,tanggalKuasa:dateWords(r.journey.fields.tanggalKuasa)}));
  let body=output.file('word/document.xml')!.asText();
- let heading=`<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="${draft?'B45309':'0066B2'}"/></w:rPr><w:t>${draft?'DRAF — ':''}${c.award?'PENGAJUAN LOKAL':'SIMULASI DATA DUMMY'}</w:t></w:r></w:p>`;
+ let heading=draft?'<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="B45309"/></w:rPr><w:t>DRAF</w:t></w:r></w:p>':'';
  if(kind!=='pks'&&kop){
   const ext=kop.mime==='image/png'?'png':'jpg',scale=Math.min(5486400/Math.max(1,kop.width),914400/Math.max(1,kop.height)),width=Math.round(kop.width*scale),height=Math.round(kop.height*scale);
   output.file('word/media/journey-kop.'+ext,kop.bytes);
@@ -87,10 +87,26 @@ export function finalJourneyDocx(bytes: Uint8Array) {
  for(const name of Object.keys(zip.files).filter(n=>/^word\/(document|header\d+)\.xml$/.test(n))){
   const xml=str2xml(zip.file(name)!.asText());
   for(const text of Array.from(xml.getElementsByTagNameNS(ns,'t'))){
-   if(text.textContent?.trim()==='DRAFT')text.textContent='';
+   if(['DRAFT','DRAF'].includes(text.textContent?.trim()||''))text.textContent='';
    else if(text.textContent?.startsWith('DRAF \u2014 '))text.textContent=text.textContent.slice(7);
   }
   zip.file(name,xml2str(xml));
  }
  return new Blob([zip.generate({type:'arraybuffer'})],{type:DOCX_MIME});
+}
+
+/** Clean only system environment headings in downloadable copies; retain draft status and user content. */
+export function withoutJourneyLabels(bytes:Uint8Array) {
+ const zip=new PizZip(bytes),ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+ for(const name of Object.keys(zip.files).filter(n=>/^word\/(document|header\d+)\.xml$/.test(n))){
+  const xml=str2xml(zip.file(name)!.asText());
+  for(const p of Array.from(xml.getElementsByTagNameNS(ns,'p'))){
+   const nodes=Array.from(p.getElementsByTagNameNS(ns,'t')),text=nodes.map(n=>n.textContent||'').join('').trim();
+   if(/^(DRAF\s*—\s*)?(PENGAJUAN LOKAL|SIMULASI DATA DUMMY)$/.test(text)){
+    nodes.forEach((n,i)=>n.textContent=i===0&&text.startsWith('DRAF')?'DRAF':'');
+   }
+  }
+  zip.file(name,xml2str(xml));
+ }
+ return zip.generate({type:'uint8array'});
 }

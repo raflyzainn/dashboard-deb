@@ -53,7 +53,7 @@
       >
         <Empty
           title="Data belum dapat dimuat"
-          description="Periksa izin penyimpanan browser lalu coba kembali."
+          description={app.error || 'Periksa koneksi, lalu coba muat ulang.'}
         />
         <div class="flex justify-center pt-[0px] pb-[30px] px-[20px] center-actions">
           <button

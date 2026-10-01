@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
  import { onMount, untrack } from 'svelte';
  import { fly } from 'svelte/transition';
  import { page } from '$app/state';
@@ -25,7 +26,7 @@
   if(!v||busy||!editsValid)return;
   busy=true;error='';
   try{data=await dataService.api.post<RabOverview>(`${base}/versions/${v.id}/correction`,{expectedRevision:data?.serverRevision,kind,items:items.map(l=>({lineId:l.id,volume:edits[l.id].volume,unitPriceSen:Math.round(edits[l.id].price*100),term1Volume:edits[l.id].first}))});sync();editingAdmin=false;message='Koreksi tersimpan sebagai versi baru. Periksa kembali RAB 100%, 70%, dan 30% sebelum menyetujui.';onloaded();}
-  catch(e){error=e instanceof Error?e.message:String(e);if((e as any).status===409)remoteChanged=true;}finally{busy=false;}
+  catch(e){error = reportError(e instanceof Error?e.message:String(e));if((e as any).status===409)remoteChanged=true;}finally{busy=false;}
  }
  $effect(()=>{onediting(editingAdmin);});
  let comparisonSearch=$state('');
@@ -124,7 +125,7 @@
  });
  async function load(versionId=page.url.searchParams.get('rabVersion')||''){
   try{if(busy)return;const result=await dataService.api.get<RabOverview>(base+(versionId?'?version='+encodeURIComponent(versionId):''));if((result as any).serverRevision<(data?.serverRevision??0))return;if(dirty){if((result as any).serverRevision!==data?.serverRevision)remoteChanged=true;return;}if(busy||editingAdmin||versionId!==(page.url.searchParams.get('rabVersion')||''))return;data=result;remoteChanged=false;sync();}
-  catch(e){error=e instanceof Error?e.message:String(e);}
+  catch(e){error = reportError(e instanceof Error?e.message:String(e));}
  }
  $effect(()=>{const versionId=page.url.searchParams.get('rabVersion')||'';untrack(()=>void load(versionId));});
  function versionLabel(version:NonNullable<RabOverview['version']>|RabOverview['versions'][number]){
@@ -149,7 +150,7 @@
  async function upload(file?:File){
   if(!file||busy)return;busy=true;error='';
   try{const body=new FormData();body.set('file',file);if(data?.serverRevision!==undefined)body.set('expectedRevision',String(data.serverRevision));data=await dataService.api.post<RabOverview>(base+'/import',body);sync();message='Excel berhasil dibaca. Periksa seluruh rincian RAB 100% terlebih dahulu.';replace=false;confirmed=false;onloaded();if(journey)await goto(journeyUrl('full'));}
-  catch(e){error=e instanceof Error?e.message:'Unggahan gagal.';}finally{busy=false;}
+  catch(e){error = reportError(e instanceof Error?e.message:'Unggahan gagal.');}finally{busy=false;}
  }
  async function advance(index:number){
   if(!v)return;
@@ -158,31 +159,31 @@
  }
  async function continueFull(){
   if(busy)return;busy=true;error='';
-  try{await advance(2);}catch(e){error=e instanceof Error?e.message:String(e);}finally{busy=false;}
+  try{await advance(2);}catch(e){error = reportError(e instanceof Error?e.message:String(e));}finally{busy=false;}
  }
  async function save(next=false,automatic=false){
   if(!v||invalid||busy)return;
   const submitted=$state.snapshot(quantities);
   busy=true;autosaving=automatic;error='';saveFailed=false;
   try{if(dirty){data=await dataService.api.patch<RabOverview>(`${base}/versions/${v.id}/allocation`,{quantities:submitted,expectedRevision:data?.serverRevision});saved=JSON.stringify(submitted);}if(journey){message='';if(!dirty)showSaved();}else message='Pembagian tersimpan sebagai draf. Belum dikirim ke PF.';onloaded();if(next&&!dirty){if(journey)await advance(3);else await goto('/campus/pencairan?butir=rab');}}
-  catch(e){error=e instanceof Error?e.message:String(e);saveFailed=true;if((e as any).status===409)remoteChanged=true;}finally{busy=false;autosaving=false;}
+  catch(e){error = reportError(e instanceof Error?e.message:String(e));saveFailed=true;if((e as any).status===409)remoteChanged=true;}finally{busy=false;autosaving=false;}
  }
  async function submit(){
   if(!v||!confirmed||!ready||busy||dirty)return;busy=true;error='';message='';
   try{data=await dataService.api.post<RabOverview>(`${base}/versions/${v.id}/submit`);sync();confirmed=false;message='RAB terkirim. Tunggu pemeriksaan PF; pembagian terkunci selama pemeriksaan.';onloaded();}
-  catch(e){error=e instanceof Error?e.message:String(e);}finally{busy=false;}
+  catch(e){error = reportError(e instanceof Error?e.message:String(e));}finally{busy=false;}
  }
  async function revise(){
   if(!v||busy||latest?.status==='menunggu')return;busy=true;error='';
   try{data=await dataService.api.post<RabOverview>(base+'/versions',{from:v.id,expectedRevision:data?.serverRevision});sync();confirmed=false;message='Draf terbaru dibuat dari versi yang dipilih. Pembagian lama tetap tersimpan. Periksa lalu ajukan kembali.';await goto(journey?journeyUrl('full'):'/campus/pencairan?butir=rab_penuh');onloaded();}
-  catch(e){error=e instanceof Error?e.message:String(e);}finally{busy=false;}
+  catch(e){error = reportError(e instanceof Error?e.message:String(e));}finally{busy=false;}
  }
  async function exportRab(share:'penuh'|'tahap1'|'tahap2'){
   if(!v||busy||dirty)return;busy=true;error='';
   try{
    const {downloadRabWorkbook,linesToRows}=await import('$lib/rab-excel');
    await downloadRabWorkbook(`RAB_${share}_${campusId}_v${v.number}.xlsx`,{university:data!.campus.name,penuh:linesToRows(v.lines,'penuh'),tahap1:linesToRows(v.lines,'tahap1'),tahap2:linesToRows(v.lines,'tahap2')},share);
-  }catch(e){error=e instanceof Error?e.message:String(e);}finally{busy=false;}
+  }catch(e){error = reportError(e instanceof Error?e.message:String(e));}finally{busy=false;}
  }
 </script>
 
@@ -222,7 +223,7 @@
   <p>Isi seluruh kebutuhan di lembar RAB 100%. Pembagian Tahap 1 dan Tahap 2 dilakukan di aplikasi setelah unggah; tidak perlu mengunggah dua file lagi.</p>
   <div class="grid gap-3 sm:grid-cols-2">
    <div class="grid gap-2 rounded-xl border border-slate-200 p-4"><strong>1. Siapkan Excel</strong><p>Total RAB harus sama dengan nilai SK: <b>{formatSen(data.summary.amountSen)}</b>.</p><a class={btn+' justify-self-start'} href="/contoh-rab.xlsx" download="Contoh_RAB_100_Persen.xlsx">Unduh Excel contoh (.xlsx)</a><p class="text-xs text-slate-500">Ganti 6 item contoh dengan kebutuhan kampus. Pertahankan nama lembar dan kepala tabel.</p></div>
-   <div class="grid gap-2 rounded-xl border border-blue-200 bg-blue-50 p-4"><strong>2. Pilih file untuk diunggah</strong><label class="grid gap-2 font-semibold">Excel RAB 100%<input class="min-w-0 w-full rounded-lg border border-slate-300 bg-white p-2 font-normal" type="file" aria-label="Unggah Excel RAB 100%" accept=".xlsx" disabled={busy} onchange={e=>void upload(e.currentTarget.files?.[0])}/></label><p class="text-xs text-slate-600">.xlsx · maksimal 2 MB dan 500 item. File langsung dibaca setelah dipilih.</p>{#if busy}<p role="status">Membaca Excel…</p>{/if}</div>
+   <div class="grid gap-2 rounded-xl border border-blue-200 bg-blue-50 p-4"><strong>2. Pilih file untuk diunggah</strong><label class="grid gap-2 font-semibold">Excel RAB 100%<input class="min-w-0 w-full rounded-lg border border-slate-300 bg-white p-2 font-normal" type="file" required aria-label="Unggah Excel RAB 100%" accept=".xlsx" disabled={busy} onchange={e=>void upload(e.currentTarget.files?.[0])}/></label><p class="text-xs text-slate-600">.xlsx · maksimal 2 MB dan 500 item. File langsung dibaca setelah dipilih.</p>{#if busy}<p role="status">Membaca Excel…</p>{/if}</div>
   </div>
   {#if replace||journey&&v}<p class="text-amber-900">File baru akan membuat versi baru dan mengosongkan pembagian. Versi lama tetap tersimpan.</p>{#if journey}<button class={blue+' justify-self-end'} disabled={busy} onclick={()=>openStep(1)}>Lanjut</button>{:else}<button class={btn+' justify-self-start'} disabled={busy} onclick={()=>replace=false}>Batal ganti file</button>{/if}{/if}
  {:else if v}
@@ -253,7 +254,7 @@
      <article class="rounded-xl border p-4 {q!=null&&!valid?'border-red-300 bg-red-50/30':'border-slate-200'}">
       <div class="flex flex-wrap items-start justify-between gap-2"><div><h3 class="font-bold text-slate-900">{line.title}</h3><p class="text-xs text-slate-500">{line.code} · {formatSen(line.unitPriceSen)} / {line.unit}</p></div><p class="rounded-lg bg-slate-100 px-3 py-1 text-sm">Jumlah awal: <b>{formatVolume(line.volume)} {line.unit}</b></p></div>
       <div class="mt-3 grid gap-3 sm:grid-cols-2">
-       <label class="grid gap-1 font-semibold">Jumlah Tahap 1 ({line.unit})<input class="min-h-11 w-full rounded-lg border bg-white p-2 font-normal {q!=null&&!valid?'border-red-400':'border-slate-300'}" type="number" min="0" max={line.volume} step={Number.isInteger(line.volume)?1:0.0001} aria-invalid={q!=null&&!valid} aria-describedby={`help-${line.id}`} value={q??''} placeholder="Isi jumlah, termasuk 0" aria-label={`Jumlah Tahap 1: ${line.title}`} disabled={busy&&!autosaving} oninput={e=>setQuantity(line.id,e.currentTarget.value===''?null:e.currentTarget.valueAsNumber)}/><span class="text-xs font-normal text-slate-500">{valid?formatSen(Math.round(q!*line.unitPriceSen)):'Belum ada nominal valid'}</span></label>
+       <label class="grid gap-1 font-semibold">Jumlah Tahap 1 ({line.unit})<input class="min-h-11 w-full rounded-lg border bg-white p-2 font-normal {q!=null&&!valid?'border-red-400':'border-slate-300'}" type="number" required min="0" max={line.volume} step={Number.isInteger(line.volume)?1:0.0001} aria-invalid={q!=null&&!valid} aria-describedby={`help-${line.id}`} value={q??''} placeholder="Isi jumlah, termasuk 0" aria-label={`Jumlah Tahap 1: ${line.title}`} disabled={busy&&!autosaving} oninput={e=>setQuantity(line.id,e.currentTarget.value===''?null:e.currentTarget.valueAsNumber)}/><span class="text-xs font-normal text-slate-500">{valid?formatSen(Math.round(q!*line.unitPriceSen)):'Belum ada nominal valid'}</span></label>
        <div class="grid content-start gap-1 rounded-lg bg-blue-50 p-3"><p class="font-semibold">Jumlah Tahap 2 · otomatis</p><strong class="text-lg text-blue-900">{remaining(line)}</strong><p class="text-xs">{valid?formatSen(line.amountSen-Math.round(q!*line.unitPriceSen)):'Diisi dari sisa jumlah Tahap 1'}</p></div>
       </div>
       <div class="mt-3 flex flex-wrap gap-2"><button class={q===line.volume?blue:btn} aria-pressed={q===line.volume} disabled={busy&&!autosaving} onclick={()=>setQuantity(line.id,line.volume)} aria-label={`Semua ke Tahap 1: ${line.title}`}>{q===line.volume?'✓ ':''}Semua ke Tahap 1</button><button class={q===0?blue:btn} aria-pressed={q===0} disabled={busy&&!autosaving} onclick={()=>setQuantity(line.id,0)} aria-label={`Semua ke Tahap 2: ${line.title}`}>{q===0?'✓ ':''}Semua ke Tahap 2</button></div>
@@ -286,10 +287,10 @@
      <tbody>{#each reviewItems as line (line.id)}
       {@const q=quantities[line.id]}
       {@const valid=validQuantity(q,line.volume)}
-      <tr class="bg-white hover:bg-slate-50"><th scope="row" class="min-w-[220px] border-b border-slate-100 p-3 text-left font-normal"><p class="text-xs font-semibold text-slate-500">{line.code}</p><p class="font-semibold">{line.title}</p>{#if editingAdmin}<label class="mt-2 grid gap-1 text-xs">Harga satuan (Rp)<input class="min-h-11 w-full rounded-lg border border-slate-300 bg-white p-2" type="number" min="0.01" step="0.01" aria-label={`Harga satuan: ${line.title}`} bind:value={edits[line.id].price} disabled={busy||kind!=='rab_penuh'}/></label>{:else}<p class="text-xs text-slate-500">{formatSen(line.unitPriceSen)} / {line.unit}</p>{/if}</th>
-       <td data-review-column="rab_penuh" class="cursor-pointer border-b border-slate-100 p-3 text-right {kind==='rab_penuh'||hoveredReview==='rab_penuh'?'bg-blue-100':''}">{#if editingAdmin}<b>{formatSen(Math.round((edits[line.id].volume||0)*(edits[line.id].price||0)*100))}</b><label class="mt-2 grid gap-1 text-xs text-left">Jumlah awal ({line.unit})<input class="min-h-11 w-full rounded-lg border border-slate-300 bg-white p-2" type="number" min={Number.isInteger(line.volume)?1:0.0001} step={Number.isInteger(line.volume)?1:0.0001} aria-invalid={!validEditedVolume(edits[line.id].volume,line.volume)} aria-label={`Jumlah awal: ${line.title}`} bind:value={edits[line.id].volume} disabled={busy||kind!=='rab_penuh'}/>{#if !validEditedVolume(edits[line.id].volume,line.volume)}<span class="text-red-700" role="alert">{Number.isInteger(line.volume)?'Jumlah awal harus bilangan bulat positif.':'Isi jumlah positif dengan maksimal 4 desimal.'}</span>{/if}</label>{:else}<b>{formatSen(line.amountSen)}</b><p class="mt-1 text-xs">{formatVolume(line.volume)} {line.unit}</p>{/if}</td>
-       <td data-review-column="rab" class="cursor-pointer border-b border-slate-100 p-3 text-right {kind==='rab'||hoveredReview==='rab'?'bg-blue-100':''}">{#if editingAdmin}<b>{formatSen(Math.round((edits[line.id].first||0)*(edits[line.id].price||0)*100))}</b><label class="mt-2 grid gap-1 text-xs text-left">Jumlah Tahap 1 ({line.unit})<input class="min-h-11 w-full rounded-lg border border-slate-300 bg-white p-2" type="number" min="0" max={edits[line.id].volume} step={Number.isInteger(edits[line.id].volume)?1:0.0001} aria-label={`Jumlah Tahap 1: ${line.title}`} bind:value={edits[line.id].first} disabled={busy||kind!=='rab'}/></label>{:else}<b>{legacy?formatSen(line.term1Sen):valid?formatSen(Math.round(q!*line.unitPriceSen)):'-'}</b><p class="mt-1 text-xs">{valid?formatVolume(q!)+' '+line.unit:legacy?'Jumlah belum tercatat':'Belum dibagi'}</p>{/if}</td>
-       <td data-review-column="rab_tahap2" class="cursor-pointer border-b border-slate-100 p-3 text-right {kind==='rab_tahap2'||hoveredReview==='rab_tahap2'?'bg-blue-100':''}">{#if editingAdmin&&(validQuantity(edits[line.id].first,edits[line.id].volume)||kind==='rab_tahap2')}<b>{formatSen(Math.round(edits[line.id].volume*edits[line.id].price*100)-Math.round(edits[line.id].first*edits[line.id].price*100))}</b><p class="mt-1 text-xs">{formatVolume(Math.round((edits[line.id].volume-edits[line.id].first)*10000)/10000)} {line.unit}</p>{#if kind==='rab_tahap2'}<label class="mt-2 grid gap-1 text-xs text-left">Jumlah Tahap 2 ({line.unit})<input class="min-h-11 w-full rounded-lg border border-slate-300 bg-white p-2" type="number" min="0" max={edits[line.id].volume} step={Number.isInteger(edits[line.id].volume)?1:0.0001} aria-invalid={!validQuantity(edits[line.id].first,edits[line.id].volume)} aria-label={`Jumlah Tahap 2: ${line.title}`} value={Math.round((edits[line.id].volume-edits[line.id].first)*10000)/10000} disabled={busy} oninput={e=>{edits[line.id].first=Math.round((edits[line.id].volume-e.currentTarget.valueAsNumber)*10000)/10000;}}/>{#if !validQuantity(edits[line.id].first,edits[line.id].volume)}<span class="text-red-700" role="alert">Jumlah Tahap 2 harus antara 0 dan jumlah awal, mengikuti aturan jumlah bulat.</span>{/if}</label>{:else}<p class="mt-1 text-xs text-slate-500">Otomatis dari sisa</p>{/if}{:else if editingAdmin}<span class="text-red-700">Pembagian tidak valid</span>{:else}<b>{legacy?formatSen(line.term2Sen):valid?formatSen(line.amountSen-Math.round(q!*line.unitPriceSen)):'-'}</b><p class="mt-1 text-xs">{legacy?'Jumlah belum tercatat':remaining(line)}</p>{/if}</td></tr>
+      <tr class="bg-white hover:bg-slate-50"><th scope="row" class="min-w-[220px] border-b border-slate-100 p-3 text-left font-normal"><p class="text-xs font-semibold text-slate-500">{line.code}</p><p class="font-semibold">{line.title}</p>{#if editingAdmin}<label class="mt-2 grid gap-1 text-xs">Harga satuan (Rp)<input class="min-h-11 w-full rounded-lg border border-slate-300 bg-white p-2" type="number" required min="0.01" step="0.01" aria-label={`Harga satuan: ${line.title}`} bind:value={edits[line.id].price} disabled={busy||kind!=='rab_penuh'}/></label>{:else}<p class="text-xs text-slate-500">{formatSen(line.unitPriceSen)} / {line.unit}</p>{/if}</th>
+       <td data-review-column="rab_penuh" class="cursor-pointer border-b border-slate-100 p-3 text-right {kind==='rab_penuh'||hoveredReview==='rab_penuh'?'bg-blue-100':''}">{#if editingAdmin}<b>{formatSen(Math.round((edits[line.id].volume||0)*(edits[line.id].price||0)*100))}</b><label class="mt-2 grid gap-1 text-xs text-left">Jumlah awal ({line.unit})<input class="min-h-11 w-full rounded-lg border border-slate-300 bg-white p-2" type="number" required min={Number.isInteger(line.volume)?1:0.0001} step={Number.isInteger(line.volume)?1:0.0001} aria-invalid={!validEditedVolume(edits[line.id].volume,line.volume)} aria-label={`Jumlah awal: ${line.title}`} bind:value={edits[line.id].volume} disabled={busy||kind!=='rab_penuh'}/>{#if !validEditedVolume(edits[line.id].volume,line.volume)}<span class="text-red-700" role="alert">{Number.isInteger(line.volume)?'Jumlah awal harus bilangan bulat positif.':'Isi jumlah positif dengan maksimal 4 desimal.'}</span>{/if}</label>{:else}<b>{formatSen(line.amountSen)}</b><p class="mt-1 text-xs">{formatVolume(line.volume)} {line.unit}</p>{/if}</td>
+       <td data-review-column="rab" class="cursor-pointer border-b border-slate-100 p-3 text-right {kind==='rab'||hoveredReview==='rab'?'bg-blue-100':''}">{#if editingAdmin}<b>{formatSen(Math.round((edits[line.id].first||0)*(edits[line.id].price||0)*100))}</b><label class="mt-2 grid gap-1 text-xs text-left">Jumlah Tahap 1 ({line.unit})<input class="min-h-11 w-full rounded-lg border border-slate-300 bg-white p-2" type="number" required min="0" max={edits[line.id].volume} step={Number.isInteger(edits[line.id].volume)?1:0.0001} aria-label={`Jumlah Tahap 1: ${line.title}`} bind:value={edits[line.id].first} disabled={busy||kind!=='rab'}/></label>{:else}<b>{legacy?formatSen(line.term1Sen):valid?formatSen(Math.round(q!*line.unitPriceSen)):'-'}</b><p class="mt-1 text-xs">{valid?formatVolume(q!)+' '+line.unit:legacy?'Jumlah belum tercatat':'Belum dibagi'}</p>{/if}</td>
+       <td data-review-column="rab_tahap2" class="cursor-pointer border-b border-slate-100 p-3 text-right {kind==='rab_tahap2'||hoveredReview==='rab_tahap2'?'bg-blue-100':''}">{#if editingAdmin&&(validQuantity(edits[line.id].first,edits[line.id].volume)||kind==='rab_tahap2')}<b>{formatSen(Math.round(edits[line.id].volume*edits[line.id].price*100)-Math.round(edits[line.id].first*edits[line.id].price*100))}</b><p class="mt-1 text-xs">{formatVolume(Math.round((edits[line.id].volume-edits[line.id].first)*10000)/10000)} {line.unit}</p>{#if kind==='rab_tahap2'}<label class="mt-2 grid gap-1 text-xs text-left">Jumlah Tahap 2 ({line.unit})<input class="min-h-11 w-full rounded-lg border border-slate-300 bg-white p-2" type="number" required min="0" max={edits[line.id].volume} step={Number.isInteger(edits[line.id].volume)?1:0.0001} aria-invalid={!validQuantity(edits[line.id].first,edits[line.id].volume)} aria-label={`Jumlah Tahap 2: ${line.title}`} value={Math.round((edits[line.id].volume-edits[line.id].first)*10000)/10000} disabled={busy} oninput={e=>{edits[line.id].first=Math.round((edits[line.id].volume-e.currentTarget.valueAsNumber)*10000)/10000;}}/>{#if !validQuantity(edits[line.id].first,edits[line.id].volume)}<span class="text-red-700" role="alert">Jumlah Tahap 2 harus antara 0 dan jumlah awal, mengikuti aturan jumlah bulat.</span>{/if}</label>{:else}<p class="mt-1 text-xs text-slate-500">Otomatis dari sisa</p>{/if}{:else if editingAdmin}<span class="text-red-700">Pembagian tidak valid</span>{:else}<b>{legacy?formatSen(line.term2Sen):valid?formatSen(line.amountSen-Math.round(q!*line.unitPriceSen)):'-'}</b><p class="mt-1 text-xs">{legacy?'Jumlah belum tercatat':remaining(line)}</p>{/if}</td></tr>
      {:else}<tr><td colspan="4" class="p-6 text-center text-slate-500">Tidak ada item yang cocok.</td></tr>{/each}</tbody>
      <tfoot class="sticky bottom-0 bg-slate-100 font-bold"><tr><th scope="row" class="border-t p-3 text-left">Total seluruh RAB</th><td data-review-column="rab_penuh" class="cursor-pointer whitespace-nowrap border-t p-3 text-right {kind==='rab_penuh'||hoveredReview==='rab_penuh'?'bg-blue-100':''}">{formatSen(editingAdmin?editedTotal:v.totalSen)}</td><td data-review-column="rab" class="cursor-pointer whitespace-nowrap border-t p-3 text-right {kind==='rab'||hoveredReview==='rab'?'bg-blue-100':''}">{formatSen(editingAdmin?editedFirst:first)}</td><td data-review-column="rab_tahap2" class="cursor-pointer whitespace-nowrap border-t p-3 text-right {kind==='rab_tahap2'||hoveredReview==='rab_tahap2'?'bg-blue-100':''}">{formatSen(editingAdmin?editedTotal-editedFirst:second)}</td></tr></tfoot>
     </table>

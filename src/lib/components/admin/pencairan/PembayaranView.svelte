@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   import { dataService } from '$lib/data/service';
   import { formatSen } from '$lib/pencairan';
   import type { KartuData } from './kartu-types';
@@ -32,7 +33,7 @@
       const next = await dataService.api.patch<KartuData>(`/api/pencairan/${campusId}/pembayaran`, { paidAt, paidSen: requested, paidRef: paidRef.trim(), paidNote: '' });
       paidAt = ''; paidRef = '';
       onchange(next, 'Pembayaran Tahap 1 tercatat.');
-    } catch (e) { error = e instanceof Error ? e.message : 'Pembayaran belum tercatat.'; }
+    } catch (e) { error = reportError(e instanceof Error ? e.message : 'Pembayaran belum tercatat.'); }
     finally { busy = false; }
   }
 </script>

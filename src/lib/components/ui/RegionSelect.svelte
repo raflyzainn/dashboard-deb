@@ -32,6 +32,7 @@
 </script>
 
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   import { untrack } from 'svelte';
   import { emptyRegion, type RegionValue } from '$lib/location';
 
@@ -78,6 +79,7 @@
       if (token !== tokens[level]) return;
       console.warn(`RegionSelect: ${level} list failed to load`, error);
       failed[level] = true;
+      reportError('Daftar wilayah belum dapat dimuat. Periksa koneksi dan tekan Coba lagi pada pilihan wilayah.');
     }
     loading[level] = false;
   }

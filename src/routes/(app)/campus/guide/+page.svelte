@@ -12,7 +12,7 @@
       icon: 'payments',
       title: 'Pencairan Dana',
       description:
-        'Pantau status tiap dokumen, baca catatan pemeriksa, dan lihat berkas yang pernah dikirim. Unggah hanya jika dokumen belum ada atau perlu revisi.',
+        'Ikuti langkah pengajuan, pantau status, dan baca catatan pemeriksa. Data, dokumen, serta riwayat kampus tersedia di satu halaman.',
       href: 'pencairan',
       action: 'Lihat pencairan'
     },
@@ -99,6 +99,20 @@
     </div>
   </section>
 
+  <section class="rounded-xl border border-slate-200 bg-white p-6" aria-labelledby="journey-guide-title">
+    <h2 id="journey-guide-title" class="text-xl font-bold text-slate-900">Urutan pengajuan baru</h2>
+    <ol class="mt-4 list-decimal space-y-3 pl-5 text-sm leading-6 text-slate-700">
+      <li><strong>Periksa SK dan Data Program.</strong> Lengkapi isian bertanda <span class="font-bold text-red-600">*</span>. Data Program disimpan otomatis setelah berhenti mengetik; tunggu pemberitahuan tersimpan.</li>
+      <li><strong>Unggah satu RAB 100%.</strong> Gunakan Excel contoh dan samakan total dengan nilai SK. Klik Lanjut untuk memeriksa RAB penuh, mengatur jumlah Termin 1 (maksimal 70% nilai SK), lalu memeriksa sisa Termin 2. Ketiga RAB dapat diunduh.</li>
+      <li><strong>Lengkapi Administrasi dan PKS.</strong> Isi rekening, penandatangan, nomor dan tanggal surat. Unggah bukti rekening serta kop. Rekening pihak yang diberi kuasa memerlukan surat kuasa bertanda tangan. Nomor PKS PF diisi admin; gunakan tombol permintaan jika belum tersedia.</li>
+      <li><strong>Siapkan dan periksa dokumen.</strong> Buka Ringkasan, selesaikan petunjuk yang masih muncul, lalu siapkan PKS, permohonan, invoice, dan kuitansi. Jika data diubah, buat ulang dokumen agar isinya sesuai.</li>
+      <li><strong>Kirim untuk diperiksa PF.</strong> Draf tersimpan belum berarti terkirim. Tekan Ajukan untuk diperiksa di Ringkasan. Saat status Menunggu PF, cukup pantau hasilnya.</li>
+      <li><strong>Tangani revisi atau tanda tangan.</strong> Jika Perlu revisi, baca catatan PF, perbaiki, lalu kirim ulang. Setelah disetujui, unduh dokumen final dan ikuti checklist tanda tangan/meterai serta dua rangkap PKS. Unggah melalui tombol Unggah bertanda tangan pada setiap dokumen di Ringkasan.</li>
+      <li><strong>Pantau pembayaran.</strong> PF memeriksa berkas, melengkapi lampiran, lalu mencatat pembayaran. Setelah Dana dibayar, lihat tanggal, nominal, referensi, dan bukti transfer jika PF melampirkannya.</li>
+    </ol>
+    <p class="mt-4 text-sm text-slate-600">Pembagian RAB Termin 2 tersedia. Pengajuan dan pembayaran Tahap 2 belum tersedia di aplikasi.</p>
+  </section>
+
   <aside
     class="[&&]:flex [&&]:items-start [&&]:gap-y-[17px] [&&]:gap-x-[17px] [&&]:[background-image:initial] [&&]:[background-color:rgb(234,_243,_255)] [&&]:p-[24px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(215,_230,_250)] [&&]:rounded-[13px] max-[600.01px]:[&&]:p-[20px] guide-tip"
   >
@@ -112,7 +126,7 @@
         Kapan perlu mengirim dokumen?
       </h2>
       <p class="[&&]:leading-[1.6] [&&]:text-[14px] [&&]:text-[#587395] [&&]:m-[0px]">
-        Di Pencairan Dana, pilih dokumen yang belum ada atau perlu revisi. Baca catatan pemeriksa, pilih berkas, lalu kirim. Setelah itu, tunggu pemeriksaan PF; dokumen yang sedang diperiksa atau sudah sesuai tidak perlu dikirim ulang. SK dan RAB hanya dapat dilihat oleh kampus.
+        Ikuti bagian "Tahap saat ini" dan "Langkah selanjutnya" di Pencairan Dana. Pengajuan lama yang masih berjalan manual mengikuti petunjuk unggah pada tiap dokumen. Jika tombol belum aktif, lengkapi isian sesuai petunjuk di halaman. Jika proses gagal, baca snackbar, perbaiki isian atau koneksi, lalu coba kembali. Isian draf yang belum tersimpan jangan ditinggalkan.
       </p>
     </div>
   </aside>

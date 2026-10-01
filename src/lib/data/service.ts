@@ -1,4 +1,5 @@
 import { createDemoService } from './demo/service';
+import { reportError } from '../feedback';
 import { createFullDemoService } from '../../../mockups/app/service';
 import type { DataService, PreviewAccount } from '../types';
 import type { PageRequest, PageResponse, SessionResponse, NavigationData } from '../page-data';
@@ -29,16 +30,20 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
       if (started !== generation) throw new DataReadError(409, 'Pilihan akun sudah berubah.');
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
-        throw new DataReadError(response.status, body.message || 'Pembacaan PocketBase gagal.');
+        const fallback = response.status === 401 ? 'Sesi berakhir. Silakan masuk kembali.' : response.status === 403 ? 'Akun Anda tidak memiliki izin untuk tindakan ini.' : response.status === 409 ? 'Data sudah berubah. Muat ulang data sebelum mencoba kembali.' : response.status >= 500 ? 'Server belum dapat memproses permintaan. Coba lagi beberapa saat lagi.' : 'Permintaan belum berhasil. Periksa isian dan coba lagi.';
+        throw new DataReadError(response.status, typeof body?.message === 'string' && body.message && body.message !== 'Something went wrong while processing your request.' ? body.message : fallback);
       }
       const result = await parse(response);
       if (started !== generation) throw new DataReadError(409, 'Pilihan akun sudah berubah.');
       const campus=url.match(/^\/api\/pencairan\/([^/?]+)/)?.[1];
       if(campus&&Number.isInteger((result as any)?.serverRevision))revisions.set(campus,Math.max(revisions.get(campus)||0,(result as any).serverRevision));
+      if (options.method && options.method !== 'GET') reportError('');
       return result;
     } catch (error) {
-      if (error instanceof DataReadError) throw error;
-      throw new DataReadError(503, 'PocketBase tidak dapat dimuat. Periksa koneksi dan coba muat ulang.');
+      const failure = error instanceof DataReadError ? error : new DataReadError(503, controller.signal.aborted ? 'Permintaan terlalu lama. Periksa koneksi, lalu coba lagi.' : error instanceof SyntaxError ? 'Respons server tidak dapat dibaca. Coba muat ulang data atau ulangi tindakan Anda.' : 'Tidak dapat terhubung ke server. Periksa koneksi, lalu coba lagi.');
+      // Account changes cancel obsolete requests; an anonymous session probe is expected.
+      if (started === generation && !(url === '/api/session' && failure.status === 401)) reportError(failure.message);
+      throw failure;
     } finally { clearTimeout(timer); pending.delete(controller); }
   }
   const session = (): Promise<SessionResponse> => request('/api/session', response => response.json());

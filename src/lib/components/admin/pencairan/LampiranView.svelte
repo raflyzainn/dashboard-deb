@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   import { untrack, onDestroy } from 'svelte';
   import { dataService } from '$lib/data/service';
   import type { KartuData } from './kartu-types';
@@ -45,7 +46,7 @@
   const holdLine = $derived(!view || view.ready ? '' : notReady.length ? `Belum siap: ${notReady.map(s => s.label).join(', ')}.` : 'Semua butir harus Sesuai dulu.');
   const latest = $derived(view?.attachments[0] || null);
 
-  function fail(e: unknown, fallback: string) { error = e instanceof Error ? e.message : fallback; }
+  function fail(e: unknown, fallback: string) { error = reportError(e instanceof Error ? e.message : fallback); }
   async function load() {
     try { view = await dataService.api.get<View>(`${base}/lampiran`); error = ''; }
     catch (e) { fail(e, 'Lampiran belum dapat dimuat.'); }
@@ -79,7 +80,7 @@
   }
   async function copy(value: string) {
     try { await navigator.clipboard.writeText(value); copied = true; if (copyTimer) clearTimeout(copyTimer); copyTimer = setTimeout(() => (copied = false), 2000); }
-    catch { error = 'Salin otomatis tidak tersedia. Pilih teksnya lalu salin.'; }
+    catch { error = reportError('Salin otomatis tidak tersedia. Pilih teksnya lalu salin.'); }
   }
 </script>
 

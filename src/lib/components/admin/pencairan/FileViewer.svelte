@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   import { untrack } from 'svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
 
@@ -47,7 +48,7 @@
         sheet = 0;
       }
     } catch (e) {
-      if (generation === renderGeneration) error = e instanceof Error ? e.message : 'Berkas belum dapat dibuka.';
+      if (generation === renderGeneration) error = reportError(e instanceof Error ? e.message : 'Berkas belum dapat dibuka.');
     } finally { if (generation === renderGeneration) loading = false; }
   }
   $effect(() => {

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   import { onMount, tick, untrack } from 'svelte';
   import type * as Leaflet from 'leaflet';
   import 'leaflet/dist/leaflet.css';
@@ -50,6 +51,7 @@
     } catch (error) {
       console.warn('LocationPicker: map library failed to load', error);
       libFailed = true;
+      reportError('Peta belum dapat dimuat. Coba muat ulang atau isi lintang dan bujur secara manual.');
     }
   }
 
@@ -59,7 +61,7 @@
 
   function commit(next: LatLng | null, quiet = false): boolean {
     if (next && !insideIndonesia(next)) {
-      message = OUTSIDE;
+      message = reportError(OUTSIDE);
       return false;
     }
     message = '';
@@ -185,7 +187,7 @@
     const lat = Number(latRaw.replace(',', '.'));
     const lng = Number(lngRaw.replace(',', '.'));
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-      message = 'Isi lintang dan bujur dengan angka, contoh -7.556100 dan 110.831600.';
+      message = reportError('Isi lintang dan bujur dengan angka, contoh -7.556100 dan 110.831600.');
       return;
     }
     commit({ lat, lng });
@@ -200,7 +202,7 @@
 
   function useMyLocation() {
     if (!('geolocation' in navigator)) {
-      message = 'Perangkat ini tidak dapat membaca lokasi. Klik peta atau isi lintang dan bujur.';
+      message = reportError('Perangkat ini tidak dapat membaca lokasi. Klik peta atau isi lintang dan bujur.');
       return;
     }
     locating = true;
@@ -213,12 +215,12 @@
       (error) => {
         locating = false;
         console.warn('LocationPicker: geolocation failed', error.code, error.message);
-        message =
+        message = reportError(
           error.code === error.PERMISSION_DENIED
             ? 'Izin lokasi ditolak. Izinkan akses lokasi di peramban, lalu coba lagi.'
             : error.code === error.TIMEOUT
               ? 'Lokasi belum ditemukan. Coba lagi, atau klik peta untuk menandai lokasi.'
-              : 'Lokasi tidak tersedia saat ini. Klik peta atau isi lintang dan bujur.';
+              : 'Lokasi tidak tersedia saat ini. Klik peta atau isi lintang dan bujur.');
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
     );

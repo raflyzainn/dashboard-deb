@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   import { untrack } from 'svelte';
   import DocumentGuide from '../../../../../mockups/app/DocumentGuide.svelte';
   import CampusJourney from '../../../../../mockups/app/CampusJourney.svelte';
@@ -46,6 +47,7 @@
   let threadEl = $state<HTMLDivElement | null>(null);
   let reviewNote = $state('');
   let bankNameSeen = $state('');
+  let bankNameInput = $state<HTMLInputElement | null>(null);
   /** True while the admin reopens the buttons on an item that already has a decision. */
   let editing = $state(false);
   let rabEditing = $state(false);
@@ -199,7 +201,7 @@
       const next = await dataService.api.get<KartuData>(`/api/pencairan/${campusId}`);
       if (generation === loadGeneration) apply(next);
     }
-    catch (e) { if (generation === loadGeneration) error = e instanceof Error ? e.message : 'Layar belum dapat dimuat.'; }
+    catch (e) { if (generation === loadGeneration) error = reportError(e instanceof Error ? e.message : 'Layar belum dapat dimuat.'); }
   }
   $effect(() => { untrack(() => { void load(); }); });
   $effect(() => onChange(() => void load(), { campus: campusId }));
@@ -241,7 +243,7 @@
     loadGeneration++;
     busy = true; error = '';
     try { apply(await action(), message); return true; }
-    catch (e) { error = e instanceof Error ? e.message : 'Perubahan belum tersimpan.'; return false; }
+    catch (e) { error = reportError(e instanceof Error ? e.message : 'Perubahan belum tersimpan.'); return false; }
     finally { busy = false; }
   }
   function collect() {
@@ -257,11 +259,12 @@
   }
   /** Values save when the checker leaves a field; nothing to click. */
   async function saveIfChanged() {
-    if (!admin || !version || !isCurrent) return;
+    if (!admin || !version || !isCurrent) return true;
     const now = JSON.stringify(draft);
-    if (now === saved) return;
-    saved = now;
-    await run(() => dataService.api.patch<KartuData>(`/api/pencairan/${campusId}/documents/${kind}/versions/${version.id}`, { fields: collect() }), 'Tersimpan.');
+    if (now === saved) return true;
+    const ok = await run(() => dataService.api.patch<KartuData>(`/api/pencairan/${campusId}/documents/${kind}/versions/${version.id}`, { fields: collect() }), 'Tersimpan.');
+    if (ok) saved = now;
+    return ok;
   }
   function nextAfter(current: Kind): Row {
     const rest = KINDS.slice(KINDS.indexOf(current) + 1).find(k => data && !['sesuai', 'tidak_perlu'].includes(data.readiness.items[k]));
@@ -270,12 +273,17 @@
   async function decide(which: 'ok' | 'bad' | 'none') {
     if (!data || !admin) return;
     if (which !== 'none' && !canDecide || which === 'ok' && rabApprovalWarning) return;
-    await saveIfChanged();
+    if (kind === 'rekening' && !bankNameSeen.trim()) {
+      error = reportError('Nama di bank wajib diisi sesuai yang terlihat pada bukti rekening.');
+      bankNameInput?.focus();
+      return;
+    }
     const note = reviewNote.trim();
-    if (which === 'bad' && !note) { error = kind === 'sk' ? 'Tulis nilai yang tercetak di SK di kolom catatan.' : 'Tulis catatan untuk kampus dulu.'; noteInput?.focus(); return; }
+    if (which === 'bad' && !note) { error = reportError(kind === 'sk' ? 'Tulis nilai yang tercetak di SK di kolom catatan.' : 'Tulis catatan untuk kampus dulu.'); noteInput?.focus(); return; }
+    if (!await saveIfChanged()) return;
     const decision = which === 'ok' ? 'sesuai' : which === 'none' ? 'tidak_perlu' : 'perlu_revisi';
     const body: Record<string, unknown> = { decision, note, expectedRevision:(data as any).serverRevision };
-    if (kind === 'rekening') body.bank = { result: which === 'ok' ? 'sesuai' : 'berbeda', nameSeen: bankNameSeen.trim() || (which === 'bad' ? note : '') };
+    if (kind === 'rekening') body.bank = { result: which === 'ok' ? 'sesuai' : 'berbeda', nameSeen: bankNameSeen.trim() };
     const url = kind === 'rab' ? `/api/pencairan/${campusId}/rab/keputusan` : `/api/pencairan/${campusId}/documents/${kind}/review`;
     const ok = await run(() => dataService.api.post<KartuData>(url, body), which === 'ok' ? `${KIND_SHORT[kind]}: ${DECISION_LABEL[kind].ok}.` : which === 'none' ? 'Ditandai tanpa surat kuasa.' : `${KIND_SHORT[kind]}: catatan revisi tersimpan.`);
     if (ok) { bankNameSeen = ''; editing = false; if (which !== 'bad') void open(nextAfter(kind)); }
@@ -299,7 +307,7 @@
       const lines = overview.version.lines;
       await downloadRabWorkbook(`RAB_${overview.campus.code.replace(/\s+/g, '')}_v${overview.version.number}.xlsx`, { university: overview.campus.name.toUpperCase(), penuh: linesToRows(lines, 'penuh'), tahap1: linesToRows(lines, 'tahap1'), tahap2: linesToRows(lines, 'tahap2') });
       say(`Versi ${overview.version.number} diekspor.`);
-    } catch (e) { error = e instanceof Error ? e.message : 'Ekspor belum berhasil.'; }
+    } catch (e) { error = reportError(e instanceof Error ? e.message : 'Ekspor belum berhasil.'); }
     finally { busy = false; }
   }
   /** A filled template becomes the next managed RAB version; the table and the checks refresh at once. */
@@ -319,7 +327,7 @@
   }
   async function upload(file: File | null) {
     if (!file || !canUpload) return;
-    if (!file.size || file.size > 40 * 1024 * 1024) { error = 'Pilih berkas tidak kosong dengan ukuran maksimal 40 MB.'; return; }
+    if (!file.size || file.size > 40 * 1024 * 1024) { error = reportError('Pilih berkas tidak kosong dengan ukuran maksimal 40 MB.'); return; }
     const body = new FormData();
     body.set('file', file); if(signedJourneyReady)body.set('signed','true'); body.set('note', admin ? '' : uploadNote.trim());
     const ok = await run(async () => { const next = await dataService.api.post<KartuData>(`/api/pencairan/${campusId}/documents/${fileKind}/versions`, body); selectedVersionId = ''; return next; }, admin ? `Versi baru tersimpan.` : 'Berkas terkirim. Menunggu pemeriksaan Pertamina Foundation.');
@@ -593,9 +601,9 @@
                   </div>
                 </div>
               {:else if admin}
-                {#if kind === 'rekening'}<label class="grid min-w-0 gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">Nama di bank<input class="min-h-[44px] w-[170px] max-w-full rounded-lg border border-slate-300 px-2 text-[13px] font-medium normal-case tracking-normal text-slate-900" bind:value={bankNameSeen} placeholder="Nama yang terlihat di bank" /></label>{/if}
+                {#if kind === 'rekening'}<label class="grid min-w-0 gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">Nama di bank<input class="min-h-[44px] w-full max-w-full rounded-lg border border-slate-300 px-2 text-[13px] font-medium normal-case tracking-normal text-slate-900" bind:this={bankNameInput} required maxlength="200" bind:value={bankNameSeen} placeholder="Nama yang terlihat di bank" /></label>{/if}
                 <label class="grid w-full min-w-0 gap-1 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">
-                  <span>Catatan keputusan{#if doc?.decidedByName}<span class="ml-2 font-medium normal-case tracking-normal text-slate-400">{state === 'perlu_revisi' ? DECISION_LABEL[kind].bad : decided ? DECISION_LABEL[kind].ok : ITEM_STATE_LABEL[state]} · {doc.decidedByName}{doc.decidedAt ? ` · ${time.format(new Date(doc.decidedAt))}` : ''}</span>{/if}</span>
+                  <span>Catatan keputusan <span class="text-red-600">*</span><span class="font-normal normal-case"> wajib jika meminta revisi</span>{#if doc?.decidedByName}<span class="ml-2 font-medium normal-case tracking-normal text-slate-400">{state === 'perlu_revisi' ? DECISION_LABEL[kind].bad : decided ? DECISION_LABEL[kind].ok : ITEM_STATE_LABEL[state]} · {doc.decidedByName}{doc.decidedAt ? ` · ${time.format(new Date(doc.decidedAt))}` : ''}</span>{/if}</span>
                   <textarea bind:this={noteInput} rows="2" class="min-h-[64px] w-full rounded-lg border px-3 py-2 text-[14px] font-medium leading-relaxed normal-case tracking-normal text-slate-900 {state === 'perlu_revisi' ? 'border-amber-300 bg-amber-50/40' : 'border-slate-300'}" bind:value={reviewNote} oninput={grow} placeholder={kind === 'sk' ? 'Bila berbeda: nilai yang tercetak di SK' : 'Catatan keputusan: alasan revisi atau keterangan lolos, dikirim ke kampus'}></textarea>
                 </label>
                 <div class="flex w-full flex-wrap items-center justify-end gap-2">

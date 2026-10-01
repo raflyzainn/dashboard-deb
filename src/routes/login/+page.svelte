@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   import { goto } from '$app/navigation';
   import { dev } from '$app/environment';
   import { page } from '$app/state';
@@ -36,14 +37,14 @@
     event.preventDefault();
     if (busy) return;
     error = '';
-    if (!email.trim() || !password) { error = 'Isi email dan kata sandi.'; return; }
+    if (!email.trim() || !password) { error = reportError('Isi email dan kata sandi.'); return; }
     busy = true;
     try {
       await app.loginWithPassword(email.trim(), password);
       if (app.session) goto(app.home());
-      else error = app.error || 'Email atau kata sandi tidak sesuai.';
+      else error = reportError(app.error || 'Email atau kata sandi tidak sesuai.');
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Email atau kata sandi tidak sesuai.';
+      error = reportError(e instanceof Error ? e.message : 'Email atau kata sandi tidak sesuai.');
     } finally { busy = false; }
   }
 
@@ -52,7 +53,7 @@
     busy = true;
     error = '';
     if (await app.login(previewAccount)) await goto(app.home());
-    else error = app.error || 'Akun lokal tidak dapat dibuka.';
+    else error = reportError(app.error || 'Akun lokal tidak dapat dibuka.');
     busy = false;
   }
 </script>
@@ -115,7 +116,7 @@
       {#if showLocalAccounts && localAccounts.length}
         <div class="mt-6 grid min-w-0 grid-cols-1 gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
           <label class="grid min-w-0 grid-cols-1 gap-1.5 text-sm font-medium text-slate-700">
-            Masuk sebagai akun lokal
+            Pilih akun
             <select class="min-h-[44px] min-w-0 w-full max-w-full truncate rounded-lg border border-slate-300 bg-white px-3 text-[15px] text-slate-900 outline-none focus:border-[#0066B2] focus:ring-2 focus:ring-blue-100" bind:value={previewAccount}>
               <option value="">Pilih akun kampus atau admin</option>
               {#each accountGroups as group}

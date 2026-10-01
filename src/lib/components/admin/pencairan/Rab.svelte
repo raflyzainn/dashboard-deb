@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   import { untrack } from 'svelte';
   import { dataService } from '$lib/data/service';
   import { formatSen, parseSen, formatPercent, percentOf } from '$lib/pencairan';
@@ -57,7 +58,7 @@
       return { key: r.key, parentKey: r.parentKey, title: r.title.trim(), calculation: r.calculation.trim(), volume: volume ?? 0, unit: r.unit.trim(), unitPriceSen: sen(r.unitPrice, 'Harga satuan'), amountSen: sen(r.amount, 'Jumlah'), term1Sen: sen(r.term1, 'RAB 70%'), term2Sen: sen(r.term2, 'RAB 30%'), flags: r.catatan ? { catatan: r.catatan } : {} };
     });
   }
-  function fail(e: unknown, fallback: string) { error = e instanceof Error ? e.message : fallback; }
+  function fail(e: unknown, fallback: string) { error = reportError(e instanceof Error ? e.message : fallback); }
   function apply(next: RabOverview, message = '') {
     data = next; notice = message; error = ''; refresh++;
     rows = next.version ? toRows(next.version.lines) : [];

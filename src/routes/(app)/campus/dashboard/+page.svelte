@@ -23,6 +23,11 @@
     }
   }
 
+  const journey = $derived((data as any)?.journey);
+  const journeyMessage = $derived(data?.disbursement.paidAt ? 'Dana Tahap 1 sudah dibayar. Lihat tanggal, nominal, dan bukti transfer jika dilampirkan PF.' : journey?.status === 'menunggu' ? 'Pengajuan sedang diperiksa PF. Tidak perlu mengirim ulang. Pantau hasil pemeriksaan di Pencairan Dana.' : journey?.status === 'revisi' ? 'Ada catatan perbaikan dari PF. Buka pengajuan, perbaiki bagian yang diminta, lalu kirim ulang dari Ringkasan.' : journey?.status === 'selesai' ? 'Pengajuan disetujui. Unduh dokumen final, tandatangani sesuai panduan, lalu unggah hasilnya. PF akan memeriksa berkas sebelum pembayaran.' : 'Periksa SK dan Data Program, unggah satu RAB 100%, lalu bagi alokasinya di aplikasi. Lengkapi Administrasi dan PKS, buat dokumen, lalu kirim dari Ringkasan.');
+  const journeyAction = $derived(data?.disbursement.paidAt ? 'Lihat pembayaran' : journey?.status === 'menunggu' ? 'Pantau pemeriksaan PF' : journey?.status === 'revisi' ? 'Perbaiki pengajuan' : journey?.status === 'selesai' ? 'Lengkapi dokumen bertanda tangan' : 'Lanjutkan pengajuan');
+  const journeyLink = $derived(journey && (['menunggu', 'selesai'].includes(journey.status) || data?.disbursement.paidAt) ? '/campus/pencairan?bagian=ringkasan&butir=ringkasan' : '/campus/pencairan');
+
   const uploadActions = $derived.by(() => {
     if (!data) return [];
     const actions: { kind: (typeof KINDS)[number]; state: 'perlu_revisi' | 'belum_ada' }[] = [];
@@ -74,9 +79,9 @@
           <p class="mt-2 text-sm leading-6 text-slate-600" role="status">{error === 'Kampus ini tidak termasuk penerima gelombang pertama.' ? 'Belum ada penetapan pencairan untuk kampus Anda.' : 'Progres belum dapat dimuat. Buka Pencairan Dana untuk mencoba lagi.'}</p>
         {:else if !data}
           <p class="mt-2 text-sm leading-6 text-slate-600" role="status">Memuat progres pencairan…</p>
-        {:else if import.meta.env.MODE==='mockup'}
-          <p class="mt-3 text-sm text-slate-600">{(data as any)?.journey?.status==='menunggu'?'Pengajuan sedang diperiksa PF. Anda dapat melihat data dan dokumen yang dikirim.':(data as any)?.journey?.status==='revisi'?'Ada catatan perbaikan dari PF. Lanjutkan pada bagian yang perlu direvisi.':(data as any)?.journey?.status==='selesai'?'Pengajuan disetujui. Lanjutkan dokumen bertanda tangan.':'Lengkapi SK, data program, RAB, administrasi, dan PKS. Draf dapat dilanjutkan kapan saja.'}</p>
-          <a href="/campus/pencairan" class="mt-4 inline-flex min-h-11 items-center rounded-lg bg-[#0066B2] px-5 py-3 text-sm font-semibold text-white">{(data as any)?.journey?.status==='menunggu'?'Lihat pengajuan':(data as any)?.journey?.status==='revisi'?'Perbaiki pengajuan':(data as any)?.journey?'Lanjutkan pengajuan':'Mulai pengajuan'}</a>
+        {:else if journey}
+          <p class="mt-3 text-sm leading-6 text-slate-600">{journeyMessage}</p>
+          <a href={journeyLink} class="mt-4 inline-flex min-h-11 items-center rounded-lg bg-[#0066B2] px-5 py-3 text-sm font-semibold text-white">{journeyAction}</a>
         {:else if uploadActions.length}
           <p class="mt-2 text-sm leading-6 text-slate-600">Selesaikan revisi lebih dulu, lalu lengkapi dokumen yang belum diunggah.</p>
         {:else if data.readiness.state === 'dibayar'}
@@ -88,8 +93,8 @@
         {/if}
       </div>
     </div>
-    {#if app.session?.campusId && data}<h3 class="mt-5 text-sm font-semibold text-slate-800">Yang perlu dilakukan</h3>{/if}
-    {#if uploadActions.length}
+    {#if app.session?.campusId && data && !journey}<h3 class="mt-5 text-sm font-semibold text-slate-800">Yang perlu dilakukan</h3>{/if}
+    {#if !journey && uploadActions.length}
       <div class="mt-3 grid gap-5">
         {#each [{ state: 'perlu_revisi', title: 'Perlu revisi', action: 'Revisi' }, { state: 'belum_ada', title: 'Belum diunggah', action: 'Unggah' }] as group}
           {@const items = uploadActions.filter(item => item.state === group.state)}
@@ -109,13 +114,14 @@
         {/each}
       </div>
       {#if waitingPf.length === 1}<p class="mt-3 text-sm text-slate-600">{KIND_SHORT[waitingPf[0]]} sedang menunggu pemeriksaan PF.</p>{:else if waitingPf.length > 1}<p class="mt-3 text-sm text-slate-600">{waitingPf.length} dokumen menunggu pemeriksaan PF.</p>{/if}
-    {:else if app.session?.campusId}
+    {:else if app.session?.campusId && !journey}
       {#if data?.disbursement.paidAt}<p class="mt-2 text-sm text-slate-600">Tahap 1 sudah dibayar. Tidak ada dokumen yang perlu Anda kirim.</p>
       {:else if waitingPf.length}<p class="mt-2 text-sm text-slate-600">Menunggu pemeriksaan PF untuk {waitingPf.map(k => KIND_SHORT[k]).join(', ')}. Tidak perlu mengunggah ulang.</p>
       {:else if data?.readiness.lengkap}<p class="mt-2 text-sm text-slate-600">Dokumen Tahap 1 sudah lengkap. PF melanjutkan prosesnya.</p>
       {:else}<p class="mt-2 text-sm text-slate-600">Belum ada dokumen yang perlu Anda kirim. Pantau langkah yang dikelola PF di Pencairan Dana.</p>{/if}
       <a href="/campus/pencairan" class="mt-3 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#0066B2] px-5 py-3 text-sm font-semibold text-white hover:bg-[#015a9a]">Lihat progres <Icon name="arrow" size={16} /></a>
     {/if}
+    <p class="mt-4 text-sm"><a class="font-semibold text-[#0066B2] underline" href="/campus/guide">Baru pertama kali? Baca panduan pengajuan</a></p>
     <p class="mt-4 text-xs leading-relaxed text-slate-500">Untuk kembali ke Beranda atau keluar, buka dropdown akun di kanan atas.</p>
   </section>
 </div>

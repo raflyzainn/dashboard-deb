@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   import { untrack } from 'svelte';
   import { dataService } from '$lib/data/service';
   import { dateWords } from '$lib/merge';
@@ -32,7 +33,7 @@
       rows = (await dataService.api.get<{ rows: Row[] }>('/api/pengaturan-program')).rows; error = '';
       for (const row of rows) { if (editing[row.programYear] === undefined) editing[row.programYear] = false; if (!draft[row.programYear]) draft[row.programYear] = values(row); }
     }
-    catch (e) { error = e instanceof Error ? e.message : 'Pengaturan belum dapat dimuat.'; }
+    catch (e) { error = reportError(e instanceof Error ? e.message : 'Pengaturan belum dapat dimuat.'); }
   }
   $effect(() => { untrack(() => { void load(); }); });
 
@@ -46,7 +47,7 @@
       rows = (await dataService.api.patch<{ rows: Row[] }>('/api/pengaturan-program', { programYear: row.programYear, ...changed })).rows;
       notice = `Pengaturan ${YEAR_LABEL[row.programYear]} tersimpan.`; refresh++;
       return true;
-    } catch (e) { error = e instanceof Error ? e.message : 'Pengaturan belum tersimpan.'; return false; }
+    } catch (e) { error = reportError(e instanceof Error ? e.message : 'Pengaturan belum tersimpan.'); return false; }
     finally { saving = ''; }
   }
 </script>
@@ -73,9 +74,9 @@
             {#each FIELDS as f (f.key)}
               <label class="grid gap-1 text-xs font-semibold text-slate-600">{f.label}
                 {#if f.type === 'date'}
-                  <input type="date" class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal text-slate-900" bind:value={draft[row.programYear][f.key]} />
+                  <input type="date" class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal text-slate-900" aria-required="true" bind:value={draft[row.programYear][f.key]} />
                 {:else}
-                  <input class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal text-slate-900" bind:value={draft[row.programYear][f.key]} maxlength="120" />
+                  <input class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal text-slate-900" aria-required="true" bind:value={draft[row.programYear][f.key]} maxlength="120" />
                 {/if}
               </label>
             {/each}

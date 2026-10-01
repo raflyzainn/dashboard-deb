@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   import { dataService } from '$lib/data/service';
   import { untrack } from 'svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
@@ -92,7 +93,7 @@
       loadedQuery = q;
       loadedFilter = f;
     } catch (e) {
-      if (revision === generation) error = e instanceof Error ? e.message : 'Data tidak tersedia.';
+      if (revision === generation) error = reportError(e instanceof Error ? e.message : 'Data tidak tersedia.');
     } finally {
       if (revision === generation) loading = false;
     }
@@ -146,7 +147,7 @@
       await load();
       notice = 'Data PIC dan email tersimpan.';
     } catch (e) {
-      error = (e as Error).message;
+      error = reportError((e as Error).message);
       resetAccounts = null;
     } finally {
       busy = false;

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   import { page } from '$app/state';
   import { untrack } from 'svelte';
   import { formatSen } from '$lib/pencairan';
@@ -16,13 +17,15 @@
     try {
       const response = await fetch(`/api/verifikasi/${encodeURIComponent(code)}`, { cache: 'no-store' });
       result = (await response.json().catch(() => null)) || { valid: false, unavailable: true };
-    } catch { result = { valid: false, unavailable: true }; }
+      if (!response.ok || result?.unavailable) reportError(result?.message || 'Verifikasi dokumen belum berhasil. Periksa kode dan koneksi, lalu coba lagi.');
+      else if (!result?.valid) reportError(result?.message || 'Kode dokumen tidak ditemukan atau sudah tidak berlaku. Periksa kode pada dokumen Anda.');
+    } catch { result = { valid: false, unavailable: true }; reportError('Verifikasi dokumen belum dapat dimuat. Periksa koneksi, lalu coba lagi.'); }
     finally { loading = false; }
   }
   $effect(() => { code; untrack(() => { void load(); }); });
   async function copy() {
     if (!result?.sha256) return;
-    try { await navigator.clipboard.writeText(result.sha256); copied = true; setTimeout(() => (copied = false), 3000); } catch { copied = false; }
+    try { await navigator.clipboard.writeText(result.sha256); copied = true; setTimeout(() => (copied = false), 3000); } catch { copied = false; reportError('Kode pemeriksaan belum dapat disalin. Pilih teksnya lalu salin secara manual.'); }
   }
 </script>
 
@@ -45,10 +48,9 @@
           <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-green-100 text-lg font-bold text-green-700" aria-hidden="true">✓</span>
           <div class="min-w-0">
             <h1 class="text-lg font-bold leading-snug text-slate-900 sm:text-xl">Dokumen ini diterbitkan oleh sistem MonevDEB</h1>
-            {#if result.label}<p class="mt-1 text-sm text-slate-600">{result.label}</p>{/if}
+            {#if result.label}<p class="mt-1 text-sm text-slate-600">{result.label.replace(/^Pengajuan lokal/, 'Pengajuan pencairan')}</p>{/if}
           </div>
         </div>
-        {#if result.local}<p class="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">Lingkungan lokal untuk simulasi. Dokumen ini belum diterbitkan melalui website DEB produksi.</p>{/if}
         {#if result.status}<p class="mt-3 text-sm font-semibold text-slate-800">Status: {result.status}</p>{/if}
         <dl class="mt-6 grid gap-4 border-t border-slate-100 pt-5 sm:grid-cols-2">
           <div><dt class="text-[12px] font-semibold uppercase tracking-[0.06em] text-slate-500">Kampus</dt><dd class="mt-1 text-sm font-semibold text-slate-900">{result.campusName || 'Tidak tercatat'}</dd></div>

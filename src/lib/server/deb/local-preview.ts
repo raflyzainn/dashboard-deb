@@ -64,7 +64,7 @@ export async function previewContext(request: PreviewRequest, config: PreviewCon
         const started=new Set(awards.filter(a=>!String(a.skNumber||'').startsWith('SK-DUMMY-LOKAL/2026/')).map(a=>a.campus));
         // Each account is also checked on entry; migrated campus credentials are never reset by preview.
         const rows: PreviewAccount[] = campuses.flatMap(c => users.filter(u => u.role === 'campus' && u.campus === c.id && keys.includes(u.legacyId)).map(u => ({ key: u.legacyId, name: c.name+' - '+u.name, role: 'campus' as const, disbursementStarted: started.has(c.id) })));
-        return [...rows, ...keys.filter(k => k.startsWith('admin-') && eligible.has(k)).sort().map(key => ({ key, name: `Admin PF lokal ${key.slice(-1)}`, role: 'admin' as const }))];
+        return [...rows, ...keys.filter(k => k.startsWith('admin-') && eligible.has(k)).sort().map(key => ({ key, name: `Admin PF ${key.slice(-1)}`, role: 'admin' as const }))];
       }
     };
   } catch (error) {

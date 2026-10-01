@@ -1,5 +1,9 @@
 # Panduan proyek untuk Codex
 
+## Pembaruan feedback dan panduan pengguna - 1 Oktober 2026
+
+Gunakan [laporan snackbar dan field wajib](pencairan-deb/QA-SNACKBAR-FIELD-WAJIB-2026-10-01.md) untuk pola penanganan error bersama, field wajib, perubahan Beranda/Panduan kampus, dan batas QA browser terakhir. Pengajuan baru PocketBase mengikuti petunjuk terbaru ini; panduan demo dan unggah manual historis di bawah tidak menggantikannya.
+
 ## Pembaruan pengajuan lokal - 30 September 2026
 
 Untuk pekerjaan migrasi pada branch `feat/rab-dummy-all-campuses`, acuan terbaru adalah [MIGRASI-POCKETBASE-LOKAL.md](pencairan-deb/MIGRASI-POCKETBASE-LOKAL.md), beserta arsitektur, runbook, dan laporan QA yang ditautkan di sana. Mode `pocketbase-local` memakai instance 8097 dan aplikasi 5176; dummy tetap terpisah. Mesin pengajuan digunakan bersama, penyimpanan lokal memakai collection relasional yang sudah ada dengan empat field tambahan. Hanya pengajuan berpenanda `submissionStatus` memakai alur baru; record lama tidak dikonversi massal. Panduan login mitra dan demo berikut merupakan konteks historis, bukan pengganti kontrak alur baru. Build/check/test terminal migrasi belum dijalankan.

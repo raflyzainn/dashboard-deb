@@ -9,7 +9,7 @@ Pengguna membatalkan perubahan format/spacing. Template PF dan isi dokumen tetap
 - Pratinjau dan unduhan alur PocketBase lokal mendapat QR. Dokumen lama yang sudah tersimpan juga mendapat representasi unduhan ber-QR tanpa menimpa sumbernya.
 - QR membuka `/verifikasi/{kode}` tanpa login. Halaman menampilkan kampus, jenis dokumen, nominal, tanggal penerbitan QR, status, dan SHA-256 berkas unduhan.
 - Draf tetap ditandai draf meskipun butir tertentu sudah sesuai. Unduhan final setelah paket disetujui menampilkan status persetujuan. Pemeriksaan status juga mempertimbangkan revisi pengajuan dan versi terbaru.
-- Lingkungan lokal disebut pada footer dan halaman verifikasi. Ini bukti asal penerbitan sistem lokal; tanda tangan dan persetujuan mengikuti proses pengajuan. Salinan yang diedit dapat dibedakan dengan membandingkan SHA-256.
+- Sesuai revisi pengguna berikutnya, label lingkungan dihapus dari footer dan halaman verifikasi. Footer berbunyi "Diterbitkan website DEB". Status draf/persetujuan tetap ditampilkan; penghapusan label tidak mengubah lingkungan server. Salinan yang diedit dapat dibedakan dengan membandingkan SHA-256.
 - QR memakai origin frontend yang sedang dibuka, termasuk port. Jika dibuka melalui `127.0.0.1:5176`, tautan hanya dapat diakses pada komputer tersebut. QR lokal bukan tautan produksi dan tidak otomatis dapat dibuka dari ponsel.
 - Unggahan scan bertanda tangan, bukti rekening, Excel RAB, dan template surat kuasa tetap pada alur sebelumnya; tidak diberi klaim penerbitan baru.
 
@@ -36,3 +36,14 @@ Tool Playwright, frontend 5176 dan PocketBase lokal 8097:
 Cek yang dapat dijalankan ulang melalui tool Playwright: `scripts/qa/document-qr.playwright.js`. Skrip memerlukan data lokal Fakfak/Sorong tersebut. Screenshot lokal: `.playwright-mcp/qr-pf-{permohonan,invois,kuitansi,pks}.png`.
 
 Belum dilakukan: pemindaian kamera ponsel/kertas cetak, rendering Microsoft Word/LibreOffice, build/check/test terminal. Pengguna kemudian mengizinkan commit dan push branch lokal ke GitLab dan GitHub; bukti SHA pengiriman dicatat pada jawaban akhir sesi.
+
+## QA ulang setelah penghapusan label aplikasi
+
+Pengguna mengonfirmasi: pertahankan data sumber, hapus label aplikasi saja. Nomor SK `SK-DUMMY-LOKAL/...`, nama penandatangan dari data sumber, dan istilah isi PKS seperti "kearifan lokal" tidak diubah. Tampilan nama akun di header dibersihkan dari penanda lingkungan tanpa mengubah record akun.
+
+- Header dokumen buatan sistem sekarang cukup "DRAF" sebelum final. Unduhan versi lama juga membersihkan judul lingkungan pada salinan unduhan; arsip sumber tetap utuh.
+- Cache representasi QR dinaikkan menjadi `pf-logo-2`; berkas yang baru diunduh memakai kode/hash baru sesuai isinya. Kode dan hash unduhan lama tetap dapat diverifikasi. Label lama pada halaman verifikasi ditampilkan sebagai "Pengajuan pencairan".
+- Delapan QR bersiluet PF berhasil didekode ulang lewat browser; delapan halaman hasil decode dibuka tanpa login dan menampilkan status yang cocok. Semua hash cocok dan unduhan berulang stabil. Kode tidak dikenal ditolak.
+- Pratinjau invois: QR termuat, footer tanpa label lingkungan. Login menampilkan "Pilih akun"; header admin menampilkan "Admin PF". Halaman verifikasi kode lama juga bersih dari label lingkungan. Tidak ada `pageerror` pada konteks QA tersebut.
+- Screenshot: `.playwright-mcp/qr-clean-invois.png`. Skrip browser yang diperbarui: `scripts/qa/document-qr.playwright.js`.
+- Perubahan label ini belum di-commit/push. Tidak menjalankan merge, MR, build, atau tes terminal.
