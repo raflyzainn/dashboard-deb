@@ -1,5 +1,13 @@
 # Login mitra: pencairan dan unggah revisi
 
+## QA production: alur kampus dan penonaktifan akun, 29 September 2026
+
+- Admin Microsoft berhasil masuk ke `/admin/dashboard`, membuat akun QA Kampus PNK, lalu login kampus berhasil termasuk penggantian kata sandi pertama kali.
+- Beranda menampilkan identitas kampus dan tugas dokumen; Pencairan Dana menampilkan progres 2/10, linimasa 7 tahap, status revisi/kekurangan, dan tautan langsung ke revisi Permohonan. Panel tiap dokumen diperiksa tanpa memilih atau mengunggah berkas; tombol kirim kosong tetap nonaktif.
+- Akun `qa.codex.20260929@example.com` (QA Kampus Codex 20260929, Politeknik Negeri Kupang) dinonaktifkan kembali oleh admin. Sesudah penyimpanan, akun hilang dari tab Semua dan terlihat di tab Nonaktif. Status akhir: nonaktif.
+- Tidak ada dokumen diunggah/dipilih, pesan WhatsApp dikirim, atau keputusan/catatan review diubah. Satu 401 `/api/session` tercatat pada keadaan anonim sebelum login; halaman pencairan mencatat dua warning Svelte `derived_inert`, tetapi interaksi yang diperiksa tetap bekerja.
+- Ini bukti QA pada halaman production yang dibuka, bukan pemeriksaan SHA deployment. Tes/build terminal tidak dijalankan dalam sesi QA ini.
+
 ## Ringkasan tindakan dan linimasa kampus, 28 September 2026
 
 Beranda kampus memberi judul "Yang perlu dilakukan" untuk daftar revisi/berkas kosong, dan menjelaskan status menunggu PF atau sudah dibayar saat tidak ada unggahan kampus. Pencairan Dana menampilkan linimasa tujuh tahap (ditambah "Dana dibayar" setelah pembayaran), pihak yang bertindak, langkah berikutnya dengan tautan ke butir terkait, dan catatan revisi aktif. Checklist sepuluh butir dihapus. Linimasa kini menghubungkan penanda tahap selesai, aktif, dan berikutnya; tampil mendatar di desktop dan vertikal di layar kecil.

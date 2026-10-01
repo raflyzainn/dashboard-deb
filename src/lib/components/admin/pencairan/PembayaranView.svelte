@@ -3,6 +3,7 @@
   import { formatSen } from '$lib/pencairan';
   import type { KartuData } from './kartu-types';
   import Icon from '$lib/components/ui/Icon.svelte';
+  import BuktiTransfer from './BuktiTransfer.svelte';
 
   /** Closing row "Pembayaran": one card with the Tahap 1 transfer, and while unpaid one bar with three values and one button. */
   let { campusId, data, onchange }: { campusId: string; data: KartuData; onchange: (next: KartuData, message?: string) => void } = $props();
@@ -20,7 +21,7 @@
 
   const paid = $derived(Boolean(data.disbursement.paidAt));
   const requested = $derived(data.disbursement.requestedSen || data.summary.requestedSen || 0);
-  const reason = $derived(!requested ? 'Setujui RAB 70% dulu.' : '');
+  const reason = $derived(!requested ? 'Setujui RAB 70% dulu.' : (data as any).journey&&!paid&&data.readiness.state!=='siap_dibayar'?'Lengkapi dokumen bertanda tangan/asli dan simpan lampiran terlebih dahulu.':'');
   const ready = $derived(!reason && Boolean(paidAt) && Boolean(paidRef.trim()));
   const hint = $derived(reason || (!paidAt ? 'Isi tanggal bayar.' : !paidRef.trim() ? 'Isi referensi transfer.' : 'Catat transfer Tahap 1'));
 
@@ -47,8 +48,9 @@
           <span>Dibayar {dayOf(data.disbursement.paidAt)} · <span class="tabular-nums">{formatSen(data.disbursement.paidSen)}</span> · referensi {data.disbursement.paidRef} · dicatat oleh {data.disbursement.paidByName || 'Sistem'}</span>
         </p>
       {:else}
-        <p class="text-xs text-slate-500">Jumlah yang dibayar harus sama dengan yang diajukan.</p>
+        <p class="text-xs text-slate-500">Jumlah yang dibayar harus sama dengan yang diajukan.</p>{#if reason}<p class="text-sm text-amber-900" role="status">{reason}</p><div class="flex flex-wrap gap-3 text-sm font-semibold text-[#0066B2]"><a href={`/admin/pencairan/${campusId}?butir=ttd`}>Buka tanda tangan</a><a href={`/admin/pencairan/${campusId}?butir=lampiran`}>Buka lampiran</a></div>{/if}
       {/if}
+      {#if import.meta.env.MODE!=='mockup'}<BuktiTransfer {campusId} {data} editable {onchange}/>{/if}
     </div>
   </div>
 

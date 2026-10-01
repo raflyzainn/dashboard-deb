@@ -6,6 +6,10 @@ import QRCode from 'qrcode';
  */
 export interface QrMatrix { size: number; dark: (row: number, col: number) => boolean }
 
+// Siluet 32 x 32 dari simbol PF pada static/favicon-96x96.png (batas piksel 21..74).
+const PF_MASK='0004000000070000001f8000000f80807e0784801fc78f8007e38f8001f08f800ff80c0003fe0000003c00c0000003f8000001f800fe007c07fe001f1ffc27073ffc63c07ff873e070e0f1e0c0c1f1f00001f1f80003f0e00003f0f00003f0700003f038000790180007800c0003000000030000000300000002000000000000'.match(/.{8}/g)!.map(row=>parseInt(row,16));
+type QrOptions={scale?:number;margin?:number;level?:'L'|'M'|'Q'|'H';pfLogo?:boolean};
+
 export function qrMatrix(text: string, level: 'L' | 'M' | 'Q' | 'H' = 'M'): QrMatrix {
   const code = QRCode.create(text, { errorCorrectionLevel: level });
   const modules = code.modules;
@@ -57,10 +61,12 @@ function zlibStored(raw: Uint8Array) {
 }
 
 /** 8 bit grayscale PNG of the QR: black modules on white, `scale` pixels per module, `margin` modules of quiet zone. */
-export function qrPng(text: string, options: { scale?: number; margin?: number; level?: 'L' | 'M' | 'Q' | 'H' } = {}): Uint8Array {
+export function qrPng(text: string, options: QrOptions = {}): Uint8Array {
   const { scale = 4, margin = 2, level = 'M' } = options;
-  const matrix = qrMatrix(text, level);
+  const matrix = qrMatrix(text, options.pfLogo?'H':level);
   const side = (matrix.size + margin * 2) * scale;
+  // Logo covers at most 18% of the module width; H correction and a white border preserve readability.
+  const logoSide=Math.floor(matrix.size*0.18)*scale,logoStart=Math.floor((side-logoSide)/2);
   const raw = new Uint8Array(side * (side + 1));
   for (let y = 0; y < side; y++) {
     const rowStart = y * (side + 1);
@@ -68,7 +74,11 @@ export function qrPng(text: string, options: { scale?: number; margin?: number; 
     const row = Math.floor(y / scale) - margin;
     for (let x = 0; x < side; x++) {
       const col = Math.floor(x / scale) - margin;
-      const dark = row >= 0 && col >= 0 && row < matrix.size && col < matrix.size && matrix.dark(row, col);
+      let dark = row >= 0 && col >= 0 && row < matrix.size && col < matrix.size && matrix.dark(row, col);
+      if(options.pfLogo&&x>=logoStart-scale&&x<logoStart+logoSide+scale&&y>=logoStart-scale&&y<logoStart+logoSide+scale){
+        const lx=Math.floor((x-logoStart)*32/logoSide),ly=Math.floor((y-logoStart)*32/logoSide);
+        dark=lx>=0&&lx<32&&ly>=0&&ly<32&&!!((PF_MASK[ly]>>>(31-lx))&1);
+      }
       raw[rowStart + 1 + x] = dark ? 0 : 255;
     }
   }
@@ -82,7 +92,7 @@ export function qrPng(text: string, options: { scale?: number; margin?: number; 
   return png;
 }
 /** Pixel side of the PNG qrPng produces for the same options, for sizing the image in a document. */
-export function qrPngSide(text: string, options: { scale?: number; margin?: number; level?: 'L' | 'M' | 'Q' | 'H' } = {}) {
+export function qrPngSide(text: string, options: QrOptions = {}) {
   const { scale = 4, margin = 2, level = 'M' } = options;
-  return (qrMatrix(text, level).size + margin * 2) * scale;
+  return (qrMatrix(text, options.pfLogo?'H':level).size + margin * 2) * scale;
 }

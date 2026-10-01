@@ -56,3 +56,59 @@ Walkthrough ini tidak mengulang import Excel dari nol, pembayaran, atau pemeriks
 Validasi bersama Data Program, Administrasi, PKS, dan Ringkasan kini menggabungkan alias template berdasarkan sumber field. Nama kegiatan/Judul program, identitas penandatangan, pemilik rekening, tempat surat, nomor surat, dan pecahan tanggal PKS tidak dihitung berulang. Lokasi program yang dihitung dari desa/wilayah mengikuti peringatan field sumber; Kecamatan tetap opsional. Kekurangan nominal terbilang RAB mengikuti peringatan RAB yang sudah ada. Perbandingan nama kuasa hanya diperiksa setelah kedua nama diisi. Daftar placeholder mentah tetap tersedia untuk pemeriksaan template.
 
 QA melalui tool Playwright: seluruh placeholder empat template diuji pada validator di browser; program kosong menghasilkan enam pesan untuk enam field wajib, tanpa pesan Judul program/Lokasi program tambahan. Rekening alfabet dan tanggal invoice 17 Juni tetap ditolak. Pada formulir Sorong, Nama kegiatan kosong menampilkan satu pesan dan mengetik menghilangkannya langsung; isian percobaan dikembalikan tanpa disimpan. Pemeriksaan dapat diulang melalui `scripts/qa/pengajuan-live-validation.playwright.js`. Build/check terminal tidak diulang untuk perubahan ini. Temuan UX lain pada laporan sebelumnya tetap terbuka.
+
+### Autosave Data Program
+
+Data Program kini memakai debounce 800 ms setelah perubahan terakhir. Tombol Simpan draf pada bagian ini dihapus; Administrasi dan PKS masih mengikuti penyimpanan sebelumnya. Status menunggu/menyimpan/tersimpan ditampilkan, kegagalan menyediakan Coba simpan lagi; konflik akun lain tetap memerlukan muat data terbaru. Tombol Lanjut/Kembali tetap menyimpan perubahan sebelum navigasi.
+
+QA browser Sorong: perubahan cepat tidak mengirim PATCH sebelum jeda, satu burst menghasilkan satu PATCH, nilai bertahan setelah reload. Nilai percobaan dikembalikan dan disimpan kembali. Percobaan pertama membaca input terlalu cepat setelah reload; pemeriksaan ulang menunggu data halaman dan memverifikasi respons GET server, lalu berhasil. Pemeriksaan ulang tersedia pada scripts/qa/pengajuan-autosave.playwright.js, khusus formulir QA lokal yang bisa diedit. Build dan test terminal tidak dijalankan untuk perubahan ini.
+
+### Warna titik Draf pada daftar butir kampus
+
+Titik pada butir kampus berlabel Draf kini biru #0066B2, sama dengan SK. Perubahan hanya pada daftar alur kampus; status dan warna Sesuai, Menunggu PF, serta Perlu revisi tetap mengikuti pemetaan sebelumnya. QA browser Sorong memeriksa computed background ketujuh butir Draf: semuanya rgb(0, 102, 178). Build tidak dijalankan untuk perubahan tampilan ini.
+
+### Unggahan dan alasan tombol dokumen terkunci
+
+PDF TOR yang dipilih berukuran 5.659.661 byte, melebihi batas 2 MB. Pemilihan gagal kini menampilkan ukuran dan pesan di kotak unggah serta mengosongkan input gagal. QA browser memakai PDF sintetis 3 MB: pesan lokal muncul, input kosong, peringatan belum diunggah tetap berlaku. Tidak ada file sintetis tersimpan.
+
+Administrasi kini menampilkan seluruh penghalang pembuatan dokumen, termasuk bagian lain. Nomor PKS PF ditandai sebagai tugas admin PF tanpa tombol Perbaiki yang membebankan kampus. GET pengajuan Sorong terakhir menunjukkan rekening/kop tersimpan; satu penghalang tersisa nomor PKS PF. QA browser memastikan alasan tampil dan tombol tetap terkunci sesuai validasi. Nomor PF tidak diisi otomatis dengan nilai palsu.
+
+### Template surat kuasa
+
+Susunan mengacu pada contoh surat kuasa penerimaan dana Danamon (https://www.danamon.co.id/-/media/ALL-CONTENT-BUSINESS-BANKING/MUFG/pdf/form/13-Surat-Kuasa-Penerimaan-Dana.pdf), dengan isi khusus pengajuan DEB. Identitas memakai kolom label/titik dua/nilai; tanda tangan dua kolom sejajar. A4 margin 2,5 cm. Header contoh permohonan tidak diwariskan. Kop semua dokumen dibatasi tinggi 1 inci dengan rasio asli agar gambar tinggi tidak membuat satu halaman sendiri. Dokumen tersimpan sebelumnya tidak diubah; unduh/buat ulang untuk hasil baru.
+
+Pratinjau docx-preview browser diperiksa melalui screenshot: surat kuasa data sintetis satu halaman, identitas dan tanda tangan sejajar; gambar tinggi 122x332 dibatasi tinggi 96 px. LibreOffice/soffice tidak tersedia, sehingga render Word/PDF native belum diverifikasi. Screenshot final lokal: .playwright-mcp/qa-kuasa-layout-final.png. Build dan tes terminal belum dijalankan.
+
+### Dashboard admin dan permintaan data PF
+
+Akar error direktori: 138 ID versi dokumen digabung dalam satu filter OR, PocketBase mengembalikan 400. Pembacaan ID kini dibagi 50 per permintaan, dipakai bersama oleh direktori dan antrean pemeriksaan. QA browser API direktori: 200, 42 kampus. Dashboard menampilkan tugas Lengkapi nomor PKS PF dengan tautan langsung ke PKS kampus terkait. Error lama dibersihkan saat pemuatan ulang berhasil.
+
+Kampus yang membutuhkan nomor PF mendapat tombol Minta PF melengkapi nomor PKS. PATCH memakai revisi server dan menyimpan pfRequestedAt pada applicationData yang sudah ada; permintaan berulang tidak mengirim notifikasi ganda. Notifikasi memakai notifyAdmins yang sudah tersedia, setelah transaksi berhasil. Admin mengisi melalui form Data PKS yang diisi PF; perubahan nomor mengirim notifyCampus untuk melanjutkan dokumen. Tidak ada collection tambahan dan nomor tidak dibuat palsu.
+
+QA browser lokal Sorong: permintaan dikirim, tombol berubah Permintaan sudah dikirim ke PF, API notifikasi admin 200 berisi Nomor PKS PF diperlukan, tautan PKS membuka input admin. Nomor PF tetap kosong dan belum diubah dalam QA ini. Karena itu pembuatan dokumen Sorong masih menunggu aksi admin; notifikasi balik setelah nomor disimpan belum dicoba pada data Sorong. Permintaan lokal Sorong tersimpan sebagai tindakan QA, bukan paket pengajuan final. Tidak ada email/WhatsApp dikirim. Pemeriksaan browser baca direktori tersedia pada scripts/qa/pencairan-directory.playwright.js. Build/typecheck belum diulang dan perubahan belum dipush.
+
+### Pembukaan penghalang Sorong dengan nomor simulasi lokal
+
+Atas izin pengguna untuk mengisi data lokal, nomor PKS PF Sorong diisi melalui form admin menjadi PKS-PF/SIMULASI-LOKAL/SORONG/2026/001. Nomor ini khusus simulasi, bukan nomor resmi. Notifikasi balik Nomor PKS PF sudah tersedia terverifikasi di akun kampus. GET pengajuan menghasilkan blockers kosong. Tombol Siapkan semua dokumen berhasil menghasilkan PKS, permohonan, invois, kuitansi dari UI kampus. Tombol Ajukan untuk diperiksa aktif. Draf dibiarkan belum diajukan agar pengguna dapat melanjutkan percobaan.
+
+### Pratinjau di kartu dokumen
+
+Pratinjau PKS, permohonan, invois, dan kuitansi kini tampil di dalam kartu masing-masing, tepat sesudah tombol dan sebelum panduan. Hanya satu pratinjau terbuka; klik tombol yang sama menutupnya. QA browser Sorong membuka keempat dokumen, memastikan renderer terlihat dalam kartu terkait, lalu menutupnya. Build belum diulang dan perubahan belum dipush.
+
+### Linimasa pengajuan baru
+
+Linimasa sebelumnya membaca disbursement.stage alur lama, sehingga paket baru tetap di Dasar walaupun butir telah disetujui. Alur baru kini memakai status paket, dokumen dari revisi pengajuan terkini, kelengkapan berkas, penerimaan tanda tangan, dan paidAt. Label: Isi pengajuan ? Siapkan dokumen ? Kirim pengajuan ? Pemeriksaan PF ? Tanda tangan ? Pembayaran ? Dana dibayar. Persetujuan beberapa butir tidak memindahkan paket ke tanda tangan sebelum status keseluruhan selesai. Kembali ke tab lama tidak memundurkan paket menunggu pemeriksaan. Alur legacy tetap menggunakan STAGES sebelumnya.
+
+QA browser Sorong setelah pengguna mengajukan: tahap aktif Pemeriksaan PF, tiga langkah terdahulu bertanda centang, judul tahap sama. Tidak ada persetujuan/pembayaran dibuat oleh QA ini. Build belum diulang.
+
+### Snackbar penyimpanan (1 Oktober 2026)
+
+Pesan sukses pengajuan, termasuk autosave Data Program, tampil sebagai snackbar di bawah layar. Animasi masuk/keluar 200 ms, hilang otomatis setelah 4 detik, tombol tutup tersedia. Preferensi reduced motion menonaktifkan animasi. Kesalahan dan panduan validasi tetap tampil di form. QA browser pada Data Program Fakfak: autosave memunculkan snackbar dengan posisi fixed, tombol tutup tampil, pesan hilang otomatis, isi nama program tetap sama setelah normalisasi spasi. Tidak menjalankan build/test terminal atau push.
+
+### Input tetap aktif saat simpan draf
+
+`CampusJourney` membedakan simpan draf dari operasi lain. Input teks/tanggal dan pilihan rekening tetap aktif saat menyimpan; file dan tindakan lanjutan tetap menunggu request selesai. Snapshot yang dikirim dibandingkan dengan isian terkini ketika respons diterima: field yang berubah selama request tidak ditimpa respons lama. Jika masih ada perubahan, Data Program mengantre autosave berikutnya; pesan sukses hanya tampil setelah semua isian terkini tersimpan. RAB sudah mempertahankan snapshot alokasi dan membolehkan input saat autosave; snackbar RAB diberi transisi yang sama dan menghormati reduced motion.
+
+Pemeriksaan browser awal terinterupsi oleh navigasi pengguna/dialog pilih file. Belum dijadikan bukti lulus. Skrip pemeriksaan berlatensi `scripts/qa/autosave-editing.playwright.js` tersedia untuk tool browser; mengubah nama sementara lalu memulihkan. Jangan jalankan pada tab yang sedang dipakai mengetik oleh pengguna.
+
+Pemeriksaan lanjutan berhasil pada context browser terpisah, akun Universitas Pertamina: request autosave ditahan 1,2 detik; input tetap aktif selama request; ketikan kedua tidak ditimpa respons pertama; autosave berikutnya menyimpan ketikan terkini dan tetap terlihat setelah reload. Nama sementara dikembalikan ke nilai awal. QA ini memverifikasi autosave Data Program; Administrasi/PKS memakai fungsi save bersama, diperiksa melalui kode. RAB mempertahankan mekanisme autosave lama; animasi snackbar ditambahkan tanpa mengubah alokasi.

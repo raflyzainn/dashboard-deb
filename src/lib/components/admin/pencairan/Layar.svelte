@@ -18,6 +18,7 @@
   import TandaTanganView from './TandaTanganView.svelte';
   import LampiranView from './LampiranView.svelte';
   import PembayaranView from './PembayaranView.svelte';
+  import BuktiTransfer from './BuktiTransfer.svelte';
   import RiwayatSheet from './RiwayatSheet.svelte';
 
   /**
@@ -74,8 +75,20 @@
   const belumAda = $derived(data ? KINDS.filter(k => data!.readiness.items[k] === 'belum_ada') : []);
   const perluRevisi = $derived(data ? KINDS.filter(k => data!.readiness.items[k] === 'perlu_revisi') : []);
   const menungguPf = $derived(data ? KINDS.filter(k => ['menunggu_review', 'perlu_konfirmasi'].includes(data!.readiness.items[k])) : []);
-  const campusStages = $derived(data?.disbursement.paidAt ? [...STAGES, 'Dana dibayar'] : [...STAGES]);
-  const campusStage = $derived(data?.disbursement.paidAt ? campusStages.length : Math.max(1, Math.min(STAGES.length, data?.disbursement.stage || 1)));
+  const campusJourney=$derived(fullDummy&&(data as any)?.journey);
+  const campusStages = $derived(campusJourney?['Isi pengajuan','Siapkan dokumen','Kirim pengajuan','Pemeriksaan PF','Tanda tangan','Pembayaran','Dana dibayar']:data?.disbursement.paidAt ? [...STAGES, 'Dana dibayar'] : [...STAGES]);
+  const campusStage = $derived.by(()=>{
+    if(data?.disbursement.paidAt)return campusStages.length;
+    if(!campusJourney)return Math.max(1,Math.min(STAGES.length,data?.disbursement.stage||1));
+    const docs=data!.documents.filter(d=>d.generated);
+    if(campusJourney.status==='selesai')return docs.length&&docs.every(d=>d.signedReceived)?6:5;
+    if(campusJourney.status==='menunggu')return 4;
+    if(campusJourney.status==='revisi')return 1;
+    const generated=docs.filter(d=>d.versions.some(v=>v.id===d.currentVersionId&&v.origin==='generated'&&v.generation?.journeyRevision===campusJourney.revision));
+    if(generated.length===4)return 3;
+    if(generated.length||data?.rab&&campusJourney.files?.rekening&&campusJourney.files?.kop&&campusJourney.fields?.nomorPksKampus&&campusJourney.pf?.nomorPksPf)return 2;
+    return 1;
+  });
   const nextCampusUpload = $derived.by(() => {
     if (!data) return null;
     if (fullDummy) {
@@ -155,7 +168,7 @@
     return request ? { request, version } : null;
   });
   /** The review note is one editable text: it starts as the sheet's commentary and is saved again with every decision. */
-  const latestNote = $derived(thread.find(r => r.note)?.note || '');
+  const latestNote = $derived(thread[0]?.note || '');
   $effect(() => { const n = latestNote; untrack(() => { reviewNote = n; }); });
   const closingDone = $derived.by(() => {
     if (!data) return { ttd: false, lampiran: false, bayar: false } as Record<string, boolean>;
@@ -338,34 +351,36 @@
     {#if !admin}
       <section aria-label="Progres pencairan" class="my-2 grid gap-2 rounded-xl border border-blue-100 bg-blue-50/60 p-4 text-sm text-slate-700">
         <p class="text-sm text-slate-700">Nilai SK <strong class="tabular-nums text-slate-900">{formatSen(data.summary.amountSen)}</strong></p>
+        {#if data.disbursement.paidAt&&import.meta.env.MODE!=='mockup'}<BuktiTransfer {campusId} {data}/>{/if}
         <div class="flex flex-wrap items-center justify-between gap-2"><h2 class="font-bold text-slate-900">Progres Tahap 1 · {data.readiness.done} dari {data.readiness.total} selesai</h2><button type="button" class="font-semibold text-[#0066B2] disabled:opacity-50" disabled={busy} onclick={load}>Perbarui status</button></div>
         {#if belumAda.length}<p><strong class="text-slate-900">{fullDummy && data.rab ? 'Belum diajukan' : 'Belum ada'} ({belumAda.length}):</strong> {belumAda.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
         {#if perluRevisi.length}<p><strong class="text-amber-900">Perlu revisi ({perluRevisi.length}):</strong> {perluRevisi.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
         {#if menungguPf.length}<p><strong class="text-[#015a9a]">Menunggu PF ({menungguPf.length}):</strong> {menungguPf.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
         {#if data.readiness.missing.length === 0}<p>{data.readiness.phrase}</p>{/if}
-        <p class="text-xs text-slate-500">{fullDummy && (data as any).journey ? (data as any).journey.status==='menunggu' ? 'Pengajuan telah dikirim. Tunggu hasil pemeriksaan PF.' : (data as any).journey.status==='selesai' ? 'Pengajuan disetujui. Lanjutkan dokumen bertanda tangan.' : 'Lengkapi data program, RAB, administrasi, dan PKS. Pengajuan dikirim sekali setelah semuanya siap.' : fullDummy ? !data.rab ? 'Mulai dengan satu file RAB 100%. Pembagian kedua tahap dilakukan di aplikasi.' : data.rab.status === 'menunggu' ? 'RAB telah dikirim. Tunggu keputusan PF; pembagian terkunci selama pemeriksaan.' : data.rab.status === 'disetujui' ? 'RAB telah disetujui. Pantau langkah pencairan berikutnya.' : 'Draf RAB belum diajukan. Lengkapi pembagian, periksa kedua tahap, lalu kirim seluruh RAB ke PF.' : 'Pilih dokumen untuk melihat berkas dan catatan pemeriksa. SK dan RAB hanya dapat dilihat; unggah RAB belum dibuka.'}</p>
+        <p class="text-xs text-slate-500">{data.disbursement.paidAt?'Pembayaran Tahap 1 sudah tercatat. Proses pencairan Tahap 1 selesai.':fullDummy && (data as any).journey ? (data as any).journey.status==='menunggu' ? 'Pengajuan telah dikirim. Tunggu hasil pemeriksaan PF.' : (data as any).journey.status==='selesai' ? campusStage===6?'Pindaian bertanda tangan tersimpan. Menunggu penerimaan dokumen asli, lampiran, dan pembayaran oleh PF.':'Pengajuan disetujui. Unggah empat dokumen bertanda tangan.' : 'Lengkapi data program, RAB, administrasi, dan PKS. Pengajuan dikirim sekali setelah semuanya siap.' : fullDummy ? !data.rab ? 'Mulai dengan satu file RAB 100%. Pembagian kedua tahap dilakukan di aplikasi.' : data.rab.status === 'menunggu' ? 'RAB telah dikirim. Tunggu keputusan PF; pembagian terkunci selama pemeriksaan.' : data.rab.status === 'disetujui' ? 'RAB telah disetujui. Pantau langkah pencairan berikutnya.' : 'Draf RAB belum diajukan. Lengkapi pembagian, periksa kedua tahap, lalu kirim seluruh RAB ke PF.' : 'Pilih dokumen untuk melihat berkas dan catatan pemeriksa. SK dan RAB hanya dapat dilihat; unggah RAB belum dibuka.'}</p>
       </section>
       <section aria-labelledby="timeline-title" class="grid min-w-0 gap-3 rounded-xl border border-slate-200 bg-white p-4">
         <div>
           <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Tahap saat ini</p>
-          <h2 id="timeline-title" class="mt-1 font-bold text-slate-900">{fullDummy&&!admin&&(data as any).journey?({sk:'SK',program:'Data Program',rab:'RAB',administrasi:'Administrasi',pks:'PKS',ringkasan:'Ringkasan pengajuan'} as Record<string,string>)[(data as any).journey.lastSection]:campusStages[campusStage - 1]}</h2>
+          <h2 id="timeline-title" class="mt-1 font-bold text-slate-900">{campusStages[campusStage - 1]}</h2>
         </div>
         <details>
           <summary class="cursor-pointer text-sm font-semibold text-[#0066B2]">Lihat seluruh proses pencairan</summary>
           <ol class="mt-3 grid gap-0 sm:grid-cols-7" aria-label="Linimasa proses pencairan">
             {#each campusStages as stage, index}
+              {@const completed=Boolean(data.disbursement.paidAt)||index+1<campusStage}
               <li aria-current={index + 1 === campusStage ? 'step' : undefined} class="relative flex min-h-14 items-center gap-3 text-sm sm:min-h-24 sm:flex-col sm:items-center sm:gap-2">
                 {#if index < campusStages.length - 1}<span aria-hidden="true" class="absolute left-4 top-7 h-14 w-0.5 {index + 1 < campusStage ? 'bg-green-300' : 'bg-slate-200'} sm:bottom-auto sm:left-1/2 sm:top-4 sm:h-0.5 sm:w-full"></span>{/if}
-                <span class="z-10 grid size-8 shrink-0 place-items-center rounded-full border-2 bg-white font-bold {index + 1 === campusStage ? 'border-[#0066B2] text-[#0066B2]' : index + 1 < campusStage ? 'border-green-600 text-green-700' : 'border-slate-300 text-slate-500'}">{index + 1 < campusStage ? '✓' : index + 1}</span>
-                <span class="z-10 leading-5 {index + 1 === campusStage ? 'font-bold text-[#015a9a]' : index + 1 < campusStage ? 'font-medium text-green-800' : 'text-slate-600'} sm:px-1 sm:text-center sm:text-xs">{stage}</span>
+                <span class="z-10 grid size-8 shrink-0 place-items-center rounded-full border-2 bg-white font-bold {completed?'border-green-600 text-green-700':index+1===campusStage?'border-[#0066B2] text-[#0066B2]':'border-slate-300 text-slate-500'}">{completed?'✓':index+1}</span>
+                <span class="z-10 leading-5 {completed?'font-medium text-green-800':index+1===campusStage?'font-bold text-[#015a9a]':'text-slate-600'} sm:px-1 sm:text-center sm:text-xs">{stage}</span>
               </li>
             {/each}
           </ol>
         </details>
         <div class="grid gap-2 rounded-lg bg-slate-50 p-3 text-sm sm:grid-cols-2">
-          <p><strong class="text-slate-900">Yang bertindak:</strong> {fullDummy&&(data as any).journey?(data as any).journey.status==='menunggu'||(data as any).journey.status==='selesai'&&data.documents.filter(d=>d.generated).every(d=>d.signedReceived)?'Pertamina Foundation':'Kampus':nextCampusUpload ? 'Kampus' : data.disbursement.paidAt ? 'Selesai' : 'Pertamina Foundation'}</p>
+          <p><strong class="text-slate-900">Yang bertindak:</strong> {data.disbursement.paidAt?'Selesai':fullDummy&&(data as any).journey?(data as any).journey.status==='menunggu'||(data as any).journey.status==='selesai'&&data.documents.filter(d=>d.generated).every(d=>d.signedReceived)?'Pertamina Foundation':'Kampus':nextCampusUpload ? 'Kampus' : 'Pertamina Foundation'}</p>
           <div>
-            <p><strong class="text-slate-900">Langkah selanjutnya:</strong> {#if fullDummy&&(data as any).journey}{(data as any).journey.status==='menunggu'?'Tunggu pemeriksaan PF atas pengajuan Anda.':(data as any).journey.status==='selesai'?'Unduh dan lengkapi dokumen bertanda tangan.':'Lanjutkan draf, lalu periksa ringkasan sebelum mengajukan.'}{:else if nextCampusUpload}{fullDummy && data.rab && isRabKind(nextCampusUpload.kind) ? kind === 'rab' ? 'Periksa pembagian Tahap 1' : kind === 'rab_tahap2' ? 'Periksa Tahap 2 lalu ajukan seluruh RAB' : 'Lengkapi pembagian jumlah item' : nextCampusUpload.state === 'perlu_revisi' ? 'Kirim revisi' : 'Lengkapi dokumen'} {fullDummy && data.rab && isRabKind(nextCampusUpload.kind) ? '' : KIND_SHORT[nextCampusUpload.kind]}{:else if data.disbursement.paidAt}Tidak ada tindakan lagi untuk Tahap 1.{:else if menungguPf.length}Tunggu pemeriksaan PF untuk {menungguPf.map(k => KIND_SHORT[k]).join(', ')}.{:else if data.readiness.lengkap}PF melanjutkan penyelesaian proses.{:else}PF melanjutkan pemeriksaan dokumen.{/if}</p>
+            <p><strong class="text-slate-900">Langkah selanjutnya:</strong> {#if fullDummy&&(data as any).journey}{data.disbursement.paidAt?'Pembayaran Tahap 1 sudah tercatat. Tidak ada tindakan lagi untuk Tahap 1.':campusStage===6?'Pindaian bertanda tangan sudah tersimpan. Tunggu PF menerima dokumen asli, menyimpan lampiran, dan mencatat pembayaran.':(data as any).journey.status==='menunggu'?'Tunggu pemeriksaan PF atas pengajuan Anda.':(data as any).journey.status==='selesai'?'Unduh, tandatangani, lalu unggah pindaian PKS, permohonan, invois, dan kuitansi melalui tombol Unggah bertanda tangan di ringkasan.':(data as any).journey.status==='revisi'?'Perbaiki sesuai catatan PF, siapkan dokumen terbaru, lalu kirim ulang melalui Ringkasan.':'Lanjutkan draf, lalu periksa ringkasan sebelum mengajukan.'}{:else if nextCampusUpload}{fullDummy && data.rab && isRabKind(nextCampusUpload.kind) ? kind === 'rab' ? 'Periksa pembagian Tahap 1' : kind === 'rab_tahap2' ? 'Periksa Tahap 2 lalu ajukan seluruh RAB' : 'Lengkapi pembagian jumlah item' : nextCampusUpload.state === 'perlu_revisi' ? 'Kirim revisi' : 'Lengkapi dokumen'} {fullDummy && data.rab && isRabKind(nextCampusUpload.kind) ? '' : KIND_SHORT[nextCampusUpload.kind]}{:else if data.disbursement.paidAt}Tidak ada tindakan lagi untuk Tahap 1.{:else if menungguPf.length}Tunggu pemeriksaan PF untuk {menungguPf.map(k => KIND_SHORT[k]).join(', ')}.{:else if data.readiness.lengkap}PF melanjutkan penyelesaian proses.{:else}PF melanjutkan pemeriksaan dokumen.{/if}</p>
             {#if nextCampusUpload}<a class="mt-1 inline-flex font-semibold text-[#0066B2] hover:underline" href={`/campus/pencairan?butir=${nextCampusUpload.kind}`}>Buka langkah ini <Icon name="arrow" size={14} /></a>{/if}
           </div>
         </div>
@@ -381,7 +396,7 @@
           {@const j=(data as any).journey}
           {@const status=item.key==='sk'?data.readiness.items.sk:item.key==='pks'&&j&&!['menunggu','selesai'].includes(j.status)?data.readiness.items.pks==='perlu_revisi'?'perlu_revisi':'belum_ada':item.key==='program'?j?.status==='menunggu'?'menunggu_review':j?.status==='selesai'?'sesuai':'belum_ada':item.key==='administrasi'?['permohonan','invois','kuitansi','rekening','surat_kuasa'].some(k=>data!.readiness.items[k as Kind]==='perlu_revisi')?'perlu_revisi':j?.status==='menunggu'?'menunggu_review':j?.status==='selesai'?'sesuai':'belum_ada':data.readiness.items[item.key as Kind]}
           <button type="button" class="flex shrink-0 items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] transition {selected===item.key?'bg-white font-bold text-slate-900 shadow-[0_4px_12px_#0b254514]':'text-slate-700 hover:bg-white/70'}" onclick={()=>open(item.key)} aria-current={selected===item.key?'true':undefined}>
-           <i class="size-2.5 shrink-0 rounded-full {dot[status]}"></i><span class="whitespace-nowrap">{item.label}</span><span class="ml-auto whitespace-nowrap pl-2 text-[11px] font-medium text-slate-500">{status==='perlu_revisi'?'Perlu revisi':status==='sesuai'?'Sesuai':status==='menunggu_review'?'Menunggu PF':'Draf'}</span>
+           <i class="size-2.5 shrink-0 rounded-full {status==='belum_ada'?'bg-[#0066B2]':dot[status]}"></i><span class="whitespace-nowrap">{item.label}</span><span class="ml-auto whitespace-nowrap pl-2 text-[11px] font-medium text-slate-500">{status==='perlu_revisi'?'Perlu revisi':status==='sesuai'?'Sesuai':status==='menunggu_review'?'Menunggu PF':'Draf'}</span>
           </button>
          {/each}
         {:else}
@@ -578,7 +593,7 @@
                   </div>
                 </div>
               {:else if admin}
-                {#if kind === 'rekening'}<label class="grid min-w-0 gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">Nama di bank<input class="min-h-[44px] w-[170px] max-w-full rounded-lg border border-slate-300 px-2 text-[13px] font-medium normal-case tracking-normal text-slate-900" bind:value={bankNameSeen} placeholder="Bila berbeda" /></label>{/if}
+                {#if kind === 'rekening'}<label class="grid min-w-0 gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">Nama di bank<input class="min-h-[44px] w-[170px] max-w-full rounded-lg border border-slate-300 px-2 text-[13px] font-medium normal-case tracking-normal text-slate-900" bind:value={bankNameSeen} placeholder="Nama yang terlihat di bank" /></label>{/if}
                 <label class="grid w-full min-w-0 gap-1 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">
                   <span>Catatan keputusan{#if doc?.decidedByName}<span class="ml-2 font-medium normal-case tracking-normal text-slate-400">{state === 'perlu_revisi' ? DECISION_LABEL[kind].bad : decided ? DECISION_LABEL[kind].ok : ITEM_STATE_LABEL[state]} · {doc.decidedByName}{doc.decidedAt ? ` · ${time.format(new Date(doc.decidedAt))}` : ''}</span>{/if}</span>
                   <textarea bind:this={noteInput} rows="2" class="min-h-[64px] w-full rounded-lg border px-3 py-2 text-[14px] font-medium leading-relaxed normal-case tracking-normal text-slate-900 {state === 'perlu_revisi' ? 'border-amber-300 bg-amber-50/40' : 'border-slate-300'}" bind:value={reviewNote} oninput={grow} placeholder={kind === 'sk' ? 'Bila berbeda: nilai yang tercetak di SK' : 'Catatan keputusan: alasan revisi atau keterangan lolos, dikirim ke kampus'}></textarea>

@@ -3,7 +3,7 @@ import type { Kind, Status, Assessment } from '$lib/pencairan';
 /** The card payload from GET /api/pencairan/[campus], as the browser sees it. */
 export interface Review { id: string; decision: string; note: string; actorName: string; created: string; imported: boolean }
 export interface DocScan { termin2Hits: string[]; highlight: number; words: number; scannedAt: string }
-export interface Version { generation?: { final?: boolean }; id: string; number: number; originalName: string; size: number; mime: string; origin: string; uploadedByName: string; created: string; note: string; signed: boolean; scan: DocScan | null; fields: Record<string, unknown>; fieldsByName: string; fieldsAt: string; fieldsCheckedByName: string; fieldsCheckedAt: string; fieldsSamePerson: boolean; reviews: Review[] }
+export interface Version { generation?: { final?: boolean; journeyRevision?: number }; id: string; number: number; originalName: string; size: number; mime: string; origin: string; uploadedByName: string; created: string; note: string; signed: boolean; scan: DocScan | null; fields: Record<string, unknown>; fieldsByName: string; fieldsAt: string; fieldsCheckedByName: string; fieldsCheckedAt: string; fieldsSamePerson: boolean; reviews: Review[] }
 export interface Note { id: string; body: string; internal: boolean; authorName: string; authorRole: string; created: string }
 export interface Doc { id: string; kind: Kind; status: Status; signedReceived: boolean; signedReceivedAt: string; signedReceivedByName: string; originalReceived: boolean; originalReceivedAt: string; originalReceivedByName: string; currentVersionId: string; versions: Version[]; generated: boolean; decidedByName: string; decidedAt: string; notes: Note[]; reviews: Review[] }
 export interface Check { kind: Kind | 'umum'; level: 'ok' | 'warn' | 'bad' | 'info'; text: string }
@@ -20,6 +20,7 @@ export interface KartuData {
 }
 /** One dashboard row from GET /api/pencairan. */
 export interface DirectoryRow {
+  needsPfPks?: boolean;
   campus: { id: string; name: string; code: string; programYear: string; fillMode: string };
   amountSen: number; limitSen: number; stage: number; requestedSen: number; paidSen: number; paidAt: string; lampiranCount: number;
   statuses: Record<Kind, Status>; assessment: Assessment; checkedAt: string; bukti: { r100: string; r70: string; r30: string };

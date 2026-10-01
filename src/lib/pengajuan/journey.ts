@@ -19,6 +19,7 @@ export interface Journey {
  status: 'draf' | 'menunggu' | 'revisi' | 'selesai'; lastSection: Section;
  fields: Record<string, string>; files: Record<string, { id: string; name: string; mime: string; width?: number; height?: number; source?: string }>;
  revision: number; history: any[];
+ pfRequestedAt?: string;
  pf?: {nomorPksPf:string}; checklist?: Record<string,boolean>;
 }
 export function ensureJourney(c: any, r: any): Journey {
@@ -93,6 +94,7 @@ export function journeyView(c:any,r:any,settings:any,templates:Record<MergeKind,
   version:v?{totalSen:v.totalSen,term1Sen:v.term1Sen,term2Sen:v.term2Sen,campusStep:v.campusStep,lines:v.lines.map((l:any)=>({level:l.level,volume:l.volume,flags:{term1Volume:l.flags?.term1Volume}}))}:null};
  const stale=MERGE_KINDS.filter(k=>{const d=r.documents.find((d:any)=>d.kind===k);return !d?.versions.some((v:any)=>(v.id===d.currentVersionId||j.status==='selesai'&&d.signedReceived)&&v.origin==='generated'&&v.journeyRevision===j.revision&&(j.status==='selesai'||v.generation?.settingsSource===settingsSource(settings)));});
  return {validation,journey:j,pf:{nomorPksPf:j.pf?.nomorPksPf||(c.award?'':'PKS-PF/DUMMY/2026/'+c.id),name:settings.pfSignatoryName,title:settings.pfSignatoryTitle},campus:{id:c.id,name:c.name},summary:{amountSen:BUDGET,limitSen:LIMIT,skNumber:c.award?.skNumber||'SK-DUMMY/2026/'+c.id},rab:v?{id:v.id,number:v.number,totalSen:v.totalSen,term1Sen:v.term1Sen,term2Sen:v.term2Sen,status:v.status}:null,missing,blockers,stale,
+  revisionBlockers:r.documents.filter((d:any)=>d.status==='perlu_revisi'&&!(d.kind==='surat_kuasa'&&j.fields.jenisRekening==='kampus')).map((d:any)=>d.kind),
   documents:r.documents.map((d:any)=>({kind:d.kind,status:d.status,signedReceived:d.signedReceived,notes:d.reviews.filter((n:any)=>n.decision==='perlu_revisi'),versions:d.versions})),paid:!!r.payment.paidAt};
 }
 export function touchJourney(c:any,r:any) {

@@ -4,7 +4,7 @@
   import { formatSen } from '$lib/pencairan';
 
   /** Public verification page opened from the QR on a document. No sign in, no shell: campus, document, date, amount and hash. */
-  interface Result { valid: boolean; unavailable?: boolean; message?: string; code?: string; kindLabel?: string; campusName?: string; term?: number; issuedAt?: string; amountSen?: number; sha256?: string; label?: string }
+  interface Result { valid: boolean; unavailable?: boolean; message?: string; code?: string; kindLabel?: string; campusName?: string; term?: number; issuedAt?: string; amountSen?: number; sha256?: string; label?: string; local?: boolean; status?: string }
   let result = $state<Result | null>(null);
   let loading = $state(true);
   let copied = $state(false);
@@ -19,7 +19,7 @@
     } catch { result = { valid: false, unavailable: true }; }
     finally { loading = false; }
   }
-  $effect(() => { untrack(() => { void load(); }); });
+  $effect(() => { code; untrack(() => { void load(); }); });
   async function copy() {
     if (!result?.sha256) return;
     try { await navigator.clipboard.writeText(result.sha256); copied = true; setTimeout(() => (copied = false), 3000); } catch { copied = false; }
@@ -48,6 +48,8 @@
             {#if result.label}<p class="mt-1 text-sm text-slate-600">{result.label}</p>{/if}
           </div>
         </div>
+        {#if result.local}<p class="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">Lingkungan lokal untuk simulasi. Dokumen ini belum diterbitkan melalui website DEB produksi.</p>{/if}
+        {#if result.status}<p class="mt-3 text-sm font-semibold text-slate-800">Status: {result.status}</p>{/if}
         <dl class="mt-6 grid gap-4 border-t border-slate-100 pt-5 sm:grid-cols-2">
           <div><dt class="text-[12px] font-semibold uppercase tracking-[0.06em] text-slate-500">Kampus</dt><dd class="mt-1 text-sm font-semibold text-slate-900">{result.campusName || 'Tidak tercatat'}</dd></div>
           <div><dt class="text-[12px] font-semibold uppercase tracking-[0.06em] text-slate-500">Dokumen</dt><dd class="mt-1 text-sm font-semibold text-slate-900">{result.kindLabel}</dd></div>
@@ -65,7 +67,7 @@
             </dd>
           </div>
         </dl>
-        <p class="mt-5 text-sm leading-6 text-slate-600">Bandingkan SHA-256 di atas dengan berkas yang Anda pegang.</p>
+        <p class="mt-5 text-sm leading-6 text-slate-600">QR mencatat asal penerbitan dokumen. Bandingkan SHA-256 di atas dengan berkas yang Anda pegang untuk memastikan isinya sama. Tanda tangan dan persetujuan mengikuti status dokumen.</p>
       </article>
     {:else if result?.unavailable}
       <article class="rounded-2xl border border-amber-200 bg-white/95 p-5 shadow-[0_18px_45px_#0b254514] sm:p-7" role="alert">

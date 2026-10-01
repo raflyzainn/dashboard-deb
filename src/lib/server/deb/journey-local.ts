@@ -7,10 +7,12 @@ import { ensureJourney } from '../../pengajuan/journey';
 import { MERGE_KINDS, TEMPLATE_FILE } from '../../merge';
 import { secured, ANY, recordId } from './access';
 import { atomic, StoreRecord, type RestStore } from './rest-store';
+import { notifyAdmins, notifyCampus } from './pencairan';
 import { PreviewError } from './preview-error';
 import { security } from './security';
 import { storage, ALLOWED_EXTENSIONS, extensionOf } from './r2';
 import { readFormBody, readJsonBody } from './request-body';
+import { verifyJourneyDownload } from './journey-verification';
 
 const copies=(store:RestStore,name:string)=>store.records.get(name)!.map(r=>structuredClone(r.data));
 const clean=(value:any)=>JSON.stringify(value??null);
@@ -41,6 +43,7 @@ export function localJourney(event:RequestEvent):Promise<Response>{
   const selected=(await pb.collection('disbursements').getList(1,1,{filter:pb.filter('campus = {:c} && term = 1',{c:campusId})})).items[0];
   if(!selected?.submissionStatus)fail(409,'Pengajuan lama tetap menggunakan alur sebelumnya. Gunakan kampus QA lokal untuk alur baru.');
   const storeFiles=storage(settings);
+  let requestedPf=false,pfUpdated=false;
   const transaction=async<T>(action:(state:any)=>T,mutate=false):Promise<T>=>{
    return atomic(pb,async store=>{
     const c=copies(store,'campuses')[0],award=copies(store,'sk_awards')[0],payment=copies(store,'disbursements')[0];
@@ -48,10 +51,10 @@ export function localJourney(event:RequestEvent):Promise<Response>{
     if(mutate&&write&&!navigationOnly&&(!Number.isInteger(expected)||expected!==payment.revision))fail(409,'Data berubah di akun/tab lain. Isian Anda tetap tersedia; muat data terbaru sebelum mencoba lagi.');
     if(mutate&&write&&payment.paidAt)fail(409,'Pengajuan yang sudah dibayar terkunci.');
     c.award=award;
-    const rv=copies(store,'rab_versions').sort((a,b)=>a.number-b.number),rl=copies(store,'rab_lines'),dv=copies(store,'document_versions'),reviews=copies(store,'reviews'),notes=copies(store,'notes'),history=copies(store,'audit').filter(a=>a.action==='mengajukan paket pencairan').map(a=>({...a.after,id:a.id,created:a.created,actorName:a.actorName}));
+    const rv=copies(store,'rab_versions').sort((a,b)=>a.number-b.number),rl=copies(store,'rab_lines'),dv=copies(store,'document_versions'),reviews=copies(store,'reviews'),notes=copies(store,'notes'),history=copies(store,'audit').filter(a=>a.action==='mengajukan paket pencairan').sort((a,b)=>a.created.localeCompare(b.created)).map(a=>({...a.after,id:a.id,created:a.created,actorName:a.actorName}));
     const r:any={payment,versions:rv.map(v=>({...v,active:payment.rabVersion===v.id,...(v.campusStep?{quantityAllocation:true}:{}),lines:ordered(rl.filter(l=>l.version===v.id))})),
      documents:copies(store,'documents').filter(d=>d.kind!=='laporan').map(d=>{const rs=reviews.filter(v=>v.document===d.id).sort((a,b)=>a.created.localeCompare(b.created));return {...d,currentVersionId:d.currentVersion,generated:MERGE_KINDS.includes(d.kind),versions:dv.filter(v=>v.document===d.id).sort((a,b)=>a.number-b.number).map(v=>({...v,journeyRevision:v.generation?.journeyRevision,fields:v.fields||{},reviews:rs.filter(x=>x.version===v.id)})),reviews:rs,notes:notes.filter(n=>n.document===d.id),decidedByName:rs.at(-1)?.actorName||'',decidedAt:rs.at(-1)?.created||''};}),
-     bankCheck:copies(store,'bank_checks')[0]||null,attachments:[],entries:[],templates:[],journey:{...payment.applicationData,status:payment.submissionStatus,revision:payment.applicationData?.revision||1,history}};
+     bankCheck:copies(store,'bank_checks')[0]||null,attachments:copies(store,'attachments'),entries:[],templates:[],journey:{...payment.applicationData,status:payment.submissionStatus,revision:payment.applicationData?.revision||1,history}};
     if(!r.journey.fields){delete r.journey;ensureJourney(c,r);r.journey.pf={nomorPksPf:payment.properties?.nomorPksPf||''};}
     const settingsRows=copies(store,'program_settings'),files:Record<string,Blob>={},refs:Record<string,string>={};
     for(const v of dv)if(v.r2Key)refs[v.id]=v.r2Key;
@@ -62,7 +65,9 @@ export function localJourney(event:RequestEvent):Promise<Response>{
     }
     const state:any={data:{campuses:[c]},accounts:[],files,fullDummy:{campuses:{[campusId]:r},users:[],settings:settingsRows,audit:[]}};
     const originalFiles=new Set(Object.keys(files)),historyCount=history.length;
+    const requestedBefore=r.journey.pfRequestedAt,pfBefore=r.journey.pf?.nomorPksPf;
     const result=action(state);
+    if(mutate&&write){requestedPf=!requestedBefore&&!!r.journey.pfRequestedAt;pfUpdated=route==='pengajuan/pf'&&pfBefore!==r.journey.pf?.nomorPksPf;}
     if(mutate&&write&&route==='documents/rekening/review'&&body.bank){const b=body.bank;if(!['sesuai','berbeda'].includes(b.result)||typeof b.nameSeen!=='string'||!b.nameSeen.trim()||b.nameSeen.length>200)fail(400,'Isi nama yang terlihat di bank dan hasil pemeriksaan.');r.bankCheck={...r.bankCheck,id:r.bankCheck?.id||uid(),disbursement:payment.id,bankName:r.journey.fields.namaBank,accountNumber:r.journey.fields.nomorRekening,holderNames:[r.journey.fields.namaPemilik],bankResult:b.result,bankNameSeen:b.nameSeen.trim(),checkedBy:actor.record.id,checkedAt:new Date().toISOString(),revision:Number(r.bankCheck?.revision||0)+1};}
     if(!mutate||!write){if(result&&typeof result==='object'&&!(result instanceof Blob))(result as any).serverRevision=payment.revision;return result;}
     // Files are immutable. A failed DB transaction can leave an unreferenced local file, never a partial visible version.
@@ -94,13 +99,13 @@ export function localJourney(event:RequestEvent):Promise<Response>{
     }
     for(const file of Object.values(r.journey.files) as any[])file.key=keys[file.id]||file.key;
     const {history:nextHistory,status,...applicationData}=r.journey;
-    if(!navigationOnly)payment.revision++;payment.rabVersion=r.versions.find((v:any)=>v.active)?.id||payment.rabVersion||'';
+    if(!navigationOnly)payment.revision++;payment.rabVersion=r.versions.find((v:any)=>v.active&&v.status==='disetujui')?.id||'';
     put('disbursements',{id:payment.id,submissionStatus:status,applicationData,revision:payment.revision,requestedSen:payment.requestedSen||0,properties:payment.properties||{},rabVersion:payment.rabVersion});
     if(nextHistory.length>historyCount){const snapshot=nextHistory.at(-1);put('audit',{id:snapshot.id,actor:actor.record.id,actorName:actor.record.name,action:'mengajukan paket pencairan',context:`kampus:${campusId}/pencairan/t1`,campus:campusId,collection:'disbursements',record:payment.id,after:snapshot});}
     else if(!navigationOnly)put('audit',{id:uid(),actor:actor.record.id,actorName:actor.record.name,action:method+' '+route,context:`kampus:${campusId}/pencairan/t1`,campus:campusId,collection:'disbursements',record:payment.id,after:{revision:payment.revision}});
     if(result&&typeof result==='object'&&!(result instanceof Blob))(result as any).serverRevision=payment.revision;
     return result;
-   },{campuses:{filter:pb.filter('id = {:id}',{id:campusId})},sk_awards:{filter:pb.filter('campus = {:id} && wave = 1',{id:campusId})},disbursements:{filter:pb.filter('id = {:id}',{id:selected.id})},program_settings:{},rab_versions:{filter:pb.filter('campus = {:id}',{id:campusId})},rab_lines:{filter:pb.filter('version.campus = {:id}',{id:campusId})},documents:{filter:pb.filter('disbursement = {:id}',{id:selected.id})},document_versions:{filter:pb.filter('document.disbursement = {:id}',{id:selected.id})},reviews:{filter:pb.filter('document.disbursement = {:id}',{id:selected.id})},notes:{filter:pb.filter('campus = {:id}',{id:campusId})},bank_checks:{filter:pb.filter('disbursement = {:id}',{id:selected.id})},audit:{filter:pb.filter('campus = {:id} && action = "mengajukan paket pencairan"',{id:campusId})}});
+   },{campuses:{filter:pb.filter('id = {:id}',{id:campusId})},sk_awards:{filter:pb.filter('campus = {:id} && wave = 1',{id:campusId})},disbursements:{filter:pb.filter('id = {:id}',{id:selected.id})},program_settings:{},rab_versions:{filter:pb.filter('campus = {:id}',{id:campusId})},rab_lines:{filter:pb.filter('version.campus = {:id}',{id:campusId})},documents:{filter:pb.filter('disbursement = {:id}',{id:selected.id})},document_versions:{filter:pb.filter('document.disbursement = {:id}',{id:selected.id})},reviews:{filter:pb.filter('document.disbursement = {:id}',{id:selected.id})},notes:{filter:pb.filter('campus = {:id}',{id:campusId})},bank_checks:{filter:pb.filter('disbursement = {:id}',{id:selected.id})},attachments:{filter:pb.filter('disbursement = {:id}',{id:selected.id})},audit:{filter:pb.filter('campus = {:id} && action = "mengajukan paket pencairan"',{id:campusId})}});
   };
   const award=(await pb.collection('sk_awards').getList(1,1,{filter:pb.filter('campus = {:id} && wave = 1',{id:campusId})})).items[0];
   if(!award)fail(404,'Nilai SK belum tersedia.');
@@ -108,7 +113,7 @@ export function localJourney(event:RequestEvent):Promise<Response>{
    templates:async()=>Object.fromEntries(await Promise.all(MERGE_KINDS.map(async kind=>{const response=await event.fetch('/templat/'+TEMPLATE_FILE[kind]);if(!response.ok)fail(503,'Template belum tersedia.');return [kind,new Uint8Array(await response.arrayBuffer())];}))),
    image:async file=>{try{const pdf=await PDFDocument.create(),bytes=new Uint8Array(await file.arrayBuffer()),image=file.type==='image/png'?await pdf.embedPng(bytes):await pdf.embedJpg(bytes);return {width:image.width,height:image.height};}catch{return fail(400,'Kop surat bukan PNG/JPG yang valid.');}}
   });
-  try{const result=await engine.request(event.url.pathname+event.url.search,method,body);return result instanceof Blob?new Response(result,{headers:{'Content-Type':result.type,'Cache-Control':'no-store'}}):json(result,{headers:{'Cache-Control':'no-store'}});}
+  try{let result=await engine.request(event.url.pathname+event.url.search,method,body);if(method==='GET'&&result instanceof Blob)result=await verifyJourneyDownload(pb,settings,campusId,route,event.url.origin,result,{id:actor.record.id,name:actor.record.name});if(requestedPf)await notifyAdmins(pb,campusId,'pencairan_pks_pf','Nomor PKS PF diperlukan','Kampus meminta nomor PKS PF agar dokumen pencairan dapat disiapkan.',`/admin/pencairan/${campusId}?butir=pks`);if(pfUpdated)await notifyCampus(pb,campusId,'pencairan_pks_pf_ready','Nomor PKS PF sudah tersedia','Lanjutkan menyiapkan dokumen dari ringkasan pengajuan.',`/campus/pencairan?bagian=ringkasan&butir=ringkasan`);return result instanceof Blob?new Response(result,{headers:{'Content-Type':result.type,'Cache-Control':'no-store'}}):json(result,{headers:{'Cache-Control':'no-store'}});}
   catch(e){if(e instanceof PreviewError)throw e;throw new PreviewError(400,e instanceof Error?e.message:'Pengajuan tidak dapat diproses.');}
  });
 }

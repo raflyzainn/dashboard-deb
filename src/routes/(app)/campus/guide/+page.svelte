@@ -15,7 +15,7 @@
         'Pantau status tiap dokumen, baca catatan pemeriksa, dan lihat berkas yang pernah dikirim. Unggah hanya jika dokumen belum ada atau perlu revisi.',
       href: 'pencairan',
       action: 'Lihat pencairan'
-    }
+    },
   ];
 </script>
 

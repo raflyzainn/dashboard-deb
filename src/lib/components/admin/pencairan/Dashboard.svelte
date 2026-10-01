@@ -21,7 +21,7 @@
   let sort = $state<'keadaan' | 'nama'>('keadaan');
 
   async function load() {
-    try { rows = (await dataService.api.get<{ rows: DirectoryRow[] }>('/api/pencairan')).rows; }
+    try { error=''; rows = (await dataService.api.get<{ rows: DirectoryRow[] }>('/api/pencairan')).rows; }
     catch (e) { error = e instanceof Error ? e.message : 'Dashboard belum dapat dimuat.'; }
   }
   $effect(() => { untrack(() => { void load(); }); });
@@ -84,6 +84,7 @@
   {:else if !rows}
     <p class="text-sm text-slate-500">Memuat dashboard…</p>
   {:else}
+    {#if rows.some(r=>r.needsPfPks)}<section class="rounded-xl border border-blue-200 bg-blue-50 p-4" aria-label="Tugas PKS PF"><h2 class="font-semibold">Lengkapi nomor PKS PF ({rows.filter(r=>r.needsPfPks).length} kampus)</h2><p class="mt-1 text-sm">Nomor ini diperlukan agar kampus dapat membuat dokumen pencairan.</p><div class="mt-3 flex flex-wrap gap-2">{#each rows.filter(r=>r.needsPfPks) as row}<a class="rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-[#0066B2] hover:bg-blue-100" href={`/admin/pencairan/${row.campus.id}?butir=pks`}>{row.campus.name} ?</a>{/each}</div></section>{/if}
     <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <div class="rounded-xl border border-slate-200/70 bg-white p-3.5"><p class="text-2xl font-bold tabular-nums text-slate-900">{stats.lengkap} <span class="text-base font-semibold text-slate-500">dari {rows.length}</span></p><p class="text-xs text-slate-500">Lengkap</p></div>
       <div class="rounded-xl border border-slate-200/70 bg-white p-3.5"><p class="text-2xl font-bold tabular-nums text-slate-900">{stats.admin}</p><p class="text-xs text-slate-500">menunggu admin</p></div>

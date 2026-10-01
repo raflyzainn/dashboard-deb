@@ -1,5 +1,17 @@
 # Runbook pengajuan lokal untuk sesi berikutnya
 
+## Pembaruan terakhir — 1 Oktober 2026
+
+Branch aktif `feat/pencairan-pocketbase-local`. Migrasi dasar sudah dipublikasikan pada commit `bb368ac`; perubahan UX dan perbaikan penutupan terbaru masih lokal. Baca [QA alur lokal dari awal sampai pembayaran + LPJ](QA-ALUR-LOKAL-2026-10-01.md) sebelum mengandalkan status historis di bawah.
+
+**Kampus QA Lokal 1, 2, 3 dan akun campus-901 sampai campus-904 telah dihapus sesuai permintaan pengguna setelah QA.** Tabel akun/kondisi QA di bawah adalah catatan historis, bukan daftar akun aktif. Dashboard dan login diperiksa kembali: tidak ada kampus QA, Sorong tetap ada. Berkas objek QA yang tidak digunakan data lain juga dibersihkan. Manifest lokal tersimpan di `.local/pocketbase/maintenance/delete-qa-*`; jangan mencetak kredensial atau mempublikasikan manifest berisi data.
+
+Untuk pengujian berikutnya, `npm run pb:journey-local` memprovision ulang QA 1/2 bila diperlukan; QA 3 dapat dibuat lewat maintenance `node --experimental-strip-types scripts/pocketbase/journey-local.mjs --seed-qa3`. Pembersihan khusus QA dilakukan dengan `--delete-qa`, selalu dibatasi marker instance lokal 8097. Jangan menjalankan ulang provisioning setelah pengguna meminta pembersihan kecuali memang ada pekerjaan QA baru yang membutuhkan akun itu.
+
+**Keputusan terbaru pengguna: LPJ dihapus dari tambahan alur lokal.** Menu, tombol Beranda, kartu Panduan, tautan setelah pembayaran, izin halaman kampus, dan forwarding API LPJ untuk pengajuan lokal sudah dicabut. LPJ berasal dari fitur lama dan tidak termasuk revisi rapat; jangan menambahkannya kembali. Setelah pembayaran, petunjuk kampus menyatakan pencairan Tahap 1 selesai. Kuitansi pencairan ke PF tetap tersedia.
+
+Tahap 1 hingga pembayaran dan LPJ berhasil lewat browser. **Transaksi pencairan Tahap 2 belum diimplementasikan; halaman detailnya masih ringkasan baca saja.** Jangan menganggap ekspor RAB Termin 2 berarti pembayaran Termin 2 tersedia.
+
 ## Mulai di sini
 
 1. Ikuti AGENTS.md, README, PANDUAN-CODEX, dan kewajiban membaca docs.
@@ -92,3 +104,11 @@ Pemulihan memerlukan menghentikan PocketBase **8097 yang tepat**, memastikan dir
 ## Pemisahan branch (1 Oktober 2026)
 
 Integrasi PocketBase lokal dikerjakan pada branch feat/pencairan-pocketbase-local. Branch feat/rab-dummy-all-campuses tetap menunjuk versi dummy d5ee93e. Audit kedua remote tidak menemukan commit integrasi lokal pada branch dummy, sehingga tidak diperlukan revert. Database, objek unggahan, kredensial dan .env lokal tidak dipublikasikan; mengikuti runbook untuk menjalankan salinan lokal. Build terakhir sebelum perubahan validasi langsung berhasil, tetapi typecheck masih memiliki 134 error yang telah dicatat. Build belum diulang setelah perbaikan peringatan ganda; QA browser perubahan tersebut tercatat pada laporan UX.
+
+### Bukti transfer opsional (1 Oktober 2026)
+
+Admin: Pencairan → kampus → Pembayaran → pilih PDF/PNG/JPG maksimal 2 MB → Simpan bukti transfer. Tidak wajib saat mencatat pembayaran, boleh ditambahkan sesudahnya. Kampus: panel progres Pencairan menampilkan Lihat bukti transfer setelah dana tercatat dibayar. Semua tujuh langkah timeline menjadi centang hijau. Metadata berada di `disbursements.properties.paymentProof`; endpoint privat `/api/pencairan/[campus]/pembayaran/bukti` memakai penyimpanan lama dan revision record. QA dan batas pemeriksaan tersedia di laporan QA 1 Oktober dan skrip `scripts/qa/payment-proof.playwright.js`.
+
+## QR dokumen lokal
+
+Lihat [QR dokumen lokal](QR-DOKUMEN-LOKAL-2026-10-01.md) untuk alur verifikasi, siluet PF, penyimpanan representasi unduhan, dan batas QA. Format template PF dipertahankan.

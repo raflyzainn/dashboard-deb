@@ -24,7 +24,7 @@
   let note = $state('');
   let refresh = $state(0);
   const admin = $derived(mode === 'admin');
-  const canAdd = $derived(admin || data?.campus.fillMode === 'campus');
+  const canAdd = $derived(Boolean(data?.paid) && (admin || data?.campus.fillMode === 'campus'));
   const date = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' });
   const statusLabel: Record<string, string> = { menunggu_review: 'Menunggu review', sesuai: 'Sesuai', perlu_revisi: 'Perlu revisi' };
   const statusTone: Record<string, 'blue' | 'green' | 'amber'> = { menunggu_review: 'blue', sesuai: 'green', perlu_revisi: 'amber' };

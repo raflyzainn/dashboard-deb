@@ -13,6 +13,13 @@ import { scanDocx, type DocScan } from './docscan';
  * Every function takes a superuser client; the caller has already checked the role.
  */
 const opts = { requestKey: null } as const;
+/** Keep OR filters below PocketBase's expression limit as the directory grows. */
+async function currentVersions(pb:PocketBase,ids:string[],fields:string){
+ const unique=[...new Set(ids)],rows:RecordModel[]=[];
+ for(let i=0;i<unique.length;i+=50)rows.push(...await pb.collection('document_versions').getFullList({filter:unique.slice(i,i+50).map(id=>pb.filter('id = {:id}',{id})).join(' || '),fields,...opts}));
+ return rows;
+}
+
 export const TERM = 1;
 export const context = (campusId: string, term = TERM) => `kampus:${campusId}/pencairan/t${term}`;
 
@@ -56,6 +63,7 @@ export async function ensureDisbursement(pb: PocketBase, campusId: string, term 
 /** The evidence marks of the three RAB sheets, as set from the campus file (decision 47): 'ada', 'tidak', or '' when not checked. */
 export const rabEvidence = (properties: unknown) => { const p = (properties && typeof properties === 'object' ? properties : {}) as Record<string, unknown>; const m = (k: string) => (p[k] === 'ada' ? 'ada' : p[k] === 'tidak' ? 'tidak' : ''); return { r100: m('buktiRab100'), r70: m('buktiRab70'), r30: m('buktiRab30') }; };
 export interface DirectoryRow {
+  needsPfPks?: boolean;
   campus: CampusInfo; amountSen: number; limitSen: number; stage: number; requestedSen: number; paidSen: number; paidAt: string; lampiranCount: number;
   statuses: Record<Kind, Status>; assessment: Assessment; checkedAt: string; bukti: { r100: string; r70: string; r30: string };
 }
@@ -73,7 +81,7 @@ export async function directory(pb: PocketBase): Promise<DirectoryRow[]> {
     pb.collection('rab_versions').getFullList({ fields: 'id,campus,number,status,share,totalSen,term1Sen,term2Sen', ...opts })
   ]);
   const currentIds = documents.map(d => d.currentVersion).filter(Boolean);
-  const versions = currentIds.length ? await pb.collection('document_versions').getFullList({ filter: currentIds.map(id => pb.filter('id = {:id}', { id })).join(' || '), fields: 'id,document,number,originalName,mime,origin,signed,scan,fields,created,uploadedByName', ...opts }) : [];
+  const versions = await currentVersions(pb,currentIds,'id,document,number,originalName,mime,origin,signed,scan,fields,created,uploadedByName');
   return funded.map(({ campus, award }) => {
     const disbursement = disbursements.find(d => d.campus === campus.id);
     const own = disbursement ? documents.filter(x => x.disbursement === disbursement.id) : [];
@@ -94,7 +102,7 @@ export async function directory(pb: PocketBase): Promise<DirectoryRow[]> {
     const { checks: list, suratKuasaRequired } = checks(docs, summary, { campus, bankResult: String(bank?.bankResult || 'belum'), rab, sheets: sheetTotals(rabVersions.filter(v => v.campus === campus.id)) });
     const assessment = assess(statuses, { suratKuasaRequired, redChecks: list.filter(c => c.level === 'bad').length, paidAt: String(disbursement?.paidAt || ''), originalsAll: docs.filter(d => d.generated).every(d => d.originalReceived), lampiranCount });
     const checkedAt = own.map(d => String(d.updated || '')).sort().pop() || '';
-    return { campus, amountSen, limitSen: limitSen(amountSen), stage: Number(disbursement?.stage || 1), requestedSen, paidSen: Number(disbursement?.paidSen || 0), paidAt: String(disbursement?.paidAt || ''), lampiranCount, statuses, assessment, checkedAt, bukti: rabEvidence(disbursement?.properties) };
+    return { needsPfPks:Boolean(disbursement?.submissionStatus&&!disbursement?.paidAt&&!disbursement?.applicationData?.pf?.nomorPksPf),campus, amountSen, limitSen: limitSen(amountSen), stage: Number(disbursement?.stage || 1), requestedSen, paidSen: Number(disbursement?.paidSen || 0), paidAt: String(disbursement?.paidAt || ''), lampiranCount, statuses, assessment, checkedAt, bukti: rabEvidence(disbursement?.properties) };
   });
 }
 const lightVersion = (v: RecordModel): VersionInfo => ({
@@ -560,7 +568,7 @@ export async function reviewQueue(pb: PocketBase): Promise<QueueRow[]> {
   // The three RAB sheet items share the RAB file: their arrival is the current version of the campus's RAB document.
   const rabDocs = await pb.collection('documents').getFullList({ filter: 'kind = "rab"', fields: 'id,disbursement,currentVersion', ...opts });
   const currentIds = [...new Set([...documents.map(d => d.currentVersion), ...rabDocs.map(d => d.currentVersion)].filter(Boolean))];
-  const versions = currentIds.length ? await pb.collection('document_versions').getFullList({ filter: currentIds.map(id => pb.filter('id = {:id}', { id })).join(' || '), fields: 'id,document,number,originalName,origin,uploadedBy,uploadedByName,created,note', ...opts }) : [];
+  const versions = await currentVersions(pb,currentIds,'id,document,number,originalName,origin,uploadedBy,uploadedByName,created,note');
   const docIds = documents.map(d => d.id);
   const reviews = docIds.length ? await pb.collection('reviews').getFullList({ filter: docIds.map(id => pb.filter('document = {:id}', { id })).join(' || '), sort: '-created', fields: 'id,document,version,decision,note,actorName,created', ...opts }) : [];
   // Older reviews sit on earlier versions without a document link; fetch them by version for the documents in the queue.

@@ -58,20 +58,10 @@ export async function previewContext(request: PreviewRequest, config: PreviewCon
         await root.collection('_superusers').authWithPassword(credentials.superuser.email, credentials.superuser.password);
         const users = await root.collection('users').getFullList({ filter: 'simulated = true && active = true', fields: 'legacyId,campus,role,name' });
         const eligible = new Set<string>(users.map(u => u.legacyId));
-        const [payments, rab, documents] = await Promise.all([
-          root.collection('disbursements').getFullList({ filter: 'term = 1', fields: 'id,campus,submissionStatus,applicationData,requestedSen,paidSen' }),
-          root.collection('rab_versions').getFullList({ fields: 'campus' }),
-          root.collection('documents').getFullList({ filter: 'kind != "sk" && currentVersion != ""', fields: 'disbursement' })
-        ]);
-        const started = new Set(rab.map(r => r.campus));
-        const withFiles = new Set(documents.map(d => d.disbursement));
-        const adminFields = ['namaBank','nomorRekening','namaPemilik','pemberiKuasa','penerimaKuasa','penandatanganNama','penandatanganJabatan','nomorSuratPermohonan','tanggalSuratPermohonan','nomorInvois','tanggalInvois','nomorKuitansi','tanggalKuitansi','nomorPksKampus','tanggalKuasa'];
-        for (const payment of payments) {
-          const data = payment.applicationData || {};
-          if (withFiles.has(payment.id) || payment.requestedSen > 0 || payment.paidSen > 0 ||
-              ['menunggu','revisi','selesai'].includes(payment.submissionStatus) ||
-              Object.keys(data.files || {}).length || adminFields.some(key => String(data.fields?.[key] || '').trim())) started.add(payment.campus);
-        }
+        // Local provisioning marks the campuses that started empty with this SK prefix.
+        // Keep their original login group even after uploading RAB or completing the application.
+        const awards=await root.collection('sk_awards').getFullList({filter:'wave = 1',fields:'campus,skNumber'});
+        const started=new Set(awards.filter(a=>!String(a.skNumber||'').startsWith('SK-DUMMY-LOKAL/2026/')).map(a=>a.campus));
         // Each account is also checked on entry; migrated campus credentials are never reset by preview.
         const rows: PreviewAccount[] = campuses.flatMap(c => users.filter(u => u.role === 'campus' && u.campus === c.id && keys.includes(u.legacyId)).map(u => ({ key: u.legacyId, name: c.name+' - '+u.name, role: 'campus' as const, disbursementStarted: started.has(c.id) })));
         return [...rows, ...keys.filter(k => k.startsWith('admin-') && eligible.has(k)).sort().map(key => ({ key, name: `Admin PF lokal ${key.slice(-1)}`, role: 'admin' as const }))];

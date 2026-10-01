@@ -294,10 +294,10 @@ export function withVerificationFooter(docx: Uint8Array, options: { png: Uint8Ar
   /** Appends the paragraph to an existing footer part and gives that part its own image relationship. */
   const appendToPart = (part: string) => {
     if (patchedParts.has(part)) return true;
-    const xml = readText(part);
+    let xml = readText(part);
     if (!xml.includes('</w:ftr>')) return false;
-    // A document stamped earlier keeps its single paragraph; the QR bytes were replaced above.
-    if (xml.includes('name="QR verifikasi MonevDEB"')) { patchedParts.add(part); return true; }
+    // Re-stamping updates the printed link as well as the image, without duplicating the footer.
+    xml=xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g,p=>p.includes('name="QR verifikasi MonevDEB"')?'':p);
     const relsPath = part.replace(/^word\//, 'word/_rels/') + '.rels';
     zip.file(relsPath, addRelationship(readText(relsPath) || EMPTY_RELS, QR_REL_ID, REL_TYPE + 'image', 'media/qr-monev.png'));
     zip.file(part, xml.replace('</w:ftr>', verificationParagraph(QR_REL_ID, drawingId++, options.issuer, options.line) + '</w:ftr>'));

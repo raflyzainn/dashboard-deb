@@ -23,7 +23,7 @@
   const aboveThirty = $derived(data ? (paid ? data.payment.paidSen < data.summary.limitSen : Boolean(data.summary.requestedSen) && data.summary.requestedSen < data.summary.limitSen) : false);
 
   const items = $derived([
-    { title: 'Laporan realisasi Tahap 1 (LPJ)', hint: 'Satu invois, satu pindaian, satu entri per pengeluaran', href: `/admin/pencairan/${campusId}/lpj` },
+    ...(import.meta.env.MODE==='pocketbase-local'?[]:[{ title: 'Laporan realisasi Tahap 1 (LPJ)', hint: 'Satu invois, satu pindaian, satu entri per pengeluaran', href: `/admin/pencairan/${campusId}/lpj` }]),
     { title: 'RAB Tahap 2', hint: 'Total sama dengan sisa Tahap 2', href: '' },
     { title: 'Permohonan pencairan Tahap 2', hint: 'Nominal sama dengan sisa', href: '' },
     { title: 'Kuitansi Tahap 2', hint: 'Nominal dan terbilang', href: '' },
@@ -47,7 +47,7 @@
     <header>
       <p class="text-sm font-semibold text-[#015a9a]">{data.campus.name} · Kode {data.campus.code}</p>
       <h1 class="mt-1 text-2xl font-bold text-slate-900">Pencairan Tahap 2</h1>
-      <p class="mt-1 text-sm text-slate-600">Belum ada yang bisa diubah di halaman ini.</p>
+      <p class="mt-1 text-sm text-slate-600">{import.meta.env.MODE==='pocketbase-local'?'Halaman ini menampilkan ringkasan sisa dana. Pengajuan dan pembayaran Tahap 2 belum tersedia.':'Belum ada yang bisa diubah di halaman ini.'}</p>
     </header>
 
     <section class="rounded-xl border border-blue-100 bg-blue-50/70 px-4 py-3 text-sm text-[#015a9a]">
@@ -62,7 +62,7 @@
       {/if}
     </section>
 
-    <p class="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3 text-sm font-medium text-slate-800">Tahap 2 dibuka setelah laporan realisasi Tahap 1 diterima.</p>
+    <p class="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3 text-sm font-medium text-slate-800">{import.meta.env.MODE==='pocketbase-local'?'Pembagian dan ekspor RAB Termin 2 tersedia pada halaman RAB. Proses pencairan Tahap 2 belum dibuka.':'Tahap 2 dibuka setelah laporan realisasi Tahap 1 diterima.'}</p>
 
     <ul class="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 xl:grid-cols-3" aria-label="Butir Tahap 2">
       {#each items as item (item.title)}

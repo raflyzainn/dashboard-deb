@@ -1,5 +1,6 @@
 <script lang="ts">
  import { onMount, untrack } from 'svelte';
+ import { fly } from 'svelte/transition';
  import { page } from '$app/state';
  import Icon from '$lib/components/ui/Icon.svelte';
  import Modal from '$lib/components/ui/Modal.svelte';
@@ -13,6 +14,7 @@
  let {campusId,kind,admin,onloaded,onediting=()=>{},journey=false,locked=false,oncontinue=()=>{}}:{campusId:string;kind:string;admin:boolean;onloaded:()=>void;onediting?:(editing:boolean)=>void;journey?:boolean;locked?:boolean;oncontinue?:()=>void}=$props();
  let data=$state<(RabOverview & {serverRevision?:number;disbursement:RabOverview['disbursement'] & {paidAt?:string}})|null>(null),error=$state(''),busy=$state(false),replace=$state(false),confirmed=$state(false),message=$state('');
  let editingAdmin=$state(false),remoteChanged=$state(false);
+ let reducedMotion=$state(false);
  function reloadRemote(){leave(()=>{editingAdmin=false;sync();remoteChanged=false;saveFailed=false;void load();});}
  let edits=$state<Record<string,{volume:number;price:number;first:number}>>({});
  const editsValid=$derived(items.every(l=>{const e=edits[l.id];return e&&validEditedVolume(e.volume,l.volume)&&e.price>0&&Math.abs(e.price*100-Math.round(e.price*100))<0.00001&&Number.isSafeInteger(Math.round(e.volume*e.price*100))&&validQuantity(e.first,e.volume);}));
@@ -136,6 +138,7 @@
   });
  }
  onMount(()=>{
+  reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const timer=import.meta.env.MODE==='pocketbase-local'?setInterval(()=>{if(document.visibilityState==='visible')void load();},10000):undefined;
   const focus=()=>void load();window.addEventListener('focus',focus);
   const unsubscribe=onChange(()=>void load(),{campus:campusId});
@@ -361,7 +364,7 @@
 
 
 {#if savedNotice}
- <div class="fixed bottom-6 right-4 z-50 flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-xl bg-slate-900 px-4 py-3 text-sm text-white shadow-lg" role="status" aria-live="polite"><span aria-hidden="true">&#10003;</span><span>Draf RAB tersimpan</span><button type="button" class="grid size-9 shrink-0 place-items-center rounded-lg hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white" aria-label="Tutup notifikasi" onclick={()=>savedNotice=false}>&#215;</button></div>
+ <div class="fixed bottom-6 right-4 z-50 flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-xl bg-slate-900 px-4 py-3 text-sm text-white shadow-lg" role="status" aria-live="polite" transition:fly={{y:16,duration:reducedMotion?0:200}}><span aria-hidden="true">&#10003;</span><span>Draf RAB tersimpan</span><button type="button" class="grid size-9 shrink-0 place-items-center rounded-lg hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white" aria-label="Tutup notifikasi" onclick={()=>savedNotice=false}>&#215;</button></div>
 {/if}
 
 {#if pendingLeave}

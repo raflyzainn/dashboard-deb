@@ -22,7 +22,9 @@ export const handle: Handle = async ({ event, resolve }) => {
     if(settings.PB_URL!=='http://127.0.0.1:8097'||settings.DEB_LOCAL_INSTANCE_ID!=='local')return json({message:'Instance lokal tidak cocok.'},{status:503});
     const campus=event.url.pathname.split('/')[3];
     const rows=await pb.collection('disbursements').getList(1,1,{filter:pb.filter('campus = {:c} && term = 1',{c:campus})});
-    if(rows.items[0]?.submissionStatus)return (await import('$lib/server/deb/journey-local')).localJourney(event);
+    // Reuse existing real PocketBase services for closing documents and payment.
+    const closing=/^\/api\/pencairan\/[a-z0-9]{15}\/(lampiran|pembayaran)(?:\/|$)/.test(event.url.pathname);
+    if(rows.items[0]?.submissionStatus&&!closing)return (await import('$lib/server/deb/journey-local')).localJourney(event);
   }
   const response = await resolve(event);
   if (event.url.pathname.startsWith('/api/') || event.url.pathname === '/login') {

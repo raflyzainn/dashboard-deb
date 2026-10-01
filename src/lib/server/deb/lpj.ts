@@ -46,8 +46,11 @@ export async function addEntry(pb: PocketBase, store: Storage, actor: AuditActor
   if (file.bytes.byteLength > 20 * 1024 * 1024) throw new PreviewError(413, 'Ukuran pindaian maksimal 20 MB.');
   const { campus } = await campusWithAward(pb, campusId);
   const { disbursement } = await ensureDisbursement(pb, campusId);
+  if(disbursement.submissionStatus&&!disbursement.paidAt)throw new PreviewError(400,'Dana Tahap 1 belum dibayar. LPJ tersedia setelah pembayaran tercatat.');
   if (input.rabLine) {
     const line = await pb.collection('rab_lines').getOne(input.rabLine, opts).catch(() => null);
+    const version=line?await pb.collection('rab_versions').getOne(line.version,opts).catch(()=>null):null;
+    if(!version||version.campus!==campusId||version.status!=='disetujui')throw new PreviewError(400,'Pilih bagian dari RAB kampus yang sudah disetujui.');
     if (!line) throw new PreviewError(400, 'Bagian RAB tidak ditemukan.');
   }
   const safe = file.name.normalize('NFKD').replace(/[^\w.\- ]+/g, '').replace(/\s+/g, '-').slice(0, 80) || 'bukti';

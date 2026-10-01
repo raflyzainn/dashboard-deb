@@ -40,7 +40,7 @@ export async function createVerification(pb: PocketBase, input: NewVerification)
   return pb.collection('verifications').create({ ...input, documentVersion: input.documentVersion || '', attachment: input.attachment || '', issuedBy: input.issuedBy || '' }, opts);
 }
 
-export interface PublicVerification { code: string; kind: VerificationKind; kindLabel: string; campusName: string; term: number; issuedAt: string; amountSen: number; sha256: string; label: string }
+export interface PublicVerification { code: string; kind: VerificationKind; kindLabel: string; campusName: string; term: number; issuedAt: string; amountSen: number; sha256: string; label: string; local?: boolean; status?: string }
 /** Public read: no names of people, no file access. Returns null for an unknown or malformed code. */
 export async function readVerification(pb: PocketBase, rawCode: string): Promise<PublicVerification | null> {
   const code = String(rawCode || '').trim().toUpperCase();
@@ -49,5 +49,18 @@ export async function readVerification(pb: PocketBase, rawCode: string): Promise
   const record = found.items[0];
   if (!record) return null;
   const campus = (record.expand as { campus?: { name?: string } } | undefined)?.campus;
-  return { code: record.code, kind: record.kind, kindLabel: VERIFICATION_LABEL[record.kind as VerificationKind] || record.kind, campusName: campus?.name || '', term: Number(record.term), issuedAt: record.created, amountSen: Number(record.amountSen || 0), sha256: record.sha256 || '', label: record.label || '' };
+  let status='',local=false;
+  if(record.documentVersion){
+    const version=await pb.collection('document_versions').getOne(record.documentVersion,opts);
+    const issued=(Object.values(version.generation?.verifiedFiles||{}) as {code:string;approved:boolean}[]).find(file=>file.code===code);
+    if(issued){
+      local=true;
+      const document=await pb.collection('documents').getOne(version.document,opts);
+      const payment=await pb.collection('disbursements').getOne(document.disbursement,opts);
+      const latest=await pb.collection('document_versions').getList(1,1,{filter:pb.filter('document = {:d} && origin = "generated"',{d:document.id}),sort:'-number',...opts});
+      const current=latest.items[0]?.id===version.id&&version.generation?.journeyRevision===payment.applicationData?.revision;
+      status=!current?'Versi lama — data pengajuan telah berubah':payment.submissionStatus==='revisi'?'Perlu revisi':issued.approved&&payment.submissionStatus==='selesai'&&document.status==='sesuai'?'Disetujui PF':issued.approved?'Persetujuan perlu diperiksa kembali':'Draf — belum merupakan dokumen final';
+    }
+  }
+  return { code: record.code, kind: record.kind, kindLabel: VERIFICATION_LABEL[record.kind as VerificationKind] || record.kind, campusName: campus?.name || '', term: Number(record.term), issuedAt: record.created, amountSen: Number(record.amountSen || 0), sha256: record.sha256 || '', label: record.label || '',...(local?{local,status}:{}) };
 }
