@@ -66,7 +66,7 @@
 
   const rows = $derived.by<Row[]>(() => MERGE_KINDS.map(kind => {
     const doc = data.documents.find(d => d.kind === kind)!;
-    const final = [...doc.versions].reverse().find(v => v.origin === 'generated') || null;
+    const final = [...doc.versions].reverse().find(v => v.origin === 'generated' && (!(data as any).journey || import.meta.env.MODE==='mockup' || v.generation?.final)) || null;
     const signed = [...doc.versions].reverse().find(v => v.signed && (!final || v.number > final.number)) || null;
     const missing = (info?.missing[kind] || []).map(m => m.label.toLowerCase());
     const clauseBlocks = kind === 'pks' && Boolean(info?.clauseRequired) && !data.disbursement.clauseChecked;
@@ -115,7 +115,7 @@
     document.body.append(a); a.click(); a.remove();
   }
   const saveFinal = (row: Row) => run(`final:${row.kind}`, async () => {
-    const result = await dataService.api.post<{ version: { id: string; number: number }; code: string }>(`${base}/buat/${row.kind}`);
+    const result = await dataService.api.post<{ version: { id: string; number: number }; code: string }>(`${base}/buat/${row.kind}`,{expectedRevision:(data as any).serverRevision});
     download(`${base}/documents/${row.kind}/versions/${result.version.id}?download=1`);
     return [await fresh(), `${row.label} final tersimpan, kode ${result.code}.`];
   }, 'Dokumen final belum tersimpan.');
@@ -127,12 +127,13 @@
   }
   const uploadScan = (row: Row, file: File) => run(`scan:${row.kind}`, async () => {
     const body = new FormData();
+    if((data as any).serverRevision!==undefined)body.set('expectedRevision',String((data as any).serverRevision));
     body.set('file', file); body.set('signed', '1'); body.set('note', 'Pindaian bertanda tangan');
     const next = await dataService.api.post<KartuData>(`${base}/documents/${row.kind}/versions`, body);
     return [next, `Pindaian ${row.label} tersimpan. Bandingkan dengan dokumen final.`];
   }, 'Pindaian belum tersimpan.');
   const setFlag = (row: Row, flag: 'signedReceived' | 'originalReceived', value: boolean) => run(`${flag}:${row.kind}`, async () => {
-    const next = await dataService.api.patch<KartuData>(`${base}/documents/${row.kind}`, { [flag]: value });
+    const next = await dataService.api.patch<KartuData>(`${base}/documents/${row.kind}`, { [flag]: value, expectedRevision:(data as any).serverRevision });
     const message = flag === 'signedReceived' ? (value ? `Pindaian ${row.label} sesuai dengan dokumen final.` : `Tanda sesuai ${row.label} dihapus.`) : (value ? `Asli ${row.label} diterima.` : `Catatan asli ${row.label} dibatalkan.`);
     return [next, message];
   }, 'Perubahan belum tersimpan.');
@@ -148,6 +149,7 @@
   const uploadTemplate = () => run('template', async () => {
     if (!templateFile) throw new Error('Pilih berkas templat Word.');
     const body = new FormData();
+    if((data as any).serverRevision!==undefined)body.set('expectedRevision',String((data as any).serverRevision));
     body.set('file', templateFile); body.set('reason', templateReason);
     await dataService.api.post(`${base}/pks-templat`, body);
     templateFile = null; templateReason = ''; uploadOpen = false; showDiff = true;
@@ -246,8 +248,9 @@
 <div class="flex h-full min-h-0 flex-1 flex-col">
   <div class="min-h-0 flex-1 overflow-auto bg-[#e5e9f0] p-4">
     <div class="mb-3 flex flex-wrap items-center gap-1.5">
+      {#if (data as any).journey}<a class={chipBtn} href={`/admin/pencairan/${campusId}?butir=pks`}>Data PKS</a><span class={chipInfo}>Templat PF standar</span>{:else}
       <button type="button" class={chipBtn} onclick={() => open('data', 'pks', 'surat')}><Icon name="edit" size={14} />Data surat</button>
-      <button type="button" class={chipBtn} onclick={() => open('data', 'pks', 'templat')}>Templat PKS: {activeTemplate ? 'kampus' : 'standar'}</button>
+      <button type="button" class={chipBtn} onclick={() => open('data', 'pks', 'templat')}>Templat PKS: {activeTemplate ? 'kampus' : 'standar'}</button>{/if}
       {#if info && !info.settingsReady}<a class={chipBtn} href="/admin/pencairan/pengaturan" title="Penandatangan Pertamina Foundation dan masa perjanjian belum diisi">Isi Pengaturan program</a>{/if}
     </div>
 

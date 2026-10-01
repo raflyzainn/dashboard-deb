@@ -11,8 +11,9 @@
  import { formatVolume } from '$lib/rab';
  import { validQuantity, validEditedVolume } from '../rab/model';
  let {campusId,kind,admin,onloaded,onediting=()=>{},journey=false,locked=false,oncontinue=()=>{}}:{campusId:string;kind:string;admin:boolean;onloaded:()=>void;onediting?:(editing:boolean)=>void;journey?:boolean;locked?:boolean;oncontinue?:()=>void}=$props();
- let data=$state<(RabOverview & {disbursement:RabOverview['disbursement'] & {paidAt?:string}})|null>(null),error=$state(''),busy=$state(false),replace=$state(false),confirmed=$state(false),message=$state('');
- let editingAdmin=$state(false);
+ let data=$state<(RabOverview & {serverRevision?:number;disbursement:RabOverview['disbursement'] & {paidAt?:string}})|null>(null),error=$state(''),busy=$state(false),replace=$state(false),confirmed=$state(false),message=$state('');
+ let editingAdmin=$state(false),remoteChanged=$state(false);
+ function reloadRemote(){leave(()=>{editingAdmin=false;sync();remoteChanged=false;saveFailed=false;void load();});}
  let edits=$state<Record<string,{volume:number;price:number;first:number}>>({});
  const editsValid=$derived(items.every(l=>{const e=edits[l.id];return e&&validEditedVolume(e.volume,l.volume)&&e.price>0&&Math.abs(e.price*100-Math.round(e.price*100))<0.00001&&Number.isSafeInteger(Math.round(e.volume*e.price*100))&&validQuantity(e.first,e.volume);}));
  const editedTotal=$derived(items.reduce((sum,l)=>sum+Math.round((edits[l.id]?.volume||0)*(edits[l.id]?.price||0)*100),0));
@@ -21,8 +22,8 @@
  async function saveCorrection(){
   if(!v||busy||!editsValid)return;
   busy=true;error='';
-  try{data=await dataService.api.post<RabOverview>(`${base}/versions/${v.id}/correction`,{kind,items:items.map(l=>({lineId:l.id,volume:edits[l.id].volume,unitPriceSen:Math.round(edits[l.id].price*100),term1Volume:edits[l.id].first}))});sync();editingAdmin=false;message='Koreksi tersimpan sebagai versi baru. Periksa kembali RAB 100%, 70%, dan 30% sebelum menyetujui.';onloaded();}
-  catch(e){error=e instanceof Error?e.message:String(e);}finally{busy=false;}
+  try{data=await dataService.api.post<RabOverview>(`${base}/versions/${v.id}/correction`,{expectedRevision:data?.serverRevision,kind,items:items.map(l=>({lineId:l.id,volume:edits[l.id].volume,unitPriceSen:Math.round(edits[l.id].price*100),term1Volume:edits[l.id].first}))});sync();editingAdmin=false;message='Koreksi tersimpan sebagai versi baru. Periksa kembali RAB 100%, 70%, dan 30% sebelum menyetujui.';onloaded();}
+  catch(e){error=e instanceof Error?e.message:String(e);if((e as any).status===409)remoteChanged=true;}finally{busy=false;}
  }
  $effect(()=>{onediting(editingAdmin);});
  let comparisonSearch=$state('');
@@ -100,7 +101,7 @@
  function setQuantity(id:string,q:number|null){quantities[id]=q;confirmed=false;message='';error='';saveFailed=false;savedNotice=false;}
  $effect(()=>{
   const draft=JSON.stringify(quantities);
-  if(!journey||!editingAllocation||draft===saved||invalid||busy||saveFailed)return;
+  if(!journey||!editingAllocation||draft===saved||invalid||busy||saveFailed||remoteChanged)return;
   const timer=setTimeout(()=>void save(false,true),800);
   return ()=>clearTimeout(timer);
  });
@@ -120,7 +121,7 @@
   return ()=>window.removeEventListener('beforeunload',warn);
  });
  async function load(versionId=page.url.searchParams.get('rabVersion')||''){
-  try{if(dirty||busy||editingAdmin)return;const result=await dataService.api.get<RabOverview>(base+(versionId?'?version='+encodeURIComponent(versionId):''));if(dirty||busy||editingAdmin||versionId!==(page.url.searchParams.get('rabVersion')||''))return;data=result;sync();}
+  try{if(busy)return;const result=await dataService.api.get<RabOverview>(base+(versionId?'?version='+encodeURIComponent(versionId):''));if((result as any).serverRevision<(data?.serverRevision??0))return;if(dirty){if((result as any).serverRevision!==data?.serverRevision)remoteChanged=true;return;}if(busy||editingAdmin||versionId!==(page.url.searchParams.get('rabVersion')||''))return;data=result;remoteChanged=false;sync();}
   catch(e){error=e instanceof Error?e.message:String(e);}
  }
  $effect(()=>{const versionId=page.url.searchParams.get('rabVersion')||'';untrack(()=>void load(versionId));});
@@ -135,19 +136,21 @@
   });
  }
  onMount(()=>{
+  const timer=import.meta.env.MODE==='pocketbase-local'?setInterval(()=>{if(document.visibilityState==='visible')void load();},10000):undefined;
+  const focus=()=>void load();window.addEventListener('focus',focus);
   const unsubscribe=onChange(()=>void load(),{campus:campusId});
   const logout=(event:Event)=>{if(dirty){event.preventDefault();const resume=(event as CustomEvent<{resume:()=>void}>).detail?.resume;if(resume)leave(resume);}};
   window.addEventListener('beforelogout',logout);
-  return ()=>{clearTimeout(noticeTimer);onediting(false);unsubscribe();window.removeEventListener('beforelogout',logout);};
+  return ()=>{clearInterval(timer);window.removeEventListener('focus',focus);clearTimeout(noticeTimer);onediting(false);unsubscribe();window.removeEventListener('beforelogout',logout);};
  });
  async function upload(file?:File){
   if(!file||busy)return;busy=true;error='';
-  try{const body=new FormData();body.set('file',file);data=await dataService.api.post<RabOverview>(base+'/import',body);sync();message='Excel berhasil dibaca. Periksa seluruh rincian RAB 100% terlebih dahulu.';replace=false;confirmed=false;onloaded();if(journey)await goto(journeyUrl('full'));}
+  try{const body=new FormData();body.set('file',file);if(data?.serverRevision!==undefined)body.set('expectedRevision',String(data.serverRevision));data=await dataService.api.post<RabOverview>(base+'/import',body);sync();message='Excel berhasil dibaca. Periksa seluruh rincian RAB 100% terlebih dahulu.';replace=false;confirmed=false;onloaded();if(journey)await goto(journeyUrl('full'));}
   catch(e){error=e instanceof Error?e.message:'Unggahan gagal.';}finally{busy=false;}
  }
  async function advance(index:number){
   if(!v)return;
-  if(index>unlockedStep)data=await dataService.api.post<RabOverview>(`${base}/versions/${v.id}/progress`,{step:index});
+  if(index>unlockedStep)data=await dataService.api.post<RabOverview>(`${base}/versions/${v.id}/progress`,{step:index,expectedRevision:data?.serverRevision});
   await goto(journeyUrl(['upload','full','term1','term2'][index]));
  }
  async function continueFull(){
@@ -158,8 +161,8 @@
   if(!v||invalid||busy)return;
   const submitted=$state.snapshot(quantities);
   busy=true;autosaving=automatic;error='';saveFailed=false;
-  try{if(dirty){data=await dataService.api.patch<RabOverview>(`${base}/versions/${v.id}/allocation`,{quantities:submitted});saved=JSON.stringify(submitted);}if(journey){message='';if(!dirty)showSaved();}else message='Pembagian tersimpan sebagai draf. Belum dikirim ke PF.';onloaded();if(next&&!dirty){if(journey)await advance(3);else await goto('/campus/pencairan?butir=rab');}}
-  catch(e){error=e instanceof Error?e.message:String(e);saveFailed=true;}finally{busy=false;autosaving=false;}
+  try{if(dirty){data=await dataService.api.patch<RabOverview>(`${base}/versions/${v.id}/allocation`,{quantities:submitted,expectedRevision:data?.serverRevision});saved=JSON.stringify(submitted);}if(journey){message='';if(!dirty)showSaved();}else message='Pembagian tersimpan sebagai draf. Belum dikirim ke PF.';onloaded();if(next&&!dirty){if(journey)await advance(3);else await goto('/campus/pencairan?butir=rab');}}
+  catch(e){error=e instanceof Error?e.message:String(e);saveFailed=true;if((e as any).status===409)remoteChanged=true;}finally{busy=false;autosaving=false;}
  }
  async function submit(){
   if(!v||!confirmed||!ready||busy||dirty)return;busy=true;error='';message='';
@@ -168,7 +171,7 @@
  }
  async function revise(){
   if(!v||busy||latest?.status==='menunggu')return;busy=true;error='';
-  try{data=await dataService.api.post<RabOverview>(base+'/versions',{from:v.id});sync();confirmed=false;message='Draf terbaru dibuat dari versi yang dipilih. Pembagian lama tetap tersimpan. Periksa lalu ajukan kembali.';await goto(journey?journeyUrl('full'):'/campus/pencairan?butir=rab_penuh');onloaded();}
+  try{data=await dataService.api.post<RabOverview>(base+'/versions',{from:v.id,expectedRevision:data?.serverRevision});sync();confirmed=false;message='Draf terbaru dibuat dari versi yang dipilih. Pembagian lama tetap tersimpan. Periksa lalu ajukan kembali.';await goto(journey?journeyUrl('full'):'/campus/pencairan?butir=rab_penuh');onloaded();}
   catch(e){error=e instanceof Error?e.message:String(e);}finally{busy=false;}
  }
  async function exportRab(share:'penuh'|'tahap1'|'tahap2'){
@@ -188,6 +191,7 @@
 {/snippet}
 
 <section class="grid min-w-0 gap-4 bg-white p-4 text-sm" aria-label="Pengajuan RAB kampus">
+ {#if remoteChanged}<p role="alert" class="rounded-lg bg-amber-50 p-3 text-amber-900">Data diperbarui oleh akun lain. Isian Anda tetap tersedia.<button class={btn+' ml-2'} onclick={reloadRemote}>Muat data terbaru</button></p>{/if}
  {#if !admin&&!historical}
   <ol class="grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Langkah pengajuan RAB">
    {#each journey?['Upload Excel','Periksa RAB 100%','Atur Termin 1','Periksa Termin 2']:['Unggah RAB 100%','Bagi jumlah item','Periksa Tahap 1','Periksa & ajukan'] as label,index}

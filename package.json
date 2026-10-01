@@ -34,7 +34,9 @@
     "pb:admin": "tsx scripts/pocketbase/admin.ts",
     "p1:sandbox": "tsx scripts/pocketbase/p1-sandbox.ts",
     "test:p1": "tsx --test --test-concurrency=1 tests/pocketbase/p1.test.ts tests/pocketbase/p1-lifecycle.test.ts tests/pocketbase/native-email.test.ts tests/pocketbase/provision.test.ts",
-    "test:e2e:p1": "playwright test --config playwright.p1.config.ts"
+    "test:e2e:p1": "playwright test --config playwright.p1.config.ts",
+    "dev:local": "node --import tsx scripts/pocketbase/journey-local.mjs",
+    "pb:journey-local": "node --import tsx scripts/pocketbase/journey-local.mjs --migrate --seed"
   },
   "dependencies": {
     "@types/qrcode": "^1.5.5",

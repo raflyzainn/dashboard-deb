@@ -1,5 +1,9 @@
 # Panduan proyek untuk Codex
 
+## Pembaruan pengajuan lokal - 30 September 2026
+
+Untuk pekerjaan migrasi pada branch `feat/rab-dummy-all-campuses`, acuan terbaru adalah [MIGRASI-POCKETBASE-LOKAL.md](pencairan-deb/MIGRASI-POCKETBASE-LOKAL.md), beserta arsitektur, runbook, dan laporan QA yang ditautkan di sana. Mode `pocketbase-local` memakai instance 8097 dan aplikasi 5176; dummy tetap terpisah. Mesin pengajuan digunakan bersama, penyimpanan lokal memakai collection relasional yang sudah ada dengan empat field tambahan. Hanya pengajuan berpenanda `submissionStatus` memakai alur baru; record lama tidak dikonversi massal. Panduan login mitra dan demo berikut merupakan konteks historis, bukan pengganti kontrak alur baru. Build/check/test terminal migrasi belum dijalankan.
+
 Diperbarui: 18 September 2026. Baca bersama [AGENTS.md](../AGENTS.md). Aturan kerja di AGENTS.md berlaku juga jika dokumen atau skill lain menyarankan tes terminal, push, atau PR otomatis.
 
 ## Pembaruan login mitra — 21 September 2026

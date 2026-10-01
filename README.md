@@ -4,6 +4,10 @@ Branch `production` menggunakan UI terbaru dari development dan perubahan propos
 
 ## Panduan Codex
 
+### Pengajuan PocketBase lokal - 30 September 2026
+
+Branch `feat/rab-dummy-all-campuses` juga menyediakan mode backend lokal melalui `npm run dev:local` (aplikasi 5176, PocketBase 8097). Mode dummy tetap tersedia. Mulai dari [panduan migrasi lokal](docs/pencairan-deb/MIGRASI-POCKETBASE-LOKAL.md), [runbook](docs/pencairan-deb/RUNBOOK-PENGAJUAN-LOKAL.md), dan [hasil QA](docs/pencairan-deb/QA-MIGRASI-POCKETBASE-LOKAL-2026-09-30.md). Implementasi ini belum di-push atau diterapkan ke produksi; uraian demo di bawah berlaku untuk mode dummy.
+
 Mulai setiap chat dengan membaca [AGENTS.md](AGENTS.md), [panduan proyek](docs/PANDUAN-CODEX.md), dan seluruh dokumentasi `docs/`. Jangan push atau membuat PR/MR sebelum diminta. Tes melalui terminal ditunda; QA menggunakan tool browser Playwright.
 
 ## Menjalankan

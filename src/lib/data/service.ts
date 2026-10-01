@@ -8,6 +8,7 @@ export class DataReadError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }
 export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...args)) {
+  const revisions=new Map<string,number>();
   let key = '';
   let generation = 0;
   const pending = new Set<AbortController>();
@@ -15,7 +16,7 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
   function selectAccount(next: string) {
     generation++;
     pending.forEach(controller => controller.abort());
-    pending.clear(); retries.clear();
+    pending.clear(); retries.clear(); revisions.clear();
     key = next;
   }
   async function request<T>(url: string, parse: (response: Response) => Promise<T>, options: RequestInit = {}): Promise<T> {
@@ -32,6 +33,8 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
       }
       const result = await parse(response);
       if (started !== generation) throw new DataReadError(409, 'Pilihan akun sudah berubah.');
+      const campus=url.match(/^\/api\/pencairan\/([^/?]+)/)?.[1];
+      if(campus&&Number.isInteger((result as any)?.serverRevision))revisions.set(campus,Math.max(revisions.get(campus)||0,(result as any).serverRevision));
       return result;
     } catch (error) {
       if (error instanceof DataReadError) throw error;
@@ -114,10 +117,13 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
     }
   };
   // Plain JSON helpers for the modules built on the real backend (users, pencairan, audit).
-  const send = <T,>(url: string, method: string, body?: object | FormData): Promise<T> => request<T>(url, response => response.json(), {
+  const send = <T,>(url: string, method: string, body?: object | FormData): Promise<T> => {
+    const revision=revisions.get(url.match(/^\/api\/pencairan\/([^/?]+)/)?.[1]||'');
+    if(import.meta.env.MODE==='pocketbase-local'&&revision!==undefined){if(body instanceof FormData){if(!body.has('expectedRevision'))body.set('expectedRevision',String(revision));}else body={expectedRevision:revision,...body};}
+    return request<T>(url, response => response.json(), {
     method, body: body instanceof FormData ? body : body === undefined ? undefined : JSON.stringify(body),
     headers: body instanceof FormData || body === undefined ? {} : { 'Content-Type': 'application/json' }
-  });
+  });};
   const api = {
     get: <T,>(url: string) => request<T>(url, response => response.json()),
     post: <T,>(url: string, body?: object | FormData) => send<T>(url, 'POST', body),

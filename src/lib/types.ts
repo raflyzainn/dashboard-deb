@@ -3,7 +3,7 @@ import type { ForumCategoryId } from './forum';
 export type Role = 'campus' | 'admin' | 'baru';
 export interface DemoSession { role: Role; name: string; campusId?: string; campusRole?: 'mentor' | 'sobi' }
 export interface AppSession extends DemoSession { id: string; email?: string; superAdmin?: boolean; passwordChangeRequired?: boolean }
-export interface PreviewAccount { key: string; name: string; role: Role }
+export interface PreviewAccount { key: string; name: string; role: Role; disbursementStarted?: boolean }
 export interface DemoActivationStatus { email: string; activated: boolean }
 export interface LocationDto { campusId: string; province: string; island: string; longitude: number | null; latitude: number | null; approximate: boolean }
 export interface Bootstrap { session: AppSession; data: Snapshot; locations: LocationDto[]; capabilities: { readOnly: boolean }; loadedAt: string }

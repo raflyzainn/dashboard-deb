@@ -14,6 +14,12 @@
   let previewAccount = $state('');
   let error = $state(page.url.searchParams.get('error') || '');
   const localAccounts = $derived(app.accounts.filter((account) => account.role === 'campus' || account.role === 'admin'));
+  const accountGroups = $derived([
+    { label: 'Sudah ada data pencairan', accounts: localAccounts.filter(a => a.role === 'campus' && a.disbursementStarted === true) },
+    { label: 'Pengajuan masih kosong', accounts: localAccounts.filter(a => a.role === 'campus' && a.disbursementStarted === false) },
+    { label: 'Akun kampus', accounts: localAccounts.filter(a => a.role === 'campus' && a.disbursementStarted === undefined) },
+    { label: 'Admin', accounts: localAccounts.filter(a => a.role === 'admin') }
+  ].filter(group => group.accounts.length));
   const showLocalAccounts = dev || import.meta.env.MODE === 'mockup';
 
   $effect(() => {
@@ -66,8 +72,8 @@
     <p class="relative text-xs text-blue-100">Pertamina Foundation</p>
   </section>
 
-  <section class="flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50/40 px-4 py-10">
-    <div class="w-full max-w-md">
+  <section class="flex min-w-0 items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50/40 px-4 py-10">
+    <div class="min-w-0 w-full max-w-md">
       <img src="/logo-pf.png" alt="Pertamina Foundation" class="mb-8 h-10 w-auto lg:hidden" />
       <h2 class="text-2xl font-bold text-slate-900">Masuk</h2>
       <p class="mt-1 text-sm text-slate-600">Gunakan akun Microsoft Pertamina Foundation, atau email dan kata sandi yang diberikan admin.</p>
@@ -107,12 +113,16 @@
       </form>
 
       {#if showLocalAccounts && localAccounts.length}
-        <div class="mt-6 grid gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
-          <label class="grid gap-1.5 text-sm font-medium text-slate-700">
+        <div class="mt-6 grid min-w-0 grid-cols-1 gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
+          <label class="grid min-w-0 grid-cols-1 gap-1.5 text-sm font-medium text-slate-700">
             Masuk sebagai akun lokal
-            <select class="min-h-[44px] rounded-xl border border-slate-300 bg-white px-3 text-[15px] text-slate-900" bind:value={previewAccount}>
+            <select class="min-h-[44px] min-w-0 w-full max-w-full truncate rounded-lg border border-slate-300 bg-white px-3 text-[15px] text-slate-900 outline-none focus:border-[#0066B2] focus:ring-2 focus:ring-blue-100" bind:value={previewAccount}>
               <option value="">Pilih akun kampus atau admin</option>
-              {#each localAccounts as account}<option value={account.key}>{account.name}</option>{/each}
+              {#each accountGroups as group}
+                <optgroup label={group.label}>
+                  {#each group.accounts as account}<option value={account.key}>{account.name}</option>{/each}
+                </optgroup>
+              {/each}
             </select>
           </label>
           <Button type="button" full loading={busy} disabled={!previewAccount} onclick={impersonate}>Masuk ke ruang kerja</Button>

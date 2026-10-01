@@ -199,3 +199,12 @@ export function namesMatch(a: string[], b: string[]) {
   return left.every(name => found(name, right));
 }
 export const splitNames = (value: string | string[] | null | undefined): string[] => (Array.isArray(value) ? value : String(value || '').split(/[;\n]|\s+dan\s+|,/)).map(s => s.trim()).filter(Boolean);
+
+/** Shared receipt metadata for the legacy backend and the local application transaction. */
+export function documentReceiptFlags(flags: { signedReceived?: boolean; originalReceived?: boolean }, who: string, now = new Date().toISOString()) {
+  const patch: Record<string, boolean | string> = {};
+  for (const key of ['signedReceived', 'originalReceived'] as const) if (typeof flags[key] === 'boolean') {
+    patch[key] = flags[key]!; patch[key + 'At'] = flags[key] ? now : ''; patch[key + 'ByName'] = flags[key] ? who : '';
+  }
+  return patch;
+}

@@ -3,7 +3,6 @@
   import DocumentGuide from '../../../../../mockups/app/DocumentGuide.svelte';
   import CampusJourney from '../../../../../mockups/app/CampusJourney.svelte';
   import DummyRabUpload from '../../../../../mockups/app/RabUpload.svelte';
-  const fullDummy = import.meta.env.MODE === 'mockup';
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { dataService } from '$lib/data/service';
@@ -32,6 +31,7 @@
   let { campusId, mode = 'admin' }: { campusId: string; mode?: 'admin' | 'campus' } = $props();
 
   let data = $state<KartuData | null>(null);
+  const fullDummy = $derived(import.meta.env.MODE === 'mockup'||import.meta.env.MODE === 'pocketbase-local'&&Boolean((data as any)?.journey));
   let error = $state('');
   let notice = $state('');
   let busy = $state(false);
@@ -261,7 +261,7 @@
     const note = reviewNote.trim();
     if (which === 'bad' && !note) { error = kind === 'sk' ? 'Tulis nilai yang tercetak di SK di kolom catatan.' : 'Tulis catatan untuk kampus dulu.'; noteInput?.focus(); return; }
     const decision = which === 'ok' ? 'sesuai' : which === 'none' ? 'tidak_perlu' : 'perlu_revisi';
-    const body: Record<string, unknown> = { decision, note };
+    const body: Record<string, unknown> = { decision, note, expectedRevision:(data as any).serverRevision };
     if (kind === 'rekening') body.bank = { result: which === 'ok' ? 'sesuai' : 'berbeda', nameSeen: bankNameSeen.trim() || (which === 'bad' ? note : '') };
     const url = kind === 'rab' ? `/api/pencairan/${campusId}/rab/keputusan` : `/api/pencairan/${campusId}/documents/${kind}/review`;
     const ok = await run(() => dataService.api.post<KartuData>(url, body), which === 'ok' ? `${KIND_SHORT[kind]}: ${DECISION_LABEL[kind].ok}.` : which === 'none' ? 'Ditandai tanpa surat kuasa.' : `${KIND_SHORT[kind]}: catatan revisi tersimpan.`);
@@ -272,7 +272,7 @@
     if (!data || !admin || !isItem) return;
     const url = kind === 'rab' ? `/api/pencairan/${campusId}/rab/keputusan` : `/api/pencairan/${campusId}/documents/${kind}/review`;
     const body = kind === 'rab' ? { decision: 'batal' } : { decision: 'perlu_konfirmasi', note: '' };
-    const ok = await run(() => dataService.api.post<KartuData>(url, body), `${KIND_SHORT[kind]}: keputusan dibatalkan, butir kembali ke Periksa.`);
+    const ok = await run(() => dataService.api.post<KartuData>(url, {...body,expectedRevision:(data as any).serverRevision}), `${KIND_SHORT[kind]}: keputusan dibatalkan, butir kembali ke Periksa.`);
     if (ok) editing = false;
   }
   /** The latest managed RAB version in the same workbook layout as the template, built in the browser. */
@@ -416,7 +416,7 @@
           <b class="text-[15px] text-slate-900">{isItem ? KIND_LABEL[kind] : !admin&&fullDummy?selected==='ringkasan'?'Ringkasan pengajuan':CAMPUS_ROWS.find(c=>c.key===selected)?.label:CLOSING.find(c => c.key === selected)?.label}</b>
           {#if isItem && kind === 'sk'}
             <span class="rounded-full bg-[#0066B2] px-2.5 py-0.5 text-[11.5px] font-semibold text-white">{data.summary.skNumber}{data.summary.skDate ? ` · ${time.format(new Date(data.summary.skDate))} ${new Date(data.summary.skDate).getFullYear()}` : ''}</span>
-            {#if data.summary.skFile}<a class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300" href={fullDummy ? '/sk-dummy.pdf' : '/api/pencairan/sk'} target="_blank" rel="noopener">Buka SK lengkap</a>{/if}
+            {#if data.summary.skFile}<a class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300" href={import.meta.env.MODE === 'mockup' ? '/sk-dummy.pdf' : '/api/pencairan/sk'} target="_blank" rel="noopener">Buka SK lengkap</a>{/if}
           {:else if isItem && isRab}
             <button type="button" class="rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold {rabTab === 'digital' ? 'bg-[#0066B2] text-white' : 'border border-slate-200 bg-white text-slate-600'}" onclick={() => (rabTab = 'digital')}>RAB terkelola</button>
 {#if !fullDummy}            <button type="button" class="rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold {rabTab === 'asli' ? 'bg-[#0066B2] text-white' : 'border border-slate-200 bg-white text-slate-600'}" onclick={() => (rabTab = 'asli')}>Berkas asli{fileDoc?.versions.length ? '' : ' (belum ada)'}</button>{/if}
@@ -442,7 +442,7 @@
         {#if !admin&&fullDummy&&!page.url.searchParams.has('signed')}
          <CampusJourney {campusId} embedded={true} onloaded={()=>void load()}/>
         {:else}
-        {#if admin&&fullDummy&&kind==='pks'&&(data as any).journey}<details class="border-b border-slate-200 p-3 text-sm"><summary class="cursor-pointer font-semibold text-[#0066B2]">Data PKS yang diisi PF</summary><form class="mt-3 flex flex-wrap items-end gap-2" aria-label="Data PKS PF" onsubmit={event=>{event.preventDefault();const fields=new FormData(event.currentTarget);void run(()=>dataService.api.patch<KartuData>(`/api/pencairan/${campusId}/pengajuan/pf`,{nomorPksPf:fields.get('nomorPksPf')}),'Data PF tersimpan. Dokumen kampus perlu dibuat ulang.');}}><label class="grid flex-1 gap-1">Nomor PKS PF (diisi PF)<input class="min-h-11 rounded-lg border border-slate-300 p-2" name="nomorPksPf" value={(data as any).journey.pf?.nomorPksPf||'PKS-PF/DUMMY/2026/'+campusId} required maxlength="200" disabled={busy||Boolean(data.disbursement.paidAt)}/></label><button class="min-h-11 rounded-lg bg-[#0066B2] px-4 text-white disabled:opacity-40" disabled={busy||Boolean(data.disbursement.paidAt)}>Simpan data PF</button></form><p class="mt-2 text-xs text-slate-500">Perubahan data PF mewajibkan kampus memperbarui dokumen dan mengajukan kembali. Tanggal PKS tetap 17 Juni 2026.</p><a class="mt-2 inline-block text-[#0066B2] underline" href="/admin/pencairan/pengaturan">Atur penandatangan dan masa perjanjian PF</a></details>{/if}
+        {#if admin&&fullDummy&&kind==='pks'&&(data as any).journey}<details class="border-b border-slate-200 p-3 text-sm"><summary class="cursor-pointer font-semibold text-[#0066B2]">Data PKS yang diisi PF</summary><form class="mt-3 flex flex-wrap items-end gap-2" aria-label="Data PKS PF" onsubmit={event=>{event.preventDefault();const fields=new FormData(event.currentTarget);void run(()=>dataService.api.patch<KartuData>(`/api/pencairan/${campusId}/pengajuan/pf`,{nomorPksPf:fields.get('nomorPksPf'),expectedRevision:(data as any).serverRevision}),'Data PF tersimpan. Dokumen kampus perlu dibuat ulang.');}}><label class="grid flex-1 gap-1">Nomor PKS PF (diisi PF)<input class="min-h-11 rounded-lg border border-slate-300 p-2" name="nomorPksPf" value={(data as any).journey.pf?.nomorPksPf||(import.meta.env.MODE==='mockup'?'PKS-PF/DUMMY/2026/'+campusId:'')} required maxlength="200" disabled={busy||Boolean(data.disbursement.paidAt)}/></label><button class="min-h-11 rounded-lg bg-[#0066B2] px-4 text-white disabled:opacity-40" disabled={busy||Boolean(data.disbursement.paidAt)}>Simpan data PF</button></form><p class="mt-2 text-xs text-slate-500">Perubahan data PF mewajibkan kampus memperbarui dokumen dan mengajukan kembali. Tanggal PKS tetap 17 Juni 2026.</p><a class="mt-2 inline-block text-[#0066B2] underline" href="/admin/pencairan/pengaturan">Atur penandatangan dan masa perjanjian PF</a></details>{/if}
         {#if isRab && fullDummy}<DummyRabUpload {campusId} {kind} {admin} onediting={value => rabEditing = value} onloaded={() => void load()} />{/if}
         {#if !admin && isItem && !(isRab && fullDummy)}
           {#if fullDummy&&(data as any).journey&&['pks','permohonan','kuitansi','invois','surat_kuasa'].includes(kind)}<div class="p-3"><DocumentGuide {kind} checklist={(data as any).journey.checklist} kuasa={(data as any).journey.fields.jenisRekening==='kuasa'} onchange={async(key,checked)=>{await dataService.api.patch(`/api/pencairan/${campusId}/pengajuan/checklist`,{key,checked});await load();}}/></div>{/if}
@@ -482,7 +482,7 @@
             {/if}
             {#if kind === 'sk'}
               {#if data.summary.skFile}
-                <iframe title="SK" src={`${fullDummy ? '/sk-dummy.pdf' : '/api/pencairan/sk'}#page=${data.summary.skLampiranPage || 1}`} class="h-full w-full border-0 bg-white"></iframe>
+                <iframe title="SK" src={`${import.meta.env.MODE === 'mockup' ? '/sk-dummy.pdf' : '/api/pencairan/sk'}#page=${data.summary.skLampiranPage || 1}`} class="h-full w-full border-0 bg-white"></iframe>
               {:else}
                 <div class="flex h-full items-center justify-center text-sm text-slate-600">Berkas SK belum dimuat.</div>
               {/if}

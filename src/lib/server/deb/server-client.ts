@@ -6,6 +6,7 @@ import { noRedirects } from './pb-fetch';
 
 export async function serverSettings(): Promise<Record<string, string>> {
   const settings: Record<string, string> = Object.fromEntries(Object.entries(env).filter((entry): entry is [string, string] => typeof entry[1] === 'string'));
+  if (import.meta.env.MODE === 'pocketbase-local' && (!dev || settings.PB_URL !== 'http://127.0.0.1:8097' || settings.DEB_LOCAL_PREVIEW_ENABLED !== 'true')) throw new PreviewError(503, 'Mode lokal memerlukan instance PocketBase lokal bertanda pada port 8097.');
   if (dev && settings.DEB_LOCAL_PREVIEW_ENABLED === 'true' && /^http:\/\/127\.0\.0\.1:809[67]$/.test(settings.PB_URL || '')) {
     const local = await (await import('./local-config')).localServerConfig(settings.DEB_LOCAL_INSTANCE_DIR || '', settings.PB_URL);
     // The selected marked QA instance owns its credentials; never mix them with another .env database.
@@ -14,6 +15,7 @@ export async function serverSettings(): Promise<Record<string, string>> {
     settings.DEB_LOCAL_INSTANCE_ID = 'local';
     settings.DEB_PUBLIC_URL ||= settings.PB_URL.endsWith('8097') ? 'http://127.0.0.1:5177' : 'http://127.0.0.1:5176';
   }
+  if (import.meta.env.MODE === 'pocketbase-local') for (const key of Object.keys(settings)) if (key.startsWith('R2_')) delete settings[key];
   return settings;
 }
 

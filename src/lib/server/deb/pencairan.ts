@@ -1,7 +1,7 @@
 import type PocketBase from 'pocketbase';
 import type { RecordModel } from 'pocketbase';
 import { versionHolds, type RabVersionShare } from '../../rab';
-import { campusUploadBlockedReason } from '../../pencairan';
+import { campusUploadBlockedReason, documentReceiptFlags } from '../../pencairan';
 import { KINDS, KIND_LABEL, FIELDS, GENERATED, LETTERS, isRabKind, limitSen, remainderSen, formatSen, percentOf, formatPercent, splitNames, namesMatch, terbilang, assess, type Assessment, type Kind, type Status } from '../../pencairan';
 import { PreviewError } from './preview-error';
 import { writeAudit, type AuditActor } from './audit';
@@ -479,11 +479,7 @@ export async function setFields(pb: PocketBase, actor: AuditActor & { id: string
 export async function setDocumentFlags(pb: PocketBase, actor: AuditActor, campusId: string, kind: Kind, flags: { signedReceived?: boolean; originalReceived?: boolean }) {
   const { documents } = await ensureDisbursement(pb, campusId);
   const doc = documents.find(d => d.kind === kind)!;
-  const patch: Record<string, unknown> = {};
-  const now = new Date().toISOString();
-  const who = actor?.name || 'Sistem';
-  if (typeof flags.signedReceived === 'boolean') { patch.signedReceived = flags.signedReceived; patch.signedReceivedAt = flags.signedReceived ? now : ''; patch.signedReceivedByName = flags.signedReceived ? who : ''; }
-  if (typeof flags.originalReceived === 'boolean') { patch.originalReceived = flags.originalReceived; patch.originalReceivedAt = flags.originalReceived ? now : ''; patch.originalReceivedByName = flags.originalReceived ? who : ''; }
+  const patch = documentReceiptFlags(flags, actor?.name || 'Sistem');
   if (!Object.keys(patch).length) return doc;
   const updated = await pb.collection('documents').update(doc.id, patch, opts);
   await writeAudit(pb, { actor, action: `memperbarui penanda ${labelOf(kind)}`, context: context(campusId), collection: 'documents', record: doc.id, campus: campusId, before: { pindaianBertandaTangan: Boolean(doc.signedReceived), asliDiterima: Boolean(doc.originalReceived) }, after: { pindaianBertandaTangan: Boolean(updated.signedReceived), asliDiterima: Boolean(updated.originalReceived) } });
