@@ -13,10 +13,10 @@
   }
 }
 /* Required semantics drive the same marker on every form, including dialogs. */
-label:has(input:required, select:required, textarea:required, [aria-required="true"]) {
+label:not(:has(> .field-caption)):has(input:required, select:required, textarea:required, [aria-required="true"]) {
   position: relative;
 }
-label:has(input:required, select:required, textarea:required, [aria-required="true"])::after {
+label:not(:has(> .field-caption)):has(input:required, select:required, textarea:required, [aria-required="true"])::after {
   content: '*';
   color: #dc2626;
   font-weight: 700;
@@ -39,4 +39,11 @@ body:has(dialog[open]) dialog[open] .global-error { display: flex; }
 }
 @media (prefers-reduced-motion: reduce) {
   .global-error { animation: none; }
+}
+
+/* Keep required markers beside the caption in the campus journey. */
+label:has(input:required, select:required, textarea:required, [aria-required="true"]) > .field-caption::after {
+  content: ' *';
+  color: #dc2626;
+  font-weight: 700;
 }

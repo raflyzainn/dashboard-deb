@@ -76,3 +76,28 @@ Atas instruksi pengguna pada 1 Oktober 2026:
 - `npm test`: gagal memuat beberapa suite karena `import.meta.env.MODE` tidak tersedia dalam runner Node/tsx (`src/lib/data/demo/store.ts`). Baris ini dikonfirmasi juga ada pada HEAD sebelum perubahan ini. Proses yang tidak menyelesaikan suite kemudian dihentikan; tidak ada hasil kelulusan seluruh suite. Runtime mesin Node v25.5.0, sedangkan package meminta Node 22.x.
 - `git diff --check`: berhasil tanpa kesalahan whitespace.
 - Pengguna meminta push ke branch fitur GitLab dan GitHub. Validasi di atas belum membuktikan kesiapan merge ke production. Berkas Excel pengguna, env, dan data PocketBase tidak termasuk perubahan yang dikirim.
+
+## Koreksi navigasi wajib — 2 Oktober 2026
+
+Aturan terbaru pengguna: isian wajib pada langkah aktif harus lengkap sebelum
+melanjutkan. Aturan ini menggantikan keterangan lama yang hanya membatasi
+pengiriman akhir; penyimpanan draf parsial tetap diperbolehkan.
+
+- CampusJourney memakai blocker dari validator pengajuan yang sudah ada untuk
+  menonaktifkan Lanjut. Navigasi maju lewat menu samping diperiksa juga.
+- Kembali dan peninjauan pengajuan terkunci tetap tersedia.
+- Setelah RAB disimpan, snapshot dimuat sebelum mengevaluasi kelengkapan untuk
+  berpindah ke Administrasi.
+- Caption label Data Program, Administrasi, PKS dan RAB memiliki bintang inline.
+  Kecamatan tetap opsional; unggahan yang sudah tersimpan tidak wajib diulang.
+- Pada salinan video 5186, perekaman Playwright memperlihatkan Kabupaten/kota
+  kosong membuat Lanjut nonaktif; klik RAB tetap berada di Data Program.
+  Sesudah seluruh field wajib terisi, Lanjut aktif dan halaman RAB terbuka.
+  Screenshot lengkap diperiksa: bintang berada setelah label tanpa duplikasi.
+- Tool browser MCP gagal dibuka karena profil sedang digunakan sesi lain.
+  Pengamatan di atas dilakukan dalam perekaman Playwright yang diminta pengguna.
+  Skrip regresi untuk tool browser: scripts/qa/journey-required-navigation.playwright.js;
+  skrip tersebut belum dijalankan. Test suite, check, lint dan build tidak dijalankan.
+- Video revisi disimpan lokal di demo-videos; video, fixture dan database salinan
+  tidak disertakan dalam commit kode.
+- Perekaman lanjutan: RAB lengkap berhasil menuju Administrasi, Lanjut pada Administrasi kosong nonaktif, dan Kembali tetap berhasil menuju RAB.
