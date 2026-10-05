@@ -1,5 +1,13 @@
 # Panduan proyek untuk Codex
 
+## Batas development dan production — 5 Oktober 2026
+
+Sesuai arahan pengguna, `development` dipakai untuk dummy dan koneksi layanan aktif berada pada branch `production`. Default `npm run dev` dan `npm run build` pada branch pengajuan ini memakai mode `mockup`; PocketBase lokal tetap terpisah melalui `npm run dev:local`.
+
+**Jangan mengubah branch `production`, melakukan push/merge ke sana, atau mengubah deployment, konfigurasi, database, maupun layanan production sebelum pengguna menyuruh secara eksplisit.** Permintaan membuat PR, memperbaiki kode, atau melakukan QA pada `development` tidak memberi izin menyentuh production. Gunakan dummy atau instance lokal bertanda untuk QA. Keterangan deployment production dalam dokumentasi demo lama bersifat historis; jangan menerapkannya sebagai instruksi perubahan production.
+
+Hasil verifikasi branch sumber, simulasi merge, perbaikan tanggal dummy, dan QA Playwright tercatat di [laporan QA PR development](QA-PR-DEVELOPMENT-2026-10-05.md).
+
 ## Pembaruan feedback dan panduan pengguna - 1 Oktober 2026
 
 Gunakan [laporan snackbar dan field wajib](pencairan-deb/QA-SNACKBAR-FIELD-WAJIB-2026-10-01.md) untuk pola penanganan error bersama, field wajib, perubahan Beranda/Panduan kampus, dan batas QA browser terakhir. Pengajuan baru PocketBase mengikuti petunjuk terbaru ini; panduan demo dan unggah manual historis di bawah tidak menggantikannya.

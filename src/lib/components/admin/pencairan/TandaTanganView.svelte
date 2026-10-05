@@ -50,7 +50,10 @@
   const ROW_LABEL: Record<MergeKind, string> = { pks: 'PKS', permohonan: 'Permohonan', invois: 'Invois', kuitansi: 'Kuitansi' };
   const day = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', timeZone: 'Asia/Jakarta' });
   const time = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' });
-  const when = (value: string) => (value ? day.format(new Date(value)) : '');
+  const when = (value: string, full = false) => {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? 'Tanggal belum tercatat' : (full ? time : day).format(date);
+  };
   const chip = 'inline-flex min-h-8 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 text-xs font-semibold transition';
   const chipBtn = `${chip} cursor-pointer border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white`;
   const chipMain = `${chip} cursor-pointer border-[#0066B2] bg-[#0066B2] text-white hover:bg-[#015a9a] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[#0066B2]`;
@@ -244,7 +247,7 @@
   <div class="grid justify-items-start gap-2 py-1 text-sm">
     {#if row.doc.originalReceived}
       <span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-800"><Icon name="check" size={14} />Asli diterima</span>
-      <span class="text-xs text-slate-500" title={`Dicatat oleh ${row.doc.originalReceivedByName}`}>{time.format(new Date(row.doc.originalReceivedAt))}</span>
+      <span class="text-xs text-slate-500" title={`Dicatat oleh ${row.doc.originalReceivedByName}`}>{when(row.doc.originalReceivedAt, true)}</span>
       {#if !data.disbursement.paidAt}<button type="button" class="min-h-9 rounded-lg border border-slate-200 px-2.5 text-xs font-medium text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:opacity-40" aria-label={`Batalkan penerimaan asli ${row.label}`} disabled={Boolean(busy)} onclick={() => setFlag(row, 'originalReceived', false)}>{busy === `originalReceived:${row.kind}` ? 'Menyimpan…' : 'Batalkan penerimaan'}</button>{/if}
     {:else}
       <span class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">Belum diterima</span>
@@ -338,7 +341,7 @@
         <label class="inline-flex cursor-pointer items-center gap-2 font-semibold text-slate-800">
           <input type="checkbox" class="size-4 accent-[#0066B2]" checked={current.doc.signedReceived} disabled={Boolean(busy)} onchange={(e) => setFlag(current!, 'signedReceived', (e.currentTarget as HTMLInputElement).checked)} />Sesuai dengan dokumen final
         </label>
-        {#if current.doc.signedReceived}<span class="text-xs text-slate-500">{current.doc.signedReceivedByName}, {time.format(new Date(current.doc.signedReceivedAt))}</span>{/if}
+        {#if current.doc.signedReceived}<span class="text-xs text-slate-500">{current.doc.signedReceivedByName}, {when(current.doc.signedReceivedAt, true)}</span>{/if}
       </div>
 
     {:else if modal.type === 'compare'}
@@ -384,7 +387,7 @@
         {:else if info}
           {#if activeTemplate}
             <div class="grid gap-2 rounded-lg bg-blue-50 px-3 py-2 text-xs text-[#015a9a]">
-              <span>Versi {activeTemplate.version} · {activeTemplate.originalName} · {activeTemplate.uploadedByName}, {time.format(new Date(activeTemplate.created))}{activeTemplate.reason ? ` · ${activeTemplate.reason}` : ''}</span>
+              <span>Versi {activeTemplate.version} · {activeTemplate.originalName} · {activeTemplate.uploadedByName}, {when(activeTemplate.created, true)}{activeTemplate.reason ? ` · ${activeTemplate.reason}` : ''}</span>
               <span>{pasalBerbeda.length ? `${pasalBerbeda.length} pasal berbeda dari templat standar` : 'Tidak ada pasal yang berbeda dari templat standar'}{#if pasalBerbeda.length}<button type="button" class="ml-1 font-semibold underline" onclick={() => (showDiff = !showDiff)}>{showDiff ? 'tutup' : 'lihat'}</button>{/if}</span>
               {#if activeTemplate.differences.missingTags.length}<span class="text-amber-900">Tidak tercetak: {activeTemplate.differences.missingTags.join(', ')}.</span>{/if}
             </div>
@@ -411,7 +414,7 @@
           {#if info.templates.versions.some(v => !v.active)}
             <ul class="grid gap-1 text-xs">
               {#each info.templates.versions.filter(v => !v.active) as v (v.id)}
-                <li class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-1.5"><span>Versi {v.version} · {v.originalName} · {time.format(new Date(v.created))}</span><button type="button" class={chipBtn} onclick={() => useVersion(v.id, v.version)} disabled={Boolean(busy)}>Pakai versi ini</button></li>
+                <li class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-1.5"><span>Versi {v.version} · {v.originalName} · {when(v.created, true)}</span><button type="button" class={chipBtn} onclick={() => useVersion(v.id, v.version)} disabled={Boolean(busy)}>Pakai versi ini</button></li>
               {/each}
             </ul>
           {/if}

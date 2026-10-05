@@ -1,6 +1,8 @@
 # Digitalisasi DEB — demo mandiri
 
-Branch `production` menggunakan UI terbaru dari development dan perubahan proposal terkini, dengan data simulasi di **IndexedDB browser**. Aplikasi berjalan sebagai situs statis tanpa PocketBase, API aplikasi, login nyata, atau layanan email.
+Mode bawaan branch `feat/pencairan-pocketbase-local` yang diajukan ke `development` menggunakan data simulasi di **IndexedDB browser**. Build dummy berjalan sebagai situs statis tanpa PocketBase, API aplikasi, login nyata, atau layanan email.
+
+**Batas branch — 5 Oktober 2026:** sesuai arahan pengguna, `development` dipakai untuk dummy; koneksi layanan aktif berada pada `production`. Jangan mengubah branch, deployment, konfigurasi, database, atau layanan production sebelum pengguna menyuruh secara eksplisit. Izin PR/push/QA ke `development` tidak mencakup production. Panduan demo historis di bawah tidak menjelaskan kondisi deployment production saat ini.
 
 ## Panduan Codex
 
@@ -47,7 +49,7 @@ Output statis berada di `build/`. Playwright menjalankan server file statis pada
 
 ## Vercel
 
-`vercel.json` mengatur build `npm run build`, output `build`, dan fallback SPA ke `index.html` agar tautan halaman langsung/reload bekerja. Setelah branch dipush, ubah **Project Settings → Environments → Production → Branch Tracking** dari `main` menjadi `production`, lalu deploy commit branch ini. Tidak membutuhkan environment variable PocketBase atau email.
+`vercel.json` mengatur build dummy `npm run build`, output `build`, dan fallback SPA ke `index.html` agar tautan halaman langsung/reload bekerja. Demo tidak membutuhkan environment variable PocketBase atau email. PR ke `development` bukan izin mengubah Branch Tracking, konfigurasi hosting, atau deployment production.
 
 Pembuatan branch lokal tidak otomatis mengganti deployment yang sedang tayang. Konfigurasi proyek Vercel belum diubah oleh pekerjaan ini.
 

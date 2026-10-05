@@ -18,6 +18,7 @@ Kewajiban membaca berlaku pada setiap chat baru, bukan mengulang seluruh dokumen
 
 - **Jangan push atau membuat PR/MR sebelum pengguna menyuruh secara eksplisit.** Selesai implementasi atau QA bukan izin publikasi.
 - Jangan melakukan merge, deploy, atau perubahan remote tanpa instruksi pengguna.
+- **Jangan mengubah branch `production`, deployment, konfigurasi, database, atau layanan production sebelum pengguna menyuruh secara eksplisit.** Izin membuat PR, push, atau QA ke `development` tidak mencakup production. `development` dipakai untuk dummy; koneksi layanan aktif berada pada `production`.
 - Kerjakan perubahan secara lokal. Pertahankan perubahan pengguna dan berkas yang tidak terkait. Jangan otomatis commit kecuali diminta.
 
 ## Pengujian
