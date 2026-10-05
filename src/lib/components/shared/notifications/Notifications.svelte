@@ -25,24 +25,24 @@
 </script>
 
 <div
-  class="flex items-center justify-between gap-y-[20px] gap-x-[20px] mb-[27px] [&_p]:text-[14px] [&_p]:text-[#637796] [&_p]:mt-[8px] max-[900.01px]:[&_h1]:text-[24px] max-[700.01px]:items-start max-[700.01px]:gap-y-[15px] max-[700.01px]:gap-x-[15px] max-[700.01px]:mb-[22px] max-[700.01px]:flex-wrap max-[700.01px]:[&_h1]:text-[23px] max-[700.01px]:[&_p]:text-[14px] max-[700.01px]:[&_p]:leading-[1.65] max-[700.01px]:[&_p]:max-w-[340px] max-[700.01px]:[&_.period]:hidden page-heading"
+  class="flex items-center justify-between gap-y-[20px] gap-x-[20px] mb-[27px] [&_p]:text-[12px] [&_p]:text-[#637796] [&_p]:mt-[8px] max-[900.01px]:[&_h1]:text-[24px] max-[700.01px]:items-start max-[700.01px]:gap-y-[15px] max-[700.01px]:gap-x-[15px] max-[700.01px]:mb-[22px] max-[700.01px]:flex-wrap max-[700.01px]:[&_h1]:text-[23px] max-[700.01px]:[&_p]:text-[12px] max-[700.01px]:[&_p]:leading-[1.9] max-[700.01px]:[&_p]:max-w-[340px] max-[700.01px]:[&_.period]:hidden page-heading"
 >
   <div>
     <span
-      class="block text-[12px] tracking-[0.06em] font-[700] text-[#3975b7] mb-[9px] max-[700.01px]:text-[10px] eyebrow"
+      class="block text-[10px] tracking-[1.9px] font-[750] text-[#3975b7] mb-[9px] max-[700.01px]:text-[8px] eyebrow"
       >KABAR RUANG KERJA</span
     >
     <h1
-      class="font-[700] text-[color:var(--navy)] text-[29px] tracking-[-0.01em] leading-[1.3] m-[0px]"
+      class="font-[650] text-[color:var(--navy)] text-[29px] tracking-[-1.15px] leading-[1.3] m-[0px]"
     >
       Notifikasi
     </h1>
-    <p class="leading-[1.6] m-[0px]">
+    <p class="leading-[1.8] m-[0px]">
       Ikuti feedback, pembaruan data, proposal, dan percakapan yang memerlukan perhatian Anda.
     </p>
   </div>
   <button
-    class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[600] [font-stretch:inherit] text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer [&&]:text-[#075fc7] inline-flex items-center justify-center gap-y-[9px] gap-x-[9px] min-h-[42px] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_255,_255)] [transition-behavior:normal,_normal] [transition-duration:0.15s,_0.15s] [transition-timing-function:ease,_ease] [transition-delay:0s,_0s] [transition-property:background,_box-shadow] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [&&]:[box-shadow:none] px-[18px] py-[11px] border-[1px] border-solid [&&]:border-[color:rgb(185,_214,_244)] rounded-[8px] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(237,_246,_255)] [&:hover:not(:disabled)]:[box-shadow:0_10px_24px_#075fc72c] [&:hover:not(:disabled)]:border-[color:rgb(104,_172,_233)] max-[700.01px]:text-[13px] max-[700.01px]:px-[15px] max-[700.01px]:py-[10px] button secondary"
+    class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[650] [font-stretch:inherit] text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer [&&]:text-[#075fc7] inline-flex items-center justify-center gap-y-[9px] gap-x-[9px] min-h-[42px] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_255,_255)] [transition-behavior:normal,_normal] [transition-duration:0.15s,_0.15s] [transition-timing-function:ease,_ease] [transition-delay:0s,_0s] [transition-property:background,_box-shadow] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [&&]:[box-shadow:none] px-[18px] py-[11px] border-[1px] border-solid [&&]:border-[color:rgb(185,_214,_244)] rounded-[8px] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(237,_246,_255)] [&:hover:not(:disabled)]:[box-shadow:0_10px_24px_#075fc72c] [&:hover:not(:disabled)]:border-[color:rgb(104,_172,_233)] max-[700.01px]:text-[11px] max-[700.01px]:px-[15px] max-[700.01px]:py-[10px] button secondary"
     disabled={app.readOnly || !unread || app.busy}
     onclick={() =>
       app.mutate(() => dataService.readNotifications(), 'Semua notifikasi ditandai dibaca.')}
@@ -56,27 +56,27 @@
     class="[&&]:flex [&&]:items-center [&&]:justify-between [&&]:gap-y-[16px] [&&]:gap-x-[16px] [&&]:px-[24px] [&&]:py-[22px] max-[700.01px]:[&&]:items-start max-[700.01px]:[&&]:flex-wrap max-[700.01px]:[&&]:p-[18px] notification-top"
   >
     <div>
-      <strong class="font-[600] [&&]:text-[16px]">{unread} belum dibaca</strong>
-      <p class="[&&]:mt-[7px] mb-[0px] leading-[1.6] [&&]:text-[13px] [&&]:text-[#475569] mx-[0px]">
-        Membuka tautan detail menandai notifikasi
-        sebagai dibaca.
+      <strong class="font-[650] [&&]:text-[15px]">{unread} belum dibaca</strong>
+      <p class="[&&]:mt-[7px] mb-[0px] leading-[1.8] [&&]:text-[11px] [&&]:text-[#718176] mx-[0px]">
+        Notifikasi berasal dari PocketBase. Membuka tautan detail menandai notifikasi sebagai
+        dibaca.
       </p>
     </div>
     <button
-      class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[600] [font-stretch:inherit] [&&]:text-[13px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer [&&]:text-[#075fc7] inline-flex items-center justify-center gap-y-[9px] gap-x-[9px] [&&]:min-h-[33px] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_255,_255)] [transition-behavior:normal,_normal] [transition-duration:0.15s,_0.15s] [transition-timing-function:ease,_ease] [transition-delay:0s,_0s] [transition-property:background,_box-shadow] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [&&]:[box-shadow:none] [&&]:px-[12px] [&&]:py-[7px] border-[1px] border-solid [&&]:border-[color:rgb(185,_214,_244)] rounded-[8px] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(237,_246,_255)] [&:hover:not(:disabled)]:[box-shadow:0_10px_24px_#075fc72c] [&:hover:not(:disabled)]:border-[color:rgb(104,_172,_233)] max-[700.01px]:[&&]:text-[13px] max-[700.01px]:[&&]:px-[12px] max-[700.01px]:[&&]:py-[7px] button secondary small"
+      class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[650] [font-stretch:inherit] [&&]:text-[11px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer [&&]:text-[#075fc7] inline-flex items-center justify-center gap-y-[9px] gap-x-[9px] [&&]:min-h-[33px] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_255,_255)] [transition-behavior:normal,_normal] [transition-duration:0.15s,_0.15s] [transition-timing-function:ease,_ease] [transition-delay:0s,_0s] [transition-property:background,_box-shadow] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [&&]:[box-shadow:none] [&&]:px-[12px] [&&]:py-[7px] border-[1px] border-solid [&&]:border-[color:rgb(185,_214,_244)] rounded-[8px] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(237,_246,_255)] [&:hover:not(:disabled)]:[box-shadow:0_10px_24px_#075fc72c] [&:hover:not(:disabled)]:border-[color:rgb(104,_172,_233)] max-[700.01px]:[&&]:text-[11px] max-[700.01px]:[&&]:px-[12px] max-[700.01px]:[&&]:py-[7px] button secondary small"
       disabled={app.loading || app.busy}
       onclick={() => app.reload()}><Icon name="reset" size={15} />Muat ulang</button
     >
   </div>
   <div
-    class="flex gap-y-[22px] gap-x-[22px] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:var(--line)] overflow-x-auto px-[23px] py-[0px] [&_button]:[background-image:none] [&_button]:[background-color:initial] [&_button]:[border-top-width:0px] [&_button]:[border-right-width:0px] [&_button]:[border-bottom-width:2px] [&_button]:[border-left-width:0px] [&_button]:[border-top-style:none] [&_button]:[border-right-style:none] [&_button]:[border-bottom-style:solid] [&_button]:[border-left-style:none] [&_button]:[border-top-color:currentcolor] [&_button]:[border-right-color:currentcolor] [&_button]:[border-bottom-color:transparent] [&_button]:[border-left-color:currentcolor] [&_button]:pt-[16px] [&_button]:pb-[13px] [&_button]:[white-space-collapse:collapse] [&_button]:[text-wrap-mode:nowrap] [&_button]:text-[13px] [&_button]:text-[#64748b] [&_button]:flex [&_button]:gap-y-[8px] [&_button]:gap-x-[8px] [&_button]:items-center [&_button]:px-[0px] [&_button.active]:text-[#075fc7] [&_button.active]:[border-bottom-color:#1681df] [&_button.active]:font-[700] max-[700.01px]:gap-y-[19px] max-[700.01px]:gap-x-[19px] max-[700.01px]:px-[16px] max-[700.01px]:[&_button]:text-[12px] tabs"
+    class="flex gap-y-[22px] gap-x-[22px] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:var(--line)] overflow-x-auto px-[23px] py-[0px] [&_button]:[background-image:none] [&_button]:[background-color:initial] [&_button]:[border-top-width:0px] [&_button]:[border-right-width:0px] [&_button]:[border-bottom-width:2px] [&_button]:[border-left-width:0px] [&_button]:[border-top-style:none] [&_button]:[border-right-style:none] [&_button]:[border-bottom-style:solid] [&_button]:[border-left-style:none] [&_button]:[border-top-color:currentcolor] [&_button]:[border-right-color:currentcolor] [&_button]:[border-bottom-color:transparent] [&_button]:[border-left-color:currentcolor] [&_button]:pt-[16px] [&_button]:pb-[13px] [&_button]:[white-space-collapse:collapse] [&_button]:[text-wrap-mode:nowrap] [&_button]:text-[11px] [&_button]:text-[#96a087] [&_button]:flex [&_button]:gap-y-[8px] [&_button]:gap-x-[8px] [&_button]:items-center [&_button]:px-[0px] [&_button.active]:text-[#075fc7] [&_button.active]:[border-bottom-color:#1681df] [&_button.active]:font-[700] max-[700.01px]:gap-y-[19px] max-[700.01px]:gap-x-[19px] max-[700.01px]:px-[16px] max-[700.01px]:[&_button]:text-[10px] tabs"
   >
     <button
       class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [font-size:inherit] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[inherit] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px]"
       class:active={!unreadOnly}
       onclick={() => (unreadOnly = false)}
       >Semua <span
-        class="text-[13px] font-[600] [background-image:initial] [background-color:rgb(232,_242,_255)] text-[#346baf] [white-space-collapse:collapse] [text-wrap-mode:nowrap] px-[7px] py-[3px] rounded-[5px] count"
+        class="text-[11px] font-[600] [background-image:initial] [background-color:rgb(232,_242,_255)] text-[#346baf] [white-space-collapse:collapse] [text-wrap-mode:nowrap] px-[7px] py-[3px] rounded-[5px] count"
         >{notices.length}</span
       ></button
     ><button
@@ -84,7 +84,7 @@
       class:active={unreadOnly}
       onclick={() => (unreadOnly = true)}
       >Belum dibaca <span
-        class="text-[13px] font-[600] [background-image:initial] [background-color:rgb(232,_242,_255)] text-[#346baf] [white-space-collapse:collapse] [text-wrap-mode:nowrap] px-[7px] py-[3px] rounded-[5px] count"
+        class="text-[11px] font-[600] [background-image:initial] [background-color:rgb(232,_242,_255)] text-[#346baf] [white-space-collapse:collapse] [text-wrap-mode:nowrap] px-[7px] py-[3px] rounded-[5px] count"
         >{unread}</span
       ></button
     >
@@ -103,24 +103,24 @@
               class="[&&]:flex [&&]:items-center [&&]:flex-wrap [&&]:gap-y-[10px] [&&]:gap-x-[10px] notification-heading"
             >
               <h2
-                class="font-[600] text-[color:var(--navy)] [&&]:text-[15px] tracking-[-0.01em] m-[0px] max-[700.01px]:[&&]:text-[14px]"
+                class="font-[650] text-[color:var(--navy)] [&&]:text-[14px] tracking-[-0.45px] m-[0px] max-[700.01px]:[&&]:text-[13px]"
               >
                 {notice.title}
               </h2>
               {#if notice.simulated}<span
-                  class="[&&]:text-[12px] [&&]:text-[#736748] [&&]:[background-image:initial] [&&]:[background-color:rgb(244,_238,_223)] [&&]:px-[7px] [&&]:py-[3px] [&&]:rounded-[5px] simulation-label"
+                  class="[&&]:text-[10px] [&&]:text-[#736748] [&&]:[background-image:initial] [&&]:[background-color:rgb(244,_238,_223)] [&&]:px-[7px] [&&]:py-[3px] [&&]:rounded-[5px] simulation-label"
                   >Simulasi</span
                 >{/if}{#if !notice.readAt}<span
-                  class="[&&]:text-[12px] [&&]:font-[600] [&&]:[background-image:initial] [&&]:[background-color:rgb(217,_239,_218)] [&&]:text-[#245f32] [&&]:px-[7px] [&&]:py-[3px] [&&]:rounded-[5px] unread-label"
+                  class="[&&]:text-[10px] [&&]:font-[600] [&&]:[background-image:initial] [&&]:[background-color:rgb(217,_239,_218)] [&&]:text-[#245f32] [&&]:px-[7px] [&&]:py-[3px] [&&]:rounded-[5px] unread-label"
                   >Belum dibaca</span
                 >{/if}
             </div>
             <p
-              class="leading-[1.6] [&&]:text-[14px] [&&]:text-[#586c5e] [&&]:[white-space-collapse:preserve] [&&]:[text-wrap-mode:wrap] [&&]:wrap-anywhere [&&]:mx-[0px] [&&]:my-[9px] max-[700.01px]:[&&]:text-[13px]"
+              class="leading-[1.8] [&&]:text-[12px] [&&]:text-[#586c5e] [&&]:[white-space-collapse:preserve] [&&]:[text-wrap-mode:wrap] [&&]:wrap-anywhere [&&]:mx-[0px] [&&]:my-[9px] max-[700.01px]:[&&]:text-[11px]"
             >
               {notice.body}
             </p>
-            <small class="[&&]:text-[12px] [&&]:text-[#475569] leading-[1.55]"
+            <small class="[&&]:text-[10px] [&&]:text-[#77847b] leading-[1.7]"
               >{app.session?.role === 'admin'
                 ? `${app.data?.campuses.find((c) => c.id === notice.campusId)?.name || 'Kampus'} · `
                 : ''}{date(notice.createdAt)}</small
@@ -130,19 +130,14 @@
             >
               <a
                 href={notice.href}
-                class="[-webkit-tap-highlight-color:transparent] text-[#0668ce] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] inline-flex items-center gap-y-[7px] gap-x-[7px] [&&&]:text-[13px] font-[600] [background-image:none] [background-color:initial] [white-space-collapse:collapse] [text-wrap-mode:nowrap] p-[0px] border-[0px] border-none border-[color:currentcolor] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:text-[#0a3eaa] text-link"
+                class="[-webkit-tap-highlight-color:transparent] text-[#0668ce] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] inline-flex items-center gap-y-[7px] gap-x-[7px] [&&&]:text-[11px] font-[650] [background-image:none] [background-color:initial] [white-space-collapse:collapse] [text-wrap-mode:nowrap] p-[0px] border-[0px] border-none border-[color:currentcolor] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:text-[#0a3eaa] text-link"
                 aria-disabled={app.busy}
                 onclick={(event) => {
                   event.preventDefault();
                   if (!app.busy) open(notice);
-                }}
-                >{notice.href.includes('/payments') ||
-                notice.href.includes('proposal') ||
-                notice.href.includes('tab=Proposal')
-                  ? 'Periksa berkas'
-                  : 'Lihat detail'}<Icon name="arrow" size={14} /></a
+                }}>Lihat detail<Icon name="arrow" size={14} /></a
               >{#if !notice.readAt}<button
-                  class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[600] [font-stretch:inherit] [&&&]:text-[13px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[#0668ce] inline-flex items-center gap-y-[7px] gap-x-[7px] [background-image:none] [background-color:initial] [white-space-collapse:collapse] [text-wrap-mode:nowrap] p-[0px] border-[0px] border-none border-[color:currentcolor] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:text-[#0a3eaa] text-link"
+                  class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[650] [font-stretch:inherit] [&&&]:text-[11px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[#0668ce] inline-flex items-center gap-y-[7px] gap-x-[7px] [background-image:none] [background-color:initial] [white-space-collapse:collapse] [text-wrap-mode:nowrap] p-[0px] border-[0px] border-none border-[color:currentcolor] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:text-[#0a3eaa] text-link"
                   disabled={app.readOnly || app.loading || app.busy}
                   onclick={() =>
                     app.mutate(

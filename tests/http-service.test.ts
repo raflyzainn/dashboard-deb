@@ -74,7 +74,7 @@ test('account switch during file hashing cannot upload under the new account', a
 
 test('network errors and rejected requests never return seed data', async () => {
   const down = createHttpService(async () => { throw new Error('offline'); });
-  await assert.rejects(down.session(), /Tidak dapat terhubung ke server/);
+  await assert.rejects(down.session(), /PocketBase tidak dapat dimuat/);
   const forbidden = createHttpService(async () => Response.json({ message: 'Account disabled' }, { status: 403 }));
   await assert.rejects(forbidden.session(), error => error instanceof DataReadError && error.status === 403);
 });
@@ -134,11 +134,11 @@ test('missing/invalid/out-of-map coordinates do not fabricate markers or lose ca
   assert.ok(mapCampuses(data).some(point => point.id === campus.id));
 });
 
-test('demo fixtures stay isolated from presentation components', async () => {
+test('application runtime has no mock/Dexie/fixture imports or legacy campus IDs', async () => {
   async function files(directory: string): Promise<string[]> {
     return (await Promise.all((await readdir(directory, { withFileTypes: true })).map(entry => entry.isDirectory() ? files(path.join(directory, entry.name)) : [path.join(directory, entry.name)]))).flat();
   }
-  for (const file of (await files('src')).filter(f => /\.(ts|svelte)$/.test(f) && !f.replaceAll('\\', '/').includes('/data/demo/'))) {
+  for (const file of (await files('src')).filter(f => /\.(ts|svelte)$/.test(f))) {
     const content = await readFile(file, 'utf8');
     assert.ok(!/createMockService|createSeed|fake-indexeddb|from ['"]dexie|scripts\/fixtures|DEMO_CAMPUS|['"]campus-001['"]/.test(content), file);
   }

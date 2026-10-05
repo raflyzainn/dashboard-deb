@@ -23,9 +23,9 @@
   aria-label="Pengenalan Digitalisasi DEB"
 >
   <div class="guide-heading">
-    <span class="[&&]:text-[11px] [&&]:tracking-[0.06em] [&&]:text-[#2672c5]">MULAI DARI SINI</span>
+    <span class="[&&]:text-[9px] [&&]:tracking-[1.5px] [&&]:text-[#2672c5]">MULAI DARI SINI</span>
     <h3
-      class="font-[600] text-[color:var(--navy)] [&&]:text-[16px] [&&]:leading-[1.5] [&&]:mx-[0px] [&&]:my-[7px] [@media(max-height:_800px)]:[&&]:text-[15px]"
+      class="font-[650] text-[color:var(--navy)] [&&]:text-[15px] [&&]:leading-[1.5] [&&]:mx-[0px] [&&]:my-[7px] [@media(max-height:_800px)]:[&&]:text-[14px]"
     >
       Satu ruang untuk langkah kampus Anda.
     </h3>
@@ -42,21 +42,21 @@
         >
         <div>
           <h4
-            class="[&&]:mt-[0px] [&&]:mb-[3px] font-[600] text-[color:var(--navy)] [&&]:text-[14px] [&&]:leading-[1.6] [&&]:mx-[0px]"
+            class="[&&]:mt-[0px] [&&]:mb-[3px] font-[650] text-[color:var(--navy)] [&&]:text-[12px] [&&]:leading-[1.6] [&&]:mx-[0px]"
           >
             {feature.title}
           </h4>
-          <p class="[&&]:leading-[1.55] [&&]:text-[13px] [&&]:text-[#475569] m-[0px]">
+          <p class="[&&]:leading-[1.7] [&&]:text-[11px] [&&]:text-[#69809c] m-[0px]">
             {feature.description}
           </p>
         </div>
       </li>{/each}
   </ol>
   <p
-    class="[&&]:leading-[1.55] [&&]:text-[13px] [&&]:text-[#475569] [&&]:[border-top-width:1px] [&&]:[border-top-style:solid] [&&]:[border-top-color:rgb(228,_237,_248)] [&&]:pt-[12px] [&&]:flex [&&]:items-start [&&]:gap-y-[8px] [&&]:gap-x-[8px] [&&]:m-[0px] [&&_svg]:shrink-0 [&&_svg]:mt-[2px] guide-tip"
+    class="[&&]:leading-[1.7] [&&]:text-[11px] [&&]:text-[#69809c] [&&]:[border-top-width:1px] [&&]:[border-top-style:solid] [&&]:[border-top-color:rgb(228,_237,_248)] [&&]:pt-[12px] [&&]:flex [&&]:items-start [&&]:gap-y-[8px] [&&]:gap-x-[8px] [&&]:m-[0px] [&&_svg]:shrink-0 [&&_svg]:mt-[2px] guide-tip"
   >
     <Icon name="campus" size={15} /><span
-      >Mulai dari <strong class="font-[600]">Beranda</strong> untuk melihat ringkasan kampus Anda.</span
+      >Mulai dari <strong class="font-[650]">Beranda</strong> untuk melihat ringkasan kampus Anda.</span
     >
   </p>
 </section>

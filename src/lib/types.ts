@@ -1,28 +1,12 @@
 import type { Period, PeriodState } from './periods';
 import type { ForumCategoryId } from './forum';
-export type Role = 'campus' | 'admin' | 'baru' | 'finance';
-export interface DemoSession { role: Role; name: string; campusId?: string; campusRole?: 'mentor' | 'sobi' }
-export interface AppSession extends DemoSession { id: string; email?: string; superAdmin?: boolean; passwordChangeRequired?: boolean }
-export interface PreviewAccount { key: string; name: string; role: Role; disbursementStarted?: boolean }
-export interface DemoActivationStatus { email: string; activated: boolean }
+export type Role = 'campus' | 'admin';
+export interface DemoSession { role: Role; name: string; campusId?: string }
+export interface AppSession extends DemoSession { id: string }
+export interface PreviewAccount { key: string; name: string; role: Role }
 export interface LocationDto { campusId: string; province: string; island: string; longitude: number | null; latitude: number | null; approximate: boolean }
 export interface Bootstrap { session: AppSession; data: Snapshot; locations: LocationDto[]; capabilities: { readOnly: boolean }; loadedAt: string }
-export interface ProgramProfile {
-  simulatedFields?: string[];
-  mentor?: string | null; coordinator?: string | null; localHero?: string | null;
-  subholding?: string | null; operatingUnit?: string | null; actionPlanTemplate?: string | null;
-  replicationVillage?: string | null; sourceStatus?: string | null; pfTeam?: string | null;
-  income?: number | string | null; beneficiaries?: number | string | null; incomePerCapita?: number | string | null;
-  currentClass?: string | null; targetClass?: string | null; existingEbt?: string | null;
-    description?: string | null; intervention?: string | null; interventionSummary?: string | null; budget?: number | string | null;
-  address?: string | null; mapUrl?: string | null; province?: string | null;
-  // Standard address picked with RegionSelect (ids follow the region data codes). `address` holds the street detail, `coordinates` the map pin as "lat, lng".
-  provinceId?: string | null; regencyId?: string | null; regency?: string | null; districtId?: string | null; district?: string | null;
-  villageId?: string | null; village?: string | null; postalCode?: string | null;
-  coordinates?: string | null; socialMapping?: string | null; conflict?: string | null;
-  ikm?: string | null; institution?: string | null; landPermit?: string | null; siteSurvey?: string | null;
-}
-export interface Campus { id: string; name: string; region: string; initials: string; acronym?: string; city?: string; program?: ProgramProfile; source?: 'user' | 'document' | 'admin'; revision?: number; code?: string; fillMode?: 'admin' | 'campus'; fundedWave?: number; programYear?: 'kedua' | 'ketiga' }
+export interface Campus { id: string; name: string; region: string; initials: string; acronym?: string; city?: string; source?: 'user' | 'document' | 'admin'; revision?: number }
 export interface IndicatorDefinition { id: string; name: string; category: string; unit: string; description: string }
 export interface MasterDefinition extends IndicatorDefinition { period?: string; periodState?: PeriodState; code: string; baseline: number; target: number; status: 'draft' | 'active'; revision: number }
 export interface DefinitionInput { period?: string; id?: string; revision?: number; code: string; name: string; category: string; unit: string; description: string; baseline: number; target: number }
@@ -30,13 +14,13 @@ export interface CampusInput { id?: string; revision?: number; name: string; ini
 export interface MasterAudit { id: string; actor: string; entity: string; entityId: string; operation: string; before: Record<string, unknown> | null; after: Record<string, unknown> | null; created: string }
 export interface MasterData { definitions: MasterDefinition[] }
 export interface MasterAuditPage { items: MasterAudit[]; page: number; totalItems: number; totalPages: number }
-export interface CampusIndicator { targetSimulated?: boolean; unfilled?: boolean; id: string; campusId: string; definitionId: string; baseline: number; target: number; current: number; note: string; updatedAt: string }
+export interface CampusIndicator { unfilled?: boolean; id: string; campusId: string; definitionId: string; baseline: number; target: number; current: number; note: string; updatedAt: string }
 export interface SubmissionIndicator extends CampusIndicator { name: string; category: string; unit: string; description?: string }
 export type VerificationStatus = 'pending' | 'approved' | 'revision';
 export interface DebSubmission { period?: string; id: string; campusId: string; version: number; status: VerificationStatus; indicators: SubmissionIndicator[]; submittedAt: string; reviewedAt?: string; reviewedBy?: string; decisionNote?: string; simulated?: boolean }
 export type FeedbackState = 'open' | 'responded' | 'closed';
 export interface Feedback { id: string; campusId: string; indicatorId: string; text: string; requiresRevision: boolean; state: FeedbackState; createdAt: string; updatedAt: string }
-export interface ProposalVersion { reviewNote?: string; reviewedAt?: string; reviewedBy?: string; reviewRevision?: number; id: string; campusId: string; version: number; filename: string; size: number; createdAt: string; changes: string; simulated: boolean }
+export interface ProposalVersion { id: string; campusId: string; version: number; filename: string; size: number; createdAt: string; changes: string; simulated: boolean }
 export interface Question { id: string; campusId: string; title: string; body: string; createdAt: string; categoryIds?: ForumCategoryId[]; replyCount?: number; lastReplyRole?: Role }
 export interface QuestionReply { id: string; questionId: string; sequence: number; authorRole: Role; authorName: string; body: string; createdAt: string; replyTo?: string; quote?: { authorName: string; body: string } }
 export interface ReplyPage { items: QuestionReply[]; hasMore: boolean }
@@ -46,8 +30,6 @@ export interface FaqEntry { id: string; questionId?: string; question: string; a
 export interface Activity { id: string; campusId: string; text: string; createdAt: string }
 export interface Notification { id: string; campusId: string; recipient: Role; title: string; body: string; href: string; createdAt: string; readAt: string | null; simulated?: boolean }
 export interface Snapshot {
-  payments?: import('./payments').PaymentCase[];
-  proposalComments?: ProposalComment[];
   period?: Period; periods?: Period[];
   campusMetrics?: Record<string, { progress: number; achieved: number; total: number; revisions: number }>;
   locations?: LocationDto[];
@@ -57,12 +39,7 @@ export interface Snapshot {
   feedback: Feedback[]; proposals: ProposalVersion[]; questions: Question[];
   answers: Answer[]; likes: QuestionLike[]; faq: FaqEntry[]; activities: Activity[]; notifications: Notification[]; notificationSeedVersion?: number;
 }
-export interface ProposalComment { id: string; proposalId: string; campusId: string; actorId: string; authorName: string; body: string; createdAt: string }
 export interface DataService {
-  demoActivation(): Promise<DemoActivationStatus>;
-  requestDemoActivation(email: string): Promise<void>;
-  activateDemo(email: string, password: string): Promise<void>;
-  loginDemo(email: string, password: string): Promise<PreviewAccount | null>;
   createPeriod(name: string): Promise<void>;
   openPeriod(period: string): Promise<void>;
   masters(): Promise<MasterData>;
@@ -79,7 +56,6 @@ export interface DataService {
   closeFeedback(id: string): Promise<void>;
   uploadProposal(file: File, changes: string): Promise<void>;
   proposalFile(id: string): Promise<Blob>;
-  reviewProposal(id: string, note: string, revision: number): Promise<void>;
   ask(title: string, body: string, categoryIds?: ForumCategoryId[]): Promise<string>;
   replies(questionId: string, cursor?: { before?: number; after?: number }): Promise<ReplyPage>;
   reply(questionId: string, body: string, replyTo?: string): Promise<void>;

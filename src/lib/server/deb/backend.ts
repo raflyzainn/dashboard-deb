@@ -4,7 +4,6 @@ import { atomic, StoreRecord, type SnapshotReads } from './rest-store';
 import { runWorkflow } from './business/workflows';
 import { createAccounts } from './business/accounts';
 import { security } from './security';
-import { requiresPasswordChange, newSessionVersion } from './password-policy';
 import { PreviewError } from './preview-error';
 
 function workflowReads(pb: PocketBase, actor: RecordModel, operation: string, body: Record<string, unknown>, key: string): SnapshotReads {
@@ -13,7 +12,7 @@ function workflowReads(pb: PocketBase, actor: RecordModel, operation: string, bo
     submitDeb: ['indicator_definitions', 'campus_indicators', 'deb_submissions'],
     reviewDeb: ['indicator_definitions', 'campus_indicators', 'deb_submissions', 'indicator_feedback'],
     addFeedback: ['campus_indicators','indicator_definitions'], closeFeedback: ['indicator_feedback', 'campus_indicators','indicator_definitions'],
-    uploadProposal: ['proposal_versions'], reviewProposal: ['proposal_versions'], ask: [], answer: ['questions', 'question_answers'],
+    uploadProposal: ['proposal_versions'], ask: [], answer: ['questions', 'question_answers'],
     reply: ['campuses', 'questions', 'question_answers', 'question_replies'], setLike: ['questions', 'question_likes'],
     promoteFaq: ['questions', 'question_answers', 'faq_entries'], saveFaq: ['faq_entries'], moveFaq: ['faq_entries'], deleteFaq: ['faq_entries'],
     readNotifications: ['notifications'],
@@ -41,7 +40,6 @@ function workflowReads(pb: PocketBase, actor: RecordModel, operation: string, bo
     reads.question_replies = body.replyTo ? { filter: pb.filter('id = {:id}', { id: String(body.replyTo) }) } : null;
   }
   if (operation === 'setLike') reads.question_likes = { filter: pb.filter('question = {:id} && campus = {:campus}', { id: String(body.id || ''), campus: String(actor.campus || '') }) };
-  if (operation === 'reviewProposal') reads.proposal_versions = id;
   if (operation === 'uploadProposal') reads.proposal_versions = { filter: campus, sort: '-version', limit: 1 };
   if (operation === 'submitDeb') {
     reads.campus_indicators = { filter: campus };
@@ -73,8 +71,8 @@ function workflowReads(pb: PocketBase, actor: RecordModel, operation: string, bo
 
 export async function executeWorkflow(pb: PocketBase, actor: RecordModel | null, operation: string, body: Record<string, unknown>, key: string, local: boolean, file?: File) {
   if (!actor) throw new PreviewError(401, 'Silakan masuk terlebih dahulu.');
-  if (file && file.size > 41943040) throw new PreviewError(413, 'PDF maksimal 40 MB.');
-  if (operation === 'uploadProposal' && (!file || !file.size || file.size > 41943040 || !/\.pdf$/i.test(file.name) || (file.type && file.type !== 'application/pdf') || new TextDecoder().decode(await file.slice(0, 5).arrayBuffer()) !== '%PDF-')) throw new PreviewError(400, 'Pilih satu PDF valid maksimal 10 MiB.');
+  if (file && file.size > 10485760) throw new PreviewError(413, 'PDF maksimal 10 MiB.');
+  if (operation === 'uploadProposal' && (!file || !file.size || file.size > 10485760 || !/\.pdf$/i.test(file.name) || (file.type && file.type !== 'application/pdf') || new TextDecoder().decode(await file.slice(0, 5).arrayBuffer()) !== '%PDF-')) throw new PreviewError(400, 'Pilih satu PDF valid maksimal 10 MiB.');
   let fileHash = '';
   if (file) fileHash = security.sha256(Buffer.from(await file.arrayBuffer()).toString('base64'));
   return atomic(pb, store => runWorkflow({ app: store, auth: actor, local, file, fileHash,
@@ -88,7 +86,7 @@ export async function revokeSessions(pb: PocketBase, actor: RecordModel) {
     const user = store.findRecordById('users', actor.id);
     // A retry must not revoke sessions created after this logout already committed.
     if (user.getString('sessionVersion') !== (actor.sessionVersion || '')) return;
-    user.set('sessionVersion', newSessionVersion(requiresPasswordChange(user.data)));
+    user.set('sessionVersion', security.randomString(50));
     // StoreRecord's legacy tokenKey setter aliases sessionVersion; rotate the native key explicitly too.
     user.data.tokenKey = security.randomString(50);
     store.save(user);
