@@ -1,5 +1,15 @@
 # Panduan proyek untuk Codex
 
+## Build wajib sebelum push atau PR/MR — 5 Oktober 2026
+
+Setiap permintaan pengguna untuk push atau membuat PR/MR sekaligus mengizinkan
+dan mewajibkan `npm run build` melalui terminal. Jalankan build pada kode yang
+akan dikirim, termasuk ketika perubahan lokal lain perlu dipisahkan. Hanya
+lanjutkan push dan pembuatan PR/MR setelah build berhasil dengan exit 0.
+Jika gagal, perbaiki masalahnya dan ulangi build; jangan publikasi sebelum berhasil.
+Catat hasil build dan warning yang relevan dalam deskripsi PR/MR. Aturan ini
+tidak memberi izin otomatis menjalankan test suite, check, lint, merge, atau deploy.
+
 ## Batas development dan production — 5 Oktober 2026
 
 Sesuai arahan pengguna, `development` dipakai untuk dummy dan koneksi layanan aktif berada pada branch `production`. Default `npm run dev` dan `npm run build` pada branch pengajuan ini memakai mode `mockup`; PocketBase lokal tetap terpisah melalui `npm run dev:local`.

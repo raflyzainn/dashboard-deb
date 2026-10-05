@@ -11,11 +11,13 @@
  import FileViewer from '$lib/components/admin/pencairan/FileViewer.svelte';
  import RabUpload from './RabUpload.svelte';
  import DocumentGuide from './DocumentGuide.svelte';
+ import ProgramLocation from '$lib/components/shared/profile/ProgramLocation.svelte';
  import { sections, sectionLabels, PKS_DATE, LETTER_MIN_DATE, type Section, validateJourney } from './journey';
  let {campusId,embedded=false,onloaded=()=>{}}:{campusId:string;embedded?:boolean;onloaded?:()=>void}=$props();
  let remoteChanged=$state(false);
  let reducedMotion=$state(false);
  let saving=$state(false);
+ let lastDraftNotice=Number.NEGATIVE_INFINITY;
  let uploadErrors=$state<Record<string,string>>({});
  let data=$state<any>(null),fields=$state<Record<string,string>>({}),saved=$state('{}'),busy=$state(false),error=$state(''),message=$state(''),kopUrl=$state(''),preview=$state<MergeKind|'surat_kuasa'|null>(null),pending=$state<(()=>void)|null>(null);
  const base=$derived(`/api/pencairan/${campusId}/pengajuan`);
@@ -24,7 +26,7 @@
  let sectionElement=$state<HTMLElement>();
  function allowForward(next:Section){
   const nextIndex=sections.indexOf(next);
-  if(nextIndex<=index||locked)return true;
+  if(nextIndex<=index||locked||(section==='program'&&next==='rab'))return true;
   const pendingSteps=blockers.filter((b:any)=>sections.indexOf(b.section)>=index&&sections.indexOf(b.section)<nextIndex);
   if(!pendingSteps.length)return true;
   error=reportError(pendingSteps.map((b:any)=>b.text).join(' '));
@@ -55,14 +57,14 @@
  const btn='min-h-11 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-[#0066B2] disabled:opacity-40';
  const blue='min-h-11 rounded-lg bg-[#0066B2] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40';
  const input='min-h-11 w-full min-w-0 rounded-lg border border-slate-300 bg-white p-2 text-sm disabled:bg-slate-50 disabled:text-slate-500';
- const programFields=[['judulProgram','Nama kegiatan / program'],['alamat','Alamat kampus'],['desa','Desa / lokasi program'],['kecamatan','Kecamatan'],['kabupaten','Kabupaten / kota'],['mentor','Nama mentor'],['koordinator','Nama koordinator']];
+ const programFields=[['judulProgram','Nama kegiatan / program'],['alamat','Alamat kampus']];
  const adminFields=[['namaBank','Nama bank'],['nomorRekening','Nomor rekening'],['namaPemilik','Nama pemilik rekening'],['penandatanganNama','Nama penandatangan kampus'],['penandatanganJabatan','Jabatan penandatangan'],['tempatTandaTangan','Kota tempat surat dibuat']];
  const letterFields=[['nomorSuratPermohonan','Nomor surat permohonan'],['tanggalSuratPermohonan','Tanggal surat permohonan'],['nomorInvois','Nomor invoice'],['tanggalInvois','Tanggal invoice'],['nomorKuitansi','Nomor kuitansi'],['tanggalKuitansi','Tanggal kuitansi']];
  function sync(next:any,submitted?:Record<string,string>){const current=$state.snapshot(fields);data=next;fields={...next.journey.fields};if(!next.paid&&!['menunggu','selesai'].includes(next.journey.status))fields.tanggalPerjanjian=PKS_DATE;saved=JSON.stringify(fields);if(submitted)for(const key of Object.keys(current))if(current[key]!==submitted[key])fields[key]=current[key];onloaded();}
  async function load(){try{const next=await dataService.api.get<any>(base);if(busy||next.serverRevision<data?.serverRevision)return;if(!dirty){remoteChanged=false;sync(next);}else if(next.serverRevision!==data?.serverRevision)remoteChanged=true;}catch(e){error = reportError(e instanceof Error?e.message:String(e));}}
  async function save(){
   if(busy)return false;if(!dirty)return true;const submitted=$state.snapshot(fields);busy=true;saving=true;error='';message='';
-  try{sync(await dataService.api.patch(base,{fields:submitted,revision:data.journey.revision,expectedRevision:data.serverRevision}),submitted);if(!dirty)message='Draf tersimpan. Belum dikirim ke PF.';return !dirty;}
+  try{sync(await dataService.api.patch(base,{fields:submitted,revision:data.journey.revision,expectedRevision:data.serverRevision}),submitted);if(!dirty&&Date.now()-lastDraftNotice>=20000){message='Draf tersimpan. Belum dikirim ke PF.';lastDraftNotice=Date.now();}return !dirty;}
   catch(e){error = reportError(e instanceof Error?e.message:String(e));if((e as any).status===409)remoteChanged=true;return false;}finally{busy=false;saving=false;}
  }
  async function navigate(next:Section){if(section==='rab')await load();if(!allowForward(next)||!await save())return;preview=null;error='';await goto('/campus/pencairan?bagian='+next+'&butir='+({sk:'sk',program:'program',rab:'rab_penuh',administrasi:'administrasi',penandatangan:'penandatangan',surat:'surat',pks:'pks',ringkasan:'ringkasan'}[next]));}
@@ -144,14 +146,18 @@
   </nav>{/if}
   <section bind:this={sectionElement} class={embedded?'min-w-0':'min-w-0 rounded-xl border border-slate-200 bg-white p-4 sm:p-5'} aria-label="Isi pengajuan">
    {#if !embedded||section!=='rab'}<h2 class="mb-2 text-xl font-bold">{sectionLabels[index]}</h2>{/if}
-   {#if ['program','administrasi','penandatangan','surat','pks'].includes(section)}<p class="mb-3 text-xs text-slate-500"><span class="font-bold text-red-600">*</span> Wajib dilengkapi sebelum melanjutkan langkah ini. Draf boleh disimpan saat isian belum lengkap.</p>{/if}
+   {#if ['program','administrasi','penandatangan','surat','pks'].includes(section)}<p class="mb-3 text-xs text-slate-500"><span class="font-bold text-red-600">*</span> {section==='program'?'Wajib dilengkapi sebelum mengajukan. Anda tetap dapat melanjutkan ke RAB.':'Wajib dilengkapi sebelum melanjutkan langkah ini.'} Draf boleh disimpan saat isian belum lengkap.</p>{/if}
    {#if section==='sk'}
     <p class="mb-4 text-sm text-slate-600">Gunakan nilai bantuan dalam SK sebagai acuan seluruh anggaran.</p>
     <dl class="mb-4 grid gap-3 rounded-lg bg-slate-50 p-4 sm:grid-cols-2"><div><dt class="text-sm text-slate-500">Nomor SK</dt><dd class="font-semibold">{data.summary.skNumber}</dd></div><div><dt class="text-sm text-slate-500">Nilai bantuan</dt><dd class="font-semibold">{formatSen(data.summary.amountSen)}</dd></div></dl>
     <FileViewer src="/sk-dummy.pdf" mime="application/pdf" name="SK.pdf" height={420}/>
    {:else if section==='program'}
     <p class="mb-4 text-sm text-slate-600">Data awal diambil dari profil kampus. Periksa nama kegiatan dan lokasi sebelum dipakai dalam surat.</p>
-    <div class="grid gap-4 sm:grid-cols-2">{#each programFields as [key,label]}<label class="grid gap-1 text-sm font-semibold"><span class="field-caption">{label}</span><input class={input} required={key!=='kecamatan'} bind:value={fields[key]} disabled={locked||(busy&&!saving)} maxlength="2000"/></label>{/each}</div>
+     <div class="grid gap-5">
+      <div class="grid gap-4 sm:grid-cols-2">{#each programFields as [key,label]}<label class="grid gap-1 text-sm font-semibold"><span class="field-caption">{label}</span><input class={input} required bind:value={fields[key]} disabled={locked||(busy&&!saving)} maxlength="2000"/></label>{/each}</div>
+      <ProgramLocation bind:fields disabled={locked||(busy&&!saving)} />
+      <div class="grid gap-4 sm:grid-cols-2">{#each [['mentor','Nama mentor'],['koordinator','Nama koordinator']] as [key,label]}<label class="grid gap-1 text-sm font-semibold"><span class="field-caption">{label}</span><input class={input} required bind:value={fields[key]} disabled={locked||(busy&&!saving)} maxlength="2000"/></label>{/each}</div>
+     </div>
    {:else if section==='rab'}
     <RabUpload {campusId} kind={page.url.searchParams.get('rabStep')==='term1'||page.url.searchParams.get('butir')==='rab'?'rab':page.url.searchParams.get('rabStep')==='term2'||page.url.searchParams.get('butir')==='rab_tahap2'?'rab_tahap2':'rab_penuh'} admin={false} journey={true} locked={locked} onloaded={()=>void load()} oncontinue={()=>navigate('administrasi')}/>
    {:else if section==='administrasi'}

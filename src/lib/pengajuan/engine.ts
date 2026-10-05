@@ -6,6 +6,7 @@ import { ensureJourney, journeyView, touchJourney, sections, PKS_DATE, validDate
 import { journeyTemplates, journeyDocx, finalJourneyDocx } from './journey-documents';
 import { MERGE_KINDS, isMergeKind, DOCX_MIME, MERGE_LABEL, type MergeKind } from '../merge';
 import type { AppSession } from '../types';
+import { programLocationErrors } from './location';
 const now=()=>new Date().toISOString();
 const clone=<T,>(v:T):T=>structuredClone(v);
 const rabKinds=['rab_penuh','rab','rab_tahap2'];
@@ -155,6 +156,7 @@ function revisePfData(c:any,r:any,user:AppSession){
        if(body.revision!==j.revision)throw Error('Draf berubah di tab lain. Muat ulang sebelum menyimpan.');
        if(typeof body.fields!=='object'||Array.isArray(body.fields))throw Error('Data isian tidak valid.');
        const fields={...j.fields};for(const [key,value] of Object.entries(body.fields)){if(!(key in fields)||typeof value!=='string'||value.length>2000)throw Error('Isian tidak valid.');fields[key]=value.trim();}
+       const locationErrors=programLocationErrors(fields);if(locationErrors.length)throw Error(locationErrors[0]);
        if(fields.tanggalPerjanjian!==PKS_DATE)throw Error('Tanggal PKS wajib 17 Juni 2026.');
        if(!['kampus','kuasa'].includes(fields.jenisRekening))throw Error('Pilih jenis rekening.');
        if(JSON.stringify(fields)!==JSON.stringify(j.fields)){j.fields=fields;touchJourney(c,r);}

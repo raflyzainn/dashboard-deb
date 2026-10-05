@@ -1,5 +1,6 @@
 import { BUDGET, LIMIT, validQuantity } from '../../../mockups/rab/model';
 import { buildMergeData, missingFor, templateTags, MERGE_KINDS, type MergeKind } from '../merge';
+import { LOCATION_FIELDS, programLocationErrors } from './location';
 
 export const sections = ['sk', 'program', 'rab', 'administrasi', 'penandatangan', 'surat', 'pks', 'ringkasan'] as const;
 export type Section = typeof sections[number];
@@ -41,6 +42,9 @@ export function ensureJourney(c: any, r: any): Journey {
   nomorPksKampus:'', tanggalPerjanjian:PKS_DATE, tanggalKuasa:''
  }};
  journey.fields.tanggalKuasa??='';
+ // Add fields lazily without replacing an existing draft or guessing codes from old names.
+ for(const field of Object.values(LOCATION_FIELDS))journey.fields[field]??='';
+ journey.fields.lokasiAlamatLengkap??='';
  journey.pf??={nomorPksPf:''};
  journey.checklist??={};
  return journey;
@@ -52,7 +56,7 @@ export function pfNumber(journey:Pick<Journey,'pf'>):string {
 }
 export function mergeInput(c: any, r: any, settings: any) {
  const f = ensureJourney(c,r).fields;
- return {campus:{...c, code:c.acronym || c.id, program:{...c.program, address:f.alamat,village:f.desa,district:f.kecamatan,regency:f.kabupaten,mentor:f.mentor,coordinator:f.koordinator}},
+ return {campus:{...c, code:c.acronym || c.id, program:{...c.program, address:f.alamat,village:f.desa,district:f.kecamatan,regency:f.kabupaten,...(f.lokasiProvinsiId?{province:f.lokasiProvinsi,postalCode:f.lokasiKodePos}:{}),mentor:f.mentor,coordinator:f.koordinator}},
   award:{skNumber:'SK-DUMMY/2026/'+c.id,skDate:'2026-06-01',amountSen:BUDGET,...c.award,programTitle:f.judulProgram,programYear:c.programYear}, settings,
   disbursement:{requestedSen:r.versions.at(-1)?.term1Sen || 0,properties:{...f,nomorPksPf:pfNumber(r.journey)}},
   rekening:{namaBank:f.namaBank,nomorRekening:f.nomorRekening,namaPemilik:[f.namaPemilik]}};
@@ -67,6 +71,7 @@ export function validateJourney(c:any,r:any,settings:any,tags:Record<MergeKind,s
  const require=(section:Section,key:string,label:string)=>{if(!f[key]?.trim())warn(section,key,label+' belum diisi.');};
  if(!pfNumber(j))warn('pks','nomorPksPf','Nomor PKS Pertamina Foundation belum diisi.');
  for(const [key,label] of [['judulProgram','Nama kegiatan'],['alamat','Alamat kampus'],['desa','Desa program'],['kabupaten','Kabupaten/kota program'],['mentor','Mentor'],['koordinator','Koordinator']])require('program',key,label);
+ if(j.status!=='menunggu'&&j.status!=='selesai'&&!r.payment?.paidAt)for(const text of programLocationErrors(f,true))warn('program',text,text);
  if(!v)blockers.push({section:'rab',text:'Unggah RAB 100% terlebih dahulu.'});
  else if(v.totalSen!==BUDGET || v.term1Sen<=0 || v.term1Sen>LIMIT || v.term1Sen+v.term2Sen!==v.totalSen || !v.lines.some((l:any)=>l.level===4) || v.lines.some((l:any)=>l.level===4&&!validQuantity(l.flags?.term1Volume,l.volume)))blockers.push({section:'rab',text:'Periksa total RAB dan pembagian jumlah: Termin 1 maksimal 70% SK.'});
  if(v&&typeof v.campusStep==='number'&&v.campusStep<3)blockers.push({section:'rab',text:'Selesaikan pemeriksaan RAB 100%, Termin 1, dan Termin 2 melalui tombol Lanjut.'});

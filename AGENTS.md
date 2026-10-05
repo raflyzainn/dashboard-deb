@@ -17,6 +17,7 @@ Kewajiban membaca berlaku pada setiap chat baru, bukan mengulang seluruh dokumen
 ## Git dan publikasi
 
 - **Jangan push atau membuat PR/MR sebelum pengguna menyuruh secara eksplisit.** Selesai implementasi atau QA bukan izin publikasi.
+- **Setiap pengguna meminta push atau PR/MR, wajib jalankan `npm run build` terlebih dahulu.** Permintaan tersebut sekaligus mengizinkan build terminal. Build harus berhasil (exit 0) pada kode yang akan dikirim sebelum push atau membuat PR/MR; jika gagal, perbaiki dan ulangi build. Catat hasil dan warning yang relevan dalam deskripsi PR/MR. Jangan melanjutkan publikasi jika build belum berhasil.
 - Jangan melakukan merge, deploy, atau perubahan remote tanpa instruksi pengguna.
 - **Jangan mengubah branch `production`, deployment, konfigurasi, database, atau layanan production sebelum pengguna menyuruh secara eksplisit.** Izin membuat PR, push, atau QA ke `development` tidak mencakup production. `development` dipakai untuk dummy; koneksi layanan aktif berada pada `production`.
 - Kerjakan perubahan secara lokal. Pertahankan perubahan pengguna dan berkas yang tidak terkait. Jangan otomatis commit kecuali diminta.
@@ -25,7 +26,7 @@ Kewajiban membaca berlaku pada setiap chat baru, bukan mengulang seluruh dokumen
 
 - **Jangan menjalankan tes melalui terminal untuk saat ini.** Tunggu instruksi eksplisit pengguna sebelum menjalankannya.
 - Larangan mencakup `npm test`, semua `npm run test:*`, `npx playwright test`, runner Node/tsx/Vitest, skrip assertion, dan cara lain menjalankan tes dari shell. Jangan mengganti nama perintah untuk melewati aturan ini.
-- Tunda juga pemeriksaan otomatis terminal seperti `npm run check`, lint, `format:check`, dan build yang hanya ditujukan untuk verifikasi, kecuali diminta.
+- Tunda juga pemeriksaan otomatis terminal seperti `npm run check`, lint, `format:check`, dan build yang hanya ditujukan untuk verifikasi, kecuali diminta. Pengecualian: build wajib sebelum push atau PR/MR sesuai aturan Git dan publikasi di atas; ini tidak mengizinkan test suite, check, atau lint secara otomatis.
 - **Lakukan QA melalui browser menggunakan tool Playwright yang tersedia**, dengan interaksi halaman, pemeriksaan hasil terlihat, dan screenshot jika membantu. Playwright CLI tetap termasuk tes terminal yang ditunda.
 - Membaca/mengedit berkas, memeriksa Git secara read-only, dan menjalankan server pengembangan lokal untuk membuka aplikasi di browser diperbolehkan. Itu bukan izin menjalankan test suite atau layanan produksi.
 - Jika tool Playwright/browser tidak tersedia, laporkan keterbatasannya. Jangan diam-diam beralih ke tes terminal.
