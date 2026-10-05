@@ -3,6 +3,7 @@ import { createHmac } from 'node:crypto';
 import { atomic } from './rest-store';
 import { accountApi, executeAccount } from './backend';
 import { PreviewError } from './preview-error';
+import { noRedirects } from './pb-fetch';
 
 const collections = ['account_invitations', 'campus_contacts', 'email_challenges'];
 const invalid = () => new PreviewError(400, 'Tautan tidak dapat digunakan.');
@@ -50,7 +51,7 @@ export async function inspectEmailToken(pb: PocketBase, settings: Record<string,
   // A forged token derives a different password and cannot authenticate the proof record.
   const password=createHmac('sha256',settings.DEB_INVITATION_KEY).update('email-proof:'+token).digest('base64url');
   const proof=new PocketBase(pb.baseURL);proof.autoCancellation(false);
-  proof.beforeSend=(url,options)=>({url,options:{...options,redirect:'error'}});
+  noRedirects(proof);
   try { await proof.collection('email_challenges').confirmPasswordReset(token,password,password); }catch{ /* Authentication below safely handles consumed or invalid tokens. */ }
   try { const authenticated=await proof.collection('email_challenges').authWithPassword(claims.id,password); if(authenticated.record.id!==challenge.id||authenticated.record.invitation!==invitation.id)throw invalid(); }catch{throw invalid();}
   const wrapper=accountApi(settings).token({id:invitation.id,getString:(k:string)=>String(invitation[k]||''),getInt:(k:string)=>Number(invitation[k]),getFloat:(k:string)=>Number(invitation[k])});

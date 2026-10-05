@@ -24,6 +24,22 @@ test('FAQ and account views query only their own collections, not a full snapsho
   }
 });
 
+test('admin dashboard merges bounded campus activities with audit actions', async () => {
+  const user = fakeClient();
+  const feed = fakeClient({
+    activities: [{ id: 'old', campus: 'one', text: 'Kampus mengajukan proposal', created: '2026-09-21 08:00:00.000Z' }],
+    audit: [
+      { id: 'login', campus: 'one', action: 'masuk ke aplikasi', created: '2026-09-23 04:00:00.000Z' },
+      { id: 'new', campus: 'one', action: 'mengunggah Permohonan versi 2', created: '2026-09-23 03:00:00.000Z', note: 'Catatan privat' }
+    ]
+  });
+  const data = await readPage(user.pb, actor, { view: 'dashboard' }, feed.pb);
+  assert.deepEqual(data.activities?.map(item => item.text), ['Masuk ke aplikasi', 'Mengunggah Permohonan versi 2', 'Kampus mengajukan proposal']);
+  assert.ok(feed.calls.every(call => ['activities', 'audit'].includes(call.collection)));
+  assert.ok(feed.calls.every(call => String(call.options.filter).includes('actor.role = "campus"')));
+  assert.ok(!String(feed.calls.find(call => call.collection === 'audit')?.options.fields).includes('note'));
+});
+
 test('admin overview summaries preserve campus and map results without transferring raw indicators or feedback', async () => {
   const rows = {
     campuses: ['one', 'empty'].map(id => ({ id, name: id, region: 'West', initials: 'C', hasLocation: true, longitude: 110, latitude: -6, island: 'Java', province: 'Central Java' })),

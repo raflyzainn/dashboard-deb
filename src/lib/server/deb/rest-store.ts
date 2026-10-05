@@ -95,7 +95,7 @@ export type SnapshotReads = Record<string, SnapshotQuery | SnapshotQuery[] | nul
  * Every application write must use this function. Direct superuser edits require maintenance.
  * PocketBase applies the fence and all writes in one native REST batch transaction.
  */
-export async function atomic<T>(pb: PocketBase, action: (store: RestStore) => T, reads: string[] | SnapshotReads): Promise<T> {
+export async function atomic<T>(pb: PocketBase, action: (store: RestStore) => T | Promise<T>, reads: string[] | SnapshotReads): Promise<T> {
   const queries: SnapshotReads = Array.isArray(reads) ? Object.fromEntries(reads.map(name => [name, {}])) : reads;
   for (let attempt = 0; attempt < 8; attempt++) {
     // Capture every possible write scope BEFORE reading business data, including insert-only collections.
@@ -110,7 +110,7 @@ export async function atomic<T>(pb: PocketBase, action: (store: RestStore) => T,
         limit ? (await pb.collection(name).getList(1, limit, { sort: 'id', ...options, skipTotal: true })).items : pb.collection(name).getFullList({ sort: 'id', ...options })));
       return [name, [...new Map(lists.flat().map(record => [record.id, record])).values()]];
     })));
-    const store = new RestStore(rows), result = action(store);
+    const store = new RestStore(rows), result = await action(store);
     if (!store.writes.length) return result;
     // Master changes must remain atomic; never split them into partially committed batches.
     const scopes = [...new Set([...Object.keys(queries).filter(name => queries[name] !== null), ...store.writes.map(write => write.name)])].sort();
