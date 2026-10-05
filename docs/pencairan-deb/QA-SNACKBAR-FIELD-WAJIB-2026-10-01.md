@@ -103,3 +103,19 @@ pengiriman akhir; penyimpanan draf parsial tetap diperbolehkan.
 - Video revisi disimpan lokal di demo-videos; video, fixture dan database salinan
   tidak disertakan dalam commit kode.
 - Perekaman lanjutan: RAB lengkap berhasil menuju Administrasi, Lanjut pada Administrasi kosong nonaktif, dan Kembali tetap berhasil menuju RAB.
+
+## Revisi Administrasi menjadi halaman terpisah — 5 Oktober 2026
+
+- Setelah RAB, alur kampus menjadi Rekening Penerima → Penandatangan Kampus → Identitas Surat dan Kop → PKS → Dokumen. Tiap langkah memiliki tampilan dan tautan navigasi sendiri.
+- Surat kuasa berada pada Identitas Surat dan Kop dan hanya muncul untuk rekening pihak yang diberi kuasa, setelah data rekening dan penandatangan tersedia.
+- Pembuatan, pratinjau, unduhan, dan pengajuan dokumen hanya tampil di Dokumen. PKS menyediakan isian nomor PKS kampus dan permintaan nomor PKS PF.
+- Daftar kuning kelengkapan di halaman pengisian Administrasi dihapus. Lanjut dan navigasi maju memvalidasi langkah yang dilewati, menampilkan alert, dan tetap di halaman saat belum lengkap. Draf tetap dapat disimpan.
+- Kunci tersimpan administrasi dan ringkasan dipertahankan untuk kompatibilitas tautan/draf lama, dengan label Rekening Penerima dan Dokumen. Penandatangan dan surat memiliki kunci langkah sendiri. Tidak mereset data pengguna.
+- Branch berasal dari development; revisi label Foto Buku Rekening tetap berada di branch terpisah.
+- Pemeriksaan dilakukan melalui pembacaan diff; QA browser belum dijalankan karena tool browser tidak tersedia. Tes terminal, check, lint, dan build tidak dijalankan sesuai instruksi proyek.
+
+### Nomor PKS PF wajib disimpan admin
+
+- Pengisian nomor PKS PF otomatis pada mode dummy dihapus. Nomor contoh lama dengan awalan PKS-PF/DUMMY/2026/ baru diakui setelah admin menyimpannya secara eksplisit. Nilai tersimpan dan arsip dokumen lama tidak dihapus.
+- Validasi bersama menolak lanjut dari PKS, pembuatan dokumen baru, dan pengajuan jika nomor PF belum tersedia. Form admin dimulai kosong; permintaan nomor PF tetap tersedia pada kampus.
+- Pemeriksaan melalui diff; interaksi browser dan tes terminal belum dijalankan.
