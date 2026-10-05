@@ -3,5 +3,5 @@
   import CampusIndicators from '$lib/components/campus/indicators/CampusIndicators.svelte';
 </script>
 
-<svelte:head><title>Indikator · Desa Energi Berdikari</title></svelte:head>
+<svelte:head><title>Indikator · Digitalisasi DEB</title></svelte:head>
 {#key app.data?.period?.id}<CampusIndicators />{/key}

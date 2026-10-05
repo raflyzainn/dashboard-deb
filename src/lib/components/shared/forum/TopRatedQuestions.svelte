@@ -28,17 +28,17 @@
   >
     <div>
       <span
-        class="block text-[12px] tracking-[0.06em] font-[700] text-[#3975b7] mb-[9px] max-[700.01px]:text-[10px] eyebrow"
+        class="block text-[10px] tracking-[1.9px] font-[750] text-[#3975b7] mb-[9px] max-[700.01px]:text-[8px] eyebrow"
         >PILIHAN KOMUNITAS</span
       >
       <h2
-        class="[&&]:mt-[6px] mb-[0px] font-[600] [&&]:text-[#24452d] [&&]:text-[20px] [&&]:tracking-[-0.01em] mx-[0px] max-[700.01px]:[&&]:text-[18px]"
+        class="[&&]:mt-[6px] mb-[0px] font-[650] [&&]:text-[#24452d] [&&]:text-[20px] [&&]:tracking-[-0.5px] mx-[0px] max-[700.01px]:[&&]:text-[18px]"
         id="top-rated-title"
       >
         Top Rated Questions
       </h2>
       <p
-        class="[&&]:mt-[6px] mb-[0px] leading-[1.6] [&&]:text-[14px] [&&]:text-[#475569] mx-[0px] max-[700.01px]:[&&]:text-[13px]"
+        class="[&&]:mt-[6px] mb-[0px] leading-[1.8] [&&]:text-[12px] [&&]:text-[#71816a] mx-[0px] max-[700.01px]:[&&]:text-[11px]"
       >
         Pertanyaan dengan like terbanyak di seluruh forum.
       </p>
@@ -63,26 +63,26 @@
               class="[&&]:flex [&&]:items-center [&&]:justify-between [&&]:mb-[16px] [&&]:gap-y-[12px] [&&]:gap-x-[12px] max-[700.01px]:[&&]:mb-[10px] card-top"
             >
               <span
-                class="[&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:w-[32px] [&&]:h-[32px] [&&]:[background-image:initial] [&&]:[background-color:rgb(243,_245,_237)] [&&]:text-[#475569] [&&]:text-[14px] [&&]:font-[700] [&&]:rounded-[9px] [.top-rated-grid_li:first-child_&]:[background-image:initial] [.top-rated-grid_li:first-child_&]:[background-color:rgb(255,_241,_206)] [.top-rated-grid_li:first-child_&]:text-[#926d1d] rank"
+                class="[&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:w-[32px] [&&]:h-[32px] [&&]:[background-image:initial] [&&]:[background-color:rgb(243,_245,_237)] [&&]:text-[#73815e] [&&]:text-[12px] [&&]:font-[700] [&&]:rounded-[9px] [.top-rated-grid_li:first-child_&]:[background-image:initial] [.top-rated-grid_li:first-child_&]:[background-color:rgb(255,_241,_206)] [.top-rated-grid_li:first-child_&]:text-[#926d1d] rank"
                 >#{index + 1}</span
               ><span
-                class="[&&]:flex [&&]:items-center [&&]:gap-y-[6px] [&&]:gap-x-[6px] [&&]:text-[#52733e] [&&]:text-[14px] [&&]:font-[600] likes"
+                class="[&&]:flex [&&]:items-center [&&]:gap-y-[6px] [&&]:gap-x-[6px] [&&]:text-[#52733e] [&&]:text-[12px] [&&]:font-[600] likes"
                 ><Icon name="like" size={15} />{question.likes} suka</span
               >
             </div>
             <strong
-              class="font-[600] [&&]:text-[15px] [&&]:leading-[1.55] [&&]:text-[#29462d] [&&]:wrap-anywhere max-[700.01px]:[&&]:text-[14px] question-title"
+              class="font-[650] [&&]:text-[14px] [&&]:leading-[1.7] [&&]:text-[#29462d] [&&]:wrap-anywhere max-[700.01px]:[&&]:text-[13px] question-title"
               >{question.title}</strong
             >
-            <span class="[&&]:text-[12px] [&&]:text-[#475569] [&&]:mt-[9px] question-author"
+            <span class="[&&]:text-[10px] [&&]:text-[#7a8872] [&&]:mt-[9px] question-author"
               >{app.data?.campuses.find((campus) => campus.id === question.campusId)?.name}</span
             >
             <CategoryTags ids={questionCategories(question)} />
             <div
-              class="[&&]:flex [&&]:items-center [&&]:justify-between [&&]:gap-y-[10px] [&&]:gap-x-[10px] [&&]:mt-[auto] [&&]:pt-[14px] [&&]:[border-top-width:1px] [&&]:[border-top-style:solid] [&&]:[border-top-color:rgb(238,_241,_233)] [&&]:text-[12px] [&&]:text-[#8f6f3b] max-[1100.01px]:[&&]:items-start max-[1100.01px]:[&&]:flex-col max-[700.01px]:[&&]:flex-row card-bottom"
+              class="[&&]:flex [&&]:items-center [&&]:justify-between [&&]:gap-y-[10px] [&&]:gap-x-[10px] [&&]:mt-[auto] [&&]:pt-[14px] [&&]:[border-top-width:1px] [&&]:[border-top-style:solid] [&&]:[border-top-color:rgb(238,_241,_233)] [&&]:text-[10px] [&&]:text-[#96753e] max-[1100.01px]:[&&]:items-start max-[1100.01px]:[&&]:flex-col max-[700.01px]:[&&]:flex-row card-bottom"
             >
               <span
-                class="[&.answered]:text-[#475569]"
+                class="[&.answered]:text-[#64814e]"
                 class:answered={questionStatus(question, app.data?.answers || []) === 'answered'}
                 >{QUESTION_STATUS_LABELS[questionStatus(question, app.data?.answers || [])]}</span
               ><span
@@ -95,7 +95,7 @@
       {/each}
     </ol>
   {:else}<p
-      class="[&&]:leading-[1.6] [&&]:[background-image:initial] [&&]:[background-color:rgb(249,_251,_246)] [&&]:text-[#475569] [&&]:text-[14px] [&&]:p-[22px] m-[0px] [&&]:border-[1px] [&&]:border-dashed [&&]:border-[color:rgb(213,_224,_207)] [&&]:rounded-[12px] top-rated-empty"
+      class="[&&]:leading-[1.8] [&&]:[background-image:initial] [&&]:[background-color:rgb(249,_251,_246)] [&&]:text-[#71816a] [&&]:text-[12px] [&&]:p-[22px] m-[0px] [&&]:border-[1px] [&&]:border-dashed [&&]:border-[color:rgb(213,_224,_207)] [&&]:rounded-[12px] top-rated-empty"
     >
       Belum ada pertanyaan yang mendapat like. Sukai pertanyaan yang bermanfaat agar muncul di sini.
     </p>{/if}

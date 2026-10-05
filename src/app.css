@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 @theme {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+  --font-sans: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, sans-serif;
   --color-deb-900: #0b2b6f;
   --color-deb-700: #075fc7;
   --color-deb-100: #e8f2ff;
@@ -11,39 +11,4 @@
   to {
     transform: rotate(360deg);
   }
-}
-/* Required semantics drive the same marker on every form, including dialogs. */
-label:not(:has(> .field-caption)):has(input:required, select:required, textarea:required, [aria-required="true"]) {
-  position: relative;
-}
-label:not(:has(> .field-caption)):has(input:required, select:required, textarea:required, [aria-required="true"])::after {
-  content: '*';
-  color: #dc2626;
-  font-weight: 700;
-  position: absolute;
-  top: 0;
-  right: 0;
-  pointer-events: none;
-}
-.global-error {
-  z-index: 1000;
-  overflow-wrap: anywhere;
-  animation: feedback-in 180ms ease-out;
-}
-/* A native modal is above the page's stacking order; render feedback inside it. */
-body:has(dialog[open]) .global-error { display: none; }
-body:has(dialog[open]) dialog[open] .global-error { display: flex; }
-@keyframes feedback-in {
-  from { opacity: 0; translate: 0 12px; }
-  to { opacity: 1; translate: 0 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .global-error { animation: none; }
-}
-
-/* Keep required markers beside the caption in the campus journey. */
-label:has(input:required, select:required, textarea:required, [aria-required="true"]) > .field-caption::after {
-  content: ' *';
-  color: #dc2626;
-  font-weight: 700;
 }

@@ -34,10 +34,7 @@ export function validateRecord(e) {
       if (target.getString('question') !== question.id || target.getInt('sequence') >= r.getInt('sequence')) fail('Invalid reply reference');
     }
   }
-  if (name === 'proposal_versions') {
-    user('uploadedBy', 'campus', r.getString('campus'));
-    if (r.getString('reviewedBy')) user('reviewedBy', 'admin');
-  }
+  if (name === 'proposal_versions') user('uploadedBy', 'campus', r.getString('campus'));
   if (name === 'deb_submissions') {
     user('submittedBy', 'campus', r.getString('campus'));
     if (!r.getString('submittedAt')) fail('Submission timestamp required');

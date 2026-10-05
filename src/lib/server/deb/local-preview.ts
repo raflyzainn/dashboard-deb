@@ -1,4 +1,3 @@
-import { assertNoRedirect } from './pb-fetch';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import PocketBase from 'pocketbase';
@@ -32,7 +31,7 @@ export async function previewContext(request: PreviewRequest, config: PreviewCon
         url.username || url.password || url.pathname !== '/' || url.search || url.hash ||
         marker.project !== 'dashboard-deb' || marker.kind !== (fixture ? 'test' : 'development') ||
         marker.directory !== directory || marker.url !== url.origin || !marker.instanceId) throw new Error('Invalid instance');
-    const health = assertNoRedirect(await fetch(url.origin + '/api/health', { redirect: 'manual', signal: AbortSignal.timeout(5000) }));
+    const health = await fetch(url.origin + '/api/health', { redirect: 'error', signal: AbortSignal.timeout(5000) });
     if (!health.ok) throw new Error('PocketBase unavailable');
     const credentials: Credentials = JSON.parse(await readFile(path.join(directory, 'credentials.json'), 'utf8'));
     const keys = Object.keys(credentials.users).filter(key => /^(campus-\d{3}|admin-[12])$/.test(key));
@@ -41,7 +40,7 @@ export async function previewContext(request: PreviewRequest, config: PreviewCon
       const secret = credentials.users[key];
       const pb = new PocketBase(url.origin);
       pb.autoCancellation(false);
-      pb.beforeSend = (target, options) => ({ url: target, options: { ...options, redirect: 'manual', signal: AbortSignal.timeout(15000) } });
+      pb.beforeSend = (target, options) => ({ url: target, options: { ...options, redirect: 'error', signal: AbortSignal.timeout(15000) } });
       try {
         const result = await pb.collection('users').authWithPassword(secret.email, secret.password);
         const record = result.record;
@@ -56,15 +55,10 @@ export async function previewContext(request: PreviewRequest, config: PreviewCon
         const campuses = await pb.collection('campuses').getFullList({ sort: 'name' });
         const root = new PocketBase(url.origin);
         await root.collection('_superusers').authWithPassword(credentials.superuser.email, credentials.superuser.password);
-        const users = await root.collection('users').getFullList({ filter: 'simulated = true && active = true', fields: 'legacyId,campus,role,name' });
-        const eligible = new Set<string>(users.map(u => u.legacyId));
-        // Local provisioning marks the campuses that started empty with this SK prefix.
-        // Keep their original login group even after uploading RAB or completing the application.
-        const awards=await root.collection('sk_awards').getFullList({filter:'wave = 1',fields:'campus,skNumber'});
-        const started=new Set(awards.filter(a=>!String(a.skNumber||'').startsWith('SK-DUMMY-LOKAL/2026/')).map(a=>a.campus));
+        const eligible = new Set<string>((await root.collection('users').getFullList({ filter: 'simulated = true && active = true', fields: 'legacyId' })).map(u => u.legacyId));
         // Each account is also checked on entry; migrated campus credentials are never reset by preview.
-        const rows: PreviewAccount[] = campuses.flatMap(c => users.filter(u => u.role === 'campus' && u.campus === c.id && keys.includes(u.legacyId)).map(u => ({ key: u.legacyId, name: c.name+' - '+u.name, role: 'campus' as const, disbursementStarted: started.has(c.id) })));
-        return [...rows, ...keys.filter(k => k.startsWith('admin-') && eligible.has(k)).sort().map(key => ({ key, name: `Admin PF ${key.slice(-1)}`, role: 'admin' as const }))];
+        const rows: PreviewAccount[] = campuses.filter(c => keys.includes(c.legacyId) && eligible.has(c.legacyId)).map(c => ({ key: c.legacyId, name: c.name, role: 'campus' }));
+        return [...rows, ...keys.filter(k => k.startsWith('admin-') && eligible.has(k)).sort().map(key => ({ key, name: `Admin PF lokal ${key.slice(-1)}`, role: 'admin' as const }))];
       }
     };
   } catch (error) {

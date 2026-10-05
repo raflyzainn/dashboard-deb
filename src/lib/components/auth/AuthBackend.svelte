@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { reportError } from '$lib/feedback';
   import { page } from '$app/state';
   import { goto, replaceState } from '$app/navigation';
   import { dev } from '$app/environment';
@@ -109,7 +108,6 @@
       go('password');
     } catch {
       go('invalid');
-      reportError('Tautan tidak dapat digunakan. Minta tautan baru atau periksa koneksi lalu coba lagi.');
     } finally {
       busy = false;
     }
@@ -139,7 +137,7 @@
         go('sent');
       }
     } catch (e) {
-      error = reportError(e instanceof Error ? e.message : 'Tidak dapat terhubung ke server. Periksa koneksi, lalu coba lagi.');
+      error = (e as Error).message;
     } finally {
       busy = false;
     }
@@ -162,42 +160,42 @@
     class="relative overflow-x-hidden overflow-y-hidden [background-image:linear-gradient(145deg,_rgb(23,_104,_239)_0%,_rgb(25,_68,_208)_58%,_rgb(37,_44,_159)_100%)] [background-color:initial] flex flex-col [&&]:min-h-[0] [&&]:h-[100dvh] px-[55px] [&&]:py-[clamp(20px,_4vh,_36px)] [&_.brand]:text-[#fff] [&_.brand]:m-[0px] [&_.brand-mark]:[background-image:initial] [&_.brand-mark]:[background-color:rgba(255,_255,_255,_0.094)] [&_.brand-mark]:text-[#fff] [&_.brand-mark]:border-[1px] [&_.brand-mark]:border-solid [&_.brand-mark]:border-[color:rgba(255,_255,_255,_0.17)] [&_.brand-sub]:text-[#bcd9ff] max-[1200.01px]:px-[40px] max-[1200.01px]:[&&]:py-[clamp(20px,_4vh,_36px)] max-[900.01px]:[&&]:min-h-[0] max-[900.01px]:px-[30px] max-[900.01px]:[&&]:py-[clamp(20px,_4vh,_36px)] max-[700.01px]:[&&]:min-h-[0] max-[700.01px]:[&&]:h-[clamp(145px,_24dvh,_200px)] max-[700.01px]:[&&]:shrink-0 max-[700.01px]:[&&]:px-[24px] max-[700.01px]:[&&]:py-[18px] max-[700.01px]:[&_.brand]:text-[26px] max-[700.01px]:[&_.brand-mark]:w-[36px] max-[700.01px]:[&_.brand-mark]:h-[38px] [&:before]:absolute [&:before]:[content:''] [&:before]:w-[420px] [&:before]:h-[100dvh] [&:before]:left-[-190px] [&:before]:top-[70px] [&:before]:[box-shadow:0_0_0_70px_#ffffff08,_0_0_0_145px_#ffffff05] [&:before]:border-[1px] [&:before]:border-solid [&:before]:border-[color:rgba(255,_255,_255,_0.075)] [&:before]:rounded-[50%] max-[700.01px]:[.flow-page_&]:min-h-[100px] max-[700.01px]:[.flow-page_&]:h-[100px] max-[700.01px]:[.flow-page_&]:py-[18px] min-[701px]:[&&&]:min-h-[100dvh] min-[701px]:[&&&]:h-[auto] min-[701px]:[&&&]:[align-self:stretch] login-story"
   >
     <a
-      class="[-webkit-tap-highlight-color:transparent] text-[color:var(--dark)] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] flex items-center gap-y-[10px] gap-x-[10px] mt-[0px] mb-[30px] text-[30px] tracking-[-0.01em] font-[800] leading-[1] mx-[10px] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] max-[900.01px]:text-[27px] max-[700.01px]:[&&&]:text-[23px] brand"
+      class="[-webkit-tap-highlight-color:transparent] text-[color:var(--dark)] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] flex items-center gap-y-[10px] gap-x-[10px] mt-[0px] mb-[30px] text-[30px] tracking-[-1.3px] font-[800] leading-[1] mx-[10px] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] max-[900.01px]:text-[27px] max-[700.01px]:[&&&]:text-[23px] brand"
       href="/login"
       ><span
         class="flex items-center justify-center w-[42px] h-[45px] [background-image:initial] [background-color:var(--dark)] text-[#cce8b3] [border-top-left-radius:13px] [border-top-right-radius:13px] [border-bottom-right-radius:13px] [border-bottom-left-radius:4px] brand-mark"
         ><Icon name="leaf" size={29} /></span
       ><span
         >DEB<span
-          class="block text-[10px] tracking-[0.06em] font-[600] mt-[8px] text-[#475569] max-[900.01px]:text-[10px] brand-sub"
+          class="block text-[7px] tracking-[1.5px] font-[650] mt-[8px] text-[#788975] max-[900.01px]:text-[6px] brand-sub"
           >RUANG TUMBUH BERSAMA</span
         ></span
       ></a
     >
     <div
-      class="relative z-[2] [&&]:mt-[clamp(32px,_7vh,_75px)] max-w-[450px] [&_h1]:text-[#fff] [&_h1]:text-[49px] [&_h1]:leading-[1.2] [&_h1]:tracking-[-0.01em] [&_h1]:font-[500] [&_h1]:mt-[24px] [&_h1_em]:[font-style:normal] [&_h1_em]:text-[#9fd5ff] [&>p]:text-[14px] [&>p]:leading-[1.7] [&>p]:text-[#d1e5ff] [&>p]:mt-[25px] [&>p]:max-w-[360px] max-[1200.01px]:[&_h1]:text-[42px] max-[900.01px]:[&&]:mt-[clamp(32px,_7vh,_75px)] max-[900.01px]:[&_h1]:text-[35px] max-[900.01px]:[&>p]:text-[14px] max-[700.01px]:[&&]:mt-[14px] max-[700.01px]:max-w-[340px] max-[700.01px]:[&_.eyebrow]:text-[10px] max-[700.01px]:[&_.eyebrow]:mb-[10px] max-[700.01px]:[&_h1]:text-[34px] max-[700.01px]:[&_h1]:tracking-[-0.01em] max-[700.01px]:[&_h1]:mt-[10px] max-[700.01px]:[&>p]:text-[13px] max-[700.01px]:[&>p]:mt-[16px] max-[700.01px]:[&>p]:max-w-[270px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[5vh] max-[700.01px]:[.flow-page_&]:hidden login-copy"
+      class="relative z-[2] [&&]:mt-[clamp(32px,_7vh,_75px)] max-w-[450px] [&_h1]:text-[#fff] [&_h1]:text-[49px] [&_h1]:leading-[1.2] [&_h1]:tracking-[-2px] [&_h1]:font-[550] [&_h1]:mt-[24px] [&_h1_em]:[font-style:normal] [&_h1_em]:text-[#9fd5ff] [&>p]:text-[13px] [&>p]:leading-[2] [&>p]:text-[#d1e5ff] [&>p]:mt-[25px] [&>p]:max-w-[360px] max-[1200.01px]:[&_h1]:text-[42px] max-[900.01px]:[&&]:mt-[clamp(32px,_7vh,_75px)] max-[900.01px]:[&_h1]:text-[35px] max-[900.01px]:[&>p]:text-[12px] max-[700.01px]:[&&]:mt-[14px] max-[700.01px]:max-w-[340px] max-[700.01px]:[&_.eyebrow]:text-[7px] max-[700.01px]:[&_.eyebrow]:mb-[10px] max-[700.01px]:[&_h1]:text-[34px] max-[700.01px]:[&_h1]:tracking-[-1.2px] max-[700.01px]:[&_h1]:mt-[10px] max-[700.01px]:[&>p]:text-[11px] max-[700.01px]:[&>p]:mt-[16px] max-[700.01px]:[&>p]:max-w-[270px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[5vh] max-[700.01px]:[.flow-page_&]:hidden login-copy"
     >
       <span
-        class="block text-[12px] tracking-[0.06em] font-[700] [&&]:text-[#c9e5ff] mb-[9px] max-[700.01px]:[&&&]:hidden max-[700.01px]:text-[10px] eyebrow light"
+        class="block text-[10px] tracking-[1.9px] font-[750] [&&]:text-[#c9e5ff] mb-[9px] max-[700.01px]:[&&&]:hidden max-[700.01px]:text-[8px] eyebrow light"
         >DIGITALISASI DEB PUTIH</span
       >
       <h1
-        class="font-[700] text-[color:var(--navy)] text-[29px] tracking-[-0.01em] leading-[1.3] m-[0px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:text-[clamp(34px,_5.5vh,_44px)] max-[700.01px]:[&&]:mt-[0] max-[700.01px]:[&&]:text-[clamp(21px,_3.2vh,_27px)] max-[700.01px]:[&&]:leading-[1.15] max-[700.01px]:[&&]:max-w-[270px]"
+        class="font-[650] text-[color:var(--navy)] text-[29px] tracking-[-1.15px] leading-[1.3] m-[0px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:text-[clamp(34px,_5.5vh,_44px)] max-[700.01px]:[&&]:mt-[0] max-[700.01px]:[&&]:text-[clamp(21px,_3.2vh,_27px)] max-[700.01px]:[&&]:leading-[1.15] max-[700.01px]:[&&]:max-w-[270px]"
       >
         Dari kolaborasi,<br />tumbuh <em>perubahan.</em>
       </h1>
       <p
-        class="leading-[1.6] m-[0px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[16px] max-[700.01px]:[&&]:hidden"
+        class="leading-[1.8] m-[0px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[16px] max-[700.01px]:[&&]:hidden"
       >
         Satu ruang untuk merawat gagasan, memantau langkah, dan mewujudkan dampak bersama kampus
         mitra.
       </p>
       <div
-        class="flex gap-y-[36px] gap-x-[36px] [&&]:mt-[28px] [&>div]:flex [&>div]:flex-col [&_strong]:text-[29px] [&_strong]:tracking-[-0.01em] [&_strong]:text-[#fff] [&_strong]:font-[500] [&_span]:text-[12px] [&_span]:text-[#c0d9ff] [&_span]:mt-[6px] max-[900.01px]:gap-y-[23px] max-[900.01px]:gap-x-[23px] max-[700.01px]:hidden [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[20px] login-metrics"
+        class="flex gap-y-[36px] gap-x-[36px] [&&]:mt-[28px] [&>div]:flex [&>div]:flex-col [&_strong]:text-[29px] [&_strong]:tracking-[-1px] [&_strong]:text-[#fff] [&_strong]:font-[500] [&_span]:text-[10px] [&_span]:text-[#c0d9ff] [&_span]:mt-[6px] max-[900.01px]:gap-y-[23px] max-[900.01px]:gap-x-[23px] max-[700.01px]:hidden [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[20px] login-metrics"
       >
-        <div><strong class="font-[600]">40</strong><span>Kampus mitra</span></div>
-        <div><strong class="font-[600]">PB</strong><span>Sumber data tunggal</span></div>
-        <div><strong class="font-[600]">1</strong><span>Tujuan bersama</span></div>
+        <div><strong class="font-[650]">40</strong><span>Kampus mitra</span></div>
+        <div><strong class="font-[650]">PB</strong><span>Sumber data tunggal</span></div>
+        <div><strong class="font-[650]">1</strong><span>Tujuan bersama</span></div>
       </div>
     </div>
     <div
@@ -208,7 +206,7 @@
         class="absolute w-[120px] h-[120px] right-[70px] top-[15px] [box-shadow:0_0_0_35px_#ffffff0a,_0_0_0_70px_#ffffff08] border-[1px] border-solid border-[color:rgba(255,_255,_255,_0.157)] rounded-[50%] sun"
       ></span>
       <div
-        class="absolute w-[800px] h-[480px] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:left-[110px] [&&]:top-[120px] [transform:rotate(-20deg)] [&&]:text-[#276bb7] [&&]:text-[13px] [&&]:block [&&]:mb-[25px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] rounded-[50%] [.flow-page_&]:mb-[18px] [.password-page_&]:mb-[12px] [.success-page_&]:mb-[12px] hill back"
+        class="absolute w-[800px] h-[480px] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:left-[110px] [&&]:top-[120px] [transform:rotate(-20deg)] [&&]:text-[#276bb7] [&&]:text-[11px] [&&]:block [&&]:mb-[25px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] rounded-[50%] [.flow-page_&]:mb-[18px] [.password-page_&]:mb-[12px] [.success-page_&]:mb-[12px] hill back"
       ></div>
       <div
         class="absolute w-[800px] h-[480px] [&&]:[background-image:initial] [&&]:[background-color:rgb(22,_68,_187)] left-[-250px] [&&]:top-[230px] [transform:rotate(-20deg)] rounded-[50%] hill front"
@@ -223,7 +221,7 @@
       >
     </div>
     <div
-      class="relative z-[2] flex flex-col gap-y-[8px] gap-x-[8px] mt-[auto] [&&]:pt-[24px] text-[#c0d9ff] text-[11px] tracking-[0.06em] [&>span]:text-[12px] [&>span]:text-[#9fc5f5] [&>span]:tracking-[0] max-[900.01px]:[&&]:pt-[24px] max-[700.01px]:hidden login-footer"
+      class="relative z-[2] flex flex-col gap-y-[8px] gap-x-[8px] mt-[auto] [&&]:pt-[24px] text-[#c0d9ff] text-[9px] tracking-[1.4px] [&>span]:text-[10px] [&>span]:text-[#9fc5f5] [&>span]:tracking-[0] max-[900.01px]:[&&]:pt-[24px] max-[700.01px]:hidden login-footer"
     >
       <img
         class="[&&]:w-[180px] [&&]:h-[auto] [&&]:mb-[4px] pf-white-logo"
@@ -239,7 +237,7 @@
     aria-label="Akses akun"
   >
     <div
-      class="[&&]:flex [&&]:justify-between [&&]:gap-y-[15px] [&&]:gap-x-[15px] [&&]:text-[12px] [&&]:text-[#475569] max-[700.01px]:[&&]:text-[11px] max-[700.01px]:[.password-page_&]:hidden max-[700.01px]:[.success-page_&]:hidden stage-top"
+      class="[&&]:flex [&&]:justify-between [&&]:gap-y-[15px] [&&]:gap-x-[15px] [&&]:text-[10px] [&&]:text-[#6d839f] max-[700.01px]:[&&]:text-[9px] max-[700.01px]:[.password-page_&]:hidden max-[700.01px]:[.success-page_&]:hidden stage-top"
     >
       <span>PORTAL KAMPUS MITRA</span>{#if dev}<a
           class="[-webkit-tap-highlight-color:transparent] [&&]:text-[#1768c0] [&&]:[text-decoration-line:underline] [&&]:[text-decoration-thickness:initial] [&&]:[text-decoration-style:initial] [&&]:[text-decoration-color:initial] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px]"
@@ -250,7 +248,7 @@
       class="[&&]:w-[100%] [&&]:max-w-[420px] [&&]:px-[0px] [&&]:py-[clamp(16px,_3vh,_30px)] [&&]:m-[auto] max-[700.01px]:[&&]:px-[0px] max-[700.01px]:[&&]:py-[16px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:py-[12px] max-[700.01px]:[.flow-page_&]:py-[12px] [.password-page_&]:py-[10px] max-[700.01px]:[.password-page_&]:py-[0px] [@media(min-width:_701px)_and_(max-height:_800px)]:[.password-page_&]:py-[6px] [.success-page_&]:py-[10px] form-wrap"
     >
       {#if screen !== 'login' && screen !== 'success'}<button
-          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[13px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#276bb7] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:block [&&]:mb-[25px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&:disabled]:cursor-pointer [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [.flow-page_&]:mb-[18px] [.password-page_&]:mb-[12px] [.success-page_&]:mb-[12px] back"
+          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[11px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#276bb7] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:block [&&]:mb-[25px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&:disabled]:cursor-pointer [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [.flow-page_&]:mb-[18px] [.password-page_&]:mb-[12px] [.success-page_&]:mb-[12px] back"
           onclick={() => go('login')}
           >{screen === 'employee' ? 'Kembali ke masuk kampus' : 'Kembali ke masuk'}</button
         >{/if}
@@ -259,9 +257,9 @@
           aria-label="Tahapan aktivasi akun"
         >
           <p
-            class="[&&]:mt-[0px] [&&]:mb-[15px] leading-[1.6] [&&]:flex [&&]:justify-between [&&]:gap-y-[12px] [&&]:gap-x-[12px] [&&]:text-[12px] [&&]:text-[#475569] [&&]:mx-[0px] [.password-page_.activation-progress>&]:mb-[10px]"
+            class="[&&]:mt-[0px] [&&]:mb-[15px] leading-[1.8] [&&]:flex [&&]:justify-between [&&]:gap-y-[12px] [&&]:gap-x-[12px] [&&]:text-[10px] [&&]:text-[#6580a1] [&&]:mx-[0px] [.password-page_.activation-progress>&]:mb-[10px]"
           >
-            Aktivasi akun <strong class="[&&]:font-[600] [&&]:text-[#1768c0]"
+            Aktivasi akun <strong class="[&&]:font-[650] [&&]:text-[#1768c0]"
               >Langkah {step} dari 4</strong
             >
           </p>
@@ -269,13 +267,13 @@
             class="[&&]:[list-style-position:initial] [&&]:[list-style-image:initial] [&&]:[list-style-type:none] [&&]:grid [&&]:grid-cols-[repeat(4,_1fr)] [&&]:gap-y-[8px] [&&]:gap-x-[8px] [&&]:p-[0px] [&&]:m-[0px]"
           >
             {#each activationSteps as label, index}<li
-                class="[&&]:relative [&&]:flex [&&]:flex-col [&&]:items-center [&&]:gap-y-[8px] [&&]:gap-x-[8px] [&&]:text-[#64748b] [&&]:text-[11px] [&&]:text-center [&&]:leading-[1.4] [&:not(:last-child):after]:absolute [&:not(:last-child):after]:[content:''] [&:not(:last-child):after]:left-[calc(50%_+_19px)] [&:not(:last-child):after]:right-[calc(-50%_+_11px)] [&:not(:last-child):after]:top-[15px] [&:not(:last-child):after]:h-[2px] [&:not(:last-child):after]:[background-image:initial] [&:not(:last-child):after]:[background-color:rgb(217,_228,_242)] [&.current]:text-[#155fb9] [&.current]:font-[700] [&.complete]:text-[#23764f] [&.complete:after]:[background-image:initial] [&.complete:after]:[background-color:rgb(161,_211,_188)]"
+                class="[&&]:relative [&&]:flex [&&]:flex-col [&&]:items-center [&&]:gap-y-[8px] [&&]:gap-x-[8px] [&&]:text-[#7c8fa7] [&&]:text-[9px] [&&]:text-center [&&]:leading-[1.4] [&:not(:last-child):after]:absolute [&:not(:last-child):after]:[content:''] [&:not(:last-child):after]:left-[calc(50%_+_19px)] [&:not(:last-child):after]:right-[calc(-50%_+_11px)] [&:not(:last-child):after]:top-[15px] [&:not(:last-child):after]:h-[2px] [&:not(:last-child):after]:[background-image:initial] [&:not(:last-child):after]:[background-color:rgb(217,_228,_242)] [&.current]:text-[#155fb9] [&.current]:font-[700] [&.complete]:text-[#23764f] [&.complete:after]:[background-image:initial] [&.complete:after]:[background-color:rgb(161,_211,_188)]"
                 class:current={step === index + 1}
                 class:complete={step > index + 1}
                 aria-current={step === index + 1 ? 'step' : undefined}
               >
                 <span
-                  class="[&&]:w-[32px] [&&]:h-[32px] [&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:[background-image:initial] [&&]:[background-color:rgb(237,_242,_248)] [&&]:text-[#64748b] [&&]:text-[13px] [&&]:font-[600] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(212,_224,_238)] [&&]:rounded-[50%] [.current_&]:[background-image:initial] [.current_&]:[background-color:rgb(23,_107,_214)] [.current_&]:text-[white] [.current_&]:[box-shadow:0_0_0_4px_#e7f1ff] [.current_&]:border-[color:rgb(23,_107,_214)] [.complete_&]:[background-image:initial] [.complete_&]:[background-color:rgb(231,_246,_238)] [.complete_&]:text-[#23764f] [.complete_&]:border-[color:rgb(182,_221,_201)] step-number"
+                  class="[&&]:w-[32px] [&&]:h-[32px] [&&]:grid [&&]:items-center [&&]:[justify-items:center] [&&]:[background-image:initial] [&&]:[background-color:rgb(237,_242,_248)] [&&]:text-[#7b91ad] [&&]:text-[11px] [&&]:font-[650] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(212,_224,_238)] [&&]:rounded-[50%] [.current_&]:[background-image:initial] [.current_&]:[background-color:rgb(23,_107,_214)] [.current_&]:text-[white] [.current_&]:[box-shadow:0_0_0_4px_#e7f1ff] [.current_&]:border-[color:rgb(23,_107,_214)] [.complete_&]:[background-image:initial] [.complete_&]:[background-color:rgb(231,_246,_238)] [.complete_&]:text-[#23764f] [.complete_&]:border-[color:rgb(182,_221,_201)] step-number"
                   >{#if step > index + 1}<Icon name="check" size={14} />{:else}{index +
                       1}{/if}</span
                 ><span>{label}</span>
@@ -291,17 +289,17 @@
         />
       </div>
       <span
-        class="[&&]:block [&&]:text-[11px] [&&]:tracking-[0.06em] [&&]:text-[#475569] [&&]:mb-[12px] max-[700.01px]:[&&]:mb-[8px] [.password-page_&]:mb-[7px] [.success-page_&]:mb-[7px] section-label"
+        class="[&&]:block [&&]:text-[9px] [&&]:tracking-[2px] [&&]:text-[#6d89ab] [&&]:mb-[12px] max-[700.01px]:[&&]:mb-[8px] [.password-page_&]:mb-[7px] [.success-page_&]:mb-[7px] section-label"
         >AKSES AKUN DEB</span
       >
       <h2
-        class="font-[600] text-[color:var(--navy)] [&&]:text-[30px] [&&]:tracking-[-0.01em] [&&]:leading-[1.3] m-[0px] max-[700.01px]:[&&]:text-[24px] [.password-page_&]:text-[28px] max-[700.01px]:[.password-page_&]:text-[24px] [.success-page_&]:text-[26px]"
+        class="font-[650] text-[color:var(--navy)] [&&]:text-[30px] [&&]:tracking-[-1px] [&&]:leading-[1.3] m-[0px] max-[700.01px]:[&&]:text-[24px] [.password-page_&]:text-[28px] max-[700.01px]:[.password-page_&]:text-[24px] [.success-page_&]:text-[26px]"
       >
         {title}
       </h2>
       {#if ['login', 'activate', 'forgot', 'password'].includes(screen)}
         <p
-          class="[&&]:mt-[17px] [&&]:mb-[25px] [&&]:leading-[1.65] [&&]:text-[14px] [&&]:text-[#475569] [&&]:mx-[0px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[12px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mb-[16px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mx-[0px] max-[700.01px]:[&&]:mt-[10px] max-[700.01px]:[&&]:mb-[16px] max-[700.01px]:[&&]:text-[13px] max-[700.01px]:[&&]:mx-[0px] [.flow-page_&]:mt-[12px] [.flow-page_&]:mb-[17px] [.flow-page_&]:mx-[0px] [.password-page_&]:mt-[8px] [.password-page_&]:mb-[12px] [.password-page_&]:mx-[0px] [.success-page_&]:mt-[10px] [.success-page_&]:mb-[14px] [.success-page_&]:mx-[0px] intro"
+          class="[&&]:mt-[17px] [&&]:mb-[25px] [&&]:leading-[1.9] [&&]:text-[12px] [&&]:text-[#7185a0] [&&]:mx-[0px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[12px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mb-[16px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mx-[0px] max-[700.01px]:[&&]:mt-[10px] max-[700.01px]:[&&]:mb-[16px] max-[700.01px]:[&&]:text-[11px] max-[700.01px]:[&&]:mx-[0px] [.flow-page_&]:mt-[12px] [.flow-page_&]:mb-[17px] [.flow-page_&]:mx-[0px] [.password-page_&]:mt-[8px] [.password-page_&]:mb-[12px] [.password-page_&]:mx-[0px] [.success-page_&]:mt-[10px] [.success-page_&]:mb-[14px] [.success-page_&]:mx-[0px] intro"
         >
           {screen === 'login'
             ? 'Masuk menggunakan email PIC dan password akun kampus Anda.'
@@ -310,7 +308,7 @@
               : 'Gunakan email PIC yang sudah didaftarkan admin DEB.'}
         </p>
         {#if screen === 'password'}<details
-            class="[&&]:text-[13px] [&&]:text-[#2368b5] [&&]:mx-[0px] [&&]:my-[10px] intro-guide"
+            class="[&&]:text-[11px] [&&]:text-[#2368b5] [&&]:mx-[0px] [&&]:my-[10px] intro-guide"
           >
             <summary
               class="[&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&&]:cursor-pointer [&&]:leading-[1.6]"
@@ -318,28 +316,28 @@
             ><WelcomeGuide />
           </details>
           <div
-            class="[&&]:flex [&&]:gap-y-[12px] [&&]:gap-x-[12px] [&&]:items-center [&&]:[background-image:initial] [&&]:[background-color:rgb(237,_245,_255)] [&&]:text-[#2c77c6] [&&]:p-[17px] [&&]:mx-[0px] [&&]:my-[22px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(216,_231,_248)] [&&]:rounded-[9px] max-[700.01px]:[&&]:p-[12px] max-[700.01px]:[&&]:mx-[0px] max-[700.01px]:[&&]:my-[12px] max-[700.01px]:[.flow-page_&]:mx-[0px] max-[700.01px]:[.flow-page_&]:my-[12px] [.password-page_&]:mt-[12px] [.password-page_&]:mb-[16px] [.password-page_&]:px-[14px] [.password-page_&]:py-[12px] [.password-page_&]:mx-[0px] [@media(min-width:_701px)_and_(max-height:_800px)]:[.password-page_&]:mt-[8px] [@media(min-width:_701px)_and_(max-height:_800px)]:[.password-page_&]:mb-[12px] [@media(min-width:_701px)_and_(max-height:_800px)]:[.password-page_&]:mx-[0px] account-summary"
+            class="[&&]:flex [&&]:gap-y-[12px] [&&]:gap-x-[12px] [&&]:items-center [&&]:[background-image:initial] [&&]:[background-color:rgb(237,_245,_255)] [&&]:text-[#2d79ca] [&&]:p-[17px] [&&]:mx-[0px] [&&]:my-[22px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(216,_231,_248)] [&&]:rounded-[9px] max-[700.01px]:[&&]:p-[12px] max-[700.01px]:[&&]:mx-[0px] max-[700.01px]:[&&]:my-[12px] max-[700.01px]:[.flow-page_&]:mx-[0px] max-[700.01px]:[.flow-page_&]:my-[12px] [.password-page_&]:mt-[12px] [.password-page_&]:mb-[16px] [.password-page_&]:px-[14px] [.password-page_&]:py-[12px] [.password-page_&]:mx-[0px] [@media(min-width:_701px)_and_(max-height:_800px)]:[.password-page_&]:mt-[8px] [@media(min-width:_701px)_and_(max-height:_800px)]:[.password-page_&]:mb-[12px] [@media(min-width:_701px)_and_(max-height:_800px)]:[.password-page_&]:mx-[0px] account-summary"
           >
             <Icon name="campus" />
             <div class="[&&]:min-w-[0] [&&]:grid [&&]:gap-y-[6px] [&&]:gap-x-[6px]">
-              <strong class="font-[600] [&&]:text-[14px]">{target.campus}</strong><span
-                class="[&&]:text-[13px] [&&]:text-[#475569] [&&]:wrap-anywhere"
+              <strong class="font-[650] [&&]:text-[12px]">{target.campus}</strong><span
+                class="[&&]:text-[11px] [&&]:text-[#6b82a0] [&&]:wrap-anywhere"
                 >{target.name} - {target.email}</span
               >
             </div>
           </div>{/if}
         <form
-          class="[&_label]:flex [&_label]:flex-col [&_label]:gap-y-[9px] [&_label]:gap-x-[9px] [&_label]:text-[14px] [&_label]:font-[600] [&_label]:mb-[18px] [&_input]:w-[100%] [&_textarea]:w-[100%] [&&]:flex [&&]:flex-col [&&]:gap-y-[10px] [&&]:gap-x-[10px] [.password-page_&]:gap-y-[8px] [.password-page_&]:gap-x-[8px]"
+          class="[&_label]:flex [&_label]:flex-col [&_label]:gap-y-[9px] [&_label]:gap-x-[9px] [&_label]:text-[12px] [&_label]:font-[600] [&_label]:mb-[18px] [&_input]:w-[100%] [&_textarea]:w-[100%] [&&]:flex [&&]:flex-col [&&]:gap-y-[10px] [&&]:gap-x-[10px] [.password-page_&]:gap-y-[8px] [.password-page_&]:gap-x-[8px]"
           onsubmit={(e) => {
             e.preventDefault();
             void submit();
           }}
         >
           {#if screen !== 'password'}<label
-              class="[&&]:text-[14px] [&&]:text-[#335580] [&&]:mt-[7px] [.password-page_&]:m-[0px]"
-              for="real-email">Email PIC <span class="text-red-600" aria-hidden="true">*</span></label
+              class="[&&]:text-[12px] [&&]:text-[#335580] [&&]:mt-[7px] [.password-page_&]:m-[0px]"
+              for="real-email">Email PIC</label
             ><input
-              class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:[background-image:initial] [&&]:[background-color:white] [&&]:text-[#24466f] max-w-[100%] [&&]:min-w-[0] [&&]:w-[100%] [&&]:min-h-[48px] [&&]:px-[14px] [&&]:py-[12px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(205,_221,_241)] [&&]:rounded-[8px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(205,_221,_241)] [&::placeholder]:text-[#24466f]"
+              class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[13px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:[background-image:initial] [&&]:[background-color:white] [&&]:text-[#24466f] max-w-[100%] [&&]:min-w-[0] [&&]:w-[100%] [&&]:min-h-[48px] [&&]:px-[14px] [&&]:py-[12px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(205,_221,_241)] [&&]:rounded-[8px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(205,_221,_241)] [&::placeholder]:text-[#24466f]"
               id="real-email"
               type="email"
               autocomplete="email"
@@ -351,17 +349,17 @@
               class="[&&]:flex [&&]:justify-between [&&]:items-center [.password-page_&]:m-[0px] label-row"
             >
               <label
-                class="[&&]:text-[14px] [&&]:text-[#335580] [&&]:mt-[7px] [.password-page_&]:m-[0px]"
-                for="real-password">{screen === 'password' ? 'Password baru' : 'Password'} <span class="text-red-600" aria-hidden="true">*</span></label
+                class="[&&]:text-[12px] [&&]:text-[#335580] [&&]:mt-[7px] [.password-page_&]:m-[0px]"
+                for="real-password">{screen === 'password' ? 'Password baru' : 'Password'}</label
               >{#if screen === 'login'}<button
-                  class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[13px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#276bb7] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&:disabled]:cursor-pointer [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] inline-link"
+                  class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[11px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#276bb7] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&:disabled]:cursor-pointer [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] inline-link"
                   type="button"
                   onclick={() => go('forgot')}>Lupa password?</button
                 >{/if}
             </div>
             <div class="[&&]:relative password-input">
               <input
-                class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:[background-image:initial] [&&]:[background-color:white] [&&]:text-[#24466f] [&&]:pr-[48px] [&&]:pl-[14px] max-w-[100%] [&&]:min-w-[0] [&&]:w-[100%] [&&]:min-h-[48px] [&&]:py-[12px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(205,_221,_241)] [&&]:rounded-[8px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(205,_221,_241)] [&::placeholder]:text-[#24466f]"
+                class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[13px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:[background-image:initial] [&&]:[background-color:white] [&&]:text-[#24466f] [&&]:pr-[48px] [&&]:pl-[14px] max-w-[100%] [&&]:min-w-[0] [&&]:w-[100%] [&&]:min-h-[48px] [&&]:py-[12px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(205,_221,_241)] [&&]:rounded-[8px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(205,_221,_241)] [&::placeholder]:text-[#24466f]"
                 id="real-password"
                 type={showPassword ? 'text' : 'password'}
                 autocomplete={screen === 'login' ? 'current-password' : 'new-password'}
@@ -381,7 +379,7 @@
           {/if}
           {#if screen === 'password'}<ul
               id="password-requirements"
-              class="[&&]:[list-style-position:initial] [&&]:[list-style-image:initial] [&&]:[list-style-type:none] [&&]:mt-[2px] [&&]:mb-[6px] [&&]:grid [&&]:gap-y-[6px] [&&]:gap-x-[6px] [&&]:text-[13px] [&&]:text-[#475569] [&&]:p-[0px] [&&]:mx-[0px] password-rules"
+              class="[&&]:[list-style-position:initial] [&&]:[list-style-image:initial] [&&]:[list-style-type:none] [&&]:mt-[2px] [&&]:mb-[6px] [&&]:grid [&&]:gap-y-[6px] [&&]:gap-x-[6px] [&&]:text-[11px] [&&]:text-[#7185a0] [&&]:p-[0px] [&&]:mx-[0px] password-rules"
               aria-label="Persyaratan password"
             >
               {#each passwordRules as rule}<li
@@ -401,12 +399,12 @@
                 </li>{/each}
             </ul>
             <label
-              class="[&&]:text-[14px] [&&]:text-[#335580] [&&]:mt-[7px] [.password-page_&]:m-[0px]"
-              for="real-confirm">Konfirmasi password <span class="text-red-600" aria-hidden="true">*</span></label
+              class="[&&]:text-[12px] [&&]:text-[#335580] [&&]:mt-[7px] [.password-page_&]:m-[0px]"
+              for="real-confirm">Konfirmasi password</label
             >
             <div class="[&&]:relative password-input">
               <input
-                class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:[background-image:initial] [&&]:[background-color:white] [&&]:text-[#24466f] [&&]:pr-[48px] [&&]:pl-[14px] max-w-[100%] [&&]:min-w-[0] [&&]:w-[100%] [&&]:min-h-[48px] [&&]:py-[12px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(205,_221,_241)] [&&]:rounded-[8px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(205,_221,_241)] [&::placeholder]:text-[#24466f]"
+                class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[13px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:[background-image:initial] [&&]:[background-color:white] [&&]:text-[#24466f] [&&]:pr-[48px] [&&]:pl-[14px] max-w-[100%] [&&]:min-w-[0] [&&]:w-[100%] [&&]:min-h-[48px] [&&]:py-[12px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(205,_221,_241)] [&&]:rounded-[8px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(205,_221,_241)] [&::placeholder]:text-[#24466f]"
                 id="real-confirm"
                 type={showConfirmation ? 'text' : 'password'}
                 autocomplete="new-password"
@@ -427,7 +425,7 @@
             </div>
             <p
               id="password-match"
-              class="leading-[1.6] [&&]:flex [&&]:items-center [&&]:gap-y-[5px] [&&]:gap-x-[5px] [&&]:min-h-[18px] [&&]:text-[13px] [&&]:text-[#475569] [&&]:m-[0px] [&.met]:text-[#187347] [&.mismatch]:text-[#b42318] password-match"
+              class="leading-[1.8] [&&]:flex [&&]:items-center [&&]:gap-y-[5px] [&&]:gap-x-[5px] [&&]:min-h-[18px] [&&]:text-[11px] [&&]:text-[#7185a0] [&&]:m-[0px] [&.met]:text-[#187347] [&.mismatch]:text-[#b42318] password-match"
               class:met={passwordsMatch}
               class:mismatch={!!confirmation && !passwordsMatch}
               aria-live="polite"
@@ -441,13 +439,13 @@
                   : 'Ketik ulang password yang sama.'}
             </p>{/if}
           {#if error}<p
-              class="[&&]:leading-[1.55] [&&]:text-[13px] [&&]:text-[#a33b31] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_240,_238)] [&&]:p-[12px] m-[0px] [&&]:rounded-[7px] error"
+              class="[&&]:leading-[1.7] [&&]:text-[11px] [&&]:text-[#a33b31] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_240,_238)] [&&]:p-[12px] m-[0px] [&&]:rounded-[7px] error"
               role="alert"
             >
               {error}
             </p>{/if}
           <button
-            class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [&&]:font-[600] [font-stretch:inherit] [&&]:text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[white] [&&]:flex [&&]:items-center [&&]:justify-center [&&]:gap-y-[13px] [&&]:gap-x-[13px] [&&]:w-[100%] [&&]:min-h-[48px] [&&]:[background-image:initial] [&&]:[background-color:rgb(22,_104,_212)] [&&]:mt-[17px] [&&]:px-[18px] [&&]:py-[13px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[8px] [&:disabled]:[cursor:wait] [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[10px] max-[700.01px]:[&&]:mt-[12px] [.password-page_&]:mt-[6px] [.password-page_&:disabled]:cursor-not-allowed [.success-page_&]:mt-[12px] primary"
+            class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [&&]:font-[650] [font-stretch:inherit] [&&]:text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[white] [&&]:flex [&&]:items-center [&&]:justify-center [&&]:gap-y-[13px] [&&]:gap-x-[13px] [&&]:w-[100%] [&&]:min-h-[48px] [&&]:[background-image:initial] [&&]:[background-color:rgb(22,_104,_212)] [&&]:mt-[17px] [&&]:px-[18px] [&&]:py-[13px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[8px] [&:disabled]:[cursor:wait] [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[10px] max-[700.01px]:[&&]:mt-[12px] [.password-page_&]:mt-[6px] [.password-page_&:disabled]:cursor-not-allowed [.success-page_&]:mt-[12px] primary"
             disabled={busy ||
               (screen === 'password' &&
                 (!longEnough || !hasNumber || !hasCapital || !passwordsMatch))}
@@ -464,23 +462,23 @@
         </form>
         {#if screen === 'login'}
           <div
-            class="[&&]:flex [&&]:gap-y-[0px] [&&]:gap-x-[6px] [&&]:text-center [&&]:mt-[25px] [&&]:text-[14px] [&&]:text-[#475569] [&&]:items-center [&&]:justify-center [&&]:flex-wrap [&&]:leading-[1.6] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[16px] max-[700.01px]:[&&]:mt-[16px] first-time"
+            class="[&&]:flex [&&]:gap-y-[0px] [&&]:gap-x-[6px] [&&]:text-center [&&]:mt-[25px] [&&]:text-[12px] [&&]:text-[#7085a0] [&&]:items-center [&&]:justify-center [&&]:flex-wrap [&&]:leading-[1.6] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[16px] max-[700.01px]:[&&]:mt-[16px] first-time"
           >
             <span>Baru pertama kali masuk?</span><button
-              class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [&&]:font-[600] [font-stretch:inherit] [&&]:text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#125bb7] [&&]:[background-image:none] [&&]:[background-color:initial] [&&]:min-h-[44px] [&&]:[text-decoration-line:underline] [&&]:[text-decoration-thickness:initial] [&&]:[text-decoration-style:initial] [&&]:[text-decoration-color:#125bb766] [&&]:[text-underline-offset:3px] [&&]:px-[2px] [&&]:py-[10px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&:disabled]:[cursor:wait] [&:disabled]:opacity-[0.6] [&:focus-visible]:[outline-color:rgb(22,_115,_222)] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[3px] [&:hover]:[text-decoration-color:currentColor]"
+              class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [&&]:font-[650] [font-stretch:inherit] [&&]:text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#125bb7] [&&]:[background-image:none] [&&]:[background-color:initial] [&&]:min-h-[44px] [&&]:[text-decoration-line:underline] [&&]:[text-decoration-thickness:initial] [&&]:[text-decoration-style:initial] [&&]:[text-decoration-color:#125bb766] [&&]:[text-underline-offset:3px] [&&]:px-[2px] [&&]:py-[10px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&:disabled]:[cursor:wait] [&:disabled]:opacity-[0.6] [&:focus-visible]:[outline-color:rgb(22,_115,_222)] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[3px] [&:hover]:[text-decoration-color:currentColor]"
               type="button"
               disabled={busy}
               onclick={() => go('activate')}>Aktivasi akun</button
             >
           </div>
           <div
-            class="[&&]:flex [&&]:items-center [&&]:gap-y-[14px] [&&]:gap-x-[14px] [&&]:text-[#475569] [&&]:text-[13px] [&&]:mx-[0px] [&&]:my-[18px] [&::before]:[content:''] [&::before]:h-[1px] [&::before]:grow [&::before]:shrink [&::before]:[flex-basis:0%] [&::before]:[background-image:initial] [&::before]:[background-color:rgb(220,_229,_239)] [&::after]:[content:''] [&::after]:h-[1px] [&::after]:grow [&::after]:shrink [&::after]:[flex-basis:0%] [&::after]:[background-image:initial] [&::after]:[background-color:rgb(220,_229,_239)] login-divider"
+            class="[&&]:flex [&&]:items-center [&&]:gap-y-[14px] [&&]:gap-x-[14px] [&&]:text-[#7185a0] [&&]:text-[11px] [&&]:mx-[0px] [&&]:my-[18px] [&::before]:[content:''] [&::before]:h-[1px] [&::before]:grow [&::before]:shrink [&::before]:[flex-basis:0%] [&::before]:[background-image:initial] [&::before]:[background-color:rgb(220,_229,_239)] [&::after]:[content:''] [&::after]:h-[1px] [&::after]:grow [&::after]:shrink [&::after]:[flex-basis:0%] [&::after]:[background-image:initial] [&::after]:[background-color:rgb(220,_229,_239)] login-divider"
           >
             <span>Karyawan</span>
           </div>
           <button
             type="button"
-            class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [&&]:font-[600] [font-stretch:inherit] [&&]:text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#285d99] [&&]:flex [&&]:items-center [&&]:justify-center [&&]:gap-y-[10px] [&&]:gap-x-[10px] [&&]:w-[100%] [&&]:min-h-[44px] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:px-[12px] [&&]:py-[10px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[8px] [&:disabled]:[cursor:wait] [&:disabled]:opacity-[0.6] [&:focus-visible]:[outline-color:rgb(22,_115,_222)] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[3px] [&:hover]:[background-image:initial] [&:hover]:[background-color:rgb(230,_239,_250)] employee-entry"
+            class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [&&]:font-[600] [font-stretch:inherit] [&&]:text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#285d99] [&&]:flex [&&]:items-center [&&]:justify-center [&&]:gap-y-[10px] [&&]:gap-x-[10px] [&&]:w-[100%] [&&]:min-h-[44px] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:px-[12px] [&&]:py-[10px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[8px] [&:disabled]:[cursor:wait] [&:disabled]:opacity-[0.6] [&:focus-visible]:[outline-color:rgb(22,_115,_222)] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[3px] [&:hover]:[background-image:initial] [&:hover]:[background-color:rgb(230,_239,_250)] employee-entry"
             disabled={busy}
             onclick={() => go('employee')}
             >Masuk sebagai Karyawan<Icon name="arrow" size={16} /></button
@@ -488,13 +486,13 @@
         {/if}
       {:else if screen === 'employee'}
         <p
-          class="[&&]:mt-[17px] [&&]:mb-[25px] [&&]:leading-[1.65] [&&]:text-[14px] [&&]:text-[#475569] [&&]:mx-[0px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[12px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mb-[16px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mx-[0px] max-[700.01px]:[&&]:mt-[10px] max-[700.01px]:[&&]:mb-[16px] max-[700.01px]:[&&]:text-[13px] max-[700.01px]:[&&]:mx-[0px] [.flow-page_&]:mt-[12px] [.flow-page_&]:mb-[17px] [.flow-page_&]:mx-[0px] [.password-page_&]:mt-[8px] [.password-page_&]:mb-[12px] [.password-page_&]:mx-[0px] [.success-page_&]:mt-[10px] [.success-page_&]:mb-[14px] [.success-page_&]:mx-[0px] intro"
+          class="[&&]:mt-[17px] [&&]:mb-[25px] [&&]:leading-[1.9] [&&]:text-[12px] [&&]:text-[#7185a0] [&&]:mx-[0px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[12px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mb-[16px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mx-[0px] max-[700.01px]:[&&]:mt-[10px] max-[700.01px]:[&&]:mb-[16px] max-[700.01px]:[&&]:text-[11px] max-[700.01px]:[&&]:mx-[0px] [.flow-page_&]:mt-[12px] [.flow-page_&]:mb-[17px] [.flow-page_&]:mx-[0px] [.password-page_&]:mt-[8px] [.password-page_&]:mb-[12px] [.password-page_&]:mx-[0px] [.success-page_&]:mt-[10px] [.success-page_&]:mb-[14px] [.success-page_&]:mx-[0px] intro"
         >
           Gunakan akun Microsoft kerja Pertamina Foundation untuk mengakses ruang kerja karyawan.
         </p>
         <button
           type="button"
-          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [&&]:font-[600] [font-stretch:inherit] [&&]:text-[17px] [&&]:leading-[22px] [&&]:[font-family:'Segoe_UI',_Arial,_sans-serif] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#fff] [&&]:flex [&&]:items-center [&&]:justify-center [&&]:gap-y-[15px] [&&]:gap-x-[15px] [&&]:w-[100%] [&&]:min-h-[52px] [&&]:[background-image:initial] [&&]:[background-color:rgb(48,_48,_48)] [&&]:[box-shadow:0_2px_3px_#0000001a] [&&]:[transition-behavior:normal] [&&]:[transition-duration:0.15s] [&&]:[transition-timing-function:ease] [&&]:[transition-delay:0s] [&&]:[transition-property:background] [&&]:px-[18px] [&&]:py-[14px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(48,_48,_48)] [&&]:rounded-[14px] [&:disabled]:[cursor:wait] [&:disabled]:opacity-[0.6] [&:focus-visible]:[outline-color:rgb(22,_115,_222)] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[3px] [&:hover]:[background-image:initial] [&:hover]:[background-color:rgb(36,_36,_36)] microsoft-login"
+          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [&&]:font-[600] [font-stretch:inherit] [&&]:text-[16px] [&&]:leading-[22px] [&&]:[font-family:'Segoe_UI',_Arial,_sans-serif] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#fff] [&&]:flex [&&]:items-center [&&]:justify-center [&&]:gap-y-[15px] [&&]:gap-x-[15px] [&&]:w-[100%] [&&]:min-h-[52px] [&&]:[background-image:initial] [&&]:[background-color:rgb(48,_48,_48)] [&&]:[box-shadow:0_2px_3px_#0000001a] [&&]:[transition-behavior:normal] [&&]:[transition-duration:0.15s] [&&]:[transition-timing-function:ease] [&&]:[transition-delay:0s] [&&]:[transition-property:background] [&&]:px-[18px] [&&]:py-[14px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(48,_48,_48)] [&&]:rounded-[14px] [&:disabled]:[cursor:wait] [&:disabled]:opacity-[0.6] [&:focus-visible]:[outline-color:rgb(22,_115,_222)] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[3px] [&:hover]:[background-image:initial] [&:hover]:[background-color:rgb(36,_36,_36)] microsoft-login"
           disabled={busy}
           onclick={() => (microsoftNotice = true)}
         >
@@ -516,34 +514,34 @@
           <span>Masuk dengan Microsoft</span>
         </button>
         {#if microsoftNotice}<p
-            class="[&&]:mt-[12px] [&&]:mb-[0px] [&&]:leading-[1.55] [&&]:text-[14px] [&&]:text-[#607795] [&&]:mx-[0px] microsoft-notice"
+            class="[&&]:mt-[12px] [&&]:mb-[0px] [&&]:leading-[1.7] [&&]:text-[12px] [&&]:text-[#607795] [&&]:mx-[0px] microsoft-notice"
             role="status"
           >
             Login Microsoft belum diaktifkan. Hubungi admin DEB untuk informasi akses karyawan.
           </p>{/if}
       {:else if screen === 'sent'}<p
-          class="[&&]:mt-[17px] [&&]:mb-[25px] [&&]:leading-[1.65] [&&]:text-[14px] [&&]:text-[#475569] [&&]:mx-[0px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[12px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mb-[16px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mx-[0px] max-[700.01px]:[&&]:mt-[10px] max-[700.01px]:[&&]:mb-[16px] max-[700.01px]:[&&]:text-[13px] max-[700.01px]:[&&]:mx-[0px] [.flow-page_&]:mt-[12px] [.flow-page_&]:mb-[17px] [.flow-page_&]:mx-[0px] [.password-page_&]:mt-[8px] [.password-page_&]:mb-[12px] [.password-page_&]:mx-[0px] [.success-page_&]:mt-[10px] [.success-page_&]:mb-[14px] [.success-page_&]:mx-[0px] intro"
+          class="[&&]:mt-[17px] [&&]:mb-[25px] [&&]:leading-[1.9] [&&]:text-[12px] [&&]:text-[#7185a0] [&&]:mx-[0px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[12px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mb-[16px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mx-[0px] max-[700.01px]:[&&]:mt-[10px] max-[700.01px]:[&&]:mb-[16px] max-[700.01px]:[&&]:text-[11px] max-[700.01px]:[&&]:mx-[0px] [.flow-page_&]:mt-[12px] [.flow-page_&]:mb-[17px] [.flow-page_&]:mx-[0px] [.password-page_&]:mt-[8px] [.password-page_&]:mb-[12px] [.password-page_&]:mx-[0px] [.success-page_&]:mt-[10px] [.success-page_&]:mb-[14px] [.success-page_&]:mx-[0px] intro"
         >
           Jika email terdaftar dan memenuhi syarat, tautan akan dikirim ke <strong
-            class="[&&]:font-[600] [&&]:text-[#24466f] [&&]:wrap-anywhere email-destination"
+            class="[&&]:font-[650] [&&]:text-[#24466f] [&&]:wrap-anywhere email-destination"
             >{email.trim().toLowerCase()}</strong
           >. Periksa inbox dan folder spam pada alamat tersebut.
         </p>
         {#if error}<p
-            class="[&&]:leading-[1.55] [&&]:text-[13px] [&&]:text-[#a33b31] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_240,_238)] [&&]:p-[12px] m-[0px] [&&]:rounded-[7px] error"
+            class="[&&]:leading-[1.7] [&&]:text-[11px] [&&]:text-[#a33b31] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_240,_238)] [&&]:p-[12px] m-[0px] [&&]:rounded-[7px] error"
             role="alert"
           >
             {error}
           </p>{/if}
         {#if resent}<p
-            class="[&&]:mt-[17px] [&&]:mb-[25px] [&&]:leading-[1.65] [&&]:text-[14px] [&&]:text-[#475569] [&&]:mx-[0px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[12px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mb-[16px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mx-[0px] max-[700.01px]:[&&]:mt-[10px] max-[700.01px]:[&&]:mb-[16px] max-[700.01px]:[&&]:text-[13px] max-[700.01px]:[&&]:mx-[0px] [.flow-page_&]:mt-[12px] [.flow-page_&]:mb-[17px] [.flow-page_&]:mx-[0px] [.password-page_&]:mt-[8px] [.password-page_&]:mb-[12px] [.password-page_&]:mx-[0px] [.success-page_&]:mt-[10px] [.success-page_&]:mb-[14px] [.success-page_&]:mx-[0px] intro"
+            class="[&&]:mt-[17px] [&&]:mb-[25px] [&&]:leading-[1.9] [&&]:text-[12px] [&&]:text-[#7185a0] [&&]:mx-[0px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[12px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mb-[16px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mx-[0px] max-[700.01px]:[&&]:mt-[10px] max-[700.01px]:[&&]:mb-[16px] max-[700.01px]:[&&]:text-[11px] max-[700.01px]:[&&]:mx-[0px] [.flow-page_&]:mt-[12px] [.flow-page_&]:mb-[17px] [.flow-page_&]:mx-[0px] [.password-page_&]:mt-[8px] [.password-page_&]:mb-[12px] [.password-page_&]:mx-[0px] [.success-page_&]:mt-[10px] [.success-page_&]:mb-[14px] [.success-page_&]:mx-[0px] intro"
             role="status"
           >
             Permintaan kirim ulang diterima. Jika memenuhi syarat, gunakan tautan dari email
             terbaru.
           </p>{/if}
         <button
-          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [&&]:font-[600] [font-stretch:inherit] [&&]:text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[white] [&&]:flex [&&]:items-center [&&]:justify-center [&&]:gap-y-[13px] [&&]:gap-x-[13px] [&&]:w-[100%] [&&]:min-h-[48px] [&&]:[background-image:initial] [&&]:[background-color:rgb(22,_104,_212)] [&&]:mt-[17px] [&&]:px-[18px] [&&]:py-[13px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[8px] [&:disabled]:[cursor:wait] [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[10px] max-[700.01px]:[&&]:mt-[12px] [.password-page_&]:mt-[6px] [.password-page_&:disabled]:cursor-not-allowed [.success-page_&]:mt-[12px] primary"
+          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [&&]:font-[650] [font-stretch:inherit] [&&]:text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[white] [&&]:flex [&&]:items-center [&&]:justify-center [&&]:gap-y-[13px] [&&]:gap-x-[13px] [&&]:w-[100%] [&&]:min-h-[48px] [&&]:[background-image:initial] [&&]:[background-color:rgb(22,_104,_212)] [&&]:mt-[17px] [&&]:px-[18px] [&&]:py-[13px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[8px] [&:disabled]:[cursor:wait] [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[10px] max-[700.01px]:[&&]:mt-[12px] [.password-page_&]:mt-[6px] [.password-page_&:disabled]:cursor-not-allowed [.success-page_&]:mt-[12px] primary"
           disabled={busy || resendSeconds > 0}
           onclick={() => submit()}
           >{busy
@@ -553,35 +551,35 @@
               : 'Kirim ulang email'}</button
         >
         <button
-          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [&&]:font-[600] [font-stretch:inherit] [&&]:text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[white] [&&]:flex [&&]:items-center [&&]:justify-center [&&]:gap-y-[13px] [&&]:gap-x-[13px] [&&]:w-[100%] [&&]:min-h-[48px] [&&]:[background-image:initial] [&&]:[background-color:rgb(22,_104,_212)] [&&]:mt-[17px] [&&]:px-[18px] [&&]:py-[13px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[8px] [&:disabled]:[cursor:wait] [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[10px] max-[700.01px]:[&&]:mt-[12px] [.password-page_&]:mt-[6px] [.password-page_&:disabled]:cursor-not-allowed [.success-page_&]:mt-[12px] primary"
+          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [&&]:font-[650] [font-stretch:inherit] [&&]:text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[white] [&&]:flex [&&]:items-center [&&]:justify-center [&&]:gap-y-[13px] [&&]:gap-x-[13px] [&&]:w-[100%] [&&]:min-h-[48px] [&&]:[background-image:initial] [&&]:[background-color:rgb(22,_104,_212)] [&&]:mt-[17px] [&&]:px-[18px] [&&]:py-[13px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[8px] [&:disabled]:[cursor:wait] [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[10px] max-[700.01px]:[&&]:mt-[12px] [.password-page_&]:mt-[6px] [.password-page_&:disabled]:cursor-not-allowed [.success-page_&]:mt-[12px] primary"
           disabled={busy}
           onclick={() => go('login')}>Kembali ke masuk</button
         >
       {:else if screen === 'success'}<p
-          class="[&&]:mt-[17px] [&&]:mb-[25px] [&&]:leading-[1.65] [&&]:text-[14px] [&&]:text-[#475569] [&&]:mx-[0px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[12px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mb-[16px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mx-[0px] max-[700.01px]:[&&]:mt-[10px] max-[700.01px]:[&&]:mb-[16px] max-[700.01px]:[&&]:text-[13px] max-[700.01px]:[&&]:mx-[0px] [.flow-page_&]:mt-[12px] [.flow-page_&]:mb-[17px] [.flow-page_&]:mx-[0px] [.password-page_&]:mt-[8px] [.password-page_&]:mb-[12px] [.password-page_&]:mx-[0px] [.success-page_&]:mt-[10px] [.success-page_&]:mb-[14px] [.success-page_&]:mx-[0px] intro"
+          class="[&&]:mt-[17px] [&&]:mb-[25px] [&&]:leading-[1.9] [&&]:text-[12px] [&&]:text-[#7185a0] [&&]:mx-[0px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[12px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mb-[16px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mx-[0px] max-[700.01px]:[&&]:mt-[10px] max-[700.01px]:[&&]:mb-[16px] max-[700.01px]:[&&]:text-[11px] max-[700.01px]:[&&]:mx-[0px] [.flow-page_&]:mt-[12px] [.flow-page_&]:mb-[17px] [.flow-page_&]:mx-[0px] [.password-page_&]:mt-[8px] [.password-page_&]:mb-[12px] [.password-page_&]:mx-[0px] [.success-page_&]:mt-[10px] [.success-page_&]:mb-[14px] [.success-page_&]:mx-[0px] intro"
         >
           Kenali DEB, lalu masuk dengan email dan password Anda.
         </p>
         <WelcomeGuide /><button
-          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [&&]:font-[600] [font-stretch:inherit] [&&]:text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[white] [&&]:flex [&&]:items-center [&&]:justify-center [&&]:gap-y-[13px] [&&]:gap-x-[13px] [&&]:w-[100%] [&&]:min-h-[48px] [&&]:[background-image:initial] [&&]:[background-color:rgb(22,_104,_212)] [&&]:mt-[17px] [&&]:px-[18px] [&&]:py-[13px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[8px] [&:disabled]:[cursor:wait] [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[10px] max-[700.01px]:[&&]:mt-[12px] [.password-page_&]:mt-[6px] [.password-page_&:disabled]:cursor-not-allowed [.success-page_&]:mt-[12px] primary"
+          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [&&]:font-[650] [font-stretch:inherit] [&&]:text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[white] [&&]:flex [&&]:items-center [&&]:justify-center [&&]:gap-y-[13px] [&&]:gap-x-[13px] [&&]:w-[100%] [&&]:min-h-[48px] [&&]:[background-image:initial] [&&]:[background-color:rgb(22,_104,_212)] [&&]:mt-[17px] [&&]:px-[18px] [&&]:py-[13px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[8px] [&:disabled]:[cursor:wait] [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[10px] max-[700.01px]:[&&]:mt-[12px] [.password-page_&]:mt-[6px] [.password-page_&:disabled]:cursor-not-allowed [.success-page_&]:mt-[12px] primary"
           onclick={() => go('login')}>Lanjut ke masuk</button
         >
       {:else}<p
-          class="[&&]:mt-[17px] [&&]:mb-[25px] [&&]:leading-[1.65] [&&]:text-[14px] [&&]:text-[#475569] [&&]:mx-[0px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[12px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mb-[16px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mx-[0px] max-[700.01px]:[&&]:mt-[10px] max-[700.01px]:[&&]:mb-[16px] max-[700.01px]:[&&]:text-[13px] max-[700.01px]:[&&]:mx-[0px] [.flow-page_&]:mt-[12px] [.flow-page_&]:mb-[17px] [.flow-page_&]:mx-[0px] [.password-page_&]:mt-[8px] [.password-page_&]:mb-[12px] [.password-page_&]:mx-[0px] [.success-page_&]:mt-[10px] [.success-page_&]:mb-[14px] [.success-page_&]:mx-[0px] intro"
+          class="[&&]:mt-[17px] [&&]:mb-[25px] [&&]:leading-[1.9] [&&]:text-[12px] [&&]:text-[#7185a0] [&&]:mx-[0px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[12px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mb-[16px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mx-[0px] max-[700.01px]:[&&]:mt-[10px] max-[700.01px]:[&&]:mb-[16px] max-[700.01px]:[&&]:text-[11px] max-[700.01px]:[&&]:mx-[0px] [.flow-page_&]:mt-[12px] [.flow-page_&]:mb-[17px] [.flow-page_&]:mx-[0px] [.password-page_&]:mt-[8px] [.password-page_&]:mb-[12px] [.password-page_&]:mx-[0px] [.success-page_&]:mt-[10px] [.success-page_&]:mb-[14px] [.success-page_&]:mx-[0px] intro"
         >
           Tautan mungkin kedaluwarsa, sudah digunakan, atau telah diganti. Minta tautan baru sesuai
           kebutuhan akun Anda.
         </p>
         <button
-          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [&&]:font-[600] [font-stretch:inherit] [&&]:text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[white] [&&]:flex [&&]:items-center [&&]:justify-center [&&]:gap-y-[13px] [&&]:gap-x-[13px] [&&]:w-[100%] [&&]:min-h-[48px] [&&]:[background-image:initial] [&&]:[background-color:rgb(22,_104,_212)] [&&]:mt-[17px] [&&]:px-[18px] [&&]:py-[13px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[8px] [&:disabled]:[cursor:wait] [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[10px] max-[700.01px]:[&&]:mt-[12px] [.password-page_&]:mt-[6px] [.password-page_&:disabled]:cursor-not-allowed [.success-page_&]:mt-[12px] primary"
+          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [&&]:font-[650] [font-stretch:inherit] [&&]:text-[12px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[white] [&&]:flex [&&]:items-center [&&]:justify-center [&&]:gap-y-[13px] [&&]:gap-x-[13px] [&&]:w-[100%] [&&]:min-h-[48px] [&&]:[background-image:initial] [&&]:[background-color:rgb(22,_104,_212)] [&&]:mt-[17px] [&&]:px-[18px] [&&]:py-[13px] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&&]:rounded-[8px] [&:disabled]:[cursor:wait] [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [@media(min-width:_701px)_and_(max-height:_800px)]:[&&]:mt-[10px] max-[700.01px]:[&&]:mt-[12px] [.password-page_&]:mt-[6px] [.password-page_&:disabled]:cursor-not-allowed [.success-page_&]:mt-[12px] primary"
           onclick={() => go('activate')}>Minta tautan aktivasi</button
         ><button
-          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[13px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#276bb7] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&:disabled]:cursor-pointer [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] inline-link"
+          class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[11px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#276bb7] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&:disabled]:cursor-pointer [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] inline-link"
           onclick={() => go('forgot')}>Pemulihan password</button
         >{/if}
     </div>
     <footer
-      class="[&&]:text-[12px] [&&]:text-[#64748b] [&&]:text-center [&&]:grid [&&]:[justify-items:center] [&&]:gap-y-[6px] [&&]:gap-x-[6px] max-[700.01px]:[&&]:pt-[16px] max-[700.01px]:[.flow-page_&]:pt-[10px] max-[700.01px]:[.password-page_&]:pt-[10px] stage-footer"
+      class="[&&]:text-[10px] [&&]:text-[#8092aa] [&&]:text-center [&&]:grid [&&]:[justify-items:center] [&&]:gap-y-[6px] [&&]:gap-x-[6px] max-[700.01px]:[&&]:pt-[16px] max-[700.01px]:[.flow-page_&]:pt-[10px] max-[700.01px]:[.password-page_&]:pt-[10px] stage-footer"
     >
       <img
         class="[&&&]:hidden max-[700.01px]:[&&&]:block max-[700.01px]:[&&&]:w-[116px] max-[700.01px]:[&&&]:h-[auto] pf-color-logo"
@@ -589,7 +587,7 @@
         alt="Pertamina Foundation"
         width="140"
         height="37"
-      /><span class="max-[700.01px]:[&&]:text-[11px]">Digitalisasi DEB</span>
+      /><span class="max-[700.01px]:[&&]:text-[9px]">Digitalisasi DEB</span>
     </footer>
   </section>
 </main>

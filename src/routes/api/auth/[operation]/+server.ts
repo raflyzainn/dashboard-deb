@@ -1,5 +1,4 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { dev } from '$app/environment';
 import { client, SESSION_COOKIE } from '$lib/server/deb/auth';
 import { mapSession } from '$lib/server/deb/mappers';
 import { serverClient } from '$lib/server/deb/server-client';
@@ -8,7 +7,6 @@ import { drainEmails, inspectEmailToken } from '$lib/server/deb/mail';
 import { security } from '$lib/server/deb/security';
 import { PreviewError } from '$lib/server/deb/preview-error';
 import { readJsonBody } from '$lib/server/deb/request-body';
-import { writeAudit } from '$lib/server/deb/audit';
 export const GET: RequestHandler = event => event.params.operation === 'me'
   ? json({ session: event.locals.pb ? mapSession(event.locals.pb.authStore.record!) : null })
   : json({ message: 'Tidak ditemukan.' }, { status: 404 });
@@ -16,7 +14,6 @@ export const POST: RequestHandler = async event => {
   const op = event.params.operation || '';
   try {
     if (op === 'logout') {
-      event.cookies.delete('deb_local_preview', { path: '/' });
       if (event.locals.pb) {
         const backend = await serverClient();
         await revokeSessions(backend.pb, event.locals.pb.authStore.record!);
@@ -41,15 +38,11 @@ export const POST: RequestHandler = async event => {
     }
     if (op === 'login') {
       if (typeof body.email !== 'string' || typeof body.password !== 'string' || body.password.length > 128) return json({ message: 'Email atau password tidak sesuai.' }, { status: 400 });
-      // Browser QA on a development machine signs in many times; the limit stays in force everywhere else.
-      if (!(dev && ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(ip))) await rateLimit(backend.pb, backend.settings, [{ key: 'login-ip:' + ip, max: 60, duration: 900000 }, { key: 'login:' + ip + ':' + body.email.trim().toLowerCase(), max: 10, duration: 900000 }]);
+      await rateLimit(backend.pb, backend.settings, [{ key: 'login-ip:' + ip, max: 60, duration: 900000 }, { key: 'login:' + ip + ':' + body.email.trim().toLowerCase(), max: 10, duration: 900000 }]);
       const pb = client();
       const result = await pb.collection('users').authWithPassword(body.email.trim().toLowerCase(), body.password);
       if (!result.record.active || !result.record.verified || result.record.simulated) return json({ message: 'Email atau password tidak sesuai.' }, { status: 401 });
-      await backend.pb.collection('users').update(result.record.id, { lastLoginAt: new Date().toISOString() }, { requestKey: null });
-      if (result.record.role === 'campus') await writeAudit(backend.pb, { actor: result.record, action: 'masuk ke aplikasi', context: `kampus:${result.record.campus}/akses`, collection: 'users', record: result.record.id, campus: result.record.campus });
-      const cookie = security.createJWT({ kind: 'session', method: 'password', token: result.token, version: result.record.sessionVersion || '' }, backend.settings.DEB_INVITATION_KEY, 28800);
-      event.cookies.delete('deb_local_preview', { path: '/' });
+      const cookie = security.createJWT({ kind: 'session', token: result.token, version: result.record.sessionVersion || '' }, backend.settings.DEB_INVITATION_KEY, 28800);
       event.cookies.set(SESSION_COOKIE, cookie, { path: '/', httpOnly: true, sameSite: 'lax', secure: event.url.protocol === 'https:', maxAge: 28800 });
       return json({ session: mapSession(result.record) });
     }

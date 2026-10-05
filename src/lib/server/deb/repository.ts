@@ -1,4 +1,3 @@
-import { assertNoRedirect } from './pb-fetch';
 import { activePeriodFilter } from '../../periods';
 import type PocketBase from 'pocketbase';
 import type { Snapshot } from '../../types';
@@ -30,7 +29,7 @@ export function createDebRepository(pb: PocketBase) {
       await session();
       const record = await pb.collection('proposal_versions').getOne(id);
       const token = await pb.files.getToken();
-      const response = assertNoRedirect(await fetch(pb.files.getURL(record, record.file, { token }), { redirect: 'manual', signal: AbortSignal.timeout(15000) }));
+      const response = await fetch(pb.files.getURL(record, record.file, { token }), { redirect: 'error', signal: AbortSignal.timeout(15000) });
       if (!response.ok) throw new Error('Proposal file access failed');
       return response.blob();
     }

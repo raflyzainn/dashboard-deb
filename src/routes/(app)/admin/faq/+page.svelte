@@ -2,5 +2,5 @@
   import Faq from '$lib/components/shared/faq/Faq.svelte';
 </script>
 
-<svelte:head><title>Pusat bantuan · Desa Energi Berdikari</title></svelte:head>
+<svelte:head><title>Pusat bantuan · Digitalisasi DEB</title></svelte:head>
 <Faq />
