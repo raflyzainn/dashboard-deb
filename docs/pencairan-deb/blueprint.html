@@ -1,0 +1,187 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pencairan DEB Blueprint</title>
+<style>
+:root{--bg:#f4f7fb;--surface:#fff;--surface-2:#eef3fa;--line:#dbe4f0;--line-2:#c6d3e4;--ink:#0b2545;--text:#23364f;--muted:#52647d;--faint:#7d8ca3;--accent:#0066b2;--accent-ink:#fff;--accent-soft:#e3f0fb;--accent-deep:#015a9a;--ok:#15803d;--ok-soft:#dcfce7;--warn:#a16207;--warn-soft:#fef3c7;--bad:#b91c1c;--bad-soft:#fee2e2;--none:#94a3b8;--none-soft:#eef2f7;--shadow:0 10px 30px rgba(11,37,69,.06);--sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;--mono:ui-monospace,"Cascadia Mono",Consolas,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a1626;--surface:#111f33;--surface-2:#16273f;--line:#223650;--line-2:#2f4766;--ink:#eaf2fc;--text:#cfdcec;--muted:#9db0c8;--faint:#7288a3;--accent:#4aa8ea;--accent-ink:#06121f;--accent-soft:#12304b;--accent-deep:#7cc0f2;--ok:#4ade80;--ok-soft:#0f3320;--warn:#fbbf24;--warn-soft:#3a2c08;--bad:#f87171;--bad-soft:#3b1414;--none:#64748b;--none-soft:#182437;--shadow:0 10px 30px rgba(0,0,0,.35)}}
+:root[data-theme="dark"]{--bg:#0a1626;--surface:#111f33;--surface-2:#16273f;--line:#223650;--line-2:#2f4766;--ink:#eaf2fc;--text:#cfdcec;--muted:#9db0c8;--faint:#7288a3;--accent:#4aa8ea;--accent-ink:#06121f;--accent-soft:#12304b;--accent-deep:#7cc0f2;--ok:#4ade80;--ok-soft:#0f3320;--warn:#fbbf24;--warn-soft:#3a2c08;--bad:#f87171;--bad-soft:#3b1414;--none:#64748b;--none-soft:#182437;--shadow:0 10px 30px rgba(0,0,0,.35)}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.6;padding:0 20px 64px;margin:0}
+.wrap{max-width:1080px;margin-inline:auto}
+h1,h2,h3,h4{color:var(--ink);text-wrap:balance;margin:0;line-height:1.25}
+h1{font-size:clamp(28px,4.4vw,38px);font-weight:750;letter-spacing:-.01em} h2{font-size:23px;font-weight:700} h3{font-size:16px;font-weight:700} h4{font-size:14px;font-weight:700}
+p{margin:0;max-width:72ch}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.muted{color:var(--muted)} .small{font-size:13px} .num{font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:.93em}
+header.top{padding:40px 0 20px;display:grid;gap:14px} .lede{font-size:17px}
+nav.toc{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-block:1px solid var(--line);margin:0 -20px;padding:8px 20px}
+nav.toc .wrap{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+nav.toc a{flex:none;text-decoration:none;color:var(--muted);font-size:13px;font-weight:600;padding:6px 12px;border-radius:8px} nav.toc a:hover{background:var(--accent-soft);color:var(--accent-deep)}
+section{padding:36px 0 8px;display:grid;gap:16px} .sec-head{display:grid;gap:8px}
+.grid{display:grid;gap:14px} .g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))} .g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.wrong{border-left:3px solid var(--bad);padding:10px 14px;background:var(--surface);border-radius:0 12px 12px 0;font-size:14px;display:grid;gap:4px}
+.wrong b{color:var(--bad)} .wrong span{color:var(--text)}
+.menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.menu .card{display:grid;gap:6px} .menu .card b{color:var(--ink);font-size:15px} .menu .card span{font-size:13px;color:var(--muted)}
+.gate{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:start;padding:14px 0;border-bottom:1px solid var(--line)} .gate:last-child{border-bottom:0}
+.gate .n{width:36px;height:36px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:750;display:grid;place-items:center;font-size:14px}
+.gate h4{font-size:15px;margin-bottom:2px} .gate p{font-size:14px} .gate .rule{font-size:13px;color:var(--accent-deep);font-weight:600;margin-top:4px} .gate .rev{font-size:13px;color:var(--warn);margin-top:2px}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:650;white-space:nowrap}
+.p-ok{background:var(--ok-soft);color:var(--ok)} .p-warn{background:var(--warn-soft);color:var(--warn)} .p-bad{background:var(--bad-soft);color:var(--bad)} .p-info{background:var(--accent-soft);color:var(--accent-deep)} .p-none{background:var(--none-soft);color:var(--muted)}
+.mock{border:1px solid var(--line-2);border-radius:16px;background:var(--surface);overflow:hidden;box-shadow:var(--shadow)}
+.mock-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--surface-2);font-size:12.5px;color:var(--muted)}
+.dots{display:flex;gap:5px}.dots i{width:9px;height:9px;border-radius:50%;background:var(--line-2);display:block}
+.mock-body{padding:20px;display:grid;gap:16px}
+.m-title{font-size:20px;font-weight:700;color:var(--ink)} .m-sub{font-size:13.5px;color:var(--muted)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap} .tab{border:1px solid var(--line);background:var(--surface);color:var(--muted);font:inherit;font-size:13px;font-weight:650;padding:8px 14px;border-radius:10px;cursor:pointer} .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.stat{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:2px} .stat b{font-size:22px;color:var(--ink);font-variant-numeric:tabular-nums} .stat span{font-size:12.5px;color:var(--muted)}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:680px} th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;font-weight:700;background:var(--surface-2)} th,td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle} td.r,th.r{text-align:right}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+.prog{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;min-width:120px} .prog i{height:8px;border-radius:4px;display:block;background:var(--none-soft);outline:1px solid var(--line-2);outline-offset:-1px} .prog i.d{background:var(--ok);outline:none} .prog i.c{background:var(--accent);outline:none} .prog i.w{background:var(--warn);outline:none}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;padding:9px 12px;border-radius:10px}
+.check.bad{background:var(--bad-soft);color:var(--bad)} .check.ok{background:var(--ok-soft);color:var(--ok)} .check.info{background:var(--accent-soft);color:var(--accent-deep)} .check.warn{background:var(--warn-soft);color:var(--warn)}
+.btns{display:flex;flex-wrap:wrap;gap:8px} .btn{border-radius:10px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink);font:inherit;font-size:13px;font-weight:650;padding:8px 13px} .btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)} .btn.ok{background:var(--ok);color:#fff;border-color:var(--ok)} .btn.off{opacity:.5}
+.steps{display:grid;gap:8px} .step{border:1px solid var(--line);border-radius:12px;background:var(--surface)} .step .hd{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:default}
+.step .hd .n{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:750;flex:none;background:var(--none-soft);color:var(--muted)} .step.done .hd .n{background:var(--ok);color:#fff} .step.now .hd .n{background:var(--accent);color:var(--accent-ink)}
+.step.now{border-color:color-mix(in srgb,var(--accent) 40%,transparent);box-shadow:0 8px 24px rgba(11,37,69,.06)} .step.locked{opacity:.55}
+.step .hd b{color:var(--ink);font-size:14px;display:block} .step .hd span{font-size:12.5px;color:var(--muted);display:block}
+.step .bd{border-top:1px solid var(--line);padding:14px;display:grid;gap:10px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:0} .kv div{display:grid;gap:2px} .kv dt{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--faint)} .kv dd{margin:0;font-size:14px;color:var(--ink)}
+.field{border:1px solid var(--line-2);border-radius:9px;padding:7px 10px;font-size:13.5px;color:var(--ink);background:var(--surface)} .field.ro{background:var(--surface-2);color:var(--muted)}
+.docrow{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:13.5px} .docrow small{display:block;color:var(--muted);font-size:12px}
+.paper{background:#fff;color:#1f2937;border-radius:4px;box-shadow:0 2px 10px rgba(0,0,0,.18);padding:14px;font-size:10.5px;display:grid;gap:5px;min-height:120px} .paper .ln{height:6px;border-radius:3px;background:#d9dee6} .paper .hl{background:#fde047;padding:0 3px;border-radius:2px;font-weight:700}
+.qr{width:64px;height:64px;background:repeating-conic-gradient(#1f2937 0 25%,#fff 0 50%) 0 0/16px 16px;border:3px solid #fff;outline:1px solid #cbd5e1;flex:none}
+.two{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:14px;align-items:start} @media (max-width:760px){.two{grid-template-columns:1fr}}
+ul.clean{margin:0;padding-left:18px;display:grid;gap:6px;max-width:78ch} ul.clean li{font-size:14px}
+.new{font-size:10.5px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;background:var(--accent);color:var(--accent-ink);border-radius:5px;padding:1px 6px;vertical-align:middle;margin-left:6px}
+footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);display:grid;gap:6px}
+</style><style>
+.rules td:nth-child(2),.rules td:nth-child(3){font-family:var(--mono);font-size:11.5px;white-space:normal;word-break:break-word}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:12px} @media (max-width:720px){.split{grid-template-columns:1fr}}
+.box{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:14px 16px} .box h3{margin-bottom:6px}
+.box ul{margin:0;padding-left:18px;display:grid;gap:4px;font-size:13.5px}
+.flow{display:grid;gap:8px} .flow div{border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:13.5px;background:var(--surface)} .flow b{color:var(--ink)}
+.note{font-size:13px;color:var(--muted);max-width:78ch}
+.rules table{min-width:820px}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <span class="eyebrow">DEB Sobat Bumi 2025/2026 · Version 12 · row level security, the PF Series way</span>
+  <h1>The browser reads PocketBase directly, PocketBase decides row by row</h1>
+  <p class="lede">Your choice: option 2. Every read that the screens need goes from the browser straight to PocketBase with the person's own token, and PocketBase API rules decide which rows that person may see. The server keeps only what rules cannot do: money rules, uploads and private files, decisions with audit and notification, generated letters with QR, the lampiran, payment, sign in. This page is the rule table and the endpoint split to confirm before anything is changed.</p>
+</header>
+</div>
+<nav class="toc"><div class="wrap"><a href="#model">Model</a><a href="#rules">Rule table</a><a href="#split">Browser vs server</a><a href="#token">Token flow</a><a href="#risk">Risks</a><a href="#plan">Plan</a><a href="#tanya">Questions</a></div></nav>
+<div class="wrap">
+
+<section id="model">
+  <div class="sec-head"><span class="eyebrow">1 · Model</span><h2>Two walls instead of one</h2></div>
+  <div class="split">
+    <div class="box"><h3>Today</h3><ul><li>All collections closed (null rules).</li><li>Browser talks only to our server; the server checks role and campus in code, then reads and writes with one superuser token.</li><li>One wall: a bug in an endpoint check can expose another campus.</li></ul></div>
+    <div class="box"><h3>Version 12</h3><ul><li>Every collection gets list and view rules by role and campus (table below). Create, update and delete stay closed to the browser.</li><li>The browser reads with the person's PocketBase token (PF Series `createUserPB` on the client side); PocketBase enforces the rules on every row.</li><li>The server keeps the writes that carry business rules, and still uses the superuser token for those. Two walls: code plus rules.</li><li>Realtime becomes available: a reviewer sees another reviewer's decision without reloading.</li></ul></div>
+  </div>
+</section>
+
+<section id="rules">
+  <div class="sec-head"><span class="eyebrow">2 · Rule table</span><h2>List and view rules per collection</h2><p>Role names as stored on users: <span class="num">admin</span>, <span class="num">super_admin</span>, <span class="num">campus</span> (with users.campus set), <span class="num">baru</span> (nothing). "Staff" below means <span class="num">@request.auth.role = "admin" || @request.auth.role = "super_admin"</span>. Create, update and delete rules stay null everywhere: writes go through the server.</p></div>
+  <div class="tablewrap rules"><table>
+    <thead><tr><th>Collection</th><th>Staff may read</th><th>Campus account may read</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>campuses</td><td>all rows</td><td>id = @request.auth.campus</td><td>Profil DEB of its own campus only.</td></tr>
+      <tr><td>sk_awards</td><td>all rows</td><td>campus = @request.auth.campus</td><td>Nilai SK, page and line of Lampiran I.</td></tr>
+      <tr><td>program_settings</td><td>all rows</td><td>all rows</td><td>No secrets: signatory names of PF, dates, labels.</td></tr>
+      <tr><td>disbursements</td><td>all rows</td><td>campus = @request.auth.campus</td><td>Nominal, payment fields, properties of the letters.</td></tr>
+      <tr><td>documents</td><td>all rows</td><td>disbursement.campus = @request.auth.campus</td><td>Status per item, receipt flags.</td></tr>
+      <tr><td>document_versions</td><td>all rows</td><td>document.disbursement.campus = @request.auth.campus</td><td>Typed fields include the account number; the campus sees its own. Files are not in the record, only the storage key, and the key alone opens nothing.</td></tr>
+      <tr><td>reviews</td><td>all rows</td><td>version.document.disbursement.campus = @request.auth.campus && (decision = "perlu_revisi" || decision = "sesuai")</td><td>The campus never sees perlu_konfirmasi or internal notes.</td></tr>
+      <tr><td>bank_checks</td><td>all rows</td><td>disbursement.campus = @request.auth.campus</td><td>Its own account, the bank result and the name seen.</td></tr>
+      <tr><td>pks_templates</td><td>all rows</td><td>campus = @request.auth.campus</td><td></td></tr>
+      <tr><td>rab_versions</td><td>all rows</td><td>campus = @request.auth.campus</td><td></td></tr>
+      <tr><td>rab_lines</td><td>all rows</td><td>version.campus = @request.auth.campus</td><td>The RAB table on the item screen reads these directly.</td></tr>
+      <tr><td>attachments</td><td>all rows</td><td>disbursement.campus = @request.auth.campus</td><td>Metadata only; the PDF streams through the server.</td></tr>
+      <tr><td>audit</td><td>all rows</td><td>none</td><td>Riwayat is for staff.</td></tr>
+      <tr><td>lpj_entries</td><td>all rows</td><td>disbursement.campus = @request.auth.campus</td><td></td></tr>
+      <tr><td>verifications</td><td>all rows</td><td>campus = @request.auth.campus</td><td>The public page keeps its server endpoint: no rule opens the whole list to anonymous visitors.</td></tr>
+      <tr><td>notifications</td><td>recipientUser = @request.auth.id</td><td>recipientUser = @request.auth.id</td><td>Own notifications only, for everyone.</td></tr>
+      <tr><td>users</td><td>all rows</td><td>id = @request.auth.id</td><td>Pengguna page for staff; a campus sees itself.</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">The existing collections of the older modules (proposals, indicators, forum, faq) keep the rules they have; they already accept the super_admin role after provisioning.</p>
+</section>
+
+<section id="split">
+  <div class="sec-head"><span class="eyebrow">3 · Browser versus server</span><h2>What moves, what stays</h2></div>
+  <div class="split">
+    <div class="box"><h3>Browser reads PocketBase directly</h3><ul>
+      <li><b>Dashboard and Tahap 1 grid:</b> documents, current versions, bank checks, attachments, approved RAB versions of all funded campuses; the assessment and the automatic checks are computed in the browser with the same pure functions (they move from server code to the shared library).</li>
+      <li><b>Checklist screen:</b> the campus, its SK award, disbursement, documents with versions, reviews, bank check, RAB version, attachments count; the item panel shows the same data.</li>
+      <li><b>RAB table:</b> rab_versions and rab_lines.</li>
+      <li><b>Riwayat sheet:</b> audit rows by context (staff).</li>
+      <li><b>Notifications, Pengguna list, Tahap 2 list, campus view.</b></li>
+      <li><b>Realtime:</b> subscribe to documents and reviews of the open campus; the list on the left updates when a colleague decides.</li>
+    </ul></div>
+    <div class="box"><h3>Server endpoints that stay (superuser token)</h3><ul>
+      <li><b>Sign in:</b> password login, Microsoft callback, session cookie, logout, and now also handing the PocketBase token to the browser.</li>
+      <li><b>Uploads and files:</b> new versions to R2, streaming a version, the SK scan, the bank check evidence, lampiran PDFs.</li>
+      <li><b>Decisions:</b> Sesuai, Perlu revisi, Tanpa surat kuasa, SK confirmation, bank result, RAB keputusan: they write reviews, audit rows and notifications together.</li>
+      <li><b>Typed fields</b> (validation, masking of account numbers in audit), disbursement properties, receipt flags.</li>
+      <li><b>RAB import and approval, generated letters with QR, lampiran build, payment, users admin, program settings.</b></li>
+      <li><b>Public:</b> verification by code, health.</li>
+    </ul></div>
+  </div>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Server GET today</th><th>Version 12</th></tr></thead>
+    <tbody>
+      <tr><td>GET /api/pencairan (directory)</td><td>removed; browser reads and assesses</td></tr>
+      <tr><td>GET /api/pencairan/[campus] (workspace)</td><td>removed; browser reads; write endpoints keep returning the fresh state as they do now, or the browser re reads</td></tr>
+      <tr><td>GET /api/pencairan/[campus]/rab (overview)</td><td>removed; browser reads rab_versions and rab_lines</td></tr>
+      <tr><td>GET /api/audit</td><td>removed; browser reads audit</td></tr>
+      <tr><td>GET /api/users</td><td>removed; browser reads users</td></tr>
+      <tr><td>GET file streams, lampiran, SK, bukti</td><td>stay</td></tr>
+      <tr><td>GET /api/verifikasi/[code], /api/health</td><td>stay, public</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="token">
+  <div class="sec-head"><span class="eyebrow">4 · Token flow</span><h2>How the browser gets and keeps its token</h2></div>
+  <div class="flow">
+    <div><b>1 · Sign in stays on the server.</b> Password login and the Microsoft callback already receive a PocketBase user token; they set the session cookie and now also return the token to the page. The browser saves it in the SDK's auth store (local storage), as PF Series does.</div>
+    <div><b>2 · Reads go straight to PocketBase</b> at deb-api.pertaminafoundation.org with that token. PocketBase applies the rule table. Cross origin is allowed by PocketBase's default settings; rate limits count per real visitor (trusted proxy header is already set).</div>
+    <div><b>3 · Refresh.</b> The browser calls authRefresh every 20 minutes and on tab focus; the server session cookie keeps its own 8 hour life. Logout clears both.</div>
+    <div><b>4 · Role changes.</b> A campus account moved to another campus, or a role removed, takes effect on the next refresh or reload, since the token carries only the id and PocketBase evaluates rules against the current record.</div>
+  </div>
+</section>
+
+<section id="risk">
+  <div class="sec-head"><span class="eyebrow">5 · Risks and what limits them</span><h2>Honest list</h2></div>
+  <ul class="clean">
+    <li><b>Token in browser storage.</b> A script injection could read it. Mitigation: no third party scripts, a content security policy on the site, tokens short (PocketBase users tokens default to 7 days; set 1 day) with refresh.</li>
+    <li><b>Rules drift from code.</b> The rule table lives in the schema script and is applied by provisioning, next to the role list; a test signs in as a campus account and asserts it cannot list another campus.</li>
+    <li><b>Typed account numbers are readable by the campus itself.</b> Its own numbers, as on its own bank book. Staff see all, as today.</li>
+    <li><b>PocketBase must stay reachable from campus networks.</b> Same host that serves the site's API today, behind Cloudflare.</li>
+    <li><b>More requests per screen.</b> The dashboard makes five list calls instead of one; with 23 campuses that is small. Realtime replaces polling.</li>
+  </ul>
+</section>
+
+<section id="plan">
+  <div class="sec-head"><span class="eyebrow">6 · Plan</span><h2>Three steps, each usable on its own</h2></div>
+  <ol class="clean" style="list-style:decimal">
+    <li><b>Rules and token (half a day).</b> Rule table in the schema script, provisioning applies it, sign in hands the token to the browser, a shared browser client, the campus test proves isolation. Nothing else changes; the server GETs still work.</li>
+    <li><b>Reads move (one day).</b> Dashboard, Tahap 1, checklist screen, RAB table, Riwayat, notifications, Pengguna list read PocketBase directly; assessment and checks move to the shared library; the redundant server GETs are removed.</li>
+    <li><b>Realtime (half a day).</b> Subscriptions on the open campus so the list and the card update live.</li>
+  </ol>
+  <p class="note">Tested on a local PocketBase with the seeded Universitas Uji Coba and its two accounts, then provisioned to production.</p>
+</section>
+
+<section id="tanya">
+  <div class="sec-head"><span class="eyebrow">7 · Two questions</span><h2>Before I start</h2></div>
+  <ul class="clean">
+    <li><b>Token life.</b> One day with refresh (recommended) or PocketBase's default seven days?</li>
+    <li><b>Realtime now or later.</b> Step 3 is optional for onboarding.</li>
+  </ul>
+</section>
+<footer><span>Rule expressions use PocketBase filter syntax and the field names of the current schema.</span><span>Version 12, 20 September 2026.</span></footer>
+</div>

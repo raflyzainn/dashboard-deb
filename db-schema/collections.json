@@ -1290,6 +1290,28 @@
         "type":  "base",
         "fields":  [
                        {
+                           "name": "reviewNote",
+                           "type": "text",
+                           "max": 5000
+                       },
+                       {
+                           "name": "reviewedBy",
+                           "type": "relation",
+                           "collectionId": "_pb_users_auth_",
+                           "maxSelect": 1,
+                           "cascadeDelete": false
+                       },
+                       {
+                           "name": "reviewedAt",
+                           "type": "date"
+                       },
+                       {
+                           "name": "reviewRevision",
+                           "type": "number",
+                           "min": 0,
+                           "onlyInt": true
+                       },
+                       {
                            "autogeneratePattern":  "[a-z0-9]{15}",
                            "help":  "",
                            "hidden":  false,
@@ -1381,7 +1403,7 @@
                            "hidden":  false,
                            "id":  "file2359244304",
                            "maxSelect":  1,
-                           "maxSize":  10485760,
+                           "maxSize": 41943040,
                            "mimeTypes":  [
                                              "application/pdf"
                                          ],

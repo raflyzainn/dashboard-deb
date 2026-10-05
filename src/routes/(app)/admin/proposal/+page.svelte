@@ -2,5 +2,5 @@
   import Proposals from '$lib/components/shared/proposals/Proposals.svelte';
 </script>
 
-<svelte:head><title>Proposal · Digitalisasi DEB</title></svelte:head>
+<svelte:head><title>Proposal · Desa Energi Berdikari</title></svelte:head>
 <Proposals />

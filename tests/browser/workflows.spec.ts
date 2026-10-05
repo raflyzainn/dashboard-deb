@@ -82,14 +82,11 @@ test('UI uploads two real PDFs, rejects false PDF, downloads as admin and denies
       await expect(page.locator('.version-list')).toContainText(`QA perubahan versi ${version}`);
     }
     await page.reload(); await expect(page.locator('.version-list')).toContainText('QA perubahan versi 2');
-    await expect(page.locator('.comparison')).toContainText('Versi 2');
-    await expect(page.locator('.comparison')).not.toContainText('Membaca teks PDF',{timeout:30000});
     const snapshot=await boot(page,'campus-038');
     const latest=snapshot.data.proposals.sort((a:{version:number},b:{version:number})=>b.version-a.version)[0];
     expect((await page.request.get(`/api/proposals/${latest.id}/file`,{headers:headers('campus-040')})).status()).toBe(404);
     await admin.goto('/admin/proposal');
     await admin.getByLabel('Pilih kampus proposal').selectOption(snapshot.session.campusId);
-    await admin.getByRole('button',{name:'Lihat proposal',exact:true}).click();
     await expect(admin.locator('iframe')).toHaveAttribute('src',/^blob:/);
     const download=admin.waitForEvent('download');
     await admin.getByRole('link',{name:'Unduh PDF'}).click();

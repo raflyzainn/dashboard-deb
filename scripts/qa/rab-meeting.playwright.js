@@ -1,0 +1,45 @@
+// Jalankan melalui tool Playwright browser; akun lokal campus-011 harus memiliki draf QA lengkap dengan pembagian 30%/70%.
+async page => {
+ const assert=(value,message)=>{if(!value)throw Error(message);};
+ await page.setViewportSize({width:1440,height:1000});
+ await page.goto('http://127.0.0.1:5182/campus/pencairan?bagian=administrasi&butir=administrasi');
+ await page.getByRole('combobox',{name:/Rekening penerima/}).selectOption('kuasa');
+ await page.getByLabel('Nama pemilik rekening',{exact:true}).fill('Penerima Dummy QA');
+ await page.getByLabel('Nama pemberi kuasa',{exact:true}).fill('Rektor Dummy QA');
+ await page.getByLabel('Nama penerima kuasa',{exact:true}).fill('Penerima Dummy QA');
+ await page.getByLabel('Tanggal surat kuasa',{exact:true}).fill('2026-06-18');
+ await page.getByLabel('Tanggal invoice',{exact:true}).fill('2026-06-17');
+ await page.getByRole('button',{name:'Simpan draf',exact:true}).click();
+ await page.getByText('Invoice: tanggal harus setelah 17 Juni 2026.',{exact:true}).waitFor();
+ assert(await page.getByRole('button',{name:'Siapkan semua dokumen',exact:true}).isDisabled(),'Tanggal invoice harus memblokir dokumen');
+ await page.getByLabel('Tanggal invoice',{exact:true}).fill('2026-06-18');
+ const [download]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Unduh template surat kuasa',exact:true}).click()]);
+ assert(download.suggestedFilename().endsWith('.docx'),'Template kuasa harus DOCX');
+ await page.locator('.docx').first().waitFor();
+ assert((await page.locator('.docx-host').innerText()).includes('Penerima Dummy QA'),'Template kuasa harus terisi');
+ await page.getByLabel('Surat kuasa',{exact:true}).setInputFiles('static/sk-dummy.pdf');
+ await page.getByText('Berkas tersimpan dalam draf.',{exact:true}).waitFor();
+ await page.getByLabel('Nomor rekening',{exact:true}).fill('1234567891');
+ await page.getByRole('button',{name:'Simpan draf',exact:true}).click();
+ await page.getByText('Data surat kuasa berubah. Unduh template terbaru dan unggah ulang hasil tanda tangan.',{exact:true}).waitFor();
+ await page.getByLabel('Nomor rekening',{exact:true}).fill('1234567890');
+ await page.getByRole('button',{name:'Simpan draf',exact:true}).click();
+ await page.getByRole('button',{name:'Lanjut: PKS',exact:true}).click();
+ const date=page.getByLabel('Tanggal perjanjian',{exact:true});
+ assert(await date.inputValue()==='2026-06-17'&&await date.evaluate(e=>e.readOnly),'Tanggal PKS harus tetap');
+ await page.getByRole('button',{name:'Siapkan semua dokumen',exact:true}).click();
+ await page.getByText('Semua dokumen siap diperiksa.',{exact:true}).waitFor();
+ await page.locator('.docx').first().waitFor();
+ const pks=await page.locator('.docx-host').innerText();
+ assert(pks.includes('17-06-2026')&&/Surat\s+Kuasa\s*\(copy\)/i.test(pks),'Tanggal/lampiran PKS salah');
+ assert(pks.includes('Termin 1 (satu) sebesar 30%')&&pks.includes('Termin 2 (dua) sebesar 70%'),'Persentase PKS harus 30/70, bukan tertimpa menjadi 70/70');
+ await page.getByText('Panduan dan checklist PKS',{exact:true}).click();
+ const checkbox=page.getByRole('checkbox',{name:'Siapkan dua rangkap PKS dengan isi yang sama.',exact:true});
+ await checkbox.check();
+ await page.waitForFunction(()=>!Array.from(document.querySelectorAll('input[type=checkbox]')).some(e=>e.disabled));
+ await page.reload();await page.getByText('Panduan dan checklist PKS',{exact:true}).click();
+ assert(await checkbox.isChecked(),'Checklist harus tersimpan');
+ await page.setViewportSize({width:390,height:844});
+ assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Halaman melebar pada mobile');
+ return {dateValidation:true,kuasaTemplate:true,kuasaSourceValidation:true,conditionalAttachment:true,checklist:true,mobile:true};
+}
