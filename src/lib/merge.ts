@@ -140,8 +140,9 @@ export function buildMergeData(input: MergeInput): MergeData {
   const tahun = year === 'kedua' ? 'Kedua' : year === 'ketiga' ? 'Ketiga' : '';
   const judul = text(input.award.programTitle) || text(program.programTitle);
   const region = [text(program.village), text(program.district) && `Kec. ${text(program.district)}`, text(program.regency), text(program.province), text(program.postalCode)].filter(Boolean).join(', ');
-  const alamat = [text(program.address), region].filter(Boolean).join(', ');
-  const lokasi = [text(program.village) && `Desa ${text(program.village)}`, text(program.district) && `Kecamatan ${text(program.district)}`, text(program.regency), text(program.province)].filter(Boolean).join(', ');
+  // Application drafts collect campus address and program location separately.
+  const alamat = Object.hasOwn(props, 'alamat') ? text(props.alamat) : [text(program.address), region].filter(Boolean).join(', ');
+  const lokasi = text(props.lokasiAlamatLengkap) || [text(program.village) && `Desa ${text(program.village)}`, text(program.district) && `Kecamatan ${text(program.district)}`, text(program.regency), text(program.province)].filter(Boolean).join(', ');
   const namaPejabat = text(props.penandatanganNama) || text(program.signatoryName);
   const jabatanPejabat = text(props.penandatanganJabatan) || text(program.signatoryTitle);
   const perjanjian = dateParts(props.tanggalPerjanjian);
