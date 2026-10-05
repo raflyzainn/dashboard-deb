@@ -103,3 +103,19 @@ pengiriman akhir; penyimpanan draf parsial tetap diperbolehkan.
 - Video revisi disimpan lokal di demo-videos; video, fixture dan database salinan
   tidak disertakan dalam commit kode.
 - Perekaman lanjutan: RAB lengkap berhasil menuju Administrasi, Lanjut pada Administrasi kosong nonaktif, dan Kembali tetap berhasil menuju RAB.
+
+## Pengecualian Data Program ke RAB — 5 Oktober 2026
+
+- Instruksi terbaru pengguna menggantikan aturan 2 Oktober khusus perpindahan
+  Data Program ke RAB: tombol Lanjut dan tab RAB tetap tersedia saat isian belum lengkap.
+- Field Data Program tetap wajib sebelum mengirim pengajuan. Validasi langkah
+  lain dan pengiriman akhir tetap berlaku.
+- QA browser lokal 5176 melalui scripts/qa/journey-required-navigation.playwright.js
+  berhasil untuk tombol Lanjut dan tab RAB dengan enam field wajib dikosongkan
+  pada respons browser. Mutasi dicegat; data PocketBase tidak diubah.
+- Pemeriksaan hanya mencakup perpindahan tersebut. Tes, check, lint, dan build
+  terminal tidak dijalankan.
+- Menjelang PR, pengguna mengizinkan build: `npm run build` berhasil (exit 0)
+  pada salinan kode yang masuk PR, mode `mockup`, menghasilkan situs statis di
+  `build`. Warning awal tsconfig hasil generate pada salinan baru dan ukuran
+  chunk di atas 500 kB tetap tercatat. Test suite, check, dan lint tidak dijalankan.

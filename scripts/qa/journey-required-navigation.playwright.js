@@ -1,23 +1,41 @@
-// Jalankan melalui tool Playwright pada salinan demo 5186 yang sudah login kampus.
-// Kabupaten/kota dipulihkan sesudah pemeriksaan; tidak ditujukan untuk produksi.
+// Jalankan melalui tool Playwright pada aplikasi lokal 5176 yang sudah login kampus.
+// Respons Data Program dibuat kosong di browser; seluruh mutasi dicegat.
 async (page) => {
-  if (new URL(page.url()).origin !== 'http://127.0.0.1:5186') throw Error('Gunakan salinan demo 5186.');
-  await page.goto('http://127.0.0.1:5186/campus/pencairan?bagian=program');
-  const field = page.getByLabel('Kabupaten / kota', { exact: true });
-  const next = page.getByRole('button', { name: 'Lanjut: Pengajuan RAB', exact: true });
-  const saved = await field.inputValue();
+  const origin = new URL(page.url()).origin;
+  if (origin !== 'http://127.0.0.1:5176') throw Error('Gunakan aplikasi lokal 5176.');
+  const originalUrl = page.url();
+  const pattern = '**/api/pencairan/**';
+  let fixture;
+  const intercept = async route => {
+    const request = route.request();
+    if (!new URL(request.url()).pathname.endsWith('/pengajuan')) {
+      return request.method() === 'GET' ? route.continue() : route.fulfill({ status: 400, json: { message: 'Mutasi tidak termasuk pemeriksaan navigasi.' } });
+    }
+    if (!fixture) {
+      fixture = await (await route.fetch()).json();
+      fixture.paid = false;
+      fixture.journey.status = 'draf';
+      fixture.journey.lastSection = 'program';
+      for (const key of ['judulProgram', 'alamat', 'desa', 'kabupaten', 'mentor', 'koordinator']) fixture.journey.fields[key] = '';
+    }
+    if (request.method() === 'PATCH') Object.assign(fixture.journey.fields, request.postDataJSON().fields || {});
+    return route.fulfill({ json: fixture });
+  };
+  await page.route(pattern, intercept);
   try {
-    await field.fill('   '); await field.blur();
-    await page.waitForTimeout(1500);
-    if (!await next.isDisabled()) throw Error('Isian spasi tidak boleh mengaktifkan Lanjut.');
+    await page.goto(origin + '/campus/pencairan?bagian=program&butir=program');
+    const next = page.getByRole('button', { name: 'Lanjut: Pengajuan RAB', exact: true });
+    await next.waitFor();
+    if (!await next.isEnabled()) throw Error('Data Program kosong masih menonaktifkan Lanjut ke RAB.');
+    await next.click();
+    await page.waitForURL('**/campus/pencairan?bagian=rab&butir=rab_penuh');
+    await page.getByRole('button', { name: /^Data Program/ }).click();
+    await page.getByRole('heading', { name: 'Data Program', exact: true }).waitFor();
     await page.getByRole('button', { name: /^RAB 100%/ }).click();
-    await page.waitForTimeout(500);
-    if (!page.url().includes('bagian=program')) throw Error('Menu samping melewati validasi.');
-    const marker = await field.evaluate(el => ({
-      edge: getComputedStyle(el.closest('label'), '::after').content,
-      caption: getComputedStyle(el.closest('label').querySelector('.field-caption'), '::after').content
-    }));
-    if (marker.edge !== 'none' || !marker.caption.includes('*')) throw Error('Posisi bintang wajib salah.');
-    return { emptyBlocked: true, sidebarBlocked: true, markerBesideLabel: true };
-  } finally { await field.fill(saved); await field.blur(); await page.waitForTimeout(1500); }
+    await page.waitForURL('**/campus/pencairan?butir=rab_penuh');
+    return { incompleteProgramNext: true, incompleteProgramSidebar: true };
+  } finally {
+    await page.unroute(pattern, intercept);
+    await page.goto(originalUrl);
+  }
 }
