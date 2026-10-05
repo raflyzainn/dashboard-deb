@@ -52,6 +52,6 @@ export async function verifyJourneyDownload(pb:PocketBase,settings:Record<string
   store.save(verification);
   version.set('generation',{...version.data.generation,verifiedFiles:{...version.data.generation?.verifiedFiles,[cacheId]:{code,key,approved}}});
   store.save(version);
-  return new Blob([stamped],{type:DOCX_MIME});
+  return new Blob([new Uint8Array(stamped).buffer],{type:DOCX_MIME});
  },{campuses:{filter:pb.filter('id = {:c}',{c:campusId})},disbursements:{filter:pb.filter('campus = {:c} && term = 1',{c:campusId})},documents:{filter:pb.filter('disbursement.campus = {:c} && disbursement.term = 1',{c:campusId})},document_versions:{filter:pb.filter('document.disbursement.campus = {:c} && document.disbursement.term = 1',{c:campusId})},verifications:null});
 }

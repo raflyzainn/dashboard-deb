@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'vite';
 
-test('demo logout clears session without a backend request', async t => {
+test('logout clears local session even when the backend request fails', async t => {
   const server = await createServer({ server: { middlewareMode: true, ws: false, watch: null, preTransformRequests: false }, appType: 'custom' });
   t.after(() => server.close());
   const { app } = await server.ssrLoadModule('/src/lib/state.svelte.ts');
@@ -15,5 +15,5 @@ test('demo logout clears session without a backend request', async t => {
   assert.equal(await app.logout(), true);
   assert.equal(app.session, null);
   assert.equal(app.data, null);
-  assert.equal(requests, 0);
+  assert.equal(requests, 1);
 });

@@ -28,7 +28,7 @@ export interface DemoState {
   accounts: DemoAccount[];
   activation: DemoActivation;
 }
-export const DEMO_DATABASE = import.meta.env.MODE === 'mockup' ? 'deb-full-app-dummy-v1' : 'deb-standalone-demo-v6';
+export const DEMO_DATABASE = import.meta.env?.MODE === 'mockup' ? 'deb-full-app-dummy-v1' : 'deb-standalone-demo-v6';
 export function initialState(): DemoState {
   const seed = createSeed();
   const definitions = seed.data.definitions.map((d, i) => {
@@ -59,7 +59,7 @@ export function initialState(): DemoState {
     activation: { email: DEMO_ACTIVATION_EMAIL, password: null }
   };
   seedPayments(state);
-  if (import.meta.env.MODE === 'mockup') {
+  if (import.meta.env?.MODE === 'mockup') {
     state.data.campuses.forEach((campus, i) => {
       campus.fillMode = 'campus'; campus.fundedWave = 1; campus.programYear = i % 2 ? 'ketiga' : 'kedua';
       campus.program = { ...campus.program, mentor: `Mentor Dummy ${i + 1}`, coordinator: `Koordinator Dummy ${i + 1}`, localHero: `Pendamping Dummy ${i + 1}`, pfTeam: `Tim Contoh ${i % 3 + 1}`, budget: 20000000, income: 60000000, beneficiaries: 30, incomePerCapita: 2000000, description: `Program energi terbarukan simulasi kampus ${i + 1}.`, intervention: 'Pemasangan panel surya dan pelatihan masyarakat (dummy).', interventionSummary: 'Data simulasi untuk mencoba aplikasi.', replicationVillage: `Desa Contoh ${i + 1}`, address: `Jalan Contoh ${i + 1}`, socialMapping: 'Pemetaan sosial contoh', institution: 'Kelompok Usaha Contoh', landPermit: 'Izin lahan simulasi', siteSurvey: 'Survei lokasi simulasi' };

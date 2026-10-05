@@ -1,5 +1,7 @@
 # Snackbar, isian wajib, dan petunjuk pengguna baru
 
+Pembaruan 5 Oktober 2026: atas permintaan pengguna, snackbar kini hilang otomatis setelah 5 detik; tombol X tetap tersedia. Lihat [QA panel penutup](QA-PANEL-PENUTUP-2026-10-05.md) untuk bukti browser dan batas pemeriksaan. Ketentuan penutupan manual di bawah merupakan riwayat.
+
 Tanggal: 1 Oktober 2026. Target: frontend `127.0.0.1:5176`, PocketBase `127.0.0.1:8097`, branch `feat/pencairan-pocketbase-local`. Perubahan ini belum di-commit atau di-push.
 
 ## Masalah yang ditemukan

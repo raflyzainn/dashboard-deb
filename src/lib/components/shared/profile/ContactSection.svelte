@@ -66,7 +66,7 @@
 </script>
 
 <div role="group" aria-label={title}>
-  <EditableSection {title} {icon} bind:editing {canEdit} {saving} {dirty} onEdit={start} onSave={save} onCancel={() => (draft = [])}>
+  <EditableSection {title} {icon} bind:editing {canEdit} {saving} {dirty} onEdit={start} onSave={save} onCancel={() => { draft = []; }}>
     {#snippet badge()}
       {#if !editing && people.length}
         <span

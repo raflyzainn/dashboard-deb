@@ -8,7 +8,7 @@
   import type { Snippet } from 'svelte';
   let { children }: { children: Snippet } = $props();
   let mobile = $state(false);
-  let drawer: HTMLDialogElement;
+  let drawer = $state<HTMLDialogElement>(null!);
   const campus = $derived(app.session?.role === 'campus');
   const labels = {
     guide: 'Panduan aplikasi',

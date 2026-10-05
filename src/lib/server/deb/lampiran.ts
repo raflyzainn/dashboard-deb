@@ -21,7 +21,7 @@ const opts = { requestKey: null } as const;
 type Actor = AuditActor & { id: string };
 const LAMPIRAN_STAGE = 7;
 
-export type SourceKind = Kind;
+export type SourceKind = Exclude<Kind, 'sk' | 'rab_penuh' | 'rab_tahap2'>;
 export const ORDER: SourceKind[] = ['permohonan', 'invois', 'kuitansi', 'rab', 'rekening', 'surat_kuasa', 'pks'];
 /** Entry number on the sheet's list of six attachments. Surat kuasa and PKS share entry 6. */
 export const ENTRY_OF: Record<SourceKind, number> = { permohonan: 1, invois: 2, kuitansi: 3, rab: 4, rekening: 5, surat_kuasa: 6, pks: 6 };
@@ -68,7 +68,7 @@ interface Plan { ws: Workspace; view: LampiranView; rows: Map<string, RecordMode
 
 /** The checklist readiness from the workspace when the payload carries it; otherwise every item must be Sesuai and the surat kuasa is required. */
 function readinessOf(ws: Workspace): Readiness {
-  const given = (ws as { readiness?: Partial<Readiness> }).readiness;
+  const given = (ws as { readiness?: Partial<Readiness> & { items?: Record<string, string> } }).readiness;
   const label = (value: unknown) => KIND_SHORT[String(value) as Kind] || String(value);
   if (given && typeof given.lengkap === 'boolean') {
     return { lengkap: given.lengkap, missing: Array.isArray(given.missing) ? given.missing.map(label) : [], suratKuasaRequired: typeof given.suratKuasaRequired === 'boolean' ? given.suratKuasaRequired : null, suratKuasaSkipped: given.suratKuasaRequired === false || (given.items as Record<string, string> | undefined)?.surat_kuasa === 'tidak_perlu', phrase: String(given.phrase || '') };
@@ -400,7 +400,7 @@ function drawSummary(doc: PDFDocument, input: ComposeInput, ranges: { part: Comp
 /* ---------- Build, preview, store ---------- */
 
 async function sha256Hex(bytes: Uint8Array) {
-  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  const digest = await crypto.subtle.digest('SHA-256', new Uint8Array(bytes).buffer);
   return Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
 }
 
@@ -468,7 +468,7 @@ export async function saveAttachment(pb: PocketBase, store: Storage, settings: R
 }
 
 export function previewResponse(bytes: Uint8Array) {
-  return new Response(bytes, { status: 200, headers: {
+  return new Response(new Uint8Array(bytes).buffer, { status: 200, headers: {
     'Content-Type': 'application/pdf', 'Content-Length': String(bytes.byteLength), 'Content-Disposition': 'inline; filename="Pratinjau-Lampiran-Tahap-1.pdf"',
     'Cache-Control': 'no-store, private', 'X-Content-Type-Options': 'nosniff'
   } });

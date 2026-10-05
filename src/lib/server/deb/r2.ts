@@ -49,7 +49,7 @@ export function storage(settings: Record<string, string>): Storage {
   const url = (key: string) => base + encodeKey(key);
   return {
     async put(key, body, contentType) {
-      const response = await client.fetch(url(key), { method: 'PUT', body, headers: { 'content-type': contentType || 'application/octet-stream' } });
+      const response = await client.fetch(url(key), { method: 'PUT', body: new Uint8Array(body).buffer, headers: { 'content-type': contentType || 'application/octet-stream' } });
       if (!response.ok) { console.warn('R2 put failed', response.status); throw new PreviewError(503, 'Berkas belum dapat disimpan. Coba lagi.'); }
     },
     async get(key) {

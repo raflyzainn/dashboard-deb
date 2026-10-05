@@ -1,6 +1,6 @@
 import type { Period, PeriodState } from './periods';
 import type { ForumCategoryId } from './forum';
-export type Role = 'campus' | 'admin' | 'baru';
+export type Role = 'campus' | 'admin' | 'baru' | 'finance';
 export interface DemoSession { role: Role; name: string; campusId?: string; campusRole?: 'mentor' | 'sobi' }
 export interface AppSession extends DemoSession { id: string; email?: string; superAdmin?: boolean; passwordChangeRequired?: boolean }
 export interface PreviewAccount { key: string; name: string; role: Role; disbursementStarted?: boolean }

@@ -9,7 +9,7 @@ export interface Doc { id: string; kind: Kind; status: Status; signedReceived: b
 export interface Check { kind: Kind | 'umum'; level: 'ok' | 'warn' | 'bad' | 'info'; text: string }
 export interface KartuData {
   campus: { id: string; name: string; code: string; initials: string; programYear: string; fillMode: string; signatoryName: string; team: string; contacts: { mentor: string; coordinator: string; localHero: string } };
-  summary: { skNumber: string; amountSen: number; limitSen: number; requestedSen: number; term2Sen: number; term1Percent: number; term2Percent: number; programTitle: string; programYear: string };
+  summary: { skDate?: string; skFile?: boolean; skLampiranPage?: number; skLampiranNo?: number; skNumber: string; amountSen: number; limitSen: number; requestedSen: number; term2Sen: number; term1Percent: number; term2Percent: number; programTitle: string; programYear: string };
   disbursement: { id: string; stage: number; requestedSen: number; paidSen: number; paidAt: string; paidRef: string; paidByName: string; properties: Record<string, unknown>; clauseChecked: boolean; templateMode: string };
   documents: Doc[];
   bankCheck: { id: string; bankResult: string; bankNameSeen: string; checkedAt: string; evidence: boolean } | null;

@@ -1,6 +1,12 @@
 <script lang="ts">
   import { app } from '$lib/state.svelte';
   import Icon from './Icon.svelte';
+
+  $effect(() => {
+    if (!app.error) return;
+    const timer = setTimeout(() => (app.error = ''), 5000);
+    return () => clearTimeout(timer);
+  });
 </script>
 {#if app.error}<div
     class="fixed bottom-[22px] left-[50%] [transform:translateX(-50%)] z-[150] flex gap-y-[13px] gap-x-[13px] items-start w-[max-content] max-w-[calc(100%_-_32px)] [background-image:initial] [background-color:rgb(255,_245,_241)] text-[#aa4d38] [box-shadow:0_8px_40px_#45251820] px-[18px] py-[15px] border-[1px] border-solid border-[color:rgb(230,_182,_170)] rounded-[10px] [&:has(+.toast)]:bottom-[90px] [&_strong]:text-[14px] [&_p]:text-[13px] [&_p]:max-w-[490px] max-[700.01px]:bottom-[12px] max-[700.01px]:w-[calc(100%_-_24px)] max-[700.01px]:p-[12px] global-error"

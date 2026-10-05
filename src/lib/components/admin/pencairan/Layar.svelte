@@ -115,9 +115,6 @@
       .sort((a, b) => b.created.localeCompare(a.created))[0];
     return review ? { kind, note: review.note } : null;
   });
-  const uploadBlocked = $derived(campusUploadBlockedReason(kind, state, doc, Boolean(data?.disbursement.paidAt)) || (doc?.versions.find(v => v.id === doc.currentVersionId)?.signed ? 'Berkas bertanda tangan tidak dapat diganti lewat unggah revisi.' : ''));
-  const signedJourneyReady=$derived(fullDummy&&!admin&&(data as any)?.journey?.status==='selesai'&&['pks','permohonan','invois','kuitansi'].includes(kind)&&!data?.disbursement.paidAt&&!doc?.signedReceived);
-  const canUpload = $derived(admin || signedJourneyReady || (Boolean(data) && !uploadBlocked));
   const time = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', timeZone: 'Asia/Jakarta' });
   const full = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' });
   const dot: Record<ItemState, string> = { sesuai: 'bg-green-600', tidak_perlu: 'bg-green-200', perlu_konfirmasi: 'bg-[#0066B2]', menunggu_review: 'bg-sky-400', perlu_revisi: 'bg-amber-500', belum_ada: 'bg-white ring-1 ring-slate-300' };
@@ -146,7 +143,10 @@
   const isRab = $derived(isRabKind(kind));
   const fileKind = $derived<Kind>(isRab ? 'rab' : kind);
   const fileDoc = $derived(isRab ? data?.documents.find(d => d.kind === 'rab') || null : doc);
-  const state = $derived<ItemState>(data ? data.readiness.items[kind] : 'belum_ada');
+  const itemState = $derived<ItemState>(data ? data.readiness.items[kind] : 'belum_ada');
+  const uploadBlocked = $derived(campusUploadBlockedReason(kind, itemState, doc, Boolean(data?.disbursement.paidAt)) || (doc?.versions.find(v => v.id === doc.currentVersionId)?.signed ? 'Berkas bertanda tangan tidak dapat diganti lewat unggah revisi.' : ''));
+  const signedJourneyReady=$derived(fullDummy&&!admin&&(data as any)?.journey?.status==='selesai'&&['pks','permohonan','invois','kuitansi'].includes(kind)&&!data?.disbursement.paidAt&&!doc?.signedReceived);
+  const canUpload = $derived(admin || signedJourneyReady || (Boolean(data) && !uploadBlocked));
   const version = $derived<Version | null>(fileDoc ? fileDoc.versions.find(v => v.id === selectedVersionId) || fileDoc.versions.find(v => v.id === fileDoc.currentVersionId) || fileDoc.versions[fileDoc.versions.length - 1] || null : null);
   const isCurrent = $derived(Boolean(version && fileDoc && version.id === fileDoc.currentVersionId));
   const fileUrl = $derived(version ? `/api/pencairan/${campusId}/documents/${fileKind}/versions/${version.id}` : '');
@@ -159,13 +159,13 @@
     return [...mine.filter(c => c.level === 'warn').slice(0, 1), ...mine.filter(c => c.level === 'ok').slice(0, 1), ...(mine.some(c => c.level === 'warn' || c.level === 'ok') ? [] : mine.filter(c => c.level === 'info').slice(0, 1))];
   });
   const thread = $derived(doc ? [...doc.versions.flatMap(v => v.reviews.map(r => ({ ...r, version: v.number }))), ...(doc.reviews || []).map(r => ({ ...r, version: 0 }))].sort((a, b) => b.created.localeCompare(a.created)) : []);
-  const campusRevision = $derived(state === 'perlu_revisi' ? thread.find(r => r.decision === 'perlu_revisi' && r.note) : null);
+  const campusRevision = $derived(itemState === 'perlu_revisi' ? thread.find(r => r.decision === 'perlu_revisi' && r.note) : null);
   /** The conversation on this item, oldest first. Decisions keep their own note in the bar and their history in Riwayat. */
   const conversation = $derived(doc ? [...doc.notes].sort((a, b) => a.created.localeCompare(b.created)) : []);
   $effect(() => { void conversation.length; const el = threadEl; if (el) requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; }); });
   /** A revision that answers an earlier "Perlu revisi": the request and the new arrival, shown side by side while the item waits (decision 50). */
   const answered = $derived.by(() => {
-    if (!admin || !doc || !version || (state !== 'menunggu_review' && state !== 'perlu_konfirmasi')) return null;
+    if (!admin || !doc || !version || (itemState !== 'menunggu_review' && itemState !== 'perlu_konfirmasi')) return null;
     const request = thread.find(r => r.decision === 'perlu_revisi' && r.created < version.created);
     return request ? { request, version } : null;
   });
@@ -177,12 +177,12 @@
     const letters = data.documents.filter(d => d.generated);
     return { ttd: letters.length > 0 && letters.every(d => d.originalReceived), lampiran: data.lampiranCount > 0, bayar: Boolean(data.disbursement.paidAt) };
   });
-  const decided = $derived(state === 'sesuai' || state === 'tidak_perlu');
+  const decided = $derived(itemState === 'sesuai' || itemState === 'tidak_perlu');
   /** The decision statement replaces the buttons once an item is decided, until the admin opens them again. */
-  const showDecision = $derived(admin && (decided || state === 'perlu_revisi') && !editing);
-  const decisionLabel = $derived(state === 'perlu_revisi' ? DECISION_LABEL[kind].bad : state === 'tidak_perlu' ? 'Tanpa surat kuasa' : DECISION_LABEL[kind].ok);
+  const showDecision = $derived(admin && (decided || itemState === 'perlu_revisi') && !editing);
+  const decisionLabel = $derived(itemState === 'perlu_revisi' ? DECISION_LABEL[kind].bad : itemState === 'tidak_perlu' ? 'Tanpa surat kuasa' : DECISION_LABEL[kind].ok);
   /** A surat kuasa counted as not needed because the account holder signs the PKS has no decision to take back. */
-  const computedOnly = $derived(state === 'tidak_perlu' && doc?.status !== 'tidak_perlu');
+  const computedOnly = $derived(itemState === 'tidak_perlu' && doc?.status !== 'tidak_perlu');
   const rabApprovalWarning = $derived(isRab && fullDummy && data?.rab ? data.rab.totalSen !== data.summary.amountSen ? `Total RAB ${formatSen(data.rab.totalSen)} belum sesuai nilai SK ${formatSen(data.summary.amountSen)}. Sesuaikan RAB sebelum menyetujui.` : data.rab.term1Sen > data.summary.limitSen ? 'Total Tahap 1 melebihi batas 70% SK. Perbaiki pembagian sebelum menyetujui.' : data.rab.term1Sen <= 0 ? 'Total Tahap 1 harus lebih dari Rp0 sebelum menyetujui.' : data.rab.term1Sen + (data.rab.term2Sen ?? 0) !== data.rab.totalSen ? 'Jumlah nominal kedua tahap belum sama dengan total RAB.' : '' : '');
   const canDecide = $derived(admin && (!fullDummy||!(data as any)?.journey||['menunggu','selesai'].includes((data as any).journey.status)) && !rabEditing && data !== null && (kind === 'sk' || (isRab ? !fullDummy || data.rab?.status === 'menunggu' : Boolean(version))));
   /** What the campus file really contains, marked after checking the file itself (decision 47). */
@@ -470,19 +470,19 @@
         {#if !admin && isItem && !(isRab && fullDummy)}
           {#if fullDummy&&(data as any).journey&&['pks','permohonan','kuitansi','invois','surat_kuasa'].includes(kind)}<div class="p-3"><DocumentGuide {kind} checklist={(data as any).journey.checklist} kuasa={(data as any).journey.fields.jenisRekening==='kuasa'} onchange={async(key,checked)=>{await dataService.api.patch(`/api/pencairan/${campusId}/pengajuan/checklist`,{key,checked});await load();}}/></div>{/if}
           <section aria-label="Status dokumen" class="grid gap-3 border-b border-slate-200 p-3 text-sm">
-            <div class="grid gap-1 rounded-lg border border-l-4 p-3 {campusStatusClass[state]}" role="status">
-              <strong>{ITEM_STATE_LABEL[state]}</strong>
+            <div class="grid gap-1 rounded-lg border border-l-4 p-3 {campusStatusClass[itemState]}" role="status">
+              <strong>{ITEM_STATE_LABEL[itemState]}</strong>
               {#if campusRevision}<p class="whitespace-pre-wrap break-words"><b>Catatan pemeriksa:</b> {campusRevision.note}</p>{/if}
-              <p>{signedJourneyReady ? 'Pengajuan disetujui. Unggah dokumen yang sudah ditandatangani.' : uploadBlocked || (state === 'perlu_revisi' ? 'Perbaiki sesuai catatan, lalu kirim sebagai versi baru. Berkas sebelumnya tetap tersimpan.' : 'Lengkapi dokumen dengan mengunggah berkas di bawah.')}</p>
+              <p>{signedJourneyReady ? 'Pengajuan disetujui. Unggah dokumen yang sudah ditandatangani.' : uploadBlocked || (itemState === 'perlu_revisi' ? 'Perbaiki sesuai catatan, lalu kirim sebagai versi baru. Berkas sebelumnya tetap tersimpan.' : 'Lengkapi dokumen dengan mengunggah berkas di bawah.')}</p>
             </div>
             {#if canUpload}
               <form class="grid min-w-0 gap-2" onsubmit={(e) => { e.preventDefault(); void upload(uploadFile); }}>
-                <label class="grid min-w-0 gap-1 font-semibold">{signedJourneyReady ? 'Berkas bertanda tangan' : state === 'perlu_revisi' ? 'Berkas revisi' : 'Berkas kelengkapan'}
+                <label class="grid min-w-0 gap-1 font-semibold">{signedJourneyReady ? 'Berkas bertanda tangan' : itemState === 'perlu_revisi' ? 'Berkas revisi' : 'Berkas kelengkapan'}
                   <input type="file" class="min-w-0 max-w-full rounded-lg border border-slate-300 p-2 text-sm font-normal" bind:this={fileInput} disabled={busy} accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.docx,.doc,.xlsx,.xls,.csv" onchange={(e) => { uploadFile = e.currentTarget.files?.[0] || null; error = ''; }} />
                 </label>
                 <p class="text-xs text-slate-500">PDF, gambar, Word, atau Excel · maksimal 40 MB. Berkas dikirim setelah tombol di bawah ditekan.</p>
                 <label class="grid gap-1">Catatan unggahan (opsional)<textarea rows="2" maxlength="2000" class="w-full rounded-lg border border-slate-300 p-2" bind:value={uploadNote} disabled={busy}></textarea></label>
-                <button type="submit" class="justify-self-start rounded-lg bg-[#0066B2] px-4 py-2 font-semibold text-white disabled:opacity-50" disabled={busy || !uploadFile}>{busy ? 'Mengirim…' : state === 'perlu_revisi' ? 'Kirim revisi' : 'Kirim dokumen'}</button>
+                <button type="submit" class="justify-self-start rounded-lg bg-[#0066B2] px-4 py-2 font-semibold text-white disabled:opacity-50" disabled={busy || !uploadFile}>{busy ? 'Mengirim…' : itemState === 'perlu_revisi' ? 'Kirim revisi' : 'Kirim dokumen'}</button>
               </form>
             {/if}
             {#if version && !isCurrent}<p class="text-amber-800">Anda melihat versi lama. Status di atas adalah status dokumen terbaru.</p>{/if}
@@ -540,9 +540,9 @@
           <div class="document-review grid gap-2.5 border-t border-slate-200/70 bg-white px-3 py-3">
             {#if kind === 'sk'}
               <div class="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2">
-                <label class="grid min-w-0 gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">Nilai SK<span class="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[13px] font-medium normal-case tracking-normal tabular-nums text-slate-900">{formatSen(data.summary.amountSen)}</span></label>
-                <label class="grid min-w-0 gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">Batas Tahap 1 (70%)<span class="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[13px] font-medium normal-case tracking-normal tabular-nums text-slate-900">{formatSen(data.summary.limitSen)}</span></label>
-                <label class="grid min-w-0 gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">Lampiran I<span class="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[13px] font-medium normal-case tracking-normal {data.summary.skLampiranNo ? 'text-slate-900' : 'text-slate-500'}">{data.summary.skLampiranNo ? `No ${data.summary.skLampiranNo} · halaman ${data.summary.skLampiranPage}` : 'belum ditandai'}</span></label>
+                <div class="grid min-w-0 gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">Nilai SK<span class="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[13px] font-medium normal-case tracking-normal tabular-nums text-slate-900">{formatSen(data.summary.amountSen)}</span></div>
+                <div class="grid min-w-0 gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">Batas Tahap 1 (70%)<span class="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[13px] font-medium normal-case tracking-normal tabular-nums text-slate-900">{formatSen(data.summary.limitSen)}</span></div>
+                <div class="grid min-w-0 gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">Lampiran I<span class="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[13px] font-medium normal-case tracking-normal {data.summary.skLampiranNo ? 'text-slate-900' : 'text-slate-500'}">{data.summary.skLampiranNo ? `No ${data.summary.skLampiranNo} · halaman ${data.summary.skLampiranPage}` : 'belum ditandai'}</span></div>
               </div>
             {:else if admin && spec.length && version}
               <div class="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2">
@@ -588,10 +588,10 @@
             {#if rabApprovalWarning}<p class="mb-3 text-sm font-semibold text-red-700" role="alert">{rabApprovalWarning}</p>{/if}
             <div class="review-actions flex flex-wrap items-end gap-2">
               {#if admin && showDecision}
-                <div class="grid w-full grid-cols-[auto_minmax(0,1fr)] items-start gap-3 rounded-xl border px-3.5 py-2.5 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center {state === 'perlu_revisi' ? 'border-amber-300 bg-amber-50' : 'border-green-200 bg-green-50'}" role="status" aria-label="Hasil pemeriksaan">
-                  <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[17px] font-bold text-white {state === 'perlu_revisi' ? 'bg-amber-500' : 'bg-green-700'}" aria-hidden="true">{state === 'perlu_revisi' ? '!' : '✓'}</span>
+                <div class="grid w-full grid-cols-[auto_minmax(0,1fr)] items-start gap-3 rounded-xl border px-3.5 py-2.5 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center {itemState === 'perlu_revisi' ? 'border-amber-300 bg-amber-50' : 'border-green-200 bg-green-50'}" role="status" aria-label="Hasil pemeriksaan">
+                  <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[17px] font-bold text-white {itemState === 'perlu_revisi' ? 'bg-amber-500' : 'bg-green-700'}" aria-hidden="true">{itemState === 'perlu_revisi' ? '!' : '✓'}</span>
                   <div class="min-w-0 break-words">
-                    <p class="text-[15px] font-bold {state === 'perlu_revisi' ? 'text-amber-900' : 'text-green-900'}">{decisionLabel}</p>
+                    <p class="text-[15px] font-bold {itemState === 'perlu_revisi' ? 'text-amber-900' : 'text-green-900'}">{decisionLabel}</p>
                     <p class="text-[12.5px] text-slate-600">{computedOnly ? 'Pemilik rekening adalah penandatangan PKS, surat kuasa tidak diperlukan.' : `${doc?.decidedByName || (thread[0]?.imported ? 'Lembar review' : 'Sistem')}${doc?.decidedAt ? ` · ${full.format(new Date(doc.decidedAt))}` : ''}`}</p>
                     {#if latestNote && !computedOnly && latestNote.trim().toLowerCase() !== decisionLabel.toLowerCase()}<p class="mt-1 whitespace-pre-wrap text-[14px] leading-relaxed text-slate-800">{latestNote}</p>{/if}
                   </div>
@@ -603,12 +603,12 @@
               {:else if admin}
                 {#if kind === 'rekening'}<label class="grid min-w-0 gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">Nama di bank<input class="min-h-[44px] w-full max-w-full rounded-lg border border-slate-300 px-2 text-[13px] font-medium normal-case tracking-normal text-slate-900" bind:this={bankNameInput} required maxlength="200" bind:value={bankNameSeen} placeholder="Nama yang terlihat di bank" /></label>{/if}
                 <label class="grid w-full min-w-0 gap-1 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">
-                  <span>Catatan keputusan <span class="text-red-600">*</span><span class="font-normal normal-case"> wajib jika meminta revisi</span>{#if doc?.decidedByName}<span class="ml-2 font-medium normal-case tracking-normal text-slate-400">{state === 'perlu_revisi' ? DECISION_LABEL[kind].bad : decided ? DECISION_LABEL[kind].ok : ITEM_STATE_LABEL[state]} · {doc.decidedByName}{doc.decidedAt ? ` · ${time.format(new Date(doc.decidedAt))}` : ''}</span>{/if}</span>
-                  <textarea bind:this={noteInput} rows="2" class="min-h-[64px] w-full rounded-lg border px-3 py-2 text-[14px] font-medium leading-relaxed normal-case tracking-normal text-slate-900 {state === 'perlu_revisi' ? 'border-amber-300 bg-amber-50/40' : 'border-slate-300'}" bind:value={reviewNote} oninput={grow} placeholder={kind === 'sk' ? 'Bila berbeda: nilai yang tercetak di SK' : 'Catatan keputusan: alasan revisi atau keterangan lolos, dikirim ke kampus'}></textarea>
+                  <span>Catatan keputusan <span class="text-red-600">*</span><span class="font-normal normal-case"> wajib jika meminta revisi</span>{#if doc?.decidedByName}<span class="ml-2 font-medium normal-case tracking-normal text-slate-400">{itemState === 'perlu_revisi' ? DECISION_LABEL[kind].bad : decided ? DECISION_LABEL[kind].ok : ITEM_STATE_LABEL[itemState]} · {doc.decidedByName}{doc.decidedAt ? ` · ${time.format(new Date(doc.decidedAt))}` : ''}</span>{/if}</span>
+                  <textarea bind:this={noteInput} rows="2" class="min-h-[64px] w-full rounded-lg border px-3 py-2 text-[14px] font-medium leading-relaxed normal-case tracking-normal text-slate-900 {itemState === 'perlu_revisi' ? 'border-amber-300 bg-amber-50/40' : 'border-slate-300'}" bind:value={reviewNote} oninput={grow} placeholder={kind === 'sk' ? 'Bila berbeda: nilai yang tercetak di SK' : 'Catatan keputusan: alasan revisi atau keterangan lolos, dikirim ke kampus'}></textarea>
                 </label>
                 <div class="flex w-full flex-wrap items-center justify-end gap-2">
                 {#if DECISION_LABEL[kind].none}<button type="button" class="min-h-[44px] rounded-lg border border-slate-300 bg-white px-3.5 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-40" disabled={busy} onclick={() => decide('none')}>{DECISION_LABEL[kind].none}</button>{/if}
-                <button type="button" class="min-h-[44px] rounded-lg border px-3.5 text-[13px] font-semibold transition disabled:opacity-40 {state === 'perlu_revisi' ? 'border-amber-400 bg-amber-100 text-amber-900' : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50'}" disabled={busy || !canDecide} title={canDecide ? '' : 'Unggah berkas dulu'} onclick={() => decide('bad')}>{DECISION_LABEL[kind].bad}</button>
+                <button type="button" class="min-h-[44px] rounded-lg border px-3.5 text-[13px] font-semibold transition disabled:opacity-40 {itemState === 'perlu_revisi' ? 'border-amber-400 bg-amber-100 text-amber-900' : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50'}" disabled={busy || !canDecide} title={canDecide ? '' : 'Unggah berkas dulu'} onclick={() => decide('bad')}>{DECISION_LABEL[kind].bad}</button>
                 <button type="button" class="min-h-[44px] rounded-lg px-4 text-[13px] font-bold text-white shadow-[0_8px_18px_#15803d33] transition active:scale-[0.98] disabled:opacity-40 {decided ? 'bg-green-800 ring-2 ring-green-300' : 'bg-green-700 hover:bg-green-800'}" disabled={busy || !canDecide || Boolean(rabApprovalWarning)} title={rabApprovalWarning || (canDecide ? 'Enter' : 'Unggah berkas dulu')} onclick={() => decide('ok')}>{decided ? '✓ ' : ''}{DECISION_LABEL[kind].ok}</button>
                 {#if editing}<button type="button" class="min-h-[44px] px-2 text-[13px] font-semibold text-slate-500 hover:underline" onclick={() => (editing = false)}>Tutup</button>{/if}
                 </div>

@@ -4,4 +4,4 @@
 </script>
 
 <svelte:head><title>LPJ Termin 1 · Desa Energi Berdikari</title></svelte:head>
-{#key page.params.id}<Lpj campusId={page.params.id} />{/key}
+{#key page.params.id}<Lpj campusId={page.params.id!} />{/key}

@@ -40,7 +40,7 @@
   const notesOf = (doc: Doc | null) => (doc ? [...doc.notes].sort((a, b) => a.created.localeCompare(b.created)) : []);
   /** Who to call about the revisions: the campus contacts from Profil DEB, in the order people usually ring them. */
   const GROUPS = [['coordinator', 'Koordinator PFS 12'], ['mentor', 'Mentor'], ['localHero', 'Local hero']] as const;
-  const contacts = $derived(data ? GROUPS.map(([key, label]) => ({ key, label, people: parseContacts(data.campus.contacts[key]) })) : []);
+  const contacts = $derived(data ? GROUPS.map(([key, label]) => ({ key, label, people: parseContacts(data!.campus.contacts[key]) })) : []);
   const anyContact = $derived(contacts.some(g => g.people.length));
   /** The checklist: the campus has been contacted about these revisions (when, by whom, and how it went). */
   const prop = (key: string) => (data && typeof data.disbursement.properties[key] === 'string' ? (data.disbursement.properties[key] as string) : '');

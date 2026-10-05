@@ -90,7 +90,7 @@ export async function directory(pb: PocketBase): Promise<DirectoryRow[]> {
     const docs: DocumentInfo[] = KINDS.map(kind => {
       const d = own.find(x => x.kind === kind);
       const v = d ? versions.find(x => x.id === d.currentVersion) : null;
-      return { id: d?.id || '', kind, status: statuses[kind], signedReceived: Boolean(d?.signedReceived), signedReceivedAt: '', signedReceivedByName: '', originalReceived: Boolean(d?.originalReceived), originalReceivedAt: '', originalReceivedByName: '', currentVersionId: d?.currentVersion || '', generated: GENERATED.includes(kind), decidedByName: '', decidedAt: '', versions: v ? [lightVersion(v)] : [], notes: [] };
+      return { id: d?.id || '', kind, status: statuses[kind], signedReceived: Boolean(d?.signedReceived), signedReceivedAt: '', signedReceivedByName: '', originalReceived: Boolean(d?.originalReceived), originalReceivedAt: '', originalReceivedByName: '', currentVersionId: d?.currentVersion || '', generated: GENERATED.includes(kind), decidedByName: '', decidedAt: '', versions: v ? [lightVersion(v)] : [], notes: [], reviews: [] };
     });
     const amountSen = Number(award!.amountSen);
     const requestedSen = Number(disbursement?.requestedSen || 0);
@@ -327,7 +327,7 @@ export async function addVersion(pb: PocketBase, store: Storage, actor: AuditAct
   const key = versionKey(campus.code, TERM, kind, number, file.name);
   const mime = file.mime || mimeFor(file.name);
   await store.put(key, file.bytes, mime);
-  const digest = await crypto.subtle.digest('SHA-256', file.bytes instanceof Uint8Array ? file.bytes : new Uint8Array(file.bytes));
+  const digest = await crypto.subtle.digest('SHA-256', new Uint8Array(file.bytes).buffer);
   const sha256 = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
   // Word files are read for a leftover Termin 2 page and leftover highlight; the result is an automatic check, never a decision.
   const scan = ext === 'docx' ? await scanDocx(file.bytes).catch(() => null) : null;
@@ -575,7 +575,7 @@ export async function reviewQueue(pb: PocketBase): Promise<QueueRow[]> {
   const docVersionIds = docIds.length ? await pb.collection('document_versions').getFullList({ filter: docIds.map(id => pb.filter('document = {:id}', { id })).join(' || '), fields: 'id,document', ...opts }) : [];
   const versionDoc = new Map(docVersionIds.map(v => [v.id, v.document as string]));
   const oldReviews = docVersionIds.length ? await pb.collection('reviews').getFullList({ filter: docVersionIds.map(v => pb.filter('version = {:id}', { id: v.id })).join(' || '), sort: '-created', fields: 'id,document,version,decision,note,actorName,created', ...opts }) : [];
-  const allReviews = [...reviews, ...oldReviews.filter(r => !reviews.some(x => x.id === r.id))].map(r => ({ ...r, document: r.document || versionDoc.get(r.version) || '' }));
+  const allReviews: RecordModel[] = [...reviews, ...oldReviews.filter(r => !reviews.some(x => x.id === r.id))].map(r => ({ ...r, document: r.document || versionDoc.get(r.version) || '' }));
   const out: QueueRow[] = [];
   for (const { campus } of funded) {
     const disbursement = disbursements.find(d => d.campus === campus.id);

@@ -10,7 +10,7 @@
    * Antrean periksa: one row per item that waits for an admin, across every funded campus, newest arrival first.
    * Each row says what arrived and why it is here; the decision on the item screen is what clears it (decision 50).
    */
-  export interface QueueRow {
+  interface QueueRow {
     campus: { id: string; name: string; code: string; initials: string; team: string };
     kind: Kind; status: string; reason: 'baru' | 'revisi_ulang' | 'bukti'; arrivedAt: string;
     arrival: { number: number; originalName: string; uploadedByName: string; created: string; note: string } | null;

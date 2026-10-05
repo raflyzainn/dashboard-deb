@@ -78,7 +78,7 @@
     {dirty}
     onEdit={() => (draft = { ...baseline })}
     onSave={save}
-    onCancel={() => (draft = emptyDraft())}
+    onCancel={() => { draft = emptyDraft(); }}
   >
     {#snippet view()}
       <dl class="m-0 grid gap-x-8 gap-y-5 min-[700px]:grid-cols-2">

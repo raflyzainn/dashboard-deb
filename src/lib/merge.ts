@@ -305,7 +305,7 @@ export function withVerificationFooter(docx: Uint8Array, options: { png: Uint8Ar
     return true;
   };
 
-  document = document.replace(/<w:sectPr\b([^>]*?)(?:\/>|>([\s\S]*?)<\/w:sectPr>)/g, (_match, attrs: string, inner = '') => {
+  document = document.replace(/<w:sectPr\b([^>]*?)(?:\/>|>([\s\S]*?)<\/w:sectPr>)/g, (_match, attrs: string, inner: string = '') => {
     const references = inner.match(/<w:footerReference\b[^>]*\/>/g) || [];
     const added: string[] = [];
     for (const type of ['default', 'first', 'even']) {
@@ -316,7 +316,7 @@ export function withVerificationFooter(docx: Uint8Array, options: { png: Uint8Ar
       if (existing) inner = inner.replace(existing, '');
       added.push(`<w:footerReference w:type="${type}" r:id="${FOOTER_REL_ID}"/>`);
     }
-    inner = inner.replace(/(<w:pgMar\b[^>]*?\sw:footer=")(\d+)(")/, (_m, before: string, value: string, after: string) => before + String(Math.max(Number(value), MIN_FOOTER_TWIPS)) + after);
+    inner = inner.replace(/(<w:pgMar\b[^>]*?\sw:footer=")(\d+)(")/, (_m: string, before: string, value: string, after: string) => before + String(Math.max(Number(value), MIN_FOOTER_TWIPS)) + after);
     return `<w:sectPr${attrs}>${added.join('')}${inner}</w:sectPr>`;
   });
 

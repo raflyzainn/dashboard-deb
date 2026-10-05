@@ -30,7 +30,7 @@
   const pillText = $derived(!data ? '' : share === 'penuh' ? `${SHARE_LABEL.penuh} ${formatSen(total)} · Nilai SK ${formatSen(target)}` : share === 'tahap1' ? `${SHARE_LABEL.tahap1} ${formatSen(total)} dari batas ${formatSen(target)}` : `${SHARE_LABEL.tahap2} ${formatSen(total)} · sisa Nilai SK setelah Tahap 1 ${formatSen(target)}`);
   const editorUrl = $derived(`/admin/pencairan/${campusId}/rab`);
   /** The version before the one shown that carried the same sheet, for the reviewer to compare totals. */
-  const previous = $derived.by(() => { if (!data?.version) return null; const before = data.versions.filter(v => v.number < data.version!.number && holds(v, share)); const p = before[before.length - 1]; return p ? { number: p.number, total: share === 'penuh' ? p.totalSen : share === 'tahap1' ? p.term1Sen : p.term2Sen || 0 } : null; });
+  const previous = $derived.by(() => { if (!data?.version) return null; const before = data.versions.filter(v => v.number < data!.version!.number && holds(v, share)); const p = before[before.length - 1]; return p ? { number: p.number, total: share === 'penuh' ? p.totalSen : share === 'tahap1' ? p.term1Sen : p.term2Sen || 0 } : null; });
   const empty: Record<RabShare, string> = {
     penuh: 'Belum ada baris RAB. Impor Excel tiga lembar dari templat.',
     tahap1: 'Lembar RAB 70% masih kosong. Impor Excel dengan lembar RAB 70%, atau ketik total dari berkas di bawah.',

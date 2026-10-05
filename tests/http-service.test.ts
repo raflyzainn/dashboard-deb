@@ -74,7 +74,7 @@ test('account switch during file hashing cannot upload under the new account', a
 
 test('network errors and rejected requests never return seed data', async () => {
   const down = createHttpService(async () => { throw new Error('offline'); });
-  await assert.rejects(down.session(), /PocketBase tidak dapat dimuat/);
+  await assert.rejects(down.session(), /Tidak dapat terhubung ke server/);
   const forbidden = createHttpService(async () => Response.json({ message: 'Account disabled' }, { status: 403 }));
   await assert.rejects(forbidden.session(), error => error instanceof DataReadError && error.status === 403);
 });

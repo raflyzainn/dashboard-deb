@@ -4,4 +4,4 @@
 </script>
 
 <svelte:head><title>Pencairan · Desa Energi Berdikari</title></svelte:head>
-{#key page.params.id}<Layar campusId={page.params.id} />{/key}
+{#key page.params.id}<Layar campusId={page.params.id!} />{/key}

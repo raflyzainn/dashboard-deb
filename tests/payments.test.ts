@@ -202,7 +202,7 @@ test('campus accounts cannot mutate payments', async () => {
     );
     await assert.rejects(
       service.reviewPaymentDocument(p.id, p.revision, 'nota', true, ''),
-      /admin/i
+      /hanya untuk PF/i
     );
     for (const action of ['assess', 'submit-documents', 'approve', 'revise', 'paid'] as const)
       await assert.rejects(service.paymentAction(p.id, p.revision, action, 'Catatan'), /admin/i);

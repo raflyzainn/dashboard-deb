@@ -80,7 +80,7 @@
   }));
   /** "Belum diisi: a, b, c dan 4 lainnya." Three names at most, so the bar stays one line. */
   const shortList = (labels: string[]) => `Belum diisi: ${labels.slice(0, 3).join(', ')}${labels.length > 3 ? ` dan ${labels.length - 3} lainnya` : ''}.`;
-  const current = $derived(modal ? rows.find(r => r.kind === modal.kind) || null : null);
+  const current = $derived(rows.find(r => r.kind === modal?.kind) || null);
   const received = $derived(rows.filter(r => r.doc.originalReceived).length);
   /** One line for the bar: what still blocks a final document, named once across the four letters. */
   const missingLine = $derived.by(() => {
@@ -241,14 +241,20 @@
 {/snippet}
 
 {#snippet cellAsli(row: Row)}
-  <label class="inline-flex min-h-8 cursor-pointer items-center gap-2 text-sm text-slate-800">
-    <input type="checkbox" class="size-4 accent-[#0066B2]" checked={row.doc.originalReceived} disabled={Boolean(busy)} onchange={(e) => setFlag(row, 'originalReceived', (e.currentTarget as HTMLInputElement).checked)} />
-    {#if row.doc.originalReceived}<span class="font-semibold text-green-800" title={`${row.doc.originalReceivedByName}, ${time.format(new Date(row.doc.originalReceivedAt))}`}>{when(row.doc.originalReceivedAt)}</span>{:else}<span class="text-slate-500">Belum</span>{/if}
-  </label>
+  <div class="grid justify-items-start gap-2 py-1 text-sm">
+    {#if row.doc.originalReceived}
+      <span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-800"><Icon name="check" size={14} />Asli diterima</span>
+      <span class="text-xs text-slate-500" title={`Dicatat oleh ${row.doc.originalReceivedByName}`}>{time.format(new Date(row.doc.originalReceivedAt))}</span>
+      {#if !data.disbursement.paidAt}<button type="button" class="min-h-9 rounded-lg border border-slate-200 px-2.5 text-xs font-medium text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:opacity-40" aria-label={`Batalkan penerimaan asli ${row.label}`} disabled={Boolean(busy)} onclick={() => setFlag(row, 'originalReceived', false)}>{busy === `originalReceived:${row.kind}` ? 'Menyimpan…' : 'Batalkan penerimaan'}</button>{/if}
+    {:else}
+      <span class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">Belum diterima</span>
+      <button type="button" class={chipBtn} aria-label={`Catat asli ${row.label} diterima`} title={data.disbursement.paidAt ? 'Pengajuan sudah dibayar; penerimaan asli terkunci.' : 'Catat penerimaan dokumen asli'} disabled={Boolean(busy) || Boolean(data.disbursement.paidAt)} onclick={() => setFlag(row, 'originalReceived', true)}>Catat asli diterima</button>
+    {/if}
+  </div>
 {/snippet}
 
 <div class="flex h-full min-h-0 flex-1 flex-col">
-  <div class="min-h-0 flex-1 overflow-auto bg-[#e5e9f0] p-4">
+  <div class="min-h-0 flex-1 overflow-auto bg-white p-4">
     <div class="mb-3 flex flex-wrap items-center gap-1.5">
       {#if (data as any).journey}<a class={chipBtn} href={`/admin/pencairan/${campusId}?butir=pks`}>Data PKS</a><span class={chipInfo}>Templat PF standar</span>{:else}
       <button type="button" class={chipBtn} onclick={() => open('data', 'pks', 'surat')}><Icon name="edit" size={14} />Data surat</button>
@@ -256,7 +262,7 @@
       {#if info && !info.settingsReady}<a class={chipBtn} href="/admin/pencairan/pengaturan" title="Penandatangan Pertamina Foundation dan masa perjanjian belum diisi">Isi Pengaturan program</a>{/if}
     </div>
 
-    <div class="hidden overflow-hidden rounded-lg bg-white shadow-[0_2px_10px_#0b254514] md:block">
+    <div class="hidden overflow-hidden rounded-lg border border-slate-200 bg-white md:block">
       <table class="w-full border-collapse text-sm">
         <thead class="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">
           <tr><th class="px-3 py-2.5">Dokumen</th><th class="px-3 py-2.5">Dokumen final</th><th class="px-3 py-2.5">Pindaian bertanda tangan</th><th class="px-3 py-2.5">Asli</th></tr>
@@ -275,7 +281,7 @@
     </div>
     <div class="grid gap-2.5 md:hidden">
       {#each rows as row (row.kind)}
-        <article class="grid gap-2.5 rounded-lg bg-white p-3 shadow-[0_2px_10px_#0b254514]">
+        <article class="grid gap-2.5 rounded-lg border border-slate-200 bg-white p-3">
           <div class="flex items-baseline justify-between gap-2"><span class="font-semibold text-slate-900">{row.label}</span>{#if row.hint}<span class="text-[11px] text-slate-500">{row.hint}</span>{/if}</div>
           <div><span class="block text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">Dokumen final</span><div class="mt-1">{@render cellFinal(row)}</div></div>
           <div><span class="block text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">Pindaian bertanda tangan</span><div class="mt-1">{@render cellScan(row)}</div></div>

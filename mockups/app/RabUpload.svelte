@@ -18,6 +18,8 @@
  let reducedMotion=$state(false);
  function reloadRemote(){leave(()=>{editingAdmin=false;sync();remoteChanged=false;saveFailed=false;void load();});}
  let edits=$state<Record<string,{volume:number;price:number;first:number}>>({});
+ const v=$derived(data?.version),latest=$derived(data?.versions.at(-1)),historical=$derived(Boolean(v&&latest&&v.id!==latest.id));
+ const items=$derived(v?.lines.filter(l=>l.level===4)||[]);
  const editsValid=$derived(items.every(l=>{const e=edits[l.id];return e&&validEditedVolume(e.volume,l.volume)&&e.price>0&&Math.abs(e.price*100-Math.round(e.price*100))<0.00001&&Number.isSafeInteger(Math.round(e.volume*e.price*100))&&validQuantity(e.first,e.volume);}));
  const editedTotal=$derived(items.reduce((sum,l)=>sum+Math.round((edits[l.id]?.volume||0)*(edits[l.id]?.price||0)*100),0));
  const editedFirst=$derived(items.reduce((sum,l)=>sum+Math.round((edits[l.id]?.first||0)*(edits[l.id]?.price||0)*100),0));
@@ -36,13 +38,13 @@
  let autosaving=$state(false),saveFailed=$state(false);
  let savedNotice=$state(false),noticeTimer:ReturnType<typeof setTimeout>|undefined;
  function showSaved(){clearTimeout(noticeTimer);savedNotice=true;noticeTimer=setTimeout(()=>savedNotice=false,3000);}
- const v=$derived(data?.version),latest=$derived(data?.versions.at(-1)),historical=$derived(Boolean(v&&latest&&v.id!==latest.id));
  const editable=$derived(!admin&&!locked&&!historical&&(!v||v.status==='draf'));
- const items=$derived(v?.lines.filter(l=>l.level===4)||[]);
- let itemPage=$state(1),itemsTop:HTMLDivElement;
+ let itemPage=$state(1);
+ let itemsTop=$state<HTMLDivElement>();
  const pageCount=$derived(Math.max(1,Math.ceil(items.length/5)));
  const currentPage=$derived(Math.min(itemPage,pageCount));
  const pagedItems=$derived(items.slice((currentPage-1)*5,currentPage*5));
+ const journeyStep=$derived(page.url.searchParams.get('rabStep')||(kind==='rab'?'term1':kind==='rab_tahap2'?'term2':!v?'upload':'full'));
  const paginationContext=$derived((v?.id||'')+':'+journeyStep);
  $effect(()=>{if(paginationContext)itemPage=1;});
  function changeItemPage(next:number){itemPage=Math.max(1,Math.min(next,pageCount));itemsTop?.scrollIntoView({block:'start'});}
@@ -56,7 +58,6 @@
  const second=$derived(legacy&&!editable?v?.term2Sen||0:items.reduce((sum,l)=>sum+(validQuantity(quantities[l.id],l.volume)?l.amountSen-Math.round(quantities[l.id]!*l.unitPriceSen):0),0));
  const invalid=$derived(items.some(l=>quantities[l.id]!=null&&!validQuantity(quantities[l.id],l.volume)));
  const ready=$derived(allocated===items.length&&items.length>0&&!invalid&&first>0&&first<=(data?.summary.limitSen||0)&&v?.totalSen===data?.summary.amountSen);
- const journeyStep=$derived(page.url.searchParams.get('rabStep')||(kind==='rab'?'term1':kind==='rab_tahap2'?'term2':!v?'upload':'full'));
  const unlockedStep=$derived(!v?0:v.status!=='draf'||historical?3:(v as typeof v & {campusStep?:number}).campusStep??1);
  $effect(()=>{if(journey&&data&&!busy&&step>unlockedStep)void goto(journeyUrl(['upload','full','term1','term2'][unlockedStep]),{replaceState:true});});
  const editingAllocation=$derived(editable&&(journey?journeyStep==='term1':kind==='rab_penuh')&&!replace);
@@ -267,6 +268,7 @@
    <p class="text-slate-600">Pastikan semua kebutuhan, jumlah, dan harga sudah benar. Setelah ini Anda memilih item untuk Termin 1.</p>
      <div class="flex flex-wrap items-end gap-3"><label class="grid min-w-0 flex-1 gap-1 font-semibold"><span class="field-caption">Cari item atau kode</span><input type="search" class="min-h-11 rounded-lg border border-slate-300 p-2 font-normal" bind:value={search} placeholder="Contoh: panel atau A.1.a.1" /></label><label class="flex min-h-11 items-center gap-2"><input type="checkbox" bind:checked={showGroups} disabled={Boolean(search.trim())} />Tampilkan kelompok kegiatan</label></div>
      <p class="text-xs text-slate-500" role="status">{visibleLines.filter(line=>line.level===4).length} dari {items.length} item ditampilkan. Total tetap mencakup seluruh RAB 100%.</p>
+ <!-- svelte-ignore a11y_no_noninteractive_tabindex (Focusable scroll region supports keyboard scrolling of wide RAB tables.) -->
      <div class="max-h-[50vh] overflow-auto rounded-xl border border-slate-200" tabindex="0" role="region" aria-label="Rincian sumber RAB 100%">
       <table class="w-full min-w-[600px] border-separate border-spacing-0 text-sm tabular-nums">
        <caption class="sr-only">Rincian RAB 100% dari Excel</caption>
@@ -280,6 +282,7 @@
    {#if !historical&&!data.disbursement.paidAt}
     {#if editingAdmin}<div class="flex flex-wrap justify-end gap-2"><button class={btn} disabled={busy} onclick={startEdit}>Reset ke awal</button><button class={btn} disabled={busy} onclick={()=>{editingAdmin=false;error='';}}>Batal</button><button class={blue} disabled={busy||!editsValid} onclick={saveCorrection}>{busy?'Menyimpan...':'Simpan perubahan'}</button></div>{:else}<button class={btn+' justify-self-start'} disabled={busy} onclick={startEdit}><span class="inline-flex items-center gap-2"><Icon name="edit" size={16}/>Edit RAB</span></button>{/if}
    {/if}
+ <!-- svelte-ignore a11y_no_noninteractive_tabindex (Focusable scroll region supports keyboard scrolling of wide RAB tables.) -->
    <div class="max-h-[60vh] overflow-auto rounded-xl border border-slate-200" tabindex="0" role="region" aria-label="Tabel perbandingan tiga RAB">
     <table use:reviewColumns class="w-full min-w-[720px] border-separate border-spacing-0 text-sm tabular-nums">
      <caption class="sr-only">Jumlah dan nominal sumber serta kedua tahap per item</caption>
@@ -313,6 +316,7 @@
     <div class="mt-3 grid gap-3">
      <div class="flex flex-wrap items-end gap-3"><label class="grid min-w-0 flex-1 gap-1 font-semibold"><span class="field-caption">Cari item atau kode</span><input type="search" class="min-h-11 rounded-lg border border-slate-300 p-2 font-normal" bind:value={search} placeholder="Contoh: panel atau A.1.a.1" /></label><label class="flex min-h-11 items-center gap-2"><input type="checkbox" bind:checked={showGroups} disabled={Boolean(search.trim())} />Tampilkan kelompok kegiatan</label></div>
      <p class="text-xs text-slate-500" role="status">{visibleLines.filter(line=>line.level===4).length} dari {items.length} item ditampilkan. Total tetap mencakup seluruh RAB 100%.</p>
+ <!-- svelte-ignore a11y_no_noninteractive_tabindex (Focusable scroll region supports keyboard scrolling of wide RAB tables.) -->
      <div class="max-h-[50vh] overflow-auto rounded-xl border border-slate-200" tabindex="0" role="region" aria-label="Rincian sumber RAB 100%">
       <table class="w-full min-w-[760px] border-separate border-spacing-0 text-sm tabular-nums">
        <caption class="sr-only">Rincian RAB 100% dari Excel</caption>

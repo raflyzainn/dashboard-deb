@@ -21,9 +21,7 @@
  const base=$derived(`/api/pencairan/${campusId}/pengajuan`);
  const section=$derived((sections.includes(page.url.searchParams.get('bagian') as Section)?page.url.searchParams.get('bagian'):page.url.searchParams.get('butir')==='sk'?'sk':['rab_penuh','rab','rab_tahap2'].includes(page.url.searchParams.get('butir')||'')?'rab':page.url.searchParams.get('butir')==='program'?'program':page.url.searchParams.get('butir')==='administrasi'?'administrasi':page.url.searchParams.get('butir')==='ringkasan'?'ringkasan':page.url.searchParams.get('butir')==='pks'?'pks':['rekening','surat_kuasa','invois','permohonan','kuitansi'].includes(page.url.searchParams.get('butir')||'')?'administrasi':data?.journey.lastSection||'sk') as Section);
  const index=$derived(sections.indexOf(section));
- let sectionElement:HTMLElement;
- const stepBlockers=$derived(blockers.filter((b:any)=>b.section===section));
- const canContinue=$derived(locked||stepBlockers.length===0);
+ let sectionElement=$state<HTMLElement>();
  function allowForward(next:Section){
   if(sections.indexOf(next)<=index||canContinue)return true;
   error=reportError(stepBlockers.map((b:any)=>b.text).join(' '));
@@ -48,6 +46,8 @@
   return validateJourney(v.campus,{journey:{...data.journey,fields},versions:v.version?[v.version]:[]},v.settings,v.tags).blockers;
  });
  const locked=$derived(Boolean(data&&(data.paid||['menunggu','selesai'].includes(data.journey.status))));
+ const stepBlockers=$derived(blockers.filter((b:any)=>b.section===section));
+ const canContinue=$derived(locked||stepBlockers.length===0);
  const btn='min-h-11 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-[#0066B2] disabled:opacity-40';
  const blue='min-h-11 rounded-lg bg-[#0066B2] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40';
  const input='min-h-11 w-full min-w-0 rounded-lg border border-slate-300 bg-white p-2 text-sm disabled:bg-slate-50 disabled:text-slate-500';
@@ -119,7 +119,7 @@
   return()=>{clearInterval(timer);window.removeEventListener('focus',focus);window.removeEventListener('beforeunload',warn);window.removeEventListener('beforelogout',logout);};
  });
  $effect(()=>{const fileId=kopId;if(!fileId){kopUrl='';return;}let active=true,url='';void dataService.api.blob(base+'/file/kop').then(blob=>{url=URL.createObjectURL(blob);if(active)kopUrl=url;else URL.revokeObjectURL(url);});return()=>{active=false;if(url)requestAnimationFrame(()=>URL.revokeObjectURL(url));};});
- $effect(()=>{if(!data||data.journey.lastSection===section||busy||dirty)return;const current=section;data.journey.lastSection=current;void dataService.api.patch(base,{lastSection:current,expectedRevision:data.serverRevision}).catch(()=>{});});
+ $effect(()=>{if(!data||locked||data.journey.lastSection===section||busy||dirty)return;const current=section;data.journey.lastSection=current;void dataService.api.patch(base,{lastSection:current,expectedRevision:data.serverRevision}).catch(()=>{});});
 </script>
 
 <div class={embedded?'grid min-w-0 gap-3 '+(section==='rab'?'':'p-4'):'mx-auto grid w-full max-w-[1400px] min-w-0 gap-5 p-4 sm:p-6'}>

@@ -124,7 +124,7 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
   // Plain JSON helpers for the modules built on the real backend (users, pencairan, audit).
   const send = <T,>(url: string, method: string, body?: object | FormData): Promise<T> => {
     const revision=revisions.get(url.match(/^\/api\/pencairan\/([^/?]+)/)?.[1]||'');
-    if(import.meta.env.MODE==='pocketbase-local'&&revision!==undefined){if(body instanceof FormData){if(!body.has('expectedRevision'))body.set('expectedRevision',String(revision));}else body={expectedRevision:revision,...body};}
+    if(import.meta.env?.MODE==='pocketbase-local'&&revision!==undefined){if(body instanceof FormData){if(!body.has('expectedRevision'))body.set('expectedRevision',String(revision));}else body={expectedRevision:revision,...body};}
     return request<T>(url, response => response.json(), {
     method, body: body instanceof FormData ? body : body === undefined ? undefined : JSON.stringify(body),
     headers: body instanceof FormData || body === undefined ? {} : { 'Content-Type': 'application/json' }
@@ -138,11 +138,12 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
   };
   const unavailable = () => Promise.reject(new DataReadError(404, 'Fitur ini belum tersedia pada sistem produksi.'));
   const legacy = { updateReadiness: unavailable, updateIndicatorTarget: unavailable, commentProposal: unavailable, createPayment: unavailable, paymentAction: unavailable,
-    uploadPaymentDocument: unavailable, reviewPaymentDocument: unavailable, addPaymentFeedback: unavailable, savePaymentKpi: unavailable, exportPayment: unavailable,
+    uploadPaymentDocument: unavailable, reviewPaymentDocument: unavailable, addPaymentFeedback: unavailable, savePaymentKpi: unavailable, exportPayment: unavailable, paymentFile: (_id: string, _fileId: string): Promise<Blob> => unavailable(),
+    accountsAdmin: (path: string, body?: { changes?: { id: string; name: string; email: string; revision: number }[] }) => body ? api.post(path, body) : api.get(path),
     updateProgram: (campusId: string, values: Record<string, unknown>) => done(write('/api/campuses/' + idPath(campusId) + '/program', 'PATCH', values)) };
   return { ...service, ...legacy, api, selectAccount, session, navigation, page, async accounts(): Promise<PreviewAccount[]> {
     return request('/api/dev/accounts', async response => (await response.json()).accounts);
   } };
 }
-export const dataService = import.meta.env.MODE === 'mockup' ? createFullDemoService() : createHttpService();
+export const dataService = import.meta.env?.MODE === 'mockup' ? createFullDemoService() : createHttpService();
 export { createDemoService };

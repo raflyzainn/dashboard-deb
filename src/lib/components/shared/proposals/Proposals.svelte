@@ -1,6 +1,6 @@
 <script module lang="ts">
   // Last directory view, so the back link returns to the same search, filter and sort.
-  let directoryQuery = '';
+  let directoryQuery = $state('');
 </script>
 <script lang="ts">
   // Shared presentation for the explicit Campus/Admin routes.

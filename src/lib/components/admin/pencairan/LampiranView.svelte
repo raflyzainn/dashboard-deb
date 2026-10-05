@@ -85,7 +85,7 @@
 </script>
 
 <div class="flex h-full min-h-0 flex-1 flex-col">
-  <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-auto bg-[#e5e9f0] p-4">
+  <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-auto bg-white p-4">
     <div class="flex flex-wrap items-center gap-1.5">
       {#each sources as s (s.entry)}
         <span class={s.ready ? chipOk : chipWarn} title={s.title}>{s.ready ? '✓' : '!'} {s.label}</span>

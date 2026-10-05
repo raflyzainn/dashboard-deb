@@ -39,19 +39,23 @@
 </script>
 
 <div class="flex h-full min-h-0 flex-1 flex-col">
-  <div class="min-h-0 flex-1 overflow-auto bg-[#e5e9f0] p-4">
-    <div class="mx-auto grid w-full max-w-[520px] gap-3 rounded-xl bg-white p-5 shadow-[0_2px_10px_#0b254514]">
-      <h3 class="text-base font-bold text-slate-900">Transfer Tahap 1</h3>
-      <p class="text-sm text-slate-700">Diajukan <b class="tabular-nums text-slate-900">{requested ? formatSen(requested) : 'belum ditetapkan'}</b></p>
+  <div class="min-h-0 flex-1 overflow-auto bg-white p-4">
+    <div class="grid w-full gap-5 rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="grid gap-2"><h3 class="text-base font-bold text-slate-900">Transfer Tahap 1</h3><p class="text-xs text-slate-500">Nominal diajukan</p><p class="text-2xl font-bold tabular-nums tracking-tight text-slate-900">{requested ? formatSen(requested) : 'Belum ditetapkan'}</p></div>
+        <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold {paid ? 'bg-green-50 text-green-800' : 'bg-amber-50 text-amber-800'}">{#if paid}<Icon name="check" size={14} />{/if}{paid ? 'Sudah dibayar' : 'Belum dibayar'}</span>
+      </div>
       {#if paid}
-        <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-800">
-          <span class="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-800"><Icon name="check" size={14} />Dibayar</span>
-          <span>Dibayar {dayOf(data.disbursement.paidAt)} · <span class="tabular-nums">{formatSen(data.disbursement.paidSen)}</span> · referensi {data.disbursement.paidRef} · dicatat oleh {data.disbursement.paidByName || 'Sistem'}</span>
-        </p>
+        <dl class="grid gap-4 border-t border-slate-200 pt-5 text-sm sm:grid-cols-2 xl:grid-cols-4">
+          <div class="grid content-start gap-1.5"><dt class="text-xs text-slate-500">Tanggal pembayaran</dt><dd class="font-semibold text-slate-900">{dayOf(data.disbursement.paidAt)}</dd></div>
+          <div class="grid content-start gap-1.5"><dt class="text-xs text-slate-500">Jumlah dibayar</dt><dd class="font-semibold tabular-nums text-slate-900">{formatSen(data.disbursement.paidSen)}</dd></div>
+          <div class="grid min-w-0 content-start gap-1.5"><dt class="text-xs text-slate-500">Referensi transfer</dt><dd class="break-words font-semibold text-slate-900">{data.disbursement.paidRef}</dd></div>
+          <div class="grid content-start gap-1.5"><dt class="text-xs text-slate-500">Dicatat oleh</dt><dd class="font-semibold text-slate-900">{data.disbursement.paidByName || 'Sistem'}</dd></div>
+        </dl>
       {:else}
         <p class="text-xs text-slate-500">Jumlah yang dibayar harus sama dengan yang diajukan.</p>{#if reason}<p class="text-sm text-amber-900" role="status">{reason}</p><div class="flex flex-wrap gap-3 text-sm font-semibold text-[#0066B2]"><a href={`/admin/pencairan/${campusId}?butir=ttd`}>Buka tanda tangan</a><a href={`/admin/pencairan/${campusId}?butir=lampiran`}>Buka lampiran</a></div>{/if}
       {/if}
-      {#if import.meta.env.MODE!=='mockup'}<BuktiTransfer {campusId} {data} editable {onchange}/>{/if}
+      {#if import.meta.env.MODE!=='mockup'}<section class="grid gap-3 border-t border-slate-200 pt-5" aria-label="Lampiran bukti transfer"><h4 class="text-sm font-semibold text-slate-900">Bukti transfer</h4><BuktiTransfer {campusId} {data} editable {onchange}/></section>{/if}
     </div>
   </div>
 

@@ -19,7 +19,7 @@ export const KIND_FILE: Record<Kind, string> = {
 };
 /** The two buttons of each item: the green one is the right answer, the grey one the wrong one (asks for a note). */
 export const DECISION_LABEL: Record<Kind, { ok: string; bad: string; none?: string }> = {
-  sk: { ok: 'Nilai sesuai dengan SK', bad: 'Nilai berbeda' }, pks: { ok: 'Sesuai', bad: 'Perlu revisi' }, rab_penuh: { ok: 'Sesuai dengan Nilai SK', bad: 'Perlu revisi' }, rab_penuh: { ok: 'Sesuai dengan Nilai SK', bad: 'Perlu revisi' }, rab: { ok: 'Sesuai: jadikan nominal Tahap 1', bad: 'Perlu revisi' }, rab_tahap2: { ok: 'Sesuai', bad: 'Perlu revisi' }, rab_tahap2: { ok: 'Sesuai', bad: 'Perlu revisi' },
+  sk: { ok: 'Nilai sesuai dengan SK', bad: 'Nilai berbeda' }, pks: { ok: 'Sesuai', bad: 'Perlu revisi' }, rab_penuh: { ok: 'Sesuai dengan Nilai SK', bad: 'Perlu revisi' }, rab: { ok: 'Sesuai: jadikan nominal Tahap 1', bad: 'Perlu revisi' }, rab_tahap2: { ok: 'Sesuai', bad: 'Perlu revisi' },
   permohonan: { ok: 'Sesuai', bad: 'Perlu revisi' }, kuitansi: { ok: 'Sesuai', bad: 'Perlu revisi' }, invois: { ok: 'Sesuai', bad: 'Perlu revisi' },
   rekening: { ok: 'Nama sesuai di bank', bad: 'Nama berbeda di bank' }, surat_kuasa: { ok: 'Nama cocok', bad: 'Nama berbeda', none: 'Tanpa surat kuasa' }
 };
@@ -124,9 +124,7 @@ export const FIELDS: Record<Kind, { key: string; label: string; type: 'text' | '
     { key: 'tanggalPerjanjian', label: 'Tanggal perjanjian', type: 'date' }, { key: 'penandatangan', label: 'Pejabat penandatangan dan jabatan', type: 'text' }, { key: 'nilaiBantuanSen', label: 'Nilai bantuan', type: 'money' }
   ],
   rab_penuh: [],
-  rab_penuh: [],
   rab: [{ key: 'termin1Sen', label: 'Total RAB 70% di berkas', type: 'money' }],
-  rab_tahap2: [],
   rab_tahap2: [],
   permohonan: [{ key: 'nomorSurat', label: 'Nomor surat', type: 'text' }, { key: 'tanggalSurat', label: 'Tanggal surat', type: 'date' }, { key: 'nominalSen', label: 'Nominal Termin 1', type: 'money' }, { key: 'penandatangan', label: 'Penandatangan', type: 'text' }],
   invois: [{ key: 'nomorInvois', label: 'Nomor invois', type: 'text' }, { key: 'tanggal', label: 'Tanggal', type: 'date' }, { key: 'nominalSen', label: 'Nominal', type: 'money' }, { key: 'namaBank', label: 'Nama bank di invois', type: 'text' }, { key: 'rekeningTujuan', label: 'Nomor rekening di invois', type: 'text' }, { key: 'namaPemilik', label: 'Nama pemilik rekening di invois', type: 'names' }],
