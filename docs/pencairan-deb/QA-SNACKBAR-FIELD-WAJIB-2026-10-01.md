@@ -119,3 +119,15 @@ pengiriman akhir; penyimpanan draf parsial tetap diperbolehkan.
   pada salinan kode yang masuk PR, mode `mockup`, menghasilkan situs statis di
   `build`. Warning awal tsconfig hasil generate pada salinan baru dan ukuran
   chunk di atas 500 kB tetap tercatat. Test suite, check, dan lint tidak dijalankan.
+
+## Jeda snackbar simpan draf — 5 Oktober 2026
+
+- Pesan sukses simpan draf dibatasi maksimal sekali setiap 20 detik selama
+  komponen pengajuan terbuka. Batas dihitung dari pesan sukses terakhir yang
+  ditampilkan; penyimpanan otomatis tetap berjalan dan error tidak dibatasi.
+- QA browser melalui `scripts/qa/draft-snackbar-cooldown.playwright.js` berhasil:
+  pesan pertama tampil, simpan kedua berhasil tanpa pesan berulang, pesan tampil
+  kembali setelah jam browser dimajukan 21 detik, dan error tetap langsung tampil.
+  Mutasi pengajuan dicegat sehingga data PocketBase tidak diubah.
+- Build ulang kode PR setelah perubahan jeda berhasil (exit 0), mode `mockup`,
+  menghasilkan situs statis; warning ukuran chunk di atas 500 kB tetap ada.

@@ -16,6 +16,7 @@
  let remoteChanged=$state(false);
  let reducedMotion=$state(false);
  let saving=$state(false);
+ let lastDraftNotice=Number.NEGATIVE_INFINITY;
  let uploadErrors=$state<Record<string,string>>({});
  let data=$state<any>(null),fields=$state<Record<string,string>>({}),saved=$state('{}'),busy=$state(false),error=$state(''),message=$state(''),kopUrl=$state(''),preview=$state<MergeKind|'surat_kuasa'|null>(null),pending=$state<(()=>void)|null>(null);
  const base=$derived(`/api/pencairan/${campusId}/pengajuan`);
@@ -58,7 +59,7 @@
  async function load(){try{const next=await dataService.api.get<any>(base);if(busy||next.serverRevision<data?.serverRevision)return;if(!dirty){remoteChanged=false;sync(next);}else if(next.serverRevision!==data?.serverRevision)remoteChanged=true;}catch(e){error = reportError(e instanceof Error?e.message:String(e));}}
  async function save(){
   if(busy)return false;if(!dirty)return true;const submitted=$state.snapshot(fields);busy=true;saving=true;error='';message='';
-  try{sync(await dataService.api.patch(base,{fields:submitted,revision:data.journey.revision,expectedRevision:data.serverRevision}),submitted);if(!dirty)message='Draf tersimpan. Belum dikirim ke PF.';return !dirty;}
+  try{sync(await dataService.api.patch(base,{fields:submitted,revision:data.journey.revision,expectedRevision:data.serverRevision}),submitted);if(!dirty&&Date.now()-lastDraftNotice>=20000){message='Draf tersimpan. Belum dikirim ke PF.';lastDraftNotice=Date.now();}return !dirty;}
   catch(e){error = reportError(e instanceof Error?e.message:String(e));if((e as any).status===409)remoteChanged=true;return false;}finally{busy=false;saving=false;}
  }
  async function navigate(next:Section){if(section==='rab')await load();if(!allowForward(next)||!await save())return;preview=null;error='';await goto('/campus/pencairan?bagian='+next+'&butir='+({sk:'sk',program:'program',rab:'rab_penuh',administrasi:'administrasi',pks:'pks',ringkasan:'ringkasan'}[next]));}
