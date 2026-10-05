@@ -41,8 +41,9 @@
   let {
     value = $bindable<RegionValue>(),
     disabled = false,
+    required = false,
     onchange
-  }: { value: RegionValue; disabled?: boolean; onchange?: () => void } = $props();
+  }: { value: RegionValue; disabled?: boolean; required?: boolean; onchange?: () => void } = $props();
 
   const uid = $props.id();
   const region = $derived<RegionValue>({ ...emptyRegion(), ...(value ?? {}) });
@@ -177,6 +178,7 @@
     <div class="min-w-0">
       <label class={labelClass} for="{uid}-{field.level}">
         {field.label}
+        {#if required}<span class="text-red-600" aria-hidden="true">*</span>{/if}
         {#if busy}
           <span
             class="ml-1 inline-block size-3 animate-spin rounded-full border-2 border-[#9cc3ef] border-t-transparent align-[-1px]"
@@ -188,6 +190,7 @@
         id="{uid}-{field.level}"
         class={controlClass}
         value={field.id}
+        {required}
         disabled={disabled || !field.parentId || busy || failed[field.level]}
         aria-busy={busy}
         aria-describedby={failed[field.level] ? `${uid}-${field.level}-error` : undefined}
