@@ -38,12 +38,12 @@ export async function verifyJourneyDownload(pb:PocketBase,settings:Record<string
   const source=new Uint8Array(await(await files.get(version.data.r2Key)).arrayBuffer());
   const expected=approved?new Uint8Array(await finalJourneyDocx(source).arrayBuffer()):source;
   if(contentHash(expected)!==sourceHash)throw new PreviewError(409,'Dokumen berubah. Muat ulang pratinjau sebelum mengunduh.');
-  const cacheId=hash(new TextEncoder().encode('pf-logo-2|'+version.id+'|'+approved+'|'+origin+'|'+sourceHash));
+  const cacheId=hash(new TextEncoder().encode('plain-qr-3|'+version.id+'|'+approved+'|'+origin+'|'+sourceHash));
   const cached=version.data.generation?.verifiedFiles?.[cacheId];
   if(cached)return new Blob([await(await files.get(cached.key)).arrayBuffer()],{type:DOCX_MIME});
   const campus=store.records.get('campuses')![0].data;
   const code=await mintCode(pb,campus.acronym||campus.initials||campusId,1,kind as VerificationKind);
-  const qr={scale:6,margin:4,pfLogo:true},url=verificationUrl(publicSettings,code);
+  const qr={scale:6,margin:4,level:'H'} as const,url=verificationUrl(publicSettings,code);
   const stamped=withVerificationFooter(withoutJourneyLabels(bytes),{png:qrPng(url,qr),pngSide:qrPngSide(url,qr),code,line:verificationLine(publicSettings,code),issuer:'Diterbitkan website DEB'});
   const key=`journey/${campusId}/verification/${code}.docx`;
   await files.put(key,stamped,DOCX_MIME);
