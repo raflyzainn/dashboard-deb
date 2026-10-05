@@ -29,6 +29,8 @@
    */
   type Row = Kind | 'program' | 'administrasi' | 'penandatangan' | 'surat' | 'ringkasan' | 'ttd' | 'lampiran' | 'bayar';
   const CAMPUS_ROWS: {key:Row;label:string}[]=[{key:'sk',label:'SK'},{key:'program',label:'Data Program'},{key:'rab_penuh',label:'RAB 100%'},{key:'rab',label:'RAB 70%'},{key:'rab_tahap2',label:'RAB 30%'},{key:'administrasi',label:'Rekening Penerima'},{key:'penandatangan',label:'Penandatangan Kampus'},{key:'surat',label:'Identitas Surat dan Kop'},{key:'pks',label:'PKS'},{key:'ringkasan',label:'Dokumen'}];
+  const ADMINISTRATION_KEYS: Row[] = ['administrasi','penandatangan','surat','pks','ringkasan'];
+  let administrationOpen = $state(false);
   const CLOSING: { key: Row; label: string }[] = [{ key: 'ttd', label: 'Tanda tangan' }, { key: 'lampiran', label: 'Lampiran' }, { key: 'bayar', label: 'Pembayaran' }];
   let { campusId, mode = 'admin' }: { campusId: string; mode?: 'admin' | 'campus' } = $props();
 
@@ -136,6 +138,9 @@
     return k || (admin && data.readiness.lengkap ? 'ttd' : 'sk');
   }
   const selected = $derived<Row>(requested);
+  $effect(() => {
+    if (ADMINISTRATION_KEYS.includes(selected)) administrationOpen = true;
+  });
   const isItem = $derived((KINDS as readonly string[]).includes(selected));
   const kind = $derived<Kind>(isItem ? (selected as Kind) : 'sk');
   const doc = $derived(data?.documents.find(d => d.kind === kind) || null);
@@ -400,13 +405,28 @@
       <aside use:trackRail class="flex gap-1 overflow-x-auto p-2 lg:grid lg:content-start lg:gap-0.5 lg:overflow-visible lg:p-2.5" aria-label="Butir">
         <span class="hidden px-2.5 pb-1 text-[10.5px] font-bold uppercase tracking-[0.06em] text-slate-400 lg:block">Butir</span>
         {#if !admin&&fullDummy&&!page.url.searchParams.has('signed')}
-         {#each CAMPUS_ROWS as item}
+         {#snippet campusStep(item: {key: Row; label: string})}
           {@const j=(data as any).journey}
           {@const status=item.key==='sk'?data.readiness.items.sk:item.key==='pks'&&j&&!['menunggu','selesai'].includes(j.status)?data.readiness.items.pks==='perlu_revisi'?'perlu_revisi':'belum_ada':item.key==='program'?j?.status==='menunggu'?'menunggu_review':j?.status==='selesai'?'sesuai':'belum_ada':['administrasi','penandatangan','surat','ringkasan'].includes(item.key)?['permohonan','invois','kuitansi','rekening','surat_kuasa'].some(k=>data!.readiness.items[k as Kind]==='perlu_revisi')?'perlu_revisi':j?.status==='menunggu'?'menunggu_review':j?.status==='selesai'?'sesuai':'belum_ada':data.readiness.items[item.key as Kind]}
-          <button type="button" class="flex shrink-0 items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] transition {selected===item.key?'bg-white font-bold text-slate-900 shadow-[0_4px_12px_#0b254514]':'text-slate-700 hover:bg-white/70'}" onclick={()=>open(item.key)} aria-current={selected===item.key?'true':undefined}>
-           <i class="size-2.5 shrink-0 rounded-full {status==='belum_ada'?'bg-[#0066B2]':dot[status]}"></i><span class="whitespace-nowrap">{item.label}</span><span class="ml-auto whitespace-nowrap pl-2 text-[11px] font-medium text-slate-500">{status==='perlu_revisi'?'Perlu revisi':status==='sesuai'?'Sesuai':status==='menunggu_review'?'Menunggu PF':'Draf'}</span>
+          <button type="button" class="campus-step self-start lg:self-auto flex shrink-0 items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] transition {selected===item.key?'bg-white font-bold text-slate-900 shadow-[0_4px_12px_#0b254514]':'text-slate-700 hover:bg-white/70'}" onclick={()=>open(item.key)} aria-current={selected===item.key?'true':undefined}>
+           <i class="size-2.5 shrink-0 rounded-full {['belum_ada','menunggu_review'].includes(status)?'bg-[#2868ad]':dot[status]}"></i><span class="whitespace-nowrap">{item.label}</span>{#if status!=='menunggu_review'}<span class="ml-auto whitespace-nowrap pl-2 text-[11px] font-medium text-slate-500">{status==='perlu_revisi'?'Perlu revisi':status==='sesuai'?'Sesuai':'Draf'}</span>{/if}
           </button>
+         {/snippet}
+         {#each CAMPUS_ROWS.filter(item=>!ADMINISTRATION_KEYS.includes(item.key)) as item}
+          {@render campusStep(item)}
          {/each}
+         <div class="min-w-0 w-[220px] shrink-0 self-start lg:w-auto lg:self-auto">
+          <button type="button" class="flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] {ADMINISTRATION_KEYS.includes(selected)?'bg-white font-bold text-slate-900 shadow-[0_4px_12px_#0b254514]':'text-slate-700 hover:bg-white/70'}" aria-expanded={administrationOpen} aria-controls={'administration-menu-'+campusId} onclick={()=>administrationOpen=!administrationOpen}>
+           <i class="size-2.5 shrink-0 rounded-full bg-[#2868ad]" aria-hidden="true"></i><span>Administrasi</span><span class="ml-auto text-[11px] font-medium text-slate-500">{campusJourney?.status==='menunggu'?'':campusJourney?.status==='selesai'?'Sesuai':campusJourney?.status==='revisi'?'Revisi':'Draf'}</span><span class="shrink-0 text-slate-500" aria-hidden="true"><Icon name={administrationOpen?'down':'chevron'} size={12}/></span>
+          </button>
+          <div id={'administration-menu-'+campusId} hidden={!administrationOpen}>
+           <div class="administration-submenu ml-[17px] mt-1 grid min-w-0 gap-0.5 border-l border-[#0b2545]/15 pl-3" role="group" aria-label="Administrasi">
+            {#each CAMPUS_ROWS.filter(item=>ADMINISTRATION_KEYS.includes(item.key)) as item}
+             {@render campusStep(item)}
+            {/each}
+           </div>
+          </div>
+         </div>
         {:else}
         {#each KINDS as k}
           {@const s = data.readiness.items[k]}
@@ -646,6 +666,15 @@
 {/if}
 
 <style>
+  .administration-submenu .campus-step { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; min-width: 0; width: 100%; gap: 8px; }
+  .administration-submenu .campus-step > span:nth-child(2) { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+  .administration-submenu .campus-step > span:nth-child(3) { padding-left: 0; }
+  @media (min-width: 1024px) {
+    .campus-step { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; width: 100%; min-width: 0; gap: 8px; }
+    .campus-step > span:nth-child(2) { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+    .campus-step > span:nth-child(3) { padding-left: 0; }
+  }
+
   @media (max-width: 1023px) {
     .document-frame { gap: 20px; background: transparent; border: 0; box-shadow: none; }
     .document-navigation { border: 0; border-radius: 12px; overflow: hidden; }

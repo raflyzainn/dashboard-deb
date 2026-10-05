@@ -14,6 +14,7 @@ export function sectionForField(key:string):Section {
  return 'surat';
 }
 export const PKS_DATE = '2026-06-17';
+export const PF_PKS_PENDING = 'masih menunggu surat dari PF';
 export const LETTER_MIN_DATE = '2026-06-18';
 export const documentGuides: Record<string, string[]> = {
  pks:['Siapkan dua rangkap PKS dengan isi yang sama.','Gunakan satu perwakilan kampus yang berwenang; nama dan jabatan harus konsisten.','Lengkapi tanda tangan para pihak dan meterai pada tempat yang ditentukan template.','Pastikan tanggal PKS 17 Juni 2026 dan lampiran sesuai jenis rekening.'],
@@ -49,16 +50,19 @@ export function ensureJourney(c: any, r: any): Journey {
  journey.checklist??={};
  return journey;
 }
-/** Legacy auto-generated dummy numbers require an explicit admin save. */
+/** Simulated PF numbers are not issued PKS numbers. */
 export function pfNumber(journey:Pick<Journey,'pf'>):string {
  const value=journey.pf?.nomorPksPf?.trim()||'';
- return value.startsWith('PKS-PF/DUMMY/2026/')&&!journey.pf?.confirmedByAdmin?'':value;
+ return value.startsWith('PKS-PF/DUMMY/2026/')?'':value;
+}
+export function pfNumberForDocument(journey:Pick<Journey,'pf'>):string {
+ return pfNumber(journey)||PF_PKS_PENDING;
 }
 export function mergeInput(c: any, r: any, settings: any) {
  const f = ensureJourney(c,r).fields;
  return {campus:{...c, code:c.acronym || c.id, program:{...c.program, address:f.alamat,village:f.desa,district:f.kecamatan,regency:f.kabupaten,...(f.lokasiProvinsiId?{province:f.lokasiProvinsi,postalCode:f.lokasiKodePos}:{}),mentor:f.mentor,coordinator:f.koordinator}},
   award:{skNumber:'SK-DUMMY/2026/'+c.id,skDate:'2026-06-01',amountSen:BUDGET,...c.award,programTitle:f.judulProgram,programYear:c.programYear}, settings,
-  disbursement:{requestedSen:r.versions.at(-1)?.term1Sen || 0,properties:{...f,nomorPksPf:pfNumber(r.journey)}},
+  disbursement:{requestedSen:r.versions.at(-1)?.term1Sen || 0,properties:{...f,nomorPksPf:pfNumberForDocument(r.journey)}},
   rekening:{namaBank:f.namaBank,nomorRekening:f.nomorRekening,namaPemilik:[f.namaPemilik]}};
 }
 export const settingsSource=(settings:any)=>JSON.stringify(['pfSignatoryName','pfSignatoryTitle','agreementStart','agreementEnd','reportDeadline'].map(k=>settings?.[k]||''));
@@ -69,7 +73,7 @@ export function validateJourney(c:any,r:any,settings:any,tags:Record<MergeKind,s
  const warned=new Set<string>();
  const warn=(section:Section,key:string,text:string)=>{if(!warned.has(key)){warned.add(key);blockers.push({section,text});}};
  const require=(section:Section,key:string,label:string)=>{if(!f[key]?.trim())warn(section,key,label+' belum diisi.');};
- if(!pfNumber(j))warn('pks','nomorPksPf','Nomor PKS Pertamina Foundation belum diisi.');
+ if(!pfNumber(j)&&!j.pfRequestedAt)warn('pks','permintaanNomorPksPf','Klik Minta PF melengkapi nomor PKS terlebih dahulu.');
  for(const [key,label] of [['judulProgram','Nama kegiatan'],['alamat','Alamat kampus'],['desa','Desa program'],['kabupaten','Kabupaten/kota program'],['mentor','Mentor'],['koordinator','Koordinator']])require('program',key,label);
  if(j.status!=='menunggu'&&j.status!=='selesai'&&!r.payment?.paidAt)for(const text of programLocationErrors(f,true))warn('program',text,text);
  if(!v)blockers.push({section:'rab',text:'Unggah RAB 100% terlebih dahulu.'});

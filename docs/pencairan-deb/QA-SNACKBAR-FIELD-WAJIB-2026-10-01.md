@@ -114,7 +114,7 @@ pengiriman akhir; penyimpanan draf parsial tetap diperbolehkan.
 - Branch berasal dari development; revisi label Foto Buku Rekening tetap berada di branch terpisah.
 - Pemeriksaan dilakukan melalui pembacaan diff; QA browser belum dijalankan karena tool browser tidak tersedia. Tes terminal, check, lint, dan build tidak dijalankan sesuai instruksi proyek.
 
-### Nomor PKS PF wajib disimpan admin
+### Nomor PKS PF wajib disimpan admin — riwayat sebelum revisi placeholder
 
 - Pengisian nomor PKS PF otomatis pada mode dummy dihapus. Nomor contoh lama dengan awalan PKS-PF/DUMMY/2026/ baru diakui setelah admin menyimpannya secara eksplisit. Nilai tersimpan dan arsip dokumen lama tidak dihapus.
 - Validasi bersama menolak lanjut dari PKS, pembuatan dokumen baru, dan pengajuan jika nomor PF belum tersedia. Form admin dimulai kosong; permintaan nomor PF tetap tersedia pada kampus.
@@ -147,3 +147,47 @@ pengiriman akhir; penyimpanan draf parsial tetap diperbolehkan.
   Mutasi pengajuan dicegat sehingga data PocketBase tidak diubah.
 - Build ulang kode PR setelah perubahan jeda berhasil (exit 0), mode `mockup`,
   menghasilkan situs statis; warning ukuran chunk di atas 500 kB tetap ada.
+
+
+### Placeholder nomor PKS PF — 5 Oktober 2026
+
+- Nomor PKS PF yang belum tersedia pada isi surat menggunakan “masih menunggu surat dari PF”. Placeholder tidak ditampilkan sebagai keterangan pada halaman PKS atau Dokumen. Kampus wajib mengirim permintaan nomor PKS PF terlebih dahulu; setelah terkirim, kampus dapat melanjutkan ke Dokumen, membuat/pratinjau/mengunduh dokumen, dan mengajukan selama persyaratan lain sudah lengkap. Aturan ini menggantikan kewajiban menunggu nomor PF pada revisi sebelumnya.
+- Teks yang sama digunakan dalam isian template, metadata dokumen, properti pencairan, dan riwayat pengajuan. Nomor asli pada data admin tetap kosong sampai diisi admin; nomor dummy lama yang belum dikonfirmasi memakai placeholder.
+- Validasi bersama memeriksa permintaan nomor PF pada navigasi, pembuatan dokumen, dan pengajuan. Permintaan yang sudah tersimpan tidak perlu dikirim ulang. Jika nomor asli sudah tersedia, permintaan tidak diperlukan. Saat admin menyimpan nomor sebenarnya, alur revisi yang sudah ada meminta kampus membuat ulang dokumen dan mengajukan kembali. Arsip versi sebelumnya dipertahankan.
+- Pemeriksaan kode: penelusuran validasi bersama, sumber data template, penyimpanan pengajuan, dan alur pembaruan nomor oleh admin. QA browser belum dilakukan karena tool browser tidak tersedia. Tes terminal, check, lint, dan build tidak dijalankan sesuai instruksi proyek.
+
+### Perbaikan sidebar kampus — 5 Oktober 2026
+
+- Screenshot pengguna menunjukkan label dan status sidebar melebar keluar kolom 240 px. Pada desktop, status kini ditempatkan di bawah label; label panjang dapat membungkus dalam kolom. Navigasi horizontal mobile tetap memakai tata letak sebelumnya.
+- Pratinjau pengajuan yang sudah terkirim mengambil berkas tersimpan. Perubahan placeholder tidak menulis ulang arsip; dokumen perlu dibuat ulang melalui alur revisi untuk memakai aturan terbaru.
+- Penyebab ditelusuri melalui kode CSS sidebar dan pembacaan berkas pada engine. Hasil visual belum diverifikasi melalui browser karena tool tidak tersedia; tes terminal tidak dijalankan.
+
+### Salinan PKS dummy lama dan status sidebar
+
+- Label Menunggu PF pada sidebar alur kampus dihapus; status pengajuan dan indikator titik tetap tersedia.
+- Nomor dengan awalan PKS-PF/DUMMY/2026/ diperlakukan sebagai nomor simulasi, termasuk yang pernah disimpan admin. Dokumen baru menggunakan placeholder sampai tersedia nomor sebenarnya.
+- Pada mode dummy, pratinjau/unduhan PKS tersimpan yang belum selesai atau dibayar mengganti nomor simulasi dengan “masih menunggu surat dari PF” pada salinan yang disajikan. Isi arsip tersimpan dipertahankan. Dokumen final dan berkas bertanda tangan tidak diubah. Ini memperbarui perilaku pratinjau lama yang dijelaskan sebelumnya.
+- Pengajuan baru tetap memerlukan permintaan nomor PF jika nomor sebenarnya kosong. Pengajuan lama berstatus menunggu tidak dibatalkan otomatis.
+- Pemeriksaan melalui diff dan penelusuran alur kode; QA browser belum tersedia, tes terminal tidak dijalankan.
+
+### Sinkronisasi revisi kedua dengan development
+
+- Branch feat/administrasi-dropdown digabungkan dengan development 5e6fbf6: lokasi program bertingkat dan alamat lengkap, perpindahan Data Program ke RAB saat belum lengkap, serta jeda notifikasi simpan draf 20 detik.
+- Halaman administrasi terpisah, permintaan nomor PF sebelum lanjut, placeholder dalam surat, serta perbaikan sidebar dipertahankan.
+- Konflik diselesaikan melalui pemeriksaan kode dan diff. QA browser belum dilakukan karena tool tidak tersedia. Build, check, lint, dan test suite tidak dijalankan pada sinkronisasi ini.
+
+### Submenu Administrasi
+
+- Navigasi kampus mengelompokkan Rekening Penerima, Penandatangan Kampus, Identitas Surat dan Kop, PKS, dan Dokumen di bawah tombol Administrasi yang dapat dibuka/tutup.
+- Kelompok otomatis terbuka saat pengguna masuk ke salah satu halaman tersebut, termasuk melalui tombol Lanjut dan tautan langsung. Membuka/menutup kelompok tidak berpindah halaman. Pemilihan submenu tetap memakai navigasi dan validasi yang ada.
+- Tombol memakai aria-expanded dan aria-controls; submenu tertutup disembunyikan dari fokus keyboard. Nama panjang dapat membungkus pada desktop dan mobile.
+- Pemeriksaan melalui pembacaan kode dan diff. QA browser belum dilakukan karena tool browser tidak tersedia; build, check, lint, dan tes terminal tidak dijalankan.
+
+- Tampilan submenu mengikuti referensi pohon navigasi: chevron di kiri judul Administrasi, ikon dokumen, garis vertikal, dan anak menu menjorok. Teks menu memakai biru tua #0b2545 dengan latar aktif tipis; warna titik status tetap mengikuti status. Pemeriksaan visual browser belum dilakukan.
+
+- Penyesuaian referensi terbaru: tampilan baris kembali ke label kiri/status kanan dan latar aktif putih. Titik draf/menunggu memakai biru tua #2868ad; Administrasi memakai titik yang sama dengan chevron di kanan untuk membuka submenu. Ikon dokumen pada judul dihapus. Pemeriksaan baru sebatas kode, belum QA browser.
+
+### Validasi sebelum publikasi revisi Administrasi
+
+- Build npm run build berhasil (exit 0), mode mockup, menghasilkan situs statis di build. Warning ukuran chunk lebih dari 500 kB tetap ada.
+- Seluruh commit development 5e6fbf6 sudah masuk. Diff diperiksa. QA browser oleh agen belum dilakukan karena tool tidak tersedia; test suite, check, dan lint tidak dijalankan.

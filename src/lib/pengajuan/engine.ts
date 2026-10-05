@@ -2,8 +2,8 @@ import { samplePdf } from '../data/demo/fixtures/pdf';
 import { KINDS, KIND_LABEL, documentReceiptFlags, assess, isRabKind, parseSen, terbilang } from '../pencairan';
 import { arrange, type LineInput } from '../rab';
 import { BUDGET, LIMIT, sampleItems, readExcel, validQuantity, validEditedVolume } from '../../../mockups/rab/model';
-import { ensureJourney, journeyView, touchJourney, sections, PKS_DATE, validDate, documentGuides, kuasaSource, settingsSource, pfNumber } from './journey';
-import { journeyTemplates, journeyDocx, finalJourneyDocx } from './journey-documents';
+import { ensureJourney, journeyView, touchJourney, sections, PKS_DATE, validDate, documentGuides, kuasaSource, settingsSource, pfNumber, pfNumberForDocument } from './journey';
+import { journeyTemplates, journeyDocx, finalJourneyDocx, pendingPfJourneyDocx } from './journey-documents';
 import { MERGE_KINDS, isMergeKind, DOCX_MIME, MERGE_LABEL, type MergeKind } from '../merge';
 import type { AppSession } from '../types';
 import { programLocationErrors } from './location';
@@ -67,7 +67,7 @@ function revisePfData(c:any,r:any,user:AppSession){
    const kuasa=parts[4]==='surat-kuasa';
    if(!kuasa&&!isMergeKind(parts[5]))throw Error('Jenis dokumen tidak dikenal.');
    const view=await request(`/api/pencairan/${parts[2]}/pengajuan`);
-   if(!write&&!kuasa&&(view.journey.status==='selesai'||!view.stale.includes(parts[5]))){const stored=await transaction(s=>{const r=s.fullDummy.campuses[parts[2]],v=r.documents.find((d:any)=>d.kind===parts[5])?.versions.filter((v:any)=>v.origin==='generated').at(-1);return v&&s.files[v.id];});if(!stored)throw Error('Dokumen yang disetujui belum tersedia.');return view.journey.status==='selesai'?finalJourneyDocx(new Uint8Array(await stored.arrayBuffer())):stored;}
+   if(!write&&!kuasa&&(view.journey.status==='selesai'||!view.stale.includes(parts[5]))){const stored=await transaction(s=>{const r=s.fullDummy.campuses[parts[2]],v=r.documents.find((d:any)=>d.kind===parts[5])?.versions.filter((v:any)=>v.origin==='generated').at(-1);return v&&s.files[v.id];});if(!stored)throw Error('Dokumen yang disetujui belum tersedia.');if(options.dummy&&parts[5]==='pks'&&view.journey.status!=='selesai'&&!view.paid)return pendingPfJourneyDocx(new Uint8Array(await stored.arrayBuffer()));return view.journey.status==='selesai'?finalJourneyDocx(new Uint8Array(await stored.arrayBuffer())):stored;}
    if(kuasa){
     if(write)throw Error('Gunakan unduh template surat kuasa.');
     const f=view.journey.fields;
@@ -128,7 +128,7 @@ function revisePfData(c:any,r:any,user:AppSession){
      if(j.revision!==expectedRevision||settingsSource(settings)!==renderedSettings)throw Error('Data berubah saat dokumen dibuat. Coba kembali.');
      if(locked)throw Error('Pengajuan terkunci selama pemeriksaan atau setelah pembayaran.');
      const d=r.documents.find((d:any)=>d.kind===parts[5]),v=documentVersion(parts[5],`${MERGE_LABEL[parts[5] as keyof typeof MERGE_LABEL]}_${c.id}_v${d.versions.length+1}.docx`,d.versions.length+1);
-     Object.assign(v,{origin:'generated',mime:DOCX_MIME,size:generated.size,journeyRevision:j.revision,generation:{settingsSource:renderedSettings},fields:{...j.fields,nominalSen:r.versions.at(-1)?.term1Sen}});
+     Object.assign(v,{origin:'generated',mime:DOCX_MIME,size:generated.size,journeyRevision:j.revision,generation:{settingsSource:renderedSettings},fields:{...j.fields,nomorPksPf:pfNumberForDocument(j),nominalSen:r.versions.at(-1)?.term1Sen}});
      d.versions.push(v);d.currentVersionId=v.id;d.status='belum_ada';s.files[v.id]=generated;return view();
     }
     if(parts[4]==='submit'){
@@ -136,9 +136,9 @@ function revisePfData(c:any,r:any,user:AppSession){
      const current=view();if(current.blockers.length||current.stale.length)throw Error('Lengkapi data dan buat ulang dokumen sebelum mengajukan.');
      if(current.revisionBlockers.length)throw Error('Selesaikan catatan revisi: unggah ulang berkas, buat ulang dokumen, atau ubah alokasi RAB yang diminta sebelum mengajukan.');
      check(r.versions.at(-1));j.status='menunggu';
-     j.history.push({id:id(),number:j.history.length+1,revision:j.revision,created:now(),actorName:user.name,fields:clone(j.fields),files:clone(j.files),rabVersionId:r.versions.at(-1).id,documents:r.documents.map((d:any)=>({kind:d.kind,versionId:d.currentVersionId}))});
-     r.versions.at(-1).status='menunggu';r.payment.properties={...r.payment.properties,...j.fields,nomorPksPf:j.pf!.nomorPksPf};
-     r.documents.forEach((d:any)=>{if(d.kind==='sk')return;const version=d.versions.find((v:any)=>v.id===d.currentVersionId);if(version){const f=j.fields;const amount=r.versions.at(-1).term1Sen;if(d.kind==='pks')version.fields={nomorPksPf:j.pf!.nomorPksPf,nomorPksKampus:f.nomorPksKampus,tanggalPerjanjian:f.tanggalPerjanjian,penandatangan:f.penandatanganNama+' - '+f.penandatanganJabatan,nilaiBantuanSen:BUDGET};if(d.kind==='rekening')version.fields={namaBank:f.namaBank,nomorRekening:f.nomorRekening,namaPemilik:[f.namaPemilik]};if(d.kind==='surat_kuasa')version.fields={pemberiKuasa:f.pemberiKuasa,penerimaKuasa:[f.penerimaKuasa]};if(d.kind==='invois')Object.assign(version.fields,{namaBank:f.namaBank,rekeningTujuan:f.nomorRekening,namaPemilik:[f.namaPemilik],tanggal:f.tanggalInvois,nominalSen:amount});if(d.kind==='permohonan')Object.assign(version.fields,{nomorSurat:f.nomorSuratPermohonan,tanggalSurat:f.tanggalSuratPermohonan,penandatangan:f.penandatanganNama,nominalSen:amount});if(d.kind==='kuitansi')Object.assign(version.fields,{tanggal:f.tanggalKuitansi,nominalSen:amount,terbilang:terbilang(amount)});}d.status=d.kind==='surat_kuasa'&&j.fields.jenisRekening==='kampus'?'tidak_perlu':'menunggu_review';});return view();
+     j.history.push({id:id(),number:j.history.length+1,revision:j.revision,created:now(),actorName:user.name,fields:{...clone(j.fields),nomorPksPf:pfNumberForDocument(j)},files:clone(j.files),rabVersionId:r.versions.at(-1).id,documents:r.documents.map((d:any)=>({kind:d.kind,versionId:d.currentVersionId}))});
+     r.versions.at(-1).status='menunggu';r.payment.properties={...r.payment.properties,...j.fields,nomorPksPf:pfNumberForDocument(j)};
+     r.documents.forEach((d:any)=>{if(d.kind==='sk')return;const version=d.versions.find((v:any)=>v.id===d.currentVersionId);if(version){const f=j.fields;const amount=r.versions.at(-1).term1Sen;if(d.kind==='pks')version.fields={nomorPksPf:pfNumberForDocument(j),nomorPksKampus:f.nomorPksKampus,tanggalPerjanjian:f.tanggalPerjanjian,penandatangan:f.penandatanganNama+' - '+f.penandatanganJabatan,nilaiBantuanSen:BUDGET};if(d.kind==='rekening')version.fields={namaBank:f.namaBank,nomorRekening:f.nomorRekening,namaPemilik:[f.namaPemilik]};if(d.kind==='surat_kuasa')version.fields={pemberiKuasa:f.pemberiKuasa,penerimaKuasa:[f.penerimaKuasa]};if(d.kind==='invois')Object.assign(version.fields,{namaBank:f.namaBank,rekeningTujuan:f.nomorRekening,namaPemilik:[f.namaPemilik],tanggal:f.tanggalInvois,nominalSen:amount});if(d.kind==='permohonan')Object.assign(version.fields,{nomorSurat:f.nomorSuratPermohonan,tanggalSurat:f.tanggalSuratPermohonan,penandatangan:f.penandatanganNama,nominalSen:amount});if(d.kind==='kuitansi')Object.assign(version.fields,{tanggal:f.tanggalKuitansi,nominalSen:amount,terbilang:terbilang(amount)});}d.status=d.kind==='surat_kuasa'&&j.fields.jenisRekening==='kampus'?'tidak_perlu':'menunggu_review';});return view();
     }
     if(write){
      if(parts[4]==='upload'){
