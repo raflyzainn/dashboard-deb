@@ -11,6 +11,7 @@
  import FileViewer from '$lib/components/admin/pencairan/FileViewer.svelte';
  import RabUpload from './RabUpload.svelte';
  import DocumentGuide from './DocumentGuide.svelte';
+ import ProgramLocation from '$lib/components/shared/profile/ProgramLocation.svelte';
  import { sections, sectionLabels, PKS_DATE, LETTER_MIN_DATE, type Section, validateJourney } from './journey';
  let {campusId,embedded=false,onloaded=()=>{}}:{campusId:string;embedded?:boolean;onloaded?:()=>void}=$props();
  let remoteChanged=$state(false);
@@ -51,7 +52,7 @@
  const btn='min-h-11 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-[#0066B2] disabled:opacity-40';
  const blue='min-h-11 rounded-lg bg-[#0066B2] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40';
  const input='min-h-11 w-full min-w-0 rounded-lg border border-slate-300 bg-white p-2 text-sm disabled:bg-slate-50 disabled:text-slate-500';
- const programFields=[['judulProgram','Nama kegiatan / program'],['alamat','Alamat kampus'],['desa','Desa / lokasi program'],['kecamatan','Kecamatan'],['kabupaten','Kabupaten / kota'],['mentor','Nama mentor'],['koordinator','Nama koordinator']];
+ const programFields=[['judulProgram','Nama kegiatan / program'],['alamat','Alamat kampus']];
  const adminFields=[['namaBank','Nama bank'],['nomorRekening','Nomor rekening'],['namaPemilik','Nama pemilik rekening'],['penandatanganNama','Nama penandatangan kampus'],['penandatanganJabatan','Jabatan penandatangan'],['tempatTandaTangan','Kota tempat surat dibuat']];
  const letterFields=[['nomorSuratPermohonan','Nomor surat permohonan'],['tanggalSuratPermohonan','Tanggal surat permohonan'],['nomorInvois','Nomor invoice'],['tanggalInvois','Tanggal invoice'],['nomorKuitansi','Nomor kuitansi'],['tanggalKuitansi','Tanggal kuitansi']];
  function sync(next:any,submitted?:Record<string,string>){const current=$state.snapshot(fields);data=next;fields={...next.journey.fields};if(!next.paid&&!['menunggu','selesai'].includes(next.journey.status))fields.tanggalPerjanjian=PKS_DATE;saved=JSON.stringify(fields);if(submitted)for(const key of Object.keys(current))if(current[key]!==submitted[key])fields[key]=current[key];onloaded();}
@@ -143,7 +144,11 @@
     <FileViewer src="/sk-dummy.pdf" mime="application/pdf" name="SK.pdf" height={420}/>
    {:else if section==='program'}
     <p class="mb-4 text-sm text-slate-600">Data awal diambil dari profil kampus. Periksa nama kegiatan dan lokasi sebelum dipakai dalam surat.</p>
-    <div class="grid gap-4 sm:grid-cols-2">{#each programFields as [key,label]}<label class="grid gap-1 text-sm font-semibold"><span class="field-caption">{label}</span><input class={input} required={key!=='kecamatan'} bind:value={fields[key]} disabled={locked||(busy&&!saving)} maxlength="2000"/></label>{/each}</div>
+     <div class="grid gap-5">
+      <div class="grid gap-4 sm:grid-cols-2">{#each programFields as [key,label]}<label class="grid gap-1 text-sm font-semibold"><span class="field-caption">{label}</span><input class={input} required bind:value={fields[key]} disabled={locked||(busy&&!saving)} maxlength="2000"/></label>{/each}</div>
+      <ProgramLocation bind:fields disabled={locked||(busy&&!saving)} />
+      <div class="grid gap-4 sm:grid-cols-2">{#each [['mentor','Nama mentor'],['koordinator','Nama koordinator']] as [key,label]}<label class="grid gap-1 text-sm font-semibold"><span class="field-caption">{label}</span><input class={input} required bind:value={fields[key]} disabled={locked||(busy&&!saving)} maxlength="2000"/></label>{/each}</div>
+     </div>
    {:else if section==='rab'}
     <RabUpload {campusId} kind={page.url.searchParams.get('rabStep')==='term1'||page.url.searchParams.get('butir')==='rab'?'rab':page.url.searchParams.get('rabStep')==='term2'||page.url.searchParams.get('butir')==='rab_tahap2'?'rab_tahap2':'rab_penuh'} admin={false} journey={true} locked={locked} onloaded={()=>void load()} oncontinue={()=>navigate('administrasi')}/>
    {:else if section==='administrasi'}
