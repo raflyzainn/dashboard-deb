@@ -28,8 +28,10 @@
    * Nine items (SK first, then the eight columns of the review sheet) and three closing rows. Every decision is one click.
    * mode campus: the same screen read only, with an upload button where a file is needed.
    */
-  type Row = Kind | 'program' | 'administrasi' | 'ringkasan' | 'ttd' | 'lampiran' | 'bayar' | 'edit_requests';
-  const CAMPUS_ROWS: {key:Row;label:string}[]=[{key:'sk',label:'SK'},{key:'program',label:'Data Program'},{key:'rab_penuh',label:'RAB 100%'},{key:'rab',label:'RAB 70%'},{key:'rab_tahap2',label:'RAB 30%'},{key:'administrasi',label:'Administrasi'},{key:'pks',label:'PKS'}];
+  type Row = Kind | 'program' | 'administrasi' | 'penandatangan' | 'surat' | 'ringkasan' | 'ttd' | 'lampiran' | 'bayar' | 'edit_requests';
+  const CAMPUS_ROWS: {key:Row;label:string}[]=[{key:'sk',label:'SK'},{key:'program',label:'Data Program'},{key:'rab_penuh',label:'RAB 100%'},{key:'rab',label:'RAB 70%'},{key:'rab_tahap2',label:'RAB 30%'},{key:'administrasi',label:'Rekening Penerima'},{key:'penandatangan',label:'Penandatangan Kampus'},{key:'surat',label:'Identitas Surat dan Kop'},{key:'pks',label:'PKS'},{key:'ringkasan',label:'Dokumen'}];
+  const ADMINISTRATION_KEYS: Row[] = ['administrasi','penandatangan','surat','pks','ringkasan'];
+  let administrationOpen = $state(false);
   const CLOSING: { key: Row; label: string }[] = [{ key: 'ttd', label: 'Tanda tangan' }, { key: 'lampiran', label: 'Lampiran' }, { key: 'bayar', label: 'Pembayaran' }];
   let { campusId, mode = 'admin' }: { campusId: string; mode?: 'admin' | 'campus' } = $props();
 
@@ -129,14 +131,17 @@
     belum_ada: 'border-slate-200 bg-slate-50 text-slate-700'
   };
 
-  const requested = $derived.by<Row>(() => { const k = page.url.searchParams.get('butir'); return k && (admin ? [...KINDS, ...(fullDummy?['program','edit_requests']:[]), 'ttd', 'lampiran', 'bayar'] : fullDummy?[...KINDS,'program','administrasi','ringkasan']:[...KINDS] as string[]).includes(k) ? (k as Row) : firstOpen(); });
+  const requested = $derived.by<Row>(() => { const k = page.url.searchParams.get('butir'); return k && (admin ? [...KINDS, ...(fullDummy?['program','edit_requests']:[]), 'ttd', 'lampiran', 'bayar'] : fullDummy?[...KINDS,'program','administrasi','penandatangan','surat','pks','ringkasan']:[...KINDS] as string[]).includes(k) ? (k as Row) : firstOpen(); });
   function firstOpen(): Row {
     if (!data) return 'sk';
-    if(!admin&&fullDummy&&(data as any).journey)return ({sk:'sk',program:'program',rab:'rab_penuh',administrasi:'administrasi',pks:'pks',ringkasan:'ringkasan'} as Record<string,Row>)[page.url.searchParams.get('bagian')||(data as any).journey.lastSection]||'sk';
+    if(!admin&&fullDummy&&(data as any).journey)return ({sk:'sk',program:'program',rab:'rab_penuh',administrasi:'administrasi',penandatangan:'penandatangan',surat:'surat',pks:'pks',ringkasan:'ringkasan'} as Record<string,Row>)[page.url.searchParams.get('bagian')||(data as any).journey.lastSection]||'sk';
     const k = KINDS.find(k => !['sesuai', 'tidak_perlu'].includes(data!.readiness.items[k]));
     return k || (admin && data.readiness.lengkap ? 'ttd' : 'sk');
   }
   const selected = $derived<Row>(requested);
+  $effect(() => {
+    if (ADMINISTRATION_KEYS.includes(selected)) administrationOpen = true;
+  });
   const isItem = $derived((KINDS as readonly string[]).includes(selected));
   const kind = $derived<Kind>(isItem ? (selected as Kind) : 'sk');
   const doc = $derived(data?.documents.find(d => d.kind === kind) || null);
@@ -237,7 +242,7 @@
     return () => { window.removeEventListener('resize', fit); window.removeEventListener('keydown', onKey); };
   });
 
-  const openJourneyStep=()=>{const target=(data as any)?.journey?.lastSection||'sk';return goto('/campus/pencairan?bagian='+target+'&butir='+({sk:'sk',program:'program',rab:'rab_penuh',administrasi:'administrasi',pks:'pks',ringkasan:'ringkasan'} as Record<string,string>)[target]);};
+  const openJourneyStep=()=>{const target=(data as any)?.journey?.lastSection||'sk';return goto('/campus/pencairan?bagian='+target+'&butir='+({sk:'sk',program:'program',rab:'rab_penuh',administrasi:'administrasi',penandatangan:'penandatangan',surat:'surat',pks:'pks',ringkasan:'ringkasan'} as Record<string,string>)[target]);};
   const open = (row: Row) => { if (!busy) return goto(`${base}?butir=${row}`, { replaceState: true, noScroll: true, keepFocus: true }); };
   async function run(action: () => Promise<KartuData>, message: string) {
     if (busy) return false;
@@ -367,7 +372,7 @@
         {#if perluRevisi.length}<p><strong class="text-amber-900">Perlu revisi ({perluRevisi.length}):</strong> {perluRevisi.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
         {#if menungguPf.length}<p><strong class="text-[#015a9a]">Menunggu PF ({menungguPf.length}):</strong> {menungguPf.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
         {#if data.readiness.missing.length === 0}<p>{data.readiness.phrase}</p>{/if}
-        <p class="text-xs text-slate-500">{data.disbursement.paidAt?'Pembayaran Tahap 1 sudah tercatat. Proses pencairan Tahap 1 selesai.':fullDummy && (data as any).journey ? (data as any).journey.status==='menunggu' ? 'Pengajuan telah dikirim. Tunggu hasil pemeriksaan PF.' : (data as any).journey.status==='selesai' ? campusStage===6?'Pindaian bertanda tangan tersimpan. Menunggu penerimaan dokumen asli, lampiran, dan pembayaran oleh PF.':'Pengajuan disetujui. Unggah empat dokumen bertanda tangan.' : 'Lengkapi data program, RAB, administrasi, dan PKS. Pengajuan dikirim sekali setelah semuanya siap.' : fullDummy ? !data.rab ? 'Mulai dengan satu file RAB 100%. Pembagian kedua tahap dilakukan di aplikasi.' : data.rab.status === 'menunggu' ? 'RAB telah dikirim. Tunggu keputusan PF; pembagian terkunci selama pemeriksaan.' : data.rab.status === 'disetujui' ? 'RAB telah disetujui. Pantau langkah pencairan berikutnya.' : 'Draf RAB belum diajukan. Lengkapi pembagian, periksa kedua tahap, lalu kirim seluruh RAB ke PF.' : 'Pilih dokumen untuk melihat berkas dan catatan pemeriksa. SK dan RAB hanya dapat dilihat; unggah RAB belum dibuka.'}</p>
+        <p class="text-xs text-slate-500">{data.disbursement.paidAt?'Pembayaran Tahap 1 sudah tercatat. Proses pencairan Tahap 1 selesai.':fullDummy && (data as any).journey ? (data as any).journey.status==='menunggu' ? 'Pengajuan telah dikirim. Tunggu hasil pemeriksaan PF.' : (data as any).journey.status==='selesai' ? campusStage===6?'Pindaian bertanda tangan tersimpan. Menunggu penerimaan dokumen asli, lampiran, dan pembayaran oleh PF.':'Pengajuan disetujui. Unggah empat dokumen bertanda tangan.' : 'Lengkapi data program, RAB, rekening penerima, penandatangan, identitas surat dan kop, lalu PKS. Pengajuan dikirim sekali setelah semuanya siap.' : fullDummy ? !data.rab ? 'Mulai dengan satu file RAB 100%. Pembagian kedua tahap dilakukan di aplikasi.' : data.rab.status === 'menunggu' ? 'RAB telah dikirim. Tunggu keputusan PF; pembagian terkunci selama pemeriksaan.' : data.rab.status === 'disetujui' ? 'RAB telah disetujui. Pantau langkah pencairan berikutnya.' : 'Draf RAB belum diajukan. Lengkapi pembagian, periksa kedua tahap, lalu kirim seluruh RAB ke PF.' : 'Pilih dokumen untuk melihat berkas dan catatan pemeriksa. SK dan RAB hanya dapat dilihat; unggah RAB belum dibuka.'}</p>
       </section>
       <section aria-labelledby="timeline-title" class="grid min-w-0 gap-3 rounded-xl border border-slate-200 bg-white p-4">
         <div>
@@ -402,15 +407,30 @@
       <aside use:trackRail class="flex gap-1 overflow-x-auto p-2 lg:grid lg:content-start lg:gap-0.5 lg:overflow-visible lg:p-2.5" aria-label="Butir">
         <span class="hidden px-2.5 pb-1 text-[10.5px] font-bold uppercase tracking-[0.06em] text-slate-400 lg:block">Butir</span>
         {#if !admin&&fullDummy&&(!page.url.searchParams.has('signed')||campusJourney?.status!=='selesai')}
-         {#each CAMPUS_ROWS as item}
+         {#snippet campusStep(item: {key: Row; label: string})}
           {@const j=(data as any).journey}
           {@const requestStatus=editRequestStatus(j,item.key)}
           {@const revisionOpen=j?.status==='revisi'&&canRevise(j,revisionSection(item.key) as EditableSection)}
-          {@const status=j?.status==='revisi'&&canRevise(j,revisionSection(item.key) as EditableSection)?'perlu_revisi':item.key==='sk'?data.readiness.items.sk:item.key==='pks'&&j&&!['menunggu','selesai'].includes(j.status)?data.readiness.items.pks==='perlu_revisi'?'perlu_revisi':'belum_ada':item.key==='program'?j?.status==='menunggu'?'menunggu_review':j?.status==='selesai'?'sesuai':'belum_ada':item.key==='administrasi'?['permohonan','invois','kuitansi','rekening','surat_kuasa'].some(k=>data!.readiness.items[k as Kind]==='perlu_revisi')?'perlu_revisi':j?.status==='menunggu'?'menunggu_review':j?.status==='selesai'?'sesuai':'belum_ada':data.readiness.items[item.key as Kind]}
-          <button type="button" class="flex shrink-0 items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] transition {selected===item.key?'bg-white font-bold text-slate-900 shadow-[0_4px_12px_#0b254514]':'text-slate-700 hover:bg-white/70'}" disabled={busy} onclick={()=>open(item.key)} aria-current={selected===item.key?'true':undefined}>
-           {#if revisionOpen}<span class="grid size-4 shrink-0 place-items-center rounded-full bg-amber-500 text-[10px] font-bold leading-none text-white" aria-label="Bagian ini perlu direvisi" title="Bagian ini perlu direvisi">!</span>{:else}<i class="size-2.5 shrink-0 rounded-full {requestStatus==='Menunggu admin'?'bg-amber-500':status==='belum_ada'?'bg-[#0066B2]':dot[status]}"></i>{/if}<span class="whitespace-nowrap">{item.label}</span><span class="ml-auto whitespace-nowrap pl-2 text-[11px] font-medium {requestStatus==='Menunggu admin'?'text-amber-700':'text-slate-500'}">{requestStatus|| (j?.status!=='draf'&&(!['program','rab','administrasi','pks'].includes(revisionSection(item.key))||!canRevise(j,revisionSection(item.key) as EditableSection))?'Hanya lihat':status==='perlu_revisi'?'Perlu revisi':status==='sesuai'?'Sesuai':status==='menunggu_review'?'Menunggu PF':'Draf')}</span>
+          {@const status=revisionOpen?'perlu_revisi':item.key==='sk'?data.readiness.items.sk:item.key==='pks'&&j&&!['menunggu','selesai'].includes(j.status)?data.readiness.items.pks==='perlu_revisi'?'perlu_revisi':'belum_ada':item.key==='program'?j?.status==='menunggu'?'menunggu_review':j?.status==='selesai'?'sesuai':'belum_ada':['administrasi','penandatangan','surat','ringkasan'].includes(item.key)?['permohonan','invois','kuitansi','rekening','surat_kuasa'].some(k=>data!.readiness.items[k as Kind]==='perlu_revisi')?'perlu_revisi':j?.status==='menunggu'?'menunggu_review':j?.status==='selesai'?'sesuai':'belum_ada':data.readiness.items[item.key as Kind]}
+          <button type="button" class="campus-step self-start lg:self-auto flex shrink-0 items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] transition {selected===item.key?'bg-white font-bold text-slate-900 shadow-[0_4px_12px_#0b254514]':'text-slate-700 hover:bg-white/70'}" disabled={busy} onclick={()=>open(item.key)} aria-current={selected===item.key?'true':undefined}>
+           {#if revisionOpen}<span class="grid size-4 shrink-0 place-items-center rounded-full bg-amber-500 text-[10px] font-bold leading-none text-white" aria-label="Bagian ini perlu direvisi" title="Bagian ini perlu direvisi">!</span>{:else}<i class="size-2.5 shrink-0 rounded-full {requestStatus==='Menunggu admin'?'bg-amber-500':['belum_ada','menunggu_review'].includes(status)?'bg-[#2868ad]':dot[status]}"></i>{/if}<span class="whitespace-nowrap">{item.label}</span><span class="ml-auto whitespace-nowrap pl-2 text-[11px] font-medium {requestStatus==='Menunggu admin'?'text-amber-700':'text-slate-500'}">{requestStatus||(j?.status!=='draf'&&!canRevise(j,revisionSection(item.key) as EditableSection)?'Hanya lihat':status==='perlu_revisi'?'Perlu revisi':status==='sesuai'?'Sesuai':status==='menunggu_review'?'Menunggu PF':'Draf')}</span>
           </button>
+         {/snippet}
+         {#each CAMPUS_ROWS.filter(item=>!ADMINISTRATION_KEYS.includes(item.key)) as item}
+          {@render campusStep(item)}
          {/each}
+         <div class="min-w-0 w-[220px] shrink-0 self-start lg:w-auto lg:self-auto">
+          <button type="button" class="flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] {ADMINISTRATION_KEYS.includes(selected)?'bg-white font-bold text-slate-900 shadow-[0_4px_12px_#0b254514]':'text-slate-700 hover:bg-white/70'}" aria-expanded={administrationOpen} aria-controls={'administration-menu-'+campusId} onclick={()=>administrationOpen=!administrationOpen}>
+           <i class="size-2.5 shrink-0 rounded-full bg-[#2868ad]" aria-hidden="true"></i><span>Administrasi</span><span class="ml-auto text-[11px] font-medium text-slate-500">{campusJourney?.status==='menunggu'?'':campusJourney?.status==='selesai'?'Sesuai':campusJourney?.status==='revisi'?'Revisi':'Draf'}</span><span class="shrink-0 text-slate-500" aria-hidden="true"><Icon name={administrationOpen?'down':'chevron'} size={12}/></span>
+          </button>
+          <div id={'administration-menu-'+campusId} hidden={!administrationOpen}>
+           <div class="administration-submenu ml-[17px] mt-1 grid min-w-0 gap-0.5 border-l border-[#0b2545]/15 pl-3" role="group" aria-label="Administrasi">
+            {#each CAMPUS_ROWS.filter(item=>ADMINISTRATION_KEYS.includes(item.key)) as item}
+             {@render campusStep(item)}
+            {/each}
+           </div>
+          </div>
+         </div>
         {:else}
         {#if admin&&fullDummy}<button type="button" class="min-h-11 rounded-lg px-2.5 text-left text-sm font-semibold text-[#0066B2]" onclick={()=>open('program')}>Data Program</button>{/if}
         {#each KINDS as k}
@@ -446,8 +466,7 @@
 
       <div class="document-content grid min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] [&>*]:min-w-0">
         <div class="document-toolbar flex flex-wrap items-center gap-2 border-b border-slate-200/70 px-3 py-2 text-xs text-slate-500">
-          <b class="text-[15px] text-slate-900">{isItem ? KIND_LABEL[kind] : selected==='edit_requests'?'Permintaan revisi kampus':selected==='program'?'Data Program':!admin&&fullDummy?selected==='ringkasan'?'Ringkasan pengajuan':CAMPUS_ROWS.find(c=>c.key===selected)?.label:CLOSING.find(c => c.key === selected)?.label}</b>
-          {#if selected!=='edit_requests'}
+          <b class="text-[15px] text-slate-900">{isItem ? KIND_LABEL[kind] : !admin&&fullDummy?selected==='ringkasan'?'Dokumen':CAMPUS_ROWS.find(c=>c.key===selected)?.label:CLOSING.find(c => c.key === selected)?.label}</b>
           {#if isItem && kind === 'sk'}
             <span class="rounded-full bg-[#0066B2] px-2.5 py-0.5 text-[11.5px] font-semibold text-white">{data.summary.skNumber}{data.summary.skDate ? ` · ${time.format(new Date(data.summary.skDate))} ${new Date(data.summary.skDate).getFullYear()}` : ''}</span>
             {#if data.summary.skFile}<a class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300" href={import.meta.env.MODE === 'mockup' ? '/sk-dummy.pdf' : '/api/pencairan/sk'} target="_blank" rel="noopener">Buka SK lengkap</a>{/if}
@@ -471,7 +490,6 @@
           <span class="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11.5px] font-semibold text-[#015a9a] {'xl:ml-0 ml-auto'}">{data.readiness.done} dari {data.readiness.total}</span>
           {#if admin && isItem && !(isRab && fullDummy)}<button type="button" class="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11.5px] font-bold text-slate-500 hover:border-slate-300" onclick={() => (showLook = !showLook)} aria-label="Yang dilihat" title="Yang dilihat">?</button>{/if}
           {#if admin}<button type="button" class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300" onclick={() => (showRiwayat = true)}>Riwayat</button>{/if}
-          {/if}
         </div>
 
         {#if admin&&fullDummy&&selected==='edit_requests'}
@@ -493,7 +511,7 @@
         {:else if admin&&fullDummy&&selected==='program'}
          <section class="grid gap-4 p-4" aria-label="Pemeriksaan Data Program"><h2 class="text-lg font-bold">Data Program</h2><dl class="grid gap-3 sm:grid-cols-2">{#each [['judulProgram','Nama kegiatan / program'],['alamat','Alamat kampus'],['lokasiAlamatLengkap','Alamat lengkap lokasi program'],['desa','Desa/kelurahan'],['kecamatan','Kecamatan'],['kabupaten','Kabupaten/kota'],['lokasiProvinsi','Provinsi'],['lokasiKodePos','Kode pos'],['mentor','Nama mentor'],['koordinator','Nama koordinator']] as [key,label]}<div><dt class="text-xs text-slate-500">{label}</dt><dd class="mt-1 text-sm font-semibold">{campusJourney.fields[key]||'Belum diisi'}</dd></div>{/each}</dl><label class="grid gap-1 text-sm font-semibold">Catatan revisi Data Program<textarea class="rounded-lg border border-slate-300 p-3 font-normal" rows="3" bind:value={reviewNote}></textarea></label><p class="text-sm text-slate-600">Meminta revisi akan membuka seluruh Data Program untuk kampus. Bagian lainnya tetap terkunci.</p><button class="min-h-11 justify-self-start rounded-lg bg-amber-600 px-4 font-semibold text-white disabled:opacity-40" disabled={busy||!canRequestRevision||!reviewNote.trim()} onclick={()=>void run(()=>dataService.api.post<KartuData>(`/api/pencairan/${campusId}/documents/pks/review`,{decision:'perlu_revisi',section:'program',note:reviewNote.trim(),expectedRevision:(data as any).serverRevision}),'Revisi Data Program dikirim ke kampus.')}>Minta revisi Data Program</button></section>
         {:else}
-        {#if admin&&fullDummy&&kind==='pks'&&(data as any).journey}<details class="border-b border-slate-200 p-3 text-sm"><summary class="cursor-pointer font-semibold text-[#0066B2]">Data PKS yang diisi PF</summary><form class="mt-3 flex flex-wrap items-end gap-2" aria-label="Data PKS PF" onsubmit={event=>{event.preventDefault();const fields=new FormData(event.currentTarget);void run(()=>dataService.api.patch<KartuData>(`/api/pencairan/${campusId}/pengajuan/pf`,{nomorPksPf:fields.get('nomorPksPf'),expectedRevision:(data as any).serverRevision}),'Data PF tersimpan. Dokumen kampus perlu dibuat ulang.');}}><label class="grid flex-1 gap-1">Nomor PKS PF (diisi PF)<input class="min-h-11 rounded-lg border border-slate-300 p-2" name="nomorPksPf" value={(data as any).journey.pf?.nomorPksPf||(import.meta.env.MODE==='mockup'?'PKS-PF/DUMMY/2026/'+campusId:'')} required maxlength="200" disabled={busy||Boolean(data.disbursement.paidAt)}/></label><button class="min-h-11 rounded-lg bg-[#0066B2] px-4 text-white disabled:opacity-40" disabled={busy||Boolean(data.disbursement.paidAt)}>Simpan data PF</button></form><p class="mt-2 text-xs text-slate-500">Perubahan data PF mewajibkan kampus memperbarui dokumen dan mengajukan kembali. Tanggal PKS tetap 17 Juni 2026.</p><a class="mt-2 inline-block text-[#0066B2] underline" href="/admin/pencairan/pengaturan">Atur penandatangan dan masa perjanjian PF</a></details>{/if}
+        {#if admin&&fullDummy&&kind==='pks'&&(data as any).journey}<details class="border-b border-slate-200 p-3 text-sm"><summary class="cursor-pointer font-semibold text-[#0066B2]">Data PKS yang diisi PF</summary><form class="mt-3 flex flex-wrap items-end gap-2" aria-label="Data PKS PF" onsubmit={event=>{event.preventDefault();const fields=new FormData(event.currentTarget);void run(()=>dataService.api.patch<KartuData>(`/api/pencairan/${campusId}/pengajuan/pf`,{nomorPksPf:fields.get('nomorPksPf'),expectedRevision:(data as any).serverRevision}),'Data PF tersimpan. Dokumen kampus perlu dibuat ulang.');}}><label class="grid flex-1 gap-1">Nomor PKS PF (diisi PF)<input class="min-h-11 rounded-lg border border-slate-300 p-2" name="nomorPksPf" value={(data as any).journey.pf?.nomorPksPf||''} required maxlength="200" disabled={busy||Boolean(data.disbursement.paidAt)}/></label><button class="min-h-11 rounded-lg bg-[#0066B2] px-4 text-white disabled:opacity-40" disabled={busy||Boolean(data.disbursement.paidAt)}>Simpan data PF</button></form><p class="mt-2 text-xs text-slate-500">Perubahan data PF mewajibkan kampus memperbarui dokumen dan mengajukan kembali. Tanggal PKS tetap 17 Juni 2026.</p><a class="mt-2 inline-block text-[#0066B2] underline" href="/admin/pencairan/pengaturan">Atur penandatangan dan masa perjanjian PF</a></details>{/if}
         {#if isRab && fullDummy}<DummyRabUpload {campusId} {kind} {admin} onediting={value => rabEditing = value} onloaded={() => void load()} />{/if}
         {#if !admin && isItem && !(isRab && fullDummy)}
           {#if fullDummy&&(data as any).journey&&['pks','permohonan','kuitansi','invois','surat_kuasa'].includes(kind)}<div class="p-3"><DocumentGuide {kind} disabled={busy||Boolean(data.disbursement.paidAt)||!admin&&!canRevise(campusJourney,revisionSection(kind) as EditableSection)} checklist={(data as any).journey.checklist} kuasa={(data as any).journey.fields.jenisRekening==='kuasa'} onchange={async(key,checked)=>{await dataService.api.patch(`/api/pencairan/${campusId}/pengajuan/checklist`,{key,checked,expectedRevision:(data as any).serverRevision});await load();}}/></div>{/if}
@@ -676,6 +694,15 @@
 {/if}
 
 <style>
+  .administration-submenu .campus-step { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; min-width: 0; width: 100%; gap: 8px; }
+  .administration-submenu .campus-step > span:nth-child(2) { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+  .administration-submenu .campus-step > span:nth-child(3) { padding-left: 0; }
+  @media (min-width: 1024px) {
+    .campus-step { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; width: 100%; min-width: 0; gap: 8px; }
+    .campus-step > span:nth-child(2) { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+    .campus-step > span:nth-child(3) { padding-left: 0; }
+  }
+
   @media (max-width: 1023px) {
     .document-frame { gap: 20px; background: transparent; border: 0; box-shadow: none; }
     .document-navigation { border: 0; border-radius: 12px; overflow: hidden; }

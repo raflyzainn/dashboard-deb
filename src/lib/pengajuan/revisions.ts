@@ -30,7 +30,7 @@ export interface RevisionRequest {
  status: 'open'|'submitted'|'resolved'; baseline: Record<string,string>;
 }
 export const openRevisions = (j:any):RevisionRequest[] => (j?.revisionRequests || []).filter((r:RevisionRequest)=>r.status==='open');
-export const revisionSection = (row:string) => ['rab_penuh','rab','rab_tahap2'].includes(row)?'rab':['rekening','surat_kuasa','permohonan','invois','kuitansi','administrasi'].includes(row)?'administrasi':row;
+export const revisionSection = (row:string) => ['rab_penuh','rab','rab_tahap2'].includes(row)?'rab':['rekening','surat_kuasa','permohonan','invois','kuitansi','administrasi','penandatangan','surat'].includes(row)?'administrasi':row;
 export const canRevise = (j:any,scope:RevisionScope) => Boolean(REVISION_SCOPES[scope]) && (j?.status==='draf' || j?.status==='revisi' && openRevisions(j).some(r=>r.scopes.some(key=>REVISION_SCOPES[key]?.section===REVISION_SCOPES[scope].section)));
 export const canEditField = (j:any,key:string) => j?.status==='draf' || Object.entries(REVISION_SCOPES).some(([scope,value])=>(value.fields as string[]).includes(key)&&canRevise(j,scope as RevisionScope));
 export const canUploadFile = (j:any,key:string) => j?.status==='draf' || Object.entries(REVISION_SCOPES).some(([scope,value])=>(value.files as string[]).includes(key)&&canRevise(j,scope as RevisionScope));

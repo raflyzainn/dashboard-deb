@@ -1,7 +1,7 @@
 import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
 import { buildMergeData, renderDocx, MERGE_KINDS, TEMPLATE_FILE, DOCX_MIME, numberWords, dateWords, type MergeKind } from '../merge';
-import { mergeInput } from './journey';
+import { mergeInput, PF_PKS_PENDING } from './journey';
 
 // Docxtemplater's existing XML helpers work in both Node and the browser.
 const { str2xml, xml2str } = (Docxtemplater as unknown as {
@@ -109,4 +109,19 @@ export function withoutJourneyLabels(bytes:Uint8Array) {
   zip.file(name,xml2str(xml));
  }
  return zip.generate({type:'uint8array'});
+}
+
+/** Replace legacy simulated PF numbers in a preview/download copy, keeping the stored version intact. */
+export function pendingPfJourneyDocx(bytes:Uint8Array) {
+ const zip=new PizZip(bytes),ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+ for(const name of Object.keys(zip.files).filter(n=>/^word\/(document|header\d+)\.xml$/.test(n))){
+  const xml=str2xml(zip.file(name)!.asText());
+  for(const p of Array.from(xml.getElementsByTagNameNS(ns,'p'))){
+   const nodes=Array.from(p.getElementsByTagNameNS(ns,'t')),text=nodes.map(n=>n.textContent||'').join('');
+   const next=text.replace(/PKS-PF\/DUMMY\/2026\/[A-Za-z0-9_-]+/g,PF_PKS_PENDING);
+   if(next!==text&&nodes.length){nodes[0].textContent=next;nodes.slice(1).forEach(n=>n.textContent='');}
+  }
+  zip.file(name,xml2str(xml));
+ }
+ return new Blob([zip.generate({type:'arraybuffer'})],{type:DOCX_MIME});
 }

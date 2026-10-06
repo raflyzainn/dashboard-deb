@@ -12,7 +12,7 @@
  import RabUpload from './RabUpload.svelte';
  import DocumentGuide from './DocumentGuide.svelte';
  import ProgramLocation from '$lib/components/shared/profile/ProgramLocation.svelte';
- import { REVISION_SCOPES, canRevise, canEditField, canUploadFile, openRevisions, editableSections, type EditableSection } from '$lib/pengajuan/revisions';
+ import { REVISION_SCOPES, canRevise, canEditField, canUploadFile, openRevisions, editableSections, revisionSection, type EditableSection } from '$lib/pengajuan/revisions';
  import { sections, sectionLabels, PKS_DATE, LETTER_MIN_DATE, type Section, validateJourney, requiresKuasaUpdate } from './journey';
  let {campusId,embedded=false,onloaded=()=>{}}:{campusId:string;embedded?:boolean;onloaded?:()=>void}=$props();
  let remoteChanged=$state(false);
@@ -22,16 +22,23 @@
  let uploadErrors=$state<Record<string,string>>({});
  let data=$state<any>(null),fields=$state<Record<string,string>>({}),saved=$state('{}'),busy=$state(false),error=$state(''),message=$state(''),kopUrl=$state(''),preview=$state<MergeKind|'surat_kuasa'|null>(null),pending=$state<(()=>void)|null>(null);
  const base=$derived(`/api/pencairan/${campusId}/pengajuan`);
- const section=$derived((sections.includes(page.url.searchParams.get('bagian') as Section)?page.url.searchParams.get('bagian'):page.url.searchParams.get('butir')==='sk'?'sk':['rab_penuh','rab','rab_tahap2'].includes(page.url.searchParams.get('butir')||'')?'rab':page.url.searchParams.get('butir')==='program'?'program':page.url.searchParams.get('butir')==='administrasi'?'administrasi':page.url.searchParams.get('butir')==='ringkasan'?'ringkasan':page.url.searchParams.get('butir')==='pks'?'pks':['rekening','surat_kuasa','invois','permohonan','kuitansi'].includes(page.url.searchParams.get('butir')||'')?'administrasi':data?.journey.lastSection||'sk') as Section);
+ const section=$derived((sections.includes(page.url.searchParams.get('bagian') as Section)?page.url.searchParams.get('bagian'):page.url.searchParams.get('butir')==='sk'?'sk':['rab_penuh','rab','rab_tahap2'].includes(page.url.searchParams.get('butir')||'')?'rab':page.url.searchParams.get('butir')==='program'?'program':['administrasi','penandatangan','surat'].includes(page.url.searchParams.get('butir')||'')?page.url.searchParams.get('butir'):page.url.searchParams.get('butir')==='ringkasan'?'ringkasan':page.url.searchParams.get('butir')==='pks'?'pks':page.url.searchParams.get('butir')==='rekening'?'administrasi':page.url.searchParams.get('butir')==='surat_kuasa'?'surat':['invois','permohonan','kuitansi'].includes(page.url.searchParams.get('butir')||'')?'ringkasan':data?.journey.lastSection||'sk') as Section);
  const index=$derived(sections.indexOf(section));
  let sectionElement=$state<HTMLElement>();
  function allowForward(next:Section){
   if(data?.journey.status!=='draf')return true;
-  if(sections.indexOf(next)<=index||canContinue||(section==='program'&&next==='rab'))return true;
-  error=reportError(stepBlockers.map((b:any)=>b.text).join(' '));
-  const controls=sectionElement?.querySelectorAll<HTMLInputElement|HTMLSelectElement|HTMLTextAreaElement>('input:required,select:required,textarea:required');
-  const first=Array.from(controls||[]).find(el=>!el.disabled&&(!el.value.trim()||!el.validity.valid));
-  first?.focus();first?.reportValidity();return false;
+  const nextIndex=sections.indexOf(next);
+  const adminSteps=['administrasi','penandatangan','surat','pks'];
+  if(nextIndex<=index||locked||(section==='program'&&next==='rab')||adminSteps.includes(section)&&adminSteps.includes(next))return true;
+  const pendingSteps=blockers.filter((b:any)=>sections.indexOf(b.section)>=index&&sections.indexOf(b.section)<nextIndex);
+  if(!pendingSteps.length)return true;
+  error=reportError(pendingSteps.map((b:any)=>b.text).join(' '));
+  if(pendingSteps.some((b:any)=>b.section===section)){
+   const controls=sectionElement?.querySelectorAll<HTMLInputElement|HTMLSelectElement|HTMLTextAreaElement>('input:required,select:required,textarea:required');
+   const first=Array.from(controls||[]).find(el=>!el.disabled&&(!el.value.trim()||!el.validity.valid));
+   first?.focus();first?.reportValidity();
+  }
+  return false;
  }
  const kopId=$derived(data?.journey.files.kop?.id||'');
  const dirty=$derived(JSON.stringify(fields)!==saved);
@@ -49,12 +56,13 @@
   const v=data.validation;
   return validateJourney(v.campus,{journey:{...data.journey,fields},versions:v.version?[v.version]:[]},v.settings,v.tags).blockers;
  });
- const locked=$derived(Boolean(data&&(data.paid||data.journey.status!=='draf'&&(!editableSections.includes(section as EditableSection)||!canRevise(data.journey,section as EditableSection)))));
+ const editableScope=$derived(revisionSection(section) as EditableSection);
+ const locked=$derived(Boolean(data&&(data.paid||data.journey.status!=='draf'&&(!editableSections.includes(editableScope)||!canRevise(data.journey,editableScope)))));
  let requestForm=$state(false),requestReason=$state('');
- const sectionRequest=$derived(data?.journey.editRequests?.filter((request:any)=>request.section===section).at(-1));
+ const sectionRequest=$derived(data?.journey.editRequests?.filter((request:any)=>request.section===editableScope).at(-1));
  $effect(()=>{void section;untrack(()=>{requestForm=false;requestReason='';});});
  const requests=$derived(openRevisions(data?.journey));
- const sectionRequests=$derived(requests.filter(request=>request.scopes.some(scope=>REVISION_SCOPES[scope].section===section)));
+ const sectionRequests=$derived(requests.filter(request=>request.scopes.some(scope=>REVISION_SCOPES[scope].section===editableScope)));
  const fieldLocked=(key:string)=>locked||(busy&&!saving)||!canEditField(data?.journey,key);
  const fileLocked=(key:string)=>locked||busy||!canUploadFile(data?.journey,key);
  const stepBlockers=$derived(blockers.filter((b:any)=>b.section===section));
@@ -72,7 +80,7 @@
   try{sync(await dataService.api.patch(base,{fields:submitted,revision:data.journey.revision,expectedRevision:data.serverRevision}),submitted);if(!dirty&&Date.now()-lastDraftNotice>=20000){message='Draf tersimpan. Belum dikirim ke PF.';lastDraftNotice=Date.now();}return !dirty;}
   catch(e){error = reportError(e instanceof Error?e.message:String(e));if((e as any).status===409)remoteChanged=true;return false;}finally{busy=false;saving=false;}
  }
- async function navigate(next:Section){if(section==='rab')await load();if(!allowForward(next)||!await save())return;preview=null;error='';await goto('/campus/pencairan?bagian='+next+'&butir='+({sk:'sk',program:'program',rab:'rab_penuh',administrasi:'administrasi',pks:'pks',ringkasan:'ringkasan'}[next]));}
+ async function navigate(next:Section){if(section==='rab')await load();if(!allowForward(next)||!await save())return;preview=null;error='';await goto('/campus/pencairan?bagian='+next+'&butir='+({sk:'sk',program:'program',rab:'rab_penuh',administrasi:'administrasi',penandatangan:'penandatangan',surat:'surat',pks:'pks',ringkasan:'ringkasan'}[next]));}
  async function upload(slot:string,file?:File,control?:HTMLInputElement){
   if(!file)return;uploadErrors[slot]='';
   if(!await save()){uploadErrors[slot]='Draf belum tersimpan. Coba pilih berkas lagi setelah penyimpanan berhasil.';if(control)control.value='';return;}busy=true;error='';message='';
@@ -86,7 +94,7 @@
  }
  async function requestEdit(){
   if(busy||!requestReason.trim())return;busy=true;error='';
-  try{sync(await dataService.api.post(base+'/edit-requests',{section,reason:requestReason.trim(),expectedRevision:data.serverRevision}));requestForm=false;requestReason='';message='Permintaan revisi dikirim ke admin.';}
+  try{sync(await dataService.api.post(base+'/edit-requests',{section:editableScope,reason:requestReason.trim(),expectedRevision:data.serverRevision}));requestForm=false;requestReason='';message='Permintaan revisi dikirim ke admin.';}
   catch(e){error=reportError(e instanceof Error?e.message:String(e));}finally{busy=false;}
  }
  async function requestPf(){
@@ -121,7 +129,7 @@
  function requestLeave(action:()=>void){if(dirty)pending=action;else action();}
  beforeNavigate(n=>{if(!n.to)return;
   if(n.to.url.pathname==='/campus/pencairan'){
-   const target=n.to.url.searchParams.get('bagian')||({sk:'sk',program:'program',rab_penuh:'rab',rab:'rab',rab_tahap2:'rab',administrasi:'administrasi',rekening:'administrasi',surat_kuasa:'administrasi',invois:'administrasi',permohonan:'administrasi',kuitansi:'administrasi',pks:'pks',ringkasan:'ringkasan'} as Record<string,Section>)[n.to.url.searchParams.get('butir')||''];
+   const target=n.to.url.searchParams.get('bagian')||({sk:'sk',program:'program',rab_penuh:'rab',rab:'rab',rab_tahap2:'rab',administrasi:'administrasi',penandatangan:'penandatangan',surat:'surat',rekening:'administrasi',surat_kuasa:'surat',invois:'ringkasan',permohonan:'ringkasan',kuitansi:'ringkasan',pks:'pks',ringkasan:'ringkasan'} as Record<string,Section>)[n.to.url.searchParams.get('butir')||''];
    if(target&&sections.includes(target as Section)&&!allowForward(target as Section)){n.cancel();return;}
   }
   if(!dirty)return;n.cancel();const target=n.to.url.href;requestLeave(()=>void goto(target));});
@@ -138,6 +146,10 @@
  $effect(()=>{const fileId=kopId;if(!fileId){kopUrl='';return;}let active=true,url='';void dataService.api.blob(base+'/file/kop').then(blob=>{url=URL.createObjectURL(blob);if(active)kopUrl=url;else URL.revokeObjectURL(url);});return()=>{active=false;if(url)requestAnimationFrame(()=>URL.revokeObjectURL(url));};});
  $effect(()=>{if(!data||locked||data.journey.lastSection===section||busy||dirty)return;const current=section;data.journey.lastSection=current;void dataService.api.patch(base,{lastSection:current,expectedRevision:data.serverRevision}).catch(()=>{});});
 </script>
+
+    {#snippet adminUpload(slot:string,label:string)}
+     <section class="grid gap-2 rounded-lg border border-slate-200 p-3"><label class="grid gap-2 text-sm font-semibold"><span class="field-caption">{label}</span><input class={input} type="file" required={!data.journey.files[slot]} aria-label={label} accept={slot==='kop'?'.png,.jpg,.jpeg':'.pdf,.png,.jpg,.jpeg'} disabled={fileLocked(slot)} onchange={e=>upload(slot,e.currentTarget.files?.[0],e.currentTarget)}/></label><p class="text-xs text-slate-500">{slot==='kop'?'PNG/JPG':'PDF/PNG/JPG'} · maksimal 2 MB</p>{#if uploadErrors[slot]}<p class="text-sm text-red-700" role="alert">{uploadErrors[slot]}</p>{/if}{#if data.journey.files[slot]}<a class="break-all text-sm text-[#0066B2] underline" href={base+'/file/'+slot} target="_blank">{data.journey.files[slot].name}</a>{#if slot==='kop'}<img class="max-h-28 max-w-full object-contain" src={kopUrl} alt="Pratinjau kop surat kampus"/>{/if}{/if}</section>
+    {/snippet}
 
 <div class={embedded?'grid min-w-0 gap-3 '+(section==='rab'?'':'p-4'):'mx-auto grid w-full max-w-[1400px] min-w-0 gap-5 p-4 sm:p-6'}>
  {#if !embedded}<header><p class="text-sm text-slate-500">Pencairan Dana</p><h1 class="mt-1 text-2xl font-bold text-slate-900">Pengajuan pencairan</h1><p class="mt-2 text-sm text-slate-600">Lengkapi data sekali. Simpan draf kapan saja, lalu ajukan setelah semuanya siap.</p></header>{/if}
@@ -169,16 +181,37 @@
    {:else if section==='rab'}
     <RabUpload {campusId} kind={page.url.searchParams.get('rabStep')==='term1'||page.url.searchParams.get('butir')==='rab'?'rab':page.url.searchParams.get('rabStep')==='term2'||page.url.searchParams.get('butir')==='rab_tahap2'?'rab_tahap2':'rab_penuh'} admin={false} journey={true} locked={locked||!canRevise(data.journey,'rab')} onloaded={()=>void load()} oncontinue={()=>navigate('administrasi')}/>
    {:else if section==='administrasi'}
-    <p class="mb-4 text-sm text-slate-600">Data ini dipakai bersama pada invoice, permohonan, kuitansi, dan PKS. Nominal mengikuti RAB.</p>
-    <label class="mb-4 grid gap-1 text-sm font-semibold"><span class="field-caption">Rekening penerima</span><select class={input} required bind:value={fields.jenisRekening} disabled={fieldLocked('jenisRekening')}><option value="kampus">Rekening kampus</option><option value="kuasa">Rekening pihak yang diberi kuasa</option></select></label>
-    <div class="grid gap-4 sm:grid-cols-2">{#each adminFields as [key,label]}<label class="grid gap-1 text-sm font-semibold"><span class="field-caption">{label}</span><input class={input} required={key!=='kecamatan'} bind:value={fields[key]} disabled={fieldLocked(key)} inputmode={key==='nomorRekening'?'numeric':'text'} maxlength="2000"/></label>{/each}</div>
-    {#if fields.jenisRekening==='kuasa'}<section class="mt-4 grid gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4"><h3 class="font-bold">Surat kuasa diperlukan</h3><p class="text-sm">Isi identitas, tanggal, dan kop surat terlebih dahulu. Unduh template surat kuasa, tandatangani, lalu unggah hasilnya di bawah.</p><p class="text-sm">Pemberi kuasa adalah penandatangan kampus. Penerima kuasa harus sama dengan pemilik rekening.</p>{#each [['pemberiKuasa','Nama pemberi kuasa'],['penerimaKuasa','Nama penerima kuasa']] as [key,label]}<label class="grid gap-1 text-sm font-semibold"><span class="field-caption">{label}</span><input class={input} required={key!=='kecamatan'} bind:value={fields[key]} disabled={fieldLocked(key)}/></label>{/each}<label class="grid gap-1 text-sm font-semibold"><span class="field-caption">Tanggal surat kuasa</span><input class={input} type="date" min={LETTER_MIN_DATE} required bind:value={fields.tanggalKuasa} disabled={fieldLocked('tanggalKuasa')}/></label><button class={btn+' justify-self-start'} disabled={busy||locked} onclick={downloadKuasa}>Unduh template surat kuasa</button><DocumentGuide kind="surat_kuasa" disabled={locked||busy} checklist={data.journey.checklist} kuasa={true} onchange={checkGuide}/></section>{/if}
-    <p class="mt-3 text-sm text-slate-600">Gunakan satu perwakilan kampus yang berwenang, misalnya dosen atau pejabat kampus. Nama dan jabatan yang sama akan dipakai pada PKS dan dokumen pencairan.</p>{#if fields.jenisRekening==='kampus'}<p class="mt-2 text-sm text-slate-600">Rekening universitas tidak memerlukan surat kuasa. Lampiran surat kuasa akan dihapus dari dokumen otomatis.</p>{/if}<div class="mt-5 grid gap-4 sm:grid-cols-2">{#each [['rekening','Bukti rekening'],['kop','Kop surat kampus'],...(fields.jenisRekening==='kuasa'?[['kuasa','Surat kuasa']]:[])] as [slot,label]}<section class="grid gap-2 rounded-lg border border-slate-200 p-3"><label class="grid gap-2 text-sm font-semibold"><span class="field-caption">{label}</span><input class={input} type="file" required={!data.journey.files[slot]} aria-label={label} accept={slot==='kop'?'.png,.jpg,.jpeg':'.pdf,.png,.jpg,.jpeg'} disabled={fileLocked(slot)} onchange={e=>upload(slot,e.currentTarget.files?.[0],e.currentTarget)}/></label><p class="text-xs text-slate-500">{slot==='kop'?'PNG/JPG':'PDF/PNG/JPG'} · maksimal 2 MB</p>{#if uploadErrors[slot]}<p class="text-sm text-red-700" role="alert">{uploadErrors[slot]}</p>{/if}{#if data.journey.files[slot]}<a class="break-all text-sm text-[#0066B2] underline" href={base+'/file/'+slot} target="_blank">{data.journey.files[slot].name}</a>{#if slot==='kop'}<img class="max-h-28 max-w-full object-contain" src={kopUrl} alt="Pratinjau kop surat kampus"/>{/if}{/if}</section>{/each}</div>
-    <h3 class="mb-3 mt-6 font-bold">Identitas surat</h3><p class="mb-3 text-sm text-slate-600">Tanggal PKS: 17 Juni 2026. Tanggal dokumen pencairan paling awal 18 Juni 2026.</p><div class="grid gap-4 sm:grid-cols-2">{#each letterFields as [key,label]}<label class="grid gap-1 text-sm font-semibold"><span class="field-caption">{label}</span><input class={input} type={key.startsWith('tanggal')?'date':'text'} min={key.startsWith('tanggal')?LETTER_MIN_DATE:undefined} required={key!=='kecamatan'} bind:value={fields[key]} disabled={fieldLocked(key)}/></label>{/each}</div>
+    <p class="mb-4 text-sm text-slate-600">Lengkapi rekening tujuan pencairan dan unggah bukti rekening.</p>
+<div class="grid gap-4 ">
+       <label class="mb-4 grid gap-1 text-sm font-semibold"><span class="field-caption">Rekening penerima</span><select class={input} required bind:value={fields.jenisRekening} disabled={fieldLocked('jenisRekening')}><option value="kampus">Rekening kampus</option><option value="kuasa">Rekening pihak yang diberi kuasa</option></select></label>
+       <div class="grid gap-4 sm:grid-cols-2">{#each adminFields.slice(0,3) as [key,label]}<label class="grid gap-1 text-sm font-semibold"><span class="field-caption">{label}</span><input class={input} required={key!=='kecamatan'} bind:value={fields[key]} disabled={fieldLocked(key)} inputmode={key==='nomorRekening'?'numeric':'text'} maxlength="2000"/></label>{/each}</div>
+       {@render adminUpload('rekening','Foto Buku Rekening')}
+       {#if fields.jenisRekening==='kampus'}<p class="text-sm text-slate-600">Rekening universitas tidak memerlukan surat kuasa. Lampiran surat kuasa akan dihapus dari dokumen otomatis.</p>{/if}
+      </div>
+   {:else if section==='penandatangan'}
+<div class="grid gap-4 ">
+       <p class="text-sm text-slate-600">Gunakan satu perwakilan kampus yang berwenang, misalnya dosen atau pejabat kampus. Nama dan jabatan yang sama akan dipakai pada PKS dan dokumen pencairan.</p>
+       <div class="grid gap-4 sm:grid-cols-2">{#each adminFields.slice(3) as [key,label]}<label class="grid gap-1 text-sm font-semibold"><span class="field-caption">{label}</span><input class={input} required={key!=='kecamatan'} bind:value={fields[key]} disabled={fieldLocked(key)} inputmode={key==='nomorRekening'?'numeric':'text'} maxlength="2000"/></label>{/each}</div>
+      </div>
+   {:else if section==='surat'}
+    <p class="mb-4 text-sm text-slate-600">Lengkapi identitas surat dan unggah kop yang akan dipakai pada dokumen pencairan.</p>
+<div class="grid gap-4 ">
+       <p class="mb-3 text-sm text-slate-600">Tanggal PKS: 17 Juni 2026. Tanggal dokumen pencairan paling awal 18 Juni 2026.</p><div class="grid gap-4 sm:grid-cols-2">{#each letterFields as [key,label]}<label class="grid gap-1 text-sm font-semibold"><span class="field-caption">{label}</span><input class={input} type={key.startsWith('tanggal')?'date':'text'} min={key.startsWith('tanggal')?LETTER_MIN_DATE:undefined} required={key!=='kecamatan'} bind:value={fields[key]} disabled={fieldLocked(key)}/></label>{/each}</div>
+       {@render adminUpload('kop','Kop surat kampus')}
+      </div>
+    {#if fields.jenisRekening==='kuasa'}
+     <section class="mt-5 rounded-xl border border-slate-200 p-4">
+<div class="grid gap-4 ">
+        <section class="grid gap-3"><h3 class="font-bold">Surat kuasa diperlukan</h3><p class="text-sm">Isi identitas, tanggal, dan kop surat terlebih dahulu. Unduh template surat kuasa, tandatangani, lalu unggah hasilnya di bawah.</p><p class="text-sm">Pemberi kuasa adalah penandatangan kampus. Penerima kuasa harus sama dengan pemilik rekening.</p>{#each [['pemberiKuasa','Nama pemberi kuasa'],['penerimaKuasa','Nama penerima kuasa']] as [key,label]}<label class="grid gap-1 text-sm font-semibold"><span class="field-caption">{label}</span><input class={input} required={key!=='kecamatan'} bind:value={fields[key]} disabled={fieldLocked(key)}/></label>{/each}<label class="grid gap-1 text-sm font-semibold"><span class="field-caption">Tanggal surat kuasa</span><input class={input} type="date" min={LETTER_MIN_DATE} required bind:value={fields.tanggalKuasa} disabled={fieldLocked('tanggalKuasa')}/></label><button class={btn+' justify-self-start'} disabled={busy||locked} onclick={downloadKuasa}>Unduh template surat kuasa</button><DocumentGuide kind="surat_kuasa" checklist={data.journey.checklist} kuasa={true} onchange={checkGuide}/></section>
+        {@render adminUpload('kuasa','Surat kuasa')}
+       </div>
+     </section>
+    {/if}
    {:else if section==='pks'}
     <p class="mb-4 text-sm text-slate-600">Lengkapi data khusus PKS. Identitas kampus, program, dan pembagian dana diambil dari langkah sebelumnya.</p>
     <div class="grid gap-4 sm:grid-cols-2"><label class="grid gap-1 text-sm font-semibold"><span class="field-caption">Nomor PKS kampus</span><input class={input} required bind:value={fields.nomorPksKampus} disabled={fieldLocked('nomorPksKampus')}/></label><label class="grid gap-1 text-sm font-semibold"><span class="field-caption">Tanggal perjanjian</span><input class={input} type="date" bind:value={fields.tanggalPerjanjian} readonly/></label></div>
-    <dl class="mt-4 grid gap-3 rounded-lg bg-slate-50 p-4 text-sm sm:grid-cols-2"><div><dt class="font-semibold">Diisi kampus</dt><dd>Nomor PKS kampus, identitas, nama dan jabatan satu penandatangan.</dd></div><div><dt class="font-semibold">Diisi PF</dt><dd>{data.pf.nomorPksPf}<br/>{data.pf.name} - {data.pf.title}</dd></div><div><dt class="font-semibold">Otomatis dari pengajuan</dt><dd>Nama program, nilai SK, nominal termin, identitas dan rekening.</dd></div><div><dt class="font-semibold">Tetap dari template PF</dt><dd>Tanggal PKS 17 Juni 2026 dan naskah perjanjian baku. Kebutuhan lampiran mengikuti jenis rekening.</dd></div></dl>
+    <dl class="mt-4 grid gap-3 rounded-lg bg-slate-50 p-4 text-sm sm:grid-cols-2"><div><dt class="font-semibold">Diisi kampus</dt><dd>Nomor PKS kampus, identitas, nama dan jabatan satu penandatangan.</dd></div><div><dt class="font-semibold">Diisi PF</dt><dd>{data.pf.nomorPksPf||'Belum tersedia'}<br/>{data.pf.name} - {data.pf.title}</dd></div><div><dt class="font-semibold">Otomatis dari pengajuan</dt><dd>Nama program, nilai SK, nominal termin, identitas dan rekening.</dd></div><div><dt class="font-semibold">Tetap dari template PF</dt><dd>Tanggal PKS 17 Juni 2026 dan naskah perjanjian baku. Kebutuhan lampiran mengikuti jenis rekening.</dd></div></dl>
+    {#if !data.pf.nomorPksPf&&!locked}<div class="mt-4 rounded-lg border border-slate-200 p-4 text-sm"><p>{data.journey.pfRequestedAt?'Permintaan sudah dikirim. Anda dapat melanjutkan tanpa menunggu nomor dari PF.':'Minta nomor PKS ke admin PF terlebih dahulu untuk melanjutkan.'}</p><button class={btn+' mt-3'} disabled={busy||Boolean(data.journey.pfRequestedAt)} onclick={requestPf}>{data.journey.pfRequestedAt?'Permintaan sudah dikirim ke PF':'Minta PF melengkapi nomor PKS'}</button></div>{/if}
    {:else}
     <p class="mb-4 text-sm text-slate-600">Periksa data dan dokumen sebelum mengirim satu pengajuan kepada PF.</p>
     <dl class="grid gap-3 rounded-lg bg-slate-50 p-4 sm:grid-cols-2">{#each [['Nilai SK',formatSen(data.summary.amountSen)],['Total RAB 100%',formatSen(data.rab?.totalSen||0)],['Termin 1 · maksimal 70%',formatSen(data.rab?.term1Sen||0)],['Termin 2 · sisa',formatSen(data.rab?.term2Sen||0)],['Nama kegiatan',fields.judulProgram],['Rekening tujuan',`${fields.namaBank} · ${fields.nomorRekening} · ${fields.namaPemilik}`]] as [label,value]}<div><dt class="text-xs text-slate-500">{label}</dt><dd class="mt-1 break-words text-sm font-semibold">{value||'Belum diisi'}</dd></div>{/each}</dl>
