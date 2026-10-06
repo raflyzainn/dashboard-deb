@@ -1,16 +1,15 @@
 import { buildRabWorkbook, type RabRow } from '../../src/lib/rab-excel';
 import { parseGridSheet } from '../../src/lib/rab-grid';
+import { parseRabTemplate, type TemplateQuantity } from '../../src/lib/rab-template';
 
 export const BUDGET = 2_000_000_000; // Rp20 juta, stored in integer sen.
 export const LIMIT = BUDGET * 7 / 10;
 export const validQuantity = (quantity: unknown, volume: number): quantity is number =>
-  typeof quantity === 'number' && Number.isFinite(quantity) && quantity >= 0 && quantity <= volume &&
-  (Number.isInteger(volume) ? Number.isInteger(quantity) : Math.abs(quantity * 10000 - Math.round(quantity * 10000)) < 0.00001);
-export const validEditedVolume = (volume: unknown, originalVolume: number): volume is number =>
-  typeof volume === 'number' && volume > 0 && validQuantity(volume, volume) &&
-  (!Number.isInteger(originalVolume) || Number.isInteger(volume));
+  typeof quantity === 'number' && Number.isSafeInteger(quantity) && Number.isSafeInteger(volume) && quantity >= 0 && quantity <= volume;
+export const validEditedVolume = (volume: unknown, _originalVolume: number): volume is number =>
+  typeof volume === 'number' && volume > 0 && validQuantity(volume, volume);
 export const STORE_KEY = 'deb-rab-mockup-v1';
-export type Item = { id: string; group: string; activity: string; section: string; title: string; volume: number; unit: string; priceSen: number; amountSen: number; term1Sen: number | null };
+export type Item = { id: string; group: string; activity: string; section: string; title: string; volume: number; unit: string; priceSen: number; amountSen: number; term1Sen: number | null; templateQuantity?: TemplateQuantity };
 export type Status = 'draft' | 'pending' | 'revision' | 'approved';
 export type Version = { number: number; status: Status; fileName: string; items: Item[]; note: string; events: { label: string; at: string }[] };
 export const statusText: Record<Status, string> = { draft: 'Draf', pending: 'Menunggu review PF', revision: 'Perlu revisi', approved: 'Disetujui PF' };
@@ -133,7 +132,12 @@ export async function readExcel(file: File): Promise<Item[]> {
   if (!sheet) throw Error('Lembar RAB 100% tidak ditemukan. Gunakan template yang disediakan.');
   const range = XLSX.utils.decode_range(sheet['!fullref'] || sheet['!ref'] || 'A1');
   if (range.e.r >= 1000 || range.e.c >= 30) throw Error('Mockup menerima maksimal 1.000 baris dan 30 kolom. Hapus baris atau kolom kosong berlebih.');
-  const parsed = parseGridSheet(XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, raw: true, defval: null }));
+  const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, raw: true, defval: null });
+  return readRabRows(rows);
+}
+
+export function readRabRows(rows: unknown[][]): Item[] {
+  const parsed = parseRabTemplate(rows) ?? parseGridSheet(rows);
   if (parsed.problems.length) throw Error(parsed.problems.slice(0, 3).map(p => `Baris ${p.row}: ${p.text}`).join(' '));
   const byKey = new Map(parsed.lines.map(i => [i.key, i]));
   const items = parsed.lines.filter(i => i.key.startsWith('i')).map((i, n) => {
@@ -141,9 +145,10 @@ export async function readExcel(file: File): Promise<Item[]> {
     const activity = section && byKey.get(section.parentKey);
     const group = activity && byKey.get(activity.parentKey);
     return { id: `item-${n}`, group: group?.title || 'Lainnya', activity: activity?.title || 'Kegiatan', section: section?.title || 'Rincian', title: i.title,
-      volume: i.volume, unit: i.unit, priceSen: i.unitPriceSen, amountSen: i.amountSen, term1Sen: 0 };
+      volume: i.volume, unit: i.unit, priceSen: i.unitPriceSen, amountSen: i.amountSen, term1Sen: 0, templateQuantity: i.flags?.templateQuantity as TemplateQuantity | undefined };
   });
   if (!items.length || items.length > 500) throw Error('Isi 1 sampai 500 baris barang/jasa pada lembar RAB 100%.');
+  if (items.some(i => !Number.isSafeInteger(i.volume) || i.priceSen % 100 !== 0)) throw Error('Volume dan Harga Satuan wajib bilangan bulat tanpa desimal. Perbaiki angka pada Excel.');
   if (items.some(i => !i.title || !i.unit || !(i.volume > 0) || !Number.isFinite(i.volume) || !Number.isSafeInteger(i.priceSen) || i.priceSen <= 0 || !Number.isSafeInteger(i.amountSen) || i.amountSen <= 0 || Math.round(i.volume * i.priceSen) !== i.amountSen) || total(items, 'amountSen') > 1e12) throw Error('Periksa uraian, satuan, volume, harga dan jumlah. Angka harus positif dan jumlah sama dengan volume × harga satuan.');
   return allocate(items);
 }

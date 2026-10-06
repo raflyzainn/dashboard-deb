@@ -31,7 +31,7 @@ export function localJourney(event:RequestEvent):Promise<Response>{
   const format=event.url.searchParams.get('format')==='pdf'?'pdf':'docx';
   const allowed=method==='GET'?/^(|pengajuan(?:\/(?:file\/(?:kop|rekening|kuasa)|dokumen\/(?:pks|permohonan|kuitansi|invois)|surat-kuasa))?|rab|documents\/[^/]+\/versions\/[^/]+(?:\/file)?|buat(?:\/[^/]+)?)$/.test(route)
    :method==='PATCH'?/^(pengajuan(?:\/(?:checklist|pf))?|rab\/versions\/[^/]+\/allocation|documents\/[^/]+)$/.test(route)
-   :method==='POST'?/^(buat\/(?:pks|permohonan|kuitansi|invois)|pengajuan\/(?:upload|submit|edit-requests(?:\/[^/]+)?|dokumen\/(?:pks|permohonan|kuitansi|invois))|rab\/(?:import|versions(?:\/[^/]+\/(?:progress|correction))?|keputusan)|documents\/[^/]+\/(?:review|catatan|versions))$/.test(route):false;
+   :method==='POST'?/^(buat\/(?:pks|permohonan|kuitansi|invois)|pengajuan\/(?:upload|submit|edit-requests(?:\/[^/]+)?|dokumen\/(?:pks|permohonan|kuitansi|invois))|rab\/(?:import|items|versions(?:\/[^/]+\/(?:progress|correction))?|keputusan)|documents\/[^/]+\/(?:review|catatan|versions))$/.test(route):false;
   if(!allowed)fail(405,'Operasi tidak tersedia untuk alur pengajuan lokal.');
   if(route.startsWith('documents/')&&method==='PATCH'&&(!actor.admin||parts.length!==5))fail(403,'Hanya PF dapat mencatat penerimaan dokumen.');
   let body:any={};
