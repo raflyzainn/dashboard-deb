@@ -131,3 +131,9 @@ pengiriman akhir; penyimpanan draf parsial tetap diperbolehkan.
   Mutasi pengajuan dicegat sehingga data PocketBase tidak diubah.
 - Build ulang kode PR setelah perubahan jeda berhasil (exit 0), mode `mockup`,
   menghasilkan situs statis; warning ukuran chunk di atas 500 kB tetap ada.
+
+## Revisi label Administrasi — 5 Oktober 2026
+
+- Label unggahan Bukti rekening diganti menjadi **Foto Buku Rekening** pada form Administrasi, pesan validasi, dan panduan kampus.
+- Jenis berkas PDF/PNG/JPG, batas 2 MB, serta penyimpanan unggahan tetap mengikuti implementasi yang ada.
+- Pemeriksaan perubahan teks dilakukan melalui diff. Build mode mockup sebelum push berhasil (exit 0), menghasilkan situs statis di build; terdapat warning chunk lebih dari 500 kB. QA browser belum dilakukan karena tool browser tidak tersedia; test suite, check, dan lint tidak dijalankan.
