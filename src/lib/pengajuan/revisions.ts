@@ -8,14 +8,30 @@ export const REVISION_SCOPES = {
  dokumen: { label: 'PKS', section: 'pks', fields: [], files: [] }
 } satisfies Record<string,{label:string;section:string;fields:string[];files:string[]}>;
 export type RevisionScope = keyof typeof REVISION_SCOPES;
+export type EditableSection = 'program'|'rab'|'administrasi'|'pks';
+export interface EditRequest {
+ id:string; section:EditableSection; reason:string; actorName:string; created:string;
+ status:'pending'|'approved'|'rejected'; decidedByName?:string; decidedAt?:string; decisionNote?:string;
+}
+export const editableSections:EditableSection[] = ['program','rab','administrasi','pks'];
+export function editRequestStatus(j:any,row:string):string|null {
+ const section=revisionSection(row) as EditableSection;
+ const request=[...(j?.editRequests||[])].reverse().find((item:EditRequest)=>item.section===section);
+ if(!request)return null;
+ if(request.status==='pending')return 'Menunggu admin';
+ if(j?.status==='revisi'&&canRevise(j,section))return 'Revisi dibuka';
+ if(j?.status==='menunggu'&&j.revisionRequests?.some((item:RevisionRequest)=>item.status==='submitted'&&item.scopes.some((scope:RevisionScope)=>REVISION_SCOPES[scope]?.section===section)))return 'Menunggu PF';
+ if(request.status==='rejected')return 'Ditolak · ajukan lagi';
+ if(j?.status==='selesai'&&request.status==='approved')return 'Revisi selesai';
+ return null;
+}
 export interface RevisionRequest {
  id: string; kind: string; scopes: RevisionScope[]; note: string; actorName: string; created: string;
  status: 'open'|'submitted'|'resolved'; baseline: Record<string,string>;
 }
 export const openRevisions = (j:any):RevisionRequest[] => (j?.revisionRequests || []).filter((r:RevisionRequest)=>r.status==='open');
 export const revisionSection = (row:string) => ['rab_penuh','rab','rab_tahap2'].includes(row)?'rab':['rekening','surat_kuasa','permohonan','invois','kuitansi','administrasi'].includes(row)?'administrasi':row;
-export const canRevise = (j:any,scope:RevisionScope) => j?.status==='draf' || j?.status==='revisi' && openRevisions(j).some(r=>r.scopes.some(key=>REVISION_SCOPES[key]?.section===REVISION_SCOPES[scope].section));
-export const canOpenSection = (j:any,row:string) => j?.status!=='revisi'||openRevisions(j).some(r=>r.scopes.some(key=>REVISION_SCOPES[key]?.section===revisionSection(row)));
+export const canRevise = (j:any,scope:RevisionScope) => Boolean(REVISION_SCOPES[scope]) && (j?.status==='draf' || j?.status==='revisi' && openRevisions(j).some(r=>r.scopes.some(key=>REVISION_SCOPES[key]?.section===REVISION_SCOPES[scope].section)));
 export const canEditField = (j:any,key:string) => j?.status==='draf' || Object.entries(REVISION_SCOPES).some(([scope,value])=>(value.fields as string[]).includes(key)&&canRevise(j,scope as RevisionScope));
 export const canUploadFile = (j:any,key:string) => j?.status==='draf' || Object.entries(REVISION_SCOPES).some(([scope,value])=>(value.files as string[]).includes(key)&&canRevise(j,scope as RevisionScope));
 export function revisionScopes(input:unknown):RevisionScope[] {

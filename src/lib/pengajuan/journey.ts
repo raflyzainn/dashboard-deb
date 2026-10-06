@@ -1,7 +1,7 @@
 import { BUDGET, LIMIT, validQuantity } from '../../../mockups/rab/model';
 import { buildMergeData, missingFor, templateTags, MERGE_KINDS, type MergeKind } from '../merge';
 import { LOCATION_FIELDS, programLocationErrors } from './location';
-import { canRevise, openRevisions, revisionPending, type RevisionRequest } from './revisions';
+import { canRevise, openRevisions, revisionPending, type RevisionRequest, type EditRequest } from './revisions';
 
 export const sections = ['sk', 'program', 'rab', 'administrasi', 'pks', 'ringkasan'] as const;
 export type Section = typeof sections[number];
@@ -23,6 +23,7 @@ export interface Journey {
  fields: Record<string, string>; files: Record<string, { id: string; name: string; mime: string; width?: number; height?: number; source?: string }>;
  revision: number; history: any[];
  revisionRequests?: RevisionRequest[]; documentRevisions?: Record<string,number>; revisionDocuments?: string[];
+ editRequests?: EditRequest[];
  pfRequestedAt?: string;
  pf?: {nomorPksPf:string}; checklist?: Record<string,boolean>;
 }
@@ -67,7 +68,7 @@ export function validateJourney(c:any,r:any,settings:any,tags:Record<MergeKind,s
  if(v&&typeof v.campusStep==='number'&&v.campusStep<3)blockers.push({section:'rab',text:'Selesaikan pemeriksaan RAB 100%, Termin 1, dan Termin 2 melalui tombol Lanjut.'});
  for(const [key,label] of [['namaBank','Nama bank'],['nomorRekening','Nomor rekening'],['namaPemilik','Pemilik rekening'],['penandatanganNama','Penandatangan'],['penandatanganJabatan','Jabatan penandatangan'],['tempatTandaTangan','Tempat surat']])require('administrasi',key,label);
  if(f.nomorRekening && !/^\d{5,40}$/.test(f.nomorRekening))blockers.push({section:'administrasi',text:'Nomor rekening harus berisi 5–40 angka.'});
- for(const [key,label] of [['rekening','Bukti rekening'],['kop','Kop surat']])if(!j.files[key])blockers.push({section:'administrasi',text:label+' belum diunggah.'});
+ for(const [key,label] of [['rekening','Foto Buku Rekening'],['kop','Kop surat']])if(!j.files[key])blockers.push({section:'administrasi',text:label+' belum diunggah.'});
  if(f.jenisRekening==='kuasa'){
   require('administrasi','pemberiKuasa','Pemberi kuasa');require('administrasi','penerimaKuasa','Penerima kuasa');
   if(!j.files.kuasa)blockers.push({section:'administrasi',text:'Surat kuasa wajib diunggah untuk rekening pihak yang diberi kuasa.'});
