@@ -2,7 +2,7 @@
 
 ## Lingkup yang disetujui
 
-Pengguna membatalkan perubahan format/spacing. Template PF dan isi dokumen tetap seperti sebelumnya. Tambahan hanya footer QR dengan siluet simbol PF untuk PKS, surat permohonan, invois, dan kuitansi yang dihasilkan aplikasi. Siluet diambil dari aset `static/favicon-96x96.png`; tidak ada logo baru dari internet.
+Pengguna membatalkan perubahan format/spacing. Template PF dan isi dokumen tetap seperti sebelumnya. Implementasi awal menambahkan footer QR dengan siluet simbol PF untuk PKS, surat permohonan, invois, dan kuitansi. Revisi 5 Oktober 2026 di bawah mengganti tampilan QR menjadi polos tanpa logo.
 
 ## Perilaku
 
@@ -47,3 +47,20 @@ Pengguna mengonfirmasi: pertahankan data sumber, hapus label aplikasi saja. Nomo
 - Pratinjau invois: QR termuat, footer tanpa label lingkungan. Login menampilkan "Pilih akun"; header admin menampilkan "Admin PF". Halaman verifikasi kode lama juga bersih dari label lingkungan. Tidak ada `pageerror` pada konteks QA tersebut.
 - Screenshot: `.playwright-mcp/qr-clean-invois.png`. Skrip browser yang diperbarui: `scripts/qa/document-qr.playwright.js`.
 - Perubahan label ini belum di-commit/push. Tidak menjalankan merge, MR, build, atau tes terminal.
+
+## Revisi QR polos — 5 Oktober 2026
+
+- Branch fix/dokumen dari development 5e6fbf6: QR pada unduhan dokumen pengajuan memakai pola hitam-putih tanpa logo PF di tengah.
+- Skala 6, margin 4, tingkat koreksi H, serta ukuran footer dipertahankan. QR tetap menuju halaman verifikasi dokumen. Jalur pembuatan dokumen lain sudah memakai QR polos.
+- Kunci cache representasi dinaikkan dari pf-logo-2 ke plain-qr-3 agar unduhan berikutnya membuat salinan QR polos. Kode/hash dan berkas unduhan lama tetap tersimpan untuk verifikasi; berkas yang sudah diunduh perlu diunduh kembali untuk melihat perubahan.
+- Pemeriksaan dilakukan melalui pembacaan kode dan diff. QA browser belum dilakukan karena tool browser tidak tersedia. Build, check, lint, dan tes terminal tidak dijalankan. Tidak mengubah database atau layanan production.
+
+### Validasi sebelum PR fix/dokumen
+
+- npm run build berhasil (exit 0), mode mockup, menghasilkan situs statis di build; warning ukuran chunk lebih dari 500 kB.
+- Diff diperiksa dan frontend PocketBase lokal berhasil dijalankan. Build mockup tidak memverifikasi alur unduhan PocketBase secara menyeluruh. QA visual/pemindaian QR belum dilakukan melalui browser; test suite, check, dan lint tidak dijalankan.
+
+
+### QA PR #37 ? 6 Oktober 2026
+
+Unduhan empat PDF dummy diperiksa melalui Playwright headed Chrome. QR footer tampak hitam-putih tanpa logo PF di tengah. Logo PF pada kop dokumen tetap dipertahankan. Pemeriksaan ini bersifat visual; belum menjalankan pemindaian kamera atau verifikasi runtime PocketBase/LibreOffice. Laporan lengkap ada pada PDF-RINGKASAN-2026-10-05.md.

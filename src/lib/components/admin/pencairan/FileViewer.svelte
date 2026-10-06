@@ -4,7 +4,7 @@
   import Icon from '$lib/components/ui/Icon.svelte';
 
   /** Shows one stored file inside the page: PDF and images natively, Word and Excel drawn in the browser. Files never leave the app. */
-  let { src, mime = '', name = '', height = 640 }: { src: string; mime?: string; name?: string; height?: number } = $props();
+  let { src, mime = '', name = '', height = 640, showDownload = true }: { src: string; mime?: string; name?: string; height?: number; showDownload?: boolean } = $props();
 
   const ext = $derived((name.split('.').pop() || '').toLowerCase());
   const kind = $derived(mime.includes('pdf') || ext === 'pdf' ? 'pdf' : mime.startsWith('image/') || ['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext) ? 'image' : ['docx', 'doc'].includes(ext) ? 'docx' : ['xlsx', 'xls', 'csv'].includes(ext) ? 'xlsx' : 'other');
@@ -23,9 +23,13 @@
     loading = true; error = ''; sheets = [];
     host.innerHTML = '';
     try {
+      if (nativeSource) { URL.revokeObjectURL(nativeSource); nativeSource = ''; }
       const response = await fetch(source, { cache: 'no-store' });
       if (generation !== renderGeneration) return;
-      if (!response.ok) throw new Error('Berkas belum dapat dibuka.');
+      if (!response.ok) {
+        const detail = await response.json().catch(() => null);
+        throw new Error(detail?.message || 'Berkas belum dapat dibuka.');
+      }
       if (type === 'pdf' || type === 'image') {
         const blob = await response.blob();
         if (generation !== renderGeneration) return;
@@ -67,7 +71,7 @@
         <span class="w-10 text-center tabular-nums">{Math.round(zoom * 100)}%</span>
         <button type="button" class="rounded-md px-2 py-1 hover:bg-slate-100" onclick={() => (zoom = Math.min(2, zoom + 0.1))} aria-label="Perbesar">+</button>
       {/if}
-      <a class="ml-2 flex items-center gap-1 rounded-md px-2 py-1 font-semibold text-[#0066B2] hover:bg-blue-50" href={src + (src.includes('?') ? '&' : '?') + 'download=1'} download={name}><Icon name="download" size={14} />Unduh berkas asli</a>
+      {#if showDownload}<a class="ml-2 flex items-center gap-1 rounded-md px-2 py-1 font-semibold text-[#0066B2] hover:bg-blue-50" href={src + (src.includes('?') ? '&' : '?') + 'download=1'} download={name}><Icon name="download" size={14} />Unduh berkas asli</a>{/if}
     </span>
   </div>
   <div class="relative min-h-0 flex-1 overflow-auto">
@@ -90,7 +94,7 @@
     {/if}
     <div bind:this={container} class="docx-host p-3" style={`zoom:${zoom}`} hidden={kind !== 'docx'}></div>
     {#if loading}<div class="absolute inset-0 flex items-center justify-center bg-white/70 text-sm text-slate-600">Menggambar berkas…</div>{/if}
-    {#if error}<div class="absolute inset-x-0 top-0 m-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</div>{/if}
+    {#if error}<div class="absolute inset-x-0 top-0 m-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}<button type="button" class="ml-3 font-semibold underline" disabled={loading} onclick={()=>void render()}>Coba lagi</button></div>{/if}
   </div>
 </div>
 
