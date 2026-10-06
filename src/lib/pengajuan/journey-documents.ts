@@ -68,6 +68,14 @@ export function journeyDocx(kind:MergeKind|'surat_kuasa',c:any,r:any,settings:an
  let body=output.file('word/document.xml')!.asText();
  let heading=draft?'<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="B45309"/></w:rPr><w:t>DRAF</w:t></w:r></w:p>':'';
  if(kind!=='pks'&&kop){
+  for(const name of Object.keys(output.files).filter(name=>/^word\/header\d+\.xml$/.test(name))){
+   const header=str2xml(output.file(name)!.asText());
+   for(const placeholder of [...Array.from(header.getElementsByTagNameNS(ns,'tbl')),...Array.from(header.getElementsByTagNameNS(ns,'p'))]){
+    const text=Array.from(placeholder.getElementsByTagNameNS(ns,'t')).map(node=>node.textContent||'').join('').replace(/\s/g,'');
+    if(text==='KOPUNIVERSITAS')placeholder.parentNode?.removeChild(placeholder);
+   }
+   output.file(name,xml2str(header));
+  }
   const ext=kop.mime==='image/png'?'png':'jpg',scale=Math.min(5486400/Math.max(1,kop.width),914400/Math.max(1,kop.height)),width=Math.round(kop.width*scale),height=Math.round(kop.height*scale);
   output.file('word/media/journey-kop.'+ext,kop.bytes);
   const relPath='word/_rels/document.xml.rels';

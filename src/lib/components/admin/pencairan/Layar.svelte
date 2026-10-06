@@ -281,7 +281,7 @@
     if (!data || !admin) return;
     if (which !== 'none' && !(which==='bad'?canDecide||canRequestRevision:canDecide) || which === 'ok' && rabApprovalWarning) return;
     if (kind === 'rekening' && !bankNameSeen.trim()) {
-      error = reportError('Nama di bank wajib diisi sesuai yang terlihat pada bukti rekening.');
+      error = reportError('Nama di bank wajib diisi sesuai yang terlihat pada foto buku rekening.');
       bankNameInput?.focus();
       return;
     }
