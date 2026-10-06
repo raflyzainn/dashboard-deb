@@ -18,6 +18,8 @@
  let remoteChanged=$state(false);
  let reducedMotion=$state(false);
  let saving=$state(false);
+ let savePromise:Promise<boolean>|null=null;
+ let failedDraft=$state('');
  let lastDraftNotice=Number.NEGATIVE_INFINITY;
  let uploadErrors=$state<Record<string,string>>({});
  let data=$state<any>(null),fields=$state<Record<string,string>>({}),saved=$state('{}'),busy=$state(false),error=$state(''),message=$state(''),kopUrl=$state(''),preview=$state<MergeKind|'surat_kuasa'|null>(null),pending=$state<(()=>void)|null>(null);
@@ -32,7 +34,7 @@
  $effect(()=>{if(!message)return;const timer=setTimeout(()=>message='',4000);return()=>clearTimeout(timer);});
  $effect(()=>{
   const snapshot=JSON.stringify(fields);
-  if(section!=='program'||locked||remoteChanged||busy)return;
+  if(!['program','administrasi','penandatangan','surat','pks'].includes(section)||locked||remoteChanged||busy||snapshot===failedDraft)return;
   if(!untrack(()=>data&&snapshot!==saved))return;
   const timer=setTimeout(()=>{if(!busy&&dirty)void save();},800);
   return()=>clearTimeout(timer);
@@ -43,6 +45,7 @@
   const v=data.validation;
   return validateJourney(v.campus,{journey:{...data.journey,fields},versions:v.version?[v.version]:[]},v.settings,v.tags).blockers;
  });
+ const blockerGroups=$derived(sections.map((item,i)=>({section:item,label:sectionLabels[i],items:blockers.filter((b:any)=>b.section===item)})).filter(group=>group.items.length));
  const editableScope=$derived(revisionSection(section) as EditableSection);
  const locked=$derived(Boolean(data&&(data.paid||data.journey.status!=='draf'&&(!editableSections.includes(editableScope)||!canRevise(data.journey,editableScope)))));
  let requestForm=$state(false),requestReason=$state('');
@@ -52,8 +55,6 @@
  const sectionRequests=$derived(requests.filter(request=>request.scopes.some(scope=>REVISION_SCOPES[scope].section===editableScope)));
  const fieldLocked=(key:string)=>locked||(busy&&!saving)||!canEditField(data?.journey,key);
  const fileLocked=(key:string)=>locked||busy||!canUploadFile(data?.journey,key);
- const stepBlockers=$derived(blockers.filter((b:any)=>b.section===section));
- const canContinue=$derived(locked||stepBlockers.length===0);
  const btn='min-h-11 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-[#0066B2] disabled:opacity-40';
  const docBtn='inline-flex min-h-9 items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-[#0066B2] disabled:opacity-40';
  const blue='min-h-11 rounded-lg bg-[#0066B2] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40';
@@ -64,9 +65,14 @@
  function sync(next:any,submitted?:Record<string,string>){const current=$state.snapshot(fields);data=next;fields={...next.journey.fields};if(!next.paid&&!['menunggu','selesai'].includes(next.journey.status))fields.tanggalPerjanjian=PKS_DATE;saved=JSON.stringify(fields);if(submitted)for(const key of Object.keys(current))if(current[key]!==submitted[key])fields[key]=current[key];onloaded();}
  async function load(){try{const next=await dataService.api.get<any>(base);if(busy||next.serverRevision<data?.serverRevision)return;if(!dirty){remoteChanged=false;sync(next);}else if(next.serverRevision!==data?.serverRevision)remoteChanged=true;}catch(e){error = reportError(e instanceof Error?e.message:String(e));}}
  async function save(){
-  if(busy)return false;if(!dirty)return true;const submitted=$state.snapshot(fields);busy=true;saving=true;error='';message='';
-  try{sync(await dataService.api.patch(base,{fields:submitted,revision:data.journey.revision,expectedRevision:data.serverRevision}),submitted);if(!dirty&&Date.now()-lastDraftNotice>=20000){message='Draf tersimpan. Belum dikirim ke PF.';lastDraftNotice=Date.now();}return !dirty;}
-  catch(e){error = reportError(e instanceof Error?e.message:String(e));if((e as any).status===409)remoteChanged=true;return false;}finally{busy=false;saving=false;}
+  if(savePromise)return savePromise;
+  savePromise=(async()=>{do{if(!await persist())return false;}while(dirty);return true;})();
+  try{return await savePromise;}finally{savePromise=null;}
+ }
+ async function persist(){
+  if(busy)return false;if(!dirty)return true;const submitted=$state.snapshot(fields);busy=true;saving=true;failedDraft='';error='';message='';
+  try{sync(await dataService.api.patch(base,{fields:submitted,revision:data.journey.revision,expectedRevision:data.serverRevision}),submitted);if(!dirty&&Date.now()-lastDraftNotice>=20000){message='Draf tersimpan. Belum dikirim ke PF.';lastDraftNotice=Date.now();}return true;}
+  catch(e){failedDraft=JSON.stringify(submitted);error = reportError(e instanceof Error?e.message:String(e));if((e as any).status===409)remoteChanged=true;return false;}finally{busy=false;saving=false;}
  }
  async function navigate(next:Section){if(section==='rab')await load();if(!await save())return;preview=null;error='';await goto('/campus/pencairan?bagian='+next+'&butir='+({sk:'sk',program:'program',rab:'rab_penuh',administrasi:'administrasi',penandatangan:'penandatangan',surat:'surat',pks:'pks',ringkasan:'ringkasan'}[next]));}
  async function upload(slot:string,file?:File,control?:HTMLInputElement){
@@ -116,15 +122,17 @@
   catch(e){error = reportError(e instanceof Error?e.message:String(e));}finally{busy=false;}
  }
  function requestLeave(action:()=>void){if(dirty)pending=action;else action();}
- beforeNavigate(n=>{if(!n.to)return;
-  if(!dirty)return;n.cancel();const target=n.to.url.href;requestLeave(()=>void goto(target));});
+ beforeNavigate(n=>{if(!n.to||!dirty)return;
+  n.cancel();const target=n.to.url.href;
+  if(remoteChanged)requestLeave(()=>void goto(target));
+  else void save().then(ok=>{if(ok)void goto(target);});});
  onMount(()=>{
   reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   void load();
   const timer=import.meta.env.MODE==='pocketbase-local'?setInterval(()=>{if(!busy&&document.visibilityState==='visible')void load();},10000):undefined;
   const focus=()=>{if(!busy)void load();};window.addEventListener('focus',focus);
   const warn=(e:BeforeUnloadEvent)=>{if(dirty){e.preventDefault();e.returnValue='';}};
-  const logout=(e:Event)=>{if(dirty){e.preventDefault();requestLeave((e as CustomEvent).detail.resume);}};
+  const logout=(e:Event)=>{if(dirty){e.preventDefault();const resume=(e as CustomEvent).detail.resume;if(remoteChanged)requestLeave(resume);else void save().then(ok=>{if(ok)resume();});}};
   window.addEventListener('beforeunload',warn);window.addEventListener('beforelogout',logout);
   return()=>{clearInterval(timer);window.removeEventListener('focus',focus);window.removeEventListener('beforeunload',warn);window.removeEventListener('beforelogout',logout);};
  });
@@ -137,7 +145,7 @@
     {/snippet}
 
 <div class={embedded?'grid min-w-0 gap-3 '+(section==='rab'?'':'p-4'):'mx-auto grid w-full max-w-[1400px] min-w-0 gap-5 p-4 sm:p-6'}>
- {#if !embedded}<header><p class="text-sm text-slate-500">Pencairan Dana</p><h1 class="mt-1 text-2xl font-bold text-slate-900">Pengajuan pencairan</h1><p class="mt-2 text-sm text-slate-600">Lengkapi data sekali. Simpan draf kapan saja, lalu ajukan setelah semuanya siap.</p></header>{/if}
+ {#if !embedded}<header><p class="text-sm text-slate-500">Pencairan Dana</p><h1 class="mt-1 text-2xl font-bold text-slate-900">Pengajuan pencairan</h1><p class="mt-2 text-sm text-slate-600">Isian disimpan otomatis. Lengkapi data sesuai urutan menu, lalu ajukan setelah semuanya siap.</p></header>{/if}
  {#if remoteChanged}<p class="rounded-lg bg-amber-50 p-3 text-amber-900" role="alert">Data diperbarui oleh akun lain. Isian Anda tetap tersedia.<button class={btn+' ml-2'} onclick={()=>requestLeave(()=>{fields={...data.journey.fields};saved=JSON.stringify(fields);remoteChanged=false;void load();})}>Muat data terbaru</button></p>{/if}
  {#if error}<p class="rounded-lg bg-red-50 p-3 text-sm text-red-700 {embedded&&section==='rab'?'mx-4 mt-4':''}" role="alert">{error}</p>{/if}
  {#if message}<div class="fixed inset-x-4 bottom-5 z-50 mx-auto flex w-fit max-w-[calc(100%-2rem)] items-center gap-3 rounded-xl bg-slate-900 px-4 py-3 text-sm text-white shadow-lg" role="status" aria-live="polite" transition:fly={{y:16,duration:reducedMotion?0:200}}><span aria-hidden="true" class="text-green-400">✓</span><span>{message}</span><button type="button" class="grid size-8 shrink-0 place-items-center rounded-md hover:bg-white/15 focus-visible:outline focus-visible:outline-2" aria-label="Tutup pemberitahuan" onclick={()=>message=''}>×</button></div>{/if}
@@ -150,7 +158,7 @@
   <section class={embedded?'min-w-0':'min-w-0 rounded-xl border border-slate-200 bg-white p-4 sm:p-5'} aria-label="Isi pengajuan">
    {#if !embedded||section!=='rab'}<h2 class="mb-2 text-xl font-bold">{sectionLabels[index]}</h2>{/if}
    {#if sectionRequests.length}<aside class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm" aria-label="Catatan revisi bagian ini"><h3 class="font-semibold text-amber-950">Catatan perbaikan dari PF</h3>{#each sectionRequests as request}<p class="mt-1 whitespace-pre-wrap text-amber-950">{request.note}</p>{/each}</aside>{/if}
-   {#if locked}<p class="mb-3 text-sm text-slate-500">Hanya lihat. Data dapat diubah setelah akses revisi disetujui admin.</p>{:else if ['program','administrasi','pks'].includes(section)}<p class="mb-3 text-xs text-slate-500"><span class="font-bold text-red-600">*</span> {data.journey.status==='revisi'?'Wajib dilengkapi sebelum mengirim perbaikan.':section==='program'?'Wajib dilengkapi sebelum mengajukan. Anda tetap dapat melanjutkan ke RAB.':'Wajib dilengkapi sebelum melanjutkan langkah ini.'} Draf boleh disimpan saat isian belum lengkap.</p>{/if}
+   {#if locked}<p class="mb-3 text-sm text-slate-500">Hanya lihat. Data dapat diubah setelah akses revisi disetujui admin.</p>{:else if ['program','administrasi','penandatangan','surat','pks'].includes(section)}<p class="mb-3 text-xs text-slate-500"><span class="font-bold text-red-600">*</span> {data.journey.status==='revisi'?'Wajib dilengkapi sebelum mengirim perbaikan.':'Wajib dilengkapi sebelum mengajukan. Anda tetap dapat berpindah menu.'} Draf boleh disimpan saat isian belum lengkap.</p>{/if}
    {#if section==='sk'}
     <p class="mb-4 text-sm text-slate-600">Gunakan nilai bantuan dalam SK sebagai acuan seluruh anggaran.</p>
     <dl class="mb-4 grid gap-3 rounded-lg bg-slate-50 p-4 sm:grid-cols-2"><div><dt class="text-sm text-slate-500">Nomor SK</dt><dd class="font-semibold">{data.summary.skNumber}</dd></div><div><dt class="text-sm text-slate-500">Nilai bantuan</dt><dd class="font-semibold">{formatSen(data.summary.amountSen)}</dd></div></dl>
@@ -166,7 +174,7 @@
    {:else if section==='rab'}
     <RabUpload {campusId} kind={page.url.searchParams.get('rabStep')==='term1'||page.url.searchParams.get('butir')==='rab'?'rab':page.url.searchParams.get('rabStep')==='term2'||page.url.searchParams.get('butir')==='rab_tahap2'?'rab_tahap2':'rab_penuh'} admin={false} journey={true} locked={locked||!canRevise(data.journey,'rab')} onloaded={()=>void load()} oncontinue={()=>navigate('administrasi')}/>
    {:else if section==='administrasi'}
-    <p class="mb-4 text-sm text-slate-600">Lengkapi rekening tujuan pencairan dan unggah bukti rekening.</p>
+    <p class="mb-4 text-sm text-slate-600">Lengkapi rekening tujuan pencairan dan unggah foto buku rekening.</p>
 <div class="grid gap-4 ">
        <label class="mb-4 grid gap-1 text-sm font-semibold"><span class="field-caption">Rekening penerima</span><select class={input} required bind:value={fields.jenisRekening} disabled={fieldLocked('jenisRekening')}><option value="kampus">Rekening kampus</option><option value="kuasa">Rekening pihak yang diberi kuasa</option></select></label>
        <div class="grid gap-4 sm:grid-cols-2">{#each adminFields.slice(0,3) as [key,label]}<label class="grid gap-1 text-sm font-semibold"><span class="field-caption">{label}</span><input class={input} required={key!=='kecamatan'} bind:value={fields[key]} disabled={fieldLocked(key)} inputmode={key==='nomorRekening'?'numeric':'text'} maxlength="2000"/></label>{/each}</div>
@@ -195,8 +203,8 @@
    {:else if section==='pks'}
     <p class="mb-4 text-sm text-slate-600">Lengkapi data khusus PKS. Identitas kampus, program, dan pembagian dana diambil dari langkah sebelumnya.</p>
     <div class="grid gap-4 sm:grid-cols-2"><label class="grid gap-1 text-sm font-semibold"><span class="field-caption">Nomor PKS kampus</span><input class={input} required bind:value={fields.nomorPksKampus} disabled={fieldLocked('nomorPksKampus')}/></label><label class="grid gap-1 text-sm font-semibold"><span class="field-caption">Tanggal perjanjian</span><input class={input} type="date" bind:value={fields.tanggalPerjanjian} readonly/></label></div>
-    <dl class="mt-4 grid gap-3 rounded-lg bg-slate-50 p-4 text-sm sm:grid-cols-2"><div><dt class="font-semibold">Diisi kampus</dt><dd>Nomor PKS kampus, identitas, nama dan jabatan satu penandatangan.</dd></div><div><dt class="font-semibold">Diisi PF</dt><dd>{data.pf.nomorPksPf||'Belum tersedia'}<br/>{data.pf.name} - {data.pf.title}</dd></div><div><dt class="font-semibold">Otomatis dari pengajuan</dt><dd>Nama program, nilai SK, nominal termin, identitas dan rekening.</dd></div><div><dt class="font-semibold">Tetap dari template PF</dt><dd>Tanggal PKS 17 Juni 2026 dan naskah perjanjian baku. Kebutuhan lampiran mengikuti jenis rekening.</dd></div></dl>
-    {#if !data.pf.nomorPksPf&&!locked}<div class="mt-4 rounded-lg border border-slate-200 p-4 text-sm"><p>{data.journey.pfRequestedAt?'Permintaan sudah dikirim. Anda dapat melanjutkan tanpa menunggu nomor dari PF.':'Minta nomor PKS ke admin PF terlebih dahulu untuk melanjutkan.'}</p><button class={btn+' mt-3'} disabled={busy||Boolean(data.journey.pfRequestedAt)} onclick={requestPf}>{data.journey.pfRequestedAt?'Permintaan sudah dikirim ke PF':'Minta PF melengkapi nomor PKS'}</button></div>{/if}
+    <dl class="mt-4 grid gap-3 rounded-lg bg-slate-50 p-4 text-sm sm:grid-cols-2"><div><dt class="font-semibold">Diisi kampus</dt><dd>Nomor PKS kampus, identitas, nama dan jabatan satu penandatangan.</dd></div><div><dt class="font-semibold">Diisi PF</dt><dd>{data.pf.nomorPksPf||'masih menunggu surat dari PF'}<br/>{data.pf.name} - {data.pf.title}</dd></div><div><dt class="font-semibold">Otomatis dari pengajuan</dt><dd>Nama program, nilai SK, nominal termin, identitas dan rekening.</dd></div><div><dt class="font-semibold">Tetap dari template PF</dt><dd>Tanggal PKS 17 Juni 2026 dan naskah perjanjian baku. Kebutuhan lampiran mengikuti jenis rekening.</dd></div></dl>
+    {#if !data.pf.nomorPksPf&&!locked}<div class="mt-4 rounded-lg border border-slate-200 p-4 text-sm"><p>{data.journey.pfRequestedAt?'Permintaan sudah dikirim. Anda dapat melanjutkan tanpa menunggu nomor dari PF.':'Anda dapat melanjutkan tanpa menunggu nomor PKS PF. Admin akan diberi tahu saat pengajuan dikirim, atau Anda dapat meminta sekarang.'}</p><button class={btn+' mt-3'} disabled={busy||Boolean(data.journey.pfRequestedAt)} onclick={requestPf}>{data.journey.pfRequestedAt?'Permintaan sudah dikirim ke PF':'Minta PF melengkapi nomor PKS'}</button></div>{/if}
    {:else}
     <p class="mb-4 text-sm text-slate-600">Periksa data dan dokumen sebelum mengirim satu pengajuan kepada PF.</p>
     <dl class="grid gap-3 rounded-lg bg-slate-50 p-4 sm:grid-cols-2">{#each [['Nilai SK',formatSen(data.summary.amountSen)],['Total RAB 100%',formatSen(data.rab?.totalSen||0)],['Termin 1 · maksimal 70%',formatSen(data.rab?.term1Sen||0)],['Termin 2 · sisa',formatSen(data.rab?.term2Sen||0)],['Nama kegiatan',fields.judulProgram],['Rekening tujuan',`${fields.namaBank} · ${fields.nomorRekening} · ${fields.namaPemilik}`]] as [label,value]}<div><dt class="text-xs text-slate-500">{label}</dt><dd class="mt-1 break-words text-sm font-semibold">{value||'Belum diisi'}</dd></div>{/each}</dl>
@@ -204,23 +212,24 @@
    {/if}
    {#if section!=='rab'&&blockers.some((b:any)=>b.section===section)}<aside class="mt-4 rounded-lg bg-amber-50 p-3"><h3 class="text-sm font-semibold">Masih perlu dilengkapi</h3><ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-900">{#each blockers.filter((b:any)=>b.section===section) as b}<li>{b.text}</li>{/each}</ul></aside>{/if}
    {#if ['administrasi','pks','ringkasan'].includes(section)&&data.journey.status!=='revisi'}
-    {#if blockers.length}<div class="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4"><h3 class="font-semibold">Lengkapi data sebelum membuat dokumen</h3><ul class="mt-2 list-disc space-y-2 pl-5 text-sm">{#each blockers as b}<li>{b.text} {#if b.text==='Nomor PKS Pertamina Foundation belum diisi.'}<span class="font-semibold">Menunggu admin PF mengisi nomor PKS. Isian kampus tetap tersimpan.</span>{#if !locked}<button class={btn+' mt-2 block'} disabled={busy||Boolean(data.journey.pfRequestedAt)} onclick={requestPf}>{data.journey.pfRequestedAt?'Permintaan sudah dikirim ke PF':'Minta PF melengkapi nomor PKS'}</button>{/if}{:else}<button class="font-semibold text-[#0066B2] underline" onclick={()=>navigate(b.section)}>Perbaiki {sectionLabels[sections.indexOf(b.section)]}</button>{/if}</li>{/each}</ul></div>{/if}
+    {#if blockers.length}<section class="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4" aria-label="Kelengkapan pengajuan"><h3 class="font-semibold">Lengkapi {blockerGroups.length} bagian sebelum membuat dokumen</h3><p class="mt-1 text-sm text-amber-900">Mulai dari bagian paling atas. Buka rincian untuk melihat isian yang belum lengkap.</p><div class="mt-3 grid gap-2">{#each blockerGroups as group}<div class="rounded-lg border border-amber-200 bg-white p-3"><div class="flex flex-wrap items-center justify-between gap-2"><strong class="text-sm">{group.label} <span class="font-normal text-slate-500">({group.items.length} isian)</span></strong><button class="min-h-9 text-sm font-semibold text-[#0066B2] underline" disabled={busy} onclick={()=>navigate(group.section)}>Lengkapi {group.label}</button></div><details class="mt-2 text-sm"><summary class="cursor-pointer text-amber-900">Lihat rincian</summary><ul class="mt-2 list-disc space-y-1 pl-5">{#each group.items as item}<li>{item.text}</li>{/each}</ul></details></div>{/each}</div></section>{/if}
     <section class="mt-5 grid gap-3" aria-label="Dokumen otomatis"><div class="flex flex-wrap items-center justify-between gap-3"><h3 class="font-bold">Dokumen dari data pengajuan</h3>{#if !locked&&data.stale.length}<button class={docBtn} disabled={busy||blockers.length>0} onclick={generateAll}>Siapkan semua dokumen</button>{/if}</div>{#if section==='administrasi'&&blockers.some((b:any)=>b.section==='pks'&&b.text!=='Nomor PKS Pertamina Foundation belum diisi.')}<p class="text-sm text-slate-500">Lengkapi data PKS pada langkah berikutnya untuk menyiapkan dokumen.</p>{/if}{#each MERGE_KINDS as kind}<div class="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"><div><strong class="text-sm">{MERGE_LABEL[kind]}</strong><span class="ml-2 text-xs text-slate-500">{data.documents.find((d:any)=>d.kind===kind)?.status==='sesuai'?'Sesuai':data.documents.find((d:any)=>d.kind===kind)?.status==='perlu_revisi'?'Perlu revisi':data.documents.find((d:any)=>d.kind===kind)?.status==='menunggu_review'?'Menunggu PF':'Draf'}</span><p class="mt-1 text-xs text-slate-500">{data.stale.includes(kind)?latest(kind)?'Data berubah · buat ulang dokumen':'Belum dibuat':'Menggunakan data terbaru'}{latest(kind)?` · versi ${latest(kind).number}`:''}</p></div><div class="flex flex-wrap gap-2">{#if !locked&&(data.journey.status!=='revisi'||data.stale.includes(kind))}<button class={docBtn} disabled={busy||blockers.length>0} onclick={()=>generate(kind)}>{latest(kind)?'Buat ulang':'Buat'} {MERGE_LABEL[kind]}</button>{/if}{#if latest(kind)&&(!data.stale.includes(kind)||locked)}{#if pdfAvailable}<a aria-label={'Unduh PDF '+MERGE_LABEL[kind]} class={docBtn} href={pdfUrl(kind)+'&download=1'} download={kind+'.pdf'}>PDF</a>{/if}<a aria-label={'Unduh DOCX '+MERGE_LABEL[kind]} class={docBtn} href={docUrl(kind)} download>DOCX</a>{/if}{#if locked&&data.journey.status==='selesai'&&!data.paid}<a class={docBtn} href={`/campus/pencairan?butir=${kind}&signed=1`}>{data.documents.find((d:any)=>d.kind===kind)?.signedReceived?'Lihat berkas bertanda tangan':'Unggah bertanda tangan'}</a>{/if}</div>{#if latest(kind)&&(!data.stale.includes(kind)||locked)}<section class="w-full min-w-0 overflow-hidden rounded-lg border" aria-label={'Pratinjau '+MERGE_LABEL[kind]}><!-- Nama berkas ditampilkan satu kali oleh FileViewer. -->{#key kind+latest(kind)?.id+data.journey.status+data.journey.revision}<FileViewer src={pdfAvailable?pdfUrl(kind):docUrl(kind)} mime={pdfAvailable?'application/pdf':'application/vnd.openxmlformats-officedocument.wordprocessingml.document'} name={kind+(pdfAvailable?'.pdf':'.docx')} height={620} showDownload={false}/>{/key}</section>{/if}<DocumentGuide {kind} disabled={locked||busy} checklist={data.journey.checklist} kuasa={fields.jenisRekening==='kuasa'} onchange={checkGuide}/></div>{/each}</section>
     {#if preview==='surat_kuasa'}<section class="mt-4 min-w-0 overflow-hidden rounded-lg border"><h3 class="border-b p-3 font-semibold">Pratinjau {preview==='surat_kuasa'?'surat kuasa':MERGE_LABEL[preview]}</h3>{#key preview+data.journey.revision}<FileViewer src={docUrl(preview)} mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document" name={preview+'.docx'} height={620}/>{/key}</section>{/if}
    {/if}
-   {#if data.journey.status==='revisi'&&!locked}<footer class="mt-6 grid gap-3 border-t pt-4"><p class="text-sm text-slate-600">Dokumen yang terdampak diperbarui saat perbaikan dikirim. Persetujuan bagian lain tetap tersimpan.</p><button class={blue+' justify-self-end'} disabled={busy||blockers.length>0||!requests.length} onclick={submit}>Kirim perbaikan</button>{#if data.revisionBlockers?.length}<p class="text-sm text-amber-900">Perbaiki isian atau berkas sesuai catatan PF sebelum mengirim.</p>{/if}</footer>{:else if section!=='rab'}<footer class="mt-6 flex flex-wrap justify-between gap-3 border-t pt-4"><div class="flex flex-wrap gap-2">{#if index>0}<button class={btn} disabled={busy} onclick={()=>navigate(sections[index-1])}>Kembali</button>{/if}{#if !locked&&section!=='program'}<button class={btn} disabled={busy||!dirty} onclick={save}>Simpan draf</button>{/if}</div>{#if section==='ringkasan'}{#if !locked}<button class={blue} disabled={busy||dirty||blockers.length>0||data.stale.length>0||data.revisionBlockers?.length>0} onclick={submit}>{data.journey.status==='revisi'?'Kirim perbaikan':'Ajukan untuk diperiksa'}</button>{/if}{:else}<button class={blue} disabled={busy||(!canContinue&&section!=='program')} onclick={()=>navigate(sections[index+1])}>Lanjut: {sectionLabels[index+1]}</button>{/if}</footer>{/if}
+   {#if data.journey.status==='revisi'&&!locked}<footer class="mt-6 grid gap-3 border-t pt-4"><p class="text-sm text-slate-600">Dokumen yang terdampak diperbarui saat perbaikan dikirim. Persetujuan bagian lain tetap tersimpan.</p><button class={blue+' justify-self-end'} disabled={busy||blockers.length>0||!requests.length} onclick={submit}>Kirim perbaikan</button>{#if data.revisionBlockers?.length}<p class="text-sm text-amber-900">Perbaiki isian atau berkas sesuai catatan PF sebelum mengirim.</p>{/if}</footer>{:else if section!=='rab'}<footer class="mt-6 flex flex-wrap justify-between gap-3 border-t pt-4"><div class="flex flex-wrap gap-2">{#if index>0}<button class={btn} disabled={busy} onclick={()=>navigate(sections[index-1])}>Kembali</button>{/if}</div>{#if section==='ringkasan'}{#if !locked}<button class={blue} disabled={busy||dirty||blockers.length>0||data.stale.length>0||data.revisionBlockers?.length>0} onclick={submit}>{data.journey.status==='revisi'?'Kirim perbaikan':'Ajukan untuk diperiksa'}</button>{/if}{:else}<button class={blue} disabled={busy} onclick={()=>navigate(sections[index+1])}>Lanjut: {sectionLabels[index+1]}</button>{/if}</footer>{/if}
    {#if section==='ringkasan'&&data.revisionBlockers?.length&&!locked}<p class="mt-3 text-sm text-amber-900">Selesaikan catatan revisi sebelum mengirim ulang: {data.revisionBlockers.map((k:Kind)=>KIND_SHORT[k]).join(', ')}. Unggah berkas pengganti, buat ulang dokumen, atau perbaiki alokasi RAB sesuai catatan PF.</p>{/if}
    {#if section==='ringkasan'&&data.stale.length&&!locked}<p class="mt-3 text-sm text-amber-900">Buat semua dokumen dari data terbaru sebelum mengajukan.</p>{/if}
-   {#if locked&&editableSections.includes(section as EditableSection)}
+   {#if locked&&editableSections.includes(editableScope)}
     <section class="mt-6 grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:p-5" aria-label="Permintaan revisi">
      <p class="text-sm leading-6 text-slate-600">Bagian ini hanya dapat dilihat. Ajukan revisi untuk meminta akses edit dari admin.</p>
+     {#if editableScope==='administrasi'}<p class="text-sm text-slate-600">Permintaan akses Administrasi mencakup Rekening Penerima, Penandatangan Kampus, serta Identitas Surat dan Kop. Jelaskan isian yang perlu diperbaiki dalam alasan permintaan.</p>{/if}
      {#if sectionRequest}<div class="rounded-lg bg-slate-50 p-3 text-sm"><strong>{sectionRequest.status==='pending'?'Menunggu persetujuan admin':sectionRequest.status==='rejected'?'Permintaan revisi ditolak':'Permintaan revisi disetujui'}</strong><p class="mt-1 whitespace-pre-wrap">Alasan: {sectionRequest.reason}</p>{#if sectionRequest.decisionNote}<p class="mt-1 whitespace-pre-wrap">Catatan admin: {sectionRequest.decisionNote}</p>{/if}</div>{/if}
      {#if !data.paid&&sectionRequest?.status!=='pending'}
       {#if requestForm}<form class="grid gap-4" onsubmit={event=>{event.preventDefault();void requestEdit();}}><label class="grid gap-2 text-sm font-semibold">Alasan pengajuan revisi<textarea class={input} required maxlength="2000" rows="3" bind:value={requestReason} disabled={busy}></textarea></label><div class="flex flex-wrap justify-end gap-2"><button type="button" class={btn} disabled={busy} onclick={()=>requestForm=false}>Batal</button><button class={blue} disabled={busy||!requestReason.trim()}>Kirim permintaan revisi</button></div></form>{:else}<div class="flex justify-end"><button class={blue} disabled={busy} onclick={()=>requestForm=true}>Ajukan Revisi</button></div>{/if}
      {:else if data.paid}<p class="text-sm text-slate-500">Pengajuan sudah dibayar. Akses edit tidak dapat dibuka.</p>{/if}
     </section>
    {/if}
-   {#if section==='program'&&!locked}<p class="mt-3 text-sm text-slate-500" role="status">{busy?'Menyimpan draf…':dirty?'Perubahan belum tersimpan. Draf disimpan otomatis setelah selesai mengetik.':'Draf tersimpan otomatis. Belum dikirim ke PF.'}</p>{#if error&&dirty&&!remoteChanged}<button class={btn+' mt-2'} disabled={busy} onclick={save}>Coba simpan lagi</button>{/if}{:else if dirty}<p class="mt-3 text-sm text-amber-900" role="status">Perubahan belum tersimpan.</p>{/if}
+   {#if ['program','administrasi','penandatangan','surat','pks'].includes(section)&&!locked}<p class="mt-3 text-sm text-slate-500" role="status">{busy?'Menyimpan draf…':dirty?'Perubahan belum tersimpan. Draf disimpan otomatis setelah selesai mengetik.':'Draf tersimpan otomatis. Belum dikirim ke PF.'}</p>{#if error&&dirty&&!remoteChanged}<button class={btn+' mt-2'} disabled={busy} onclick={save}>Coba simpan lagi</button>{/if}{:else if dirty}<p class="mt-3 text-sm text-amber-900" role="status">Perubahan belum tersimpan.</p>{/if}
   </section>
  </div>
  {/if}

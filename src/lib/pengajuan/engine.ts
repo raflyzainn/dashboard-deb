@@ -178,7 +178,7 @@ function revisePfData(c:any,r:any,user:AppSession){
      if(method!=='POST'||locked||j.status==='selesai')throw Error('Pengajuan tidak dapat dikirim ulang.');
      const current=view();if(current.blockers.length||current.stale.length)throw Error('Lengkapi data dan buat ulang dokumen sebelum mengajukan.');
      if(current.revisionBlockers.length){const unchanged=[...new Set(openRevisions(j).flatMap(request=>revisionPending(r,request).map(scope=>REVISION_SCOPES[scope].label)))];if(unchanged.length)throw Error(`Belum ada perubahan pada bagian ${unchanged.join(', ')}. Perbaiki semua bagian yang dibuka PF sebelum mengirim.`);throw Error('Selesaikan catatan revisi: unggah ulang berkas, buat ulang dokumen, atau ubah alokasi RAB yang diminta sebelum mengajukan.');}
-     check(r.versions.at(-1));const resubmit=j.status==='revisi'&&Boolean(j.revisionRequests);j.status='menunggu';
+     check(r.versions.at(-1));if(!pfNumber(j))j.pfRequestedAt ||= now();const resubmit=j.status==='revisi'&&Boolean(j.revisionRequests);j.status='menunggu';
      for(const request of openRevisions(j))request.status='submitted';
      j.history.push({id:id(),number:j.history.length+1,revision:j.revision,created:now(),actorName:user.name,fields:{...clone(j.fields),nomorPksPf:pfNumberForDocument(j)},files:clone(j.files),rabVersionId:r.versions.at(-1).id,revisionRequests:clone(j.revisionRequests||[]),documents:r.documents.map((d:any)=>({kind:d.kind,versionId:d.currentVersionId}))});
      if(!resubmit||r.versions.at(-1).status==='draf')r.versions.at(-1).status='menunggu';r.payment.properties={...r.payment.properties,...j.fields,nomorPksPf:pfNumberForDocument(j)};

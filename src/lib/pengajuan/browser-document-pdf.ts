@@ -60,7 +60,7 @@ async function renderPdf(bytes: ArrayBuffer, digest: string): Promise<Blob> {
   });
   await renderAsync(stamped, doc.body, doc.head, {
    className: 'deb-pdf', inWrapper: true, ignoreWidth: false, ignoreHeight: false,
-   breakPages: true, ignoreLastRenderedPageBreak: false, useBase64URL: true, renderHeaders: true, renderFooters: true
+   breakPages: true, ignoreLastRenderedPageBreak: true, useBase64URL: true, renderHeaders: true, renderFooters: true
   });
   // Watermark Word mengandalkan posisi shape yang tidak didukung renderer; status DRAF dalam isi tetap ada.
   for (const header of doc.querySelectorAll('header')) {
@@ -68,10 +68,46 @@ async function renderPdf(bytes: ArrayBuffer, digest: string): Promise<Blob> {
    while (walker.nextNode()) {
     if (walker.currentNode.textContent?.trim() === 'DRAFT') walker.currentNode.textContent = '';
    }
+   // Anchor Word berukuran nol membuat logo keluar dari tepi halaman di renderer browser.
+   for(const anchor of header.querySelectorAll<HTMLElement>('[style]')){
+    if(anchor.style.width==='0px'&&anchor.style.height==='0px'&&anchor.querySelector('img')){
+     Object.assign(anchor.style,{display:'inline-block',width:'auto',height:'auto',left:'0',top:'0'});
+    }
+   }
   }
   await doc.fonts.ready;
   await Promise.all(Array.from(doc.images).map(image => image.decode()));
-  const pages = Array.from(doc.querySelectorAll<HTMLElement>('section.deb-pdf'));
+  // ponytail: pindahkan paragraf/tabel utuh; blok tunggal lebih tinggi dari halaman memakai unduhan DOCX.
+  const pages:HTMLElement[]=[];
+  for(const source of Array.from(doc.querySelectorAll<HTMLElement>('section.deb-pdf'))){
+   const articles=Array.from(source.querySelectorAll<HTMLElement>(':scope > article'));
+   if(!articles.some(article=>article.textContent?.trim()||article.querySelector('img,svg'))){source.remove();continue;}
+   const height=parseFloat(frame.contentWindow!.getComputedStyle(source).minHeight);
+   if(!Number.isFinite(height)||height<=0)throw new Error('Ukuran halaman PDF tidak tersedia. Unduh DOCX untuk melanjutkan.');
+   const newPage=()=>{
+    const page=source.cloneNode(true) as HTMLElement;
+    page.style.margin='0';page.style.boxShadow='none';
+    for(const article of page.querySelectorAll(':scope > article'))article.remove();
+    for(const child of Array.from(page.children)) (child as HTMLElement).style.flexShrink='0';
+    source.before(page);pages.push(page);return page;
+   };
+   let page=newPage();
+   for(const original of articles){
+    let article=original.cloneNode(false) as HTMLElement;
+    article.style.flexShrink='0';page.insertBefore(article,page.querySelector(':scope > footer'));
+    for(const child of Array.from(original.childNodes)){
+     const node=child.cloneNode(true);article.append(node);
+     if(page.getBoundingClientRect().height<=height+1)continue;
+     node.remove();
+     if(!article.textContent?.trim()&&!article.querySelector('img,svg'))throw new Error('Satu bagian dokumen melebihi ukuran halaman. Unduh DOCX untuk melanjutkan.');
+     page=newPage();article=original.cloneNode(false) as HTMLElement;
+     article.style.flexShrink='0';page.insertBefore(article,page.querySelector(':scope > footer'));article.append(node);
+     if(page.getBoundingClientRect().height>height+1)throw new Error('Satu bagian dokumen melebihi ukuran halaman. Unduh DOCX untuk melanjutkan.');
+    }
+   }
+   if(!Array.from(page.querySelectorAll(':scope > article')).some(article=>article.textContent?.trim()||article.querySelector('img,svg'))){page.remove();pages.pop();}
+   source.remove();
+  }
   if (!pages.length) throw new Error('Halaman dokumen belum dapat dibuat.');
   const pdf = await PDFDocument.create();
   for (const page of pages) {

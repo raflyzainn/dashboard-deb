@@ -78,7 +78,6 @@ export function validateJourney(c:any,r:any,settings:any,tags:Record<MergeKind,s
  const warned=new Set<string>();
  const warn=(section:Section,key:string,text:string)=>{if(!warned.has(key)){warned.add(key);blockers.push({section,text});}};
  const require=(section:Section,key:string,label:string)=>{if(!f[key]?.trim())warn(section,key,label+' belum diisi.');};
- if(!pfNumber(j)&&!j.pfRequestedAt)warn('pks','permintaanNomorPksPf','Klik Minta PF melengkapi nomor PKS terlebih dahulu.');
  for(const [key,label] of [['judulProgram','Nama kegiatan'],['alamat','Alamat kampus'],['desa','Desa program'],['kabupaten','Kabupaten/kota program'],['mentor','Mentor'],['koordinator','Koordinator']])require('program',key,label);
  if(canRevise(j,'program')&&!r.payment?.paidAt)for(const text of programLocationErrors(f,true))warn('program',text,text);
  if(!v)blockers.push({section:'rab',text:'Unggah RAB 100% terlebih dahulu.'});
@@ -86,7 +85,7 @@ export function validateJourney(c:any,r:any,settings:any,tags:Record<MergeKind,s
  if(v&&typeof v.campusStep==='number'&&v.campusStep<3)blockers.push({section:'rab',text:'Selesaikan pemeriksaan RAB 100%, Termin 1, dan Termin 2 melalui tombol Lanjut.'});
  for(const [key,label] of [['namaBank','Nama bank'],['nomorRekening','Nomor rekening'],['namaPemilik','Pemilik rekening'],['penandatanganNama','Penandatangan'],['penandatanganJabatan','Jabatan penandatangan'],['tempatTandaTangan','Tempat surat']])require(sectionForField(key),key,label);
  if(f.nomorRekening && !/^\d{5,40}$/.test(f.nomorRekening))blockers.push({section:'administrasi',text:'Nomor rekening harus berisi 5–40 angka.'});
- for(const [key,label] of [['rekening','Foto Buku Rekening'],['kop','Kop surat']])if(!j.files[key])blockers.push({section:'administrasi',text:label+' belum diunggah.'});
+ for(const [key,label] of [['rekening','Foto Buku Rekening'],['kop','Kop surat']])if(!j.files[key])blockers.push({section:sectionForField(key),text:label+' belum diunggah.'});
  if(f.jenisRekening==='kuasa'){
   require('surat','pemberiKuasa','Pemberi kuasa');require('surat','penerimaKuasa','Penerima kuasa');
   if(!j.files.kuasa)blockers.push({section:'surat',text:'Surat kuasa wajib diunggah untuk rekening pihak yang diberi kuasa.'});
@@ -121,7 +120,7 @@ export function journeyView(c:any,r:any,settings:any,templates:Record<MergeKind,
  const validation={campus:{id:c.id,name:c.name,acronym:c.acronym,programYear:c.programYear,award:c.award},settings,tags,
   version:v?{totalSen:v.totalSen,term1Sen:v.term1Sen,term2Sen:v.term2Sen,campusStep:v.campusStep,lines:v.lines.map((l:any)=>({level:l.level,volume:l.volume,flags:{term1Volume:l.flags?.term1Volume}}))}:null};
  const stale=MERGE_KINDS.filter(k=>{const d=r.documents.find((d:any)=>d.kind===k);return !d?.versions.some((v:any)=>(v.id===d.currentVersionId||j.status==='selesai'&&d.signedReceived)&&v.origin==='generated'&&v.journeyRevision===j.documentRevisions![k]&&(j.status==='selesai'||v.generation?.settingsSource===settingsSource(settings)));});
- return {validation,journey:j,pf:{nomorPksPf:j.pf?.nomorPksPf||(c.award?'':'PKS-PF/DUMMY/2026/'+c.id),name:settings.pfSignatoryName,title:settings.pfSignatoryTitle},campus:{id:c.id,name:c.name},summary:{amountSen:BUDGET,limitSen:LIMIT,skNumber:c.award?.skNumber||'SK-DUMMY/2026/'+c.id},rab:v?{id:v.id,number:v.number,totalSen:v.totalSen,term1Sen:v.term1Sen,term2Sen:v.term2Sen,status:v.status}:null,missing,blockers,stale,
+ return {validation,journey:j,pf:{nomorPksPf:pfNumber(j),name:settings.pfSignatoryName,title:settings.pfSignatoryTitle},campus:{id:c.id,name:c.name},summary:{amountSen:BUDGET,limitSen:LIMIT,skNumber:c.award?.skNumber||'SK-DUMMY/2026/'+c.id},rab:v?{id:v.id,number:v.number,totalSen:v.totalSen,term1Sen:v.term1Sen,term2Sen:v.term2Sen,status:v.status}:null,missing,blockers,stale,
   revisionBlockers:[...new Set([...openRevisions(j).filter(request=>revisionPending(r,request).length).map(request=>request.kind),...r.documents.filter((d:any)=>d.status==='perlu_revisi'&&!(d.kind==='surat_kuasa'&&j.fields.jenisRekening==='kampus')&&!openRevisions(j).some(request=>request.kind===d.kind||request.scopes.includes('rab')&&['rab_penuh','rab','rab_tahap2'].includes(d.kind))).map((d:any)=>d.kind)])],
   documents:r.documents.map((d:any)=>({kind:d.kind,status:d.status,signedReceived:d.signedReceived,notes:d.reviews.filter((n:any)=>n.decision==='perlu_revisi'),versions:d.versions})),paid:!!r.payment.paidAt};
 }
