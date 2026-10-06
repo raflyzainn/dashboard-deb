@@ -30,3 +30,14 @@ Tombol kartu ringkas (tinggi minimum 36 px): Buat ulang, PDF, DOCX. Tautan unduh
 Pemeriksaan kode mencakup sumber DOCX yang sama untuk tampilan/unduhan, penggantian cache ketika isi berubah, dan pemisahan mode dummy dengan backend lokal. QA browser belum dilakukan karena tool browser tidak tersedia. Build mode mockup pada 6 Oktober 2026 setelah perubahan konversi browser berhasil (exit 0), dengan warning chunk lebih dari 500 kB. Build tidak memverifikasi hasil visual atau konversi runtime. Check, lint, dan tes terminal tidak dijalankan sesuai instruksi pengguna.
 
 html2canvas 1.4.1 ditambahkan. npm melaporkan Node lokal 24.10.0 berbeda dari kebutuhan repo 22.x, serta 12 temuan audit dependensi (4 rendah, 5 sedang, 3 tinggi); belum dianalisis dan tidak dijalankan audit fix. Publikasi ke branch fix/dokumen dan PR ke development diminta pengguna pada 6 Oktober 2026.
+
+
+## Resolusi konflik PR #37 dan QA ulang ? 6 Oktober 2026
+
+- Menggabungkan development `0b9569d` ke fix/dokumen. Resolusi CampusJourney mempertahankan penguncian revisi per bagian dan checklist; journey-local mempertahankan notifikasi permintaan akses edit serta respons PDF.
+- Renderer html2canvas berjalan dalam iframe agar pengukuran font tidak dipengaruhi CSS aplikasi. Preview draf memakai DOCX versi tersimpan, bukan regenerasi diam-diam. Penanda jeda halaman Word dibaca; teks watermark DRAFT pada header dibersihkan tanpa menghapus gambar kop. Label status DRAF tetap tampil.
+- QA Playwright headed Chrome terhadap dummy terisolasi pada 127.0.0.1:5189 berhasil: empat PDF otomatis tampil, unduhan PDF valid, perubahan nomor invoice menghasilkan sumber/PDF baru, hash sumber arsip lama tetap sama, viewport 390 px tanpa overflow horizontal, checklist terkunci setelah pengajuan, dan PATCH data terkunci ditolak HTTP 400. Tidak ada pageerror.
+- Hasil fixture: PKS 18 halaman, permohonan/invois/kuitansi masing-masing 1 halaman. Screenshot unduhan diperiksa; invoice mengikuti nomor QA-PDF37-I-002, QR hitam-putih tanpa logo di tengah. Skrip QA tersimpan di scripts/qa/document-pdf.playwright.mjs; output lokal tidak diikutkan dalam commit.
+- Batas QA: PDF browser berupa gambar dan tata letak belum identik Word. Metadata template PKS mencatat 17 halaman, sementara renderer menghasilkan 18; ada halaman kosong dan posisi bentuk/kop dapat berbeda. Ini bukan bukti kesetaraan cetak dengan Word. Konversi PocketBase/LibreOffice belum diuji runtime karena LibreOffice tidak tersedia. Pemindaian kamera QR belum diuji. Tidak menyentuh database atau layanan production.
+- Test suite, check, dan lint tidak dijalankan; QA browser di atas dijalankan dengan izin eksplisit pengguna. Build wajib sebelum push dicatat pada PR setelah selesai.
+- Build akhir resolusi PR #37: npm run build berhasil (exit 0), mode mockup, adapter-static menulis build. Warning ukuran chunk lebih dari 500 kB tetap ada.

@@ -22,7 +22,7 @@
 
   const paid = $derived(Boolean(data.disbursement.paidAt));
   const requested = $derived(data.disbursement.requestedSen || data.summary.requestedSen || 0);
-  const reason = $derived(!requested ? 'Setujui RAB 70% dulu.' : (data as any).journey&&!paid&&data.readiness.state!=='siap_dibayar'?'Lengkapi dokumen bertanda tangan/asli dan simpan lampiran terlebih dahulu.':'');
+  const reason = $derived(!requested ? 'Setujui RAB 70% dulu.' : (data as any).journey&&!paid&&(data as any).journey.status!=='selesai'?'Selesaikan revisi dan pemeriksaan pengajuan terlebih dahulu.':(data as any).journey&&!paid&&data.readiness.state!=='siap_dibayar'?'Lengkapi dokumen bertanda tangan/asli dan simpan lampiran terlebih dahulu.':'');
   const ready = $derived(!reason && Boolean(paidAt) && Boolean(paidRef.trim()));
   const hint = $derived(reason || (!paidAt ? 'Isi tanggal bayar.' : !paidRef.trim() ? 'Isi referensi transfer.' : 'Catat transfer Tahap 1'));
 

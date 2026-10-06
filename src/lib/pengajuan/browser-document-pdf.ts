@@ -1,6 +1,7 @@
 /** PDF untuk dummy statis: halaman berasal dari DOCX tersimpan, tanpa data contoh tetap. */
 import { DOCX_MIME, withVerificationFooter } from '../merge';
 import { qrPng, qrPngSide } from '../qr';
+import html2canvasSource from 'html2canvas/dist/html2canvas.min.js?url';
 
 const cache = new Map<string, Blob>();
 const pending = new Map<string, Promise<Blob>>();
@@ -31,8 +32,8 @@ export async function browserDocumentPdf(source: Blob): Promise<Blob> {
 }
 
 async function renderPdf(bytes: ArrayBuffer, digest: string): Promise<Blob> {
- const [{ renderAsync }, { default: html2canvas }, { PDFDocument }] = await Promise.all([
-  import('docx-preview'), import('html2canvas'), import('pdf-lib')
+ const [{ renderAsync }, { PDFDocument }] = await Promise.all([
+  import('docx-preview'), import('pdf-lib')
  ]);
  // Dokumen terpisah menghindari style aplikasi (termasuk warna Tailwind) masuk ke PDF.
  const frame = document.createElement('iframe');
@@ -42,6 +43,14 @@ async function renderPdf(bytes: ArrayBuffer, digest: string): Promise<Blob> {
  try {
   const doc = frame.contentDocument!;
   doc.open(); doc.write('<!doctype html><html><head></head><body style="margin:0;background:white"></body></html>'); doc.close();
+  // html2canvas memakai document global saat mengukur font; jalankan dalam iframe yang bebas CSS aplikasi.
+  const html2canvas = await new Promise<typeof import('html2canvas').default>((resolve, reject) => {
+   const script = doc.createElement('script');
+   script.src = html2canvasSource;
+   script.onload = () => resolve((frame.contentWindow as Window & { html2canvas: typeof import('html2canvas').default }).html2canvas);
+   script.onerror = () => reject(new Error('Pembuat PDF belum dapat dimuat.'));
+   doc.head.append(script);
+  });
   const code = 'DUMMY-' + digest.slice(0, 16).toUpperCase();
   const qrText = 'Dokumen simulasi DEB ' + code;
   const options = { scale: 6, margin: 4, level: 'H' } as const;
@@ -51,8 +60,15 @@ async function renderPdf(bytes: ArrayBuffer, digest: string): Promise<Blob> {
   });
   await renderAsync(stamped, doc.body, doc.head, {
    className: 'deb-pdf', inWrapper: true, ignoreWidth: false, ignoreHeight: false,
-   breakPages: true, useBase64URL: true, renderHeaders: true, renderFooters: true
+   breakPages: true, ignoreLastRenderedPageBreak: false, useBase64URL: true, renderHeaders: true, renderFooters: true
   });
+  // Watermark Word mengandalkan posisi shape yang tidak didukung renderer; status DRAF dalam isi tetap ada.
+  for (const header of doc.querySelectorAll('header')) {
+   const walker = doc.createTreeWalker(header, NodeFilter.SHOW_TEXT);
+   while (walker.nextNode()) {
+    if (walker.currentNode.textContent?.trim() === 'DRAFT') walker.currentNode.textContent = '';
+   }
+  }
   await doc.fonts.ready;
   await Promise.all(Array.from(doc.images).map(image => image.decode()));
   const pages = Array.from(doc.querySelectorAll<HTMLElement>('section.deb-pdf'));

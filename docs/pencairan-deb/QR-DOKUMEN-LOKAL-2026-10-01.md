@@ -59,3 +59,8 @@ Pengguna mengonfirmasi: pertahankan data sumber, hapus label aplikasi saja. Nomo
 
 - npm run build berhasil (exit 0), mode mockup, menghasilkan situs statis di build; warning ukuran chunk lebih dari 500 kB.
 - Diff diperiksa dan frontend PocketBase lokal berhasil dijalankan. Build mockup tidak memverifikasi alur unduhan PocketBase secara menyeluruh. QA visual/pemindaian QR belum dilakukan melalui browser; test suite, check, dan lint tidak dijalankan.
+
+
+### QA PR #37 ? 6 Oktober 2026
+
+Unduhan empat PDF dummy diperiksa melalui Playwright headed Chrome. QR footer tampak hitam-putih tanpa logo PF di tengah. Logo PF pada kop dokumen tetap dipertahankan. Pemeriksaan ini bersifat visual; belum menjalankan pemindaian kamera atau verifikasi runtime PocketBase/LibreOffice. Laporan lengkap ada pada PDF-RINGKASAN-2026-10-05.md.

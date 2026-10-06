@@ -2,11 +2,12 @@ import { samplePdf } from '../data/demo/fixtures/pdf';
 import { KINDS, KIND_LABEL, documentReceiptFlags, assess, isRabKind, parseSen, terbilang } from '../pencairan';
 import { arrange, type LineInput } from '../rab';
 import { BUDGET, LIMIT, sampleItems, readExcel, validQuantity, validEditedVolume } from '../../../mockups/rab/model';
-import { ensureJourney, journeyView, touchJourney, sections, PKS_DATE, validDate, documentGuides, kuasaSource, settingsSource } from './journey';
-import { journeyTemplates, journeyDocx, finalJourneyDocx } from './journey-documents';
+import { ensureJourney, journeyView, touchJourney, sections, PKS_DATE, validDate, documentGuides, kuasaSource, settingsSource, pfNumber, pfNumberForDocument, changedLetters, requiresKuasaUpdate } from './journey';
+import { journeyTemplates, journeyDocx, finalJourneyDocx, pendingPfJourneyDocx } from './journey-documents';
 import { MERGE_KINDS, isMergeKind, DOCX_MIME, MERGE_LABEL, type MergeKind } from '../merge';
 import type { AppSession } from '../types';
 import { programLocationErrors } from './location';
+import { REVISION_SCOPES, canRevise, canEditField, canUploadFile, openRevisions, revisionPending, revisionScopes, revisionValue, revisionSection, editableSections } from './revisions';
 const now=()=>new Date().toISOString();
 const clone=<T,>(v:T):T=>structuredClone(v);
 const rabKinds=['rab_penuh','rab','rab_tahap2'];
@@ -43,12 +44,28 @@ function init(c:any,index:number){
  const documents=KINDS.map(kind=>{const v=documentVersion(kind,`${kind}_DUMMY.pdf`);return {id:id(),kind,status:isRabKind(kind)?scenario===0?'belum_ada':scenario===1?'menunggu_review':scenario===3?'perlu_revisi':'sesuai':'sesuai',signedReceived:scenario===4,signedReceivedAt:'',signedReceivedByName:'',originalReceived:scenario===4,originalReceivedAt:'',originalReceivedByName:'',currentVersionId:isRabKind(kind)?'':v.id,versions:isRabKind(kind)?[]:[v],generated:['pks','permohonan','kuitansi','invois'].includes(kind),decidedByName:'Admin Dummy',decidedAt:now(),notes:[],reviews:scenario===3&&isRabKind(kind)?[{id:id(),decision:'perlu_revisi',note:'Periksa kembali alokasi kegiatan Tahap 1.',actorName:'Admin Dummy',created:now(),imported:false}]:[]};});
  return {versions,documents,payment:{id:id(),stage:4,requestedSen:versions[0]?.term1Sen||0,paidSen:scenario===4?LIMIT:0,paidAt:scenario===4?'2026-09-20':'',paidRef:scenario===4?'DUMMY-TRANSFER':'',paidByName:scenario===4?'Admin Dummy':'',properties:{},clauseChecked:true,templateMode:'standard'},attachments:[],entries:[],templates:[],note:'',bankCheck:{id:id(),bankResult:'sesuai',bankNameSeen:c.name,checkedAt:now(),evidence:true}};
 }
-function card(c:any,r:any,actor:AppSession){const v=r.versions.at(-1),documents=r.documents.map((d:any)=>({...d,status:isRabKind(d.kind)&&v?.status==='draf'&&d.status!=='perlu_revisi'?'belum_ada':d.status})),statuses=Object.fromEntries(documents.map((d:any)=>[d.kind,d.status]));const ready=assess(statuses as Parameters<typeof assess>[0],{suratKuasaRequired:r.journey?.fields.jenisRekening==='kuasa',redChecks:0,paidAt:r.payment.paidAt,originalsAll:r.documents.filter((d:any)=>d.generated).every((d:any)=>d.originalReceived),lampiranCount:r.attachments.length});return {journey:r.journey?{revision:r.journey.revision,files:r.journey.files,status:r.journey.status,lastSection:r.journey.lastSection,fields:r.journey.fields,pf:r.journey.pf,checklist:r.journey.checklist,history:r.journey.history}:null,campus:{...c,code:c.acronym||c.initials,signatoryName:r.journey?.fields.penandatanganNama||'',team:c.program?.pfTeam||'',contacts:{mentor:c.program?.mentor||'',coordinator:c.program?.coordinator||'',localHero:c.program?.localHero||''}},summary:{skNumber:c.award?.skNumber||'SK-DUMMY/2026/'+c.id,amountSen:BUDGET,limitSen:LIMIT,requestedSen:r.journey?.history.length?v?.term1Sen||0:r.payment.requestedSen,term2Sen:BUDGET-(r.journey?.history.length?v?.term1Sen||0:r.payment.requestedSen),term1Percent:70,term2Percent:30,programTitle:r.journey?.fields.judulProgram||c.program?.description||'Program Dummy',programYear:c.programYear,skFile:true},disbursement:r.payment,documents:documents.map((d:any)=>({...d,notes:d.notes.filter((n:any)=>actor.role==='admin'||!n.internal)})),bankCheck:r.bankCheck,rab:v?{id:v.id,number:v.number,status:v.status,totalSen:v.totalSen,term1Sen:v.term1Sen,term2Sen:v.term2Sen}:null,lampiranCount:r.attachments.length,checks:[{kind:'rab',level:v&&v.totalSen===BUDGET&&v.term1Sen<=LIMIT?'ok':'info',text:v?'Alokasi RAB tersimpan.':'Kampus belum mengunggah RAB.'}],readiness:ready};}
+function card(c:any,r:any,actor:AppSession){const v=r.versions.at(-1),documents=r.documents.map((d:any)=>({...d,status:isRabKind(d.kind)&&v?.status==='draf'&&d.status!=='perlu_revisi'?'belum_ada':d.status})),statuses=Object.fromEntries(documents.map((d:any)=>[d.kind,d.status]));const ready=assess(statuses as Parameters<typeof assess>[0],{submissionStatus:r.journey?.status,suratKuasaRequired:r.journey?.fields.jenisRekening==='kuasa',redChecks:0,paidAt:r.payment.paidAt,originalsAll:r.documents.filter((d:any)=>d.generated).every((d:any)=>d.originalReceived),lampiranCount:r.attachments.length});return {journey:r.journey?{revision:r.journey.revision,revisionRequests:r.journey.revisionRequests,editRequests:r.journey.editRequests,documentRevisions:r.journey.documentRevisions,files:r.journey.files,status:r.journey.status,lastSection:r.journey.lastSection,fields:r.journey.fields,pf:r.journey.pf,checklist:r.journey.checklist,history:r.journey.history}:null,campus:{...c,code:c.acronym||c.initials,signatoryName:r.journey?.fields.penandatanganNama||'',team:c.program?.pfTeam||'',contacts:{mentor:c.program?.mentor||'',coordinator:c.program?.coordinator||'',localHero:c.program?.localHero||''}},summary:{skNumber:c.award?.skNumber||'SK-DUMMY/2026/'+c.id,amountSen:BUDGET,limitSen:LIMIT,requestedSen:r.journey?.history.length?v?.term1Sen||0:r.payment.requestedSen,term2Sen:BUDGET-(r.journey?.history.length?v?.term1Sen||0:r.payment.requestedSen),term1Percent:70,term2Percent:30,programTitle:r.journey?.fields.judulProgram||c.program?.description||'Program Dummy',programYear:c.programYear,skFile:true},disbursement:r.payment,documents:documents.map((d:any)=>({...d,notes:d.notes.filter((n:any)=>actor.role==='admin'||!n.internal)})),bankCheck:r.bankCheck,rab:v?{id:v.id,number:v.number,status:v.status,totalSen:v.totalSen,term1Sen:v.term1Sen,term2Sen:v.term2Sen}:null,lampiranCount:r.attachments.length,checks:[{kind:'rab',level:v&&v.totalSen===BUDGET&&v.term1Sen<=LIMIT?'ok':'info',text:v?'Alokasi RAB tersimpan.':'Kampus belum mengunggah RAB.'}],readiness:ready};}
 function overview(c:any,r:any,versionId=''){return {campus:{...c,code:c.acronym||c.initials},summary:{skNumber:c.award?.skNumber||'SK-DUMMY/2026/'+c.id,amountSen:BUDGET,limitSen:LIMIT},disbursement:{...r.payment,rabVersionId:r.versions.find((v:any)=>v.active)?.id||''},versions:r.versions.map(({lines,...v}:any)=>v),version:r.versions.find((v:any)=>v.id===versionId)||r.versions.at(-1)||null,checks:[]};}
+function requestRevision(c:any,r:any,kind:string,scopes:any,note:string,user:AppSession,invalidateDocument=true){
+ const j=ensureJourney(c,r);
+ if(r.payment.paidAt||!['menunggu','selesai','revisi'].includes(j.status))throw Error('Revisi hanya untuk pengajuan yang sudah dikirim dan belum dibayar.');
+ const allowed=revisionScopes(scopes);
+ if(allowed.includes('dokumen')&&!isMergeKind(kind))throw Error('Pilihan buat ulang hanya untuk surat otomatis.');
+ if(kind==='sk')throw Error('Perbaikan SK ditangani PF, bukan kampus.');
+ j.revisionRequests??=[];
+ for(const previous of j.revisionRequests)if(previous.kind===kind&&previous.scopes.some(scope=>allowed.includes(scope))&&previous.status!=='resolved')previous.status='resolved';
+ j.revisionRequests.push({id:id(),kind,scopes:allowed,note,actorName:user.name,created:now(),status:'open',baseline:Object.fromEntries(allowed.map(scope=>[scope,revisionValue(r,scope,kind)]))});
+ if(j.status!=='revisi')j.revisionDocuments=[];
+ for(const request of j.editRequests||[])if(request.status==='pending'&&allowed.some(scope=>REVISION_SCOPES[scope].section===request.section))Object.assign(request,{status:'approved',decisionNote:note,decidedByName:user.name,decidedAt:now()});
+ j.status='revisi';j.lastSection=REVISION_SCOPES[allowed[0]].section as typeof j.lastSection;
+ touchJourney(c,r,invalidateDocument&&MERGE_KINDS.includes(kind as MergeKind)?[kind]:[]);
+ if(allowed.includes('rab')&&r.versions.length){r.versions.at(-1).status='draf';r.versions.at(-1).active=false;for(const d of r.documents)if(isRabKind(d.kind))d.status='perlu_revisi';}
+}
 function revisePfData(c:any,r:any,user:AppSession){
- const j=ensureJourney(c,r);if(j.history.length){j.status='revisi';j.lastSection='pks';if(r.versions.length)r.versions.at(-1).status='draf';}
- touchJourney(c,r);
- if(j.history.length){const pks=r.documents.find((d:any)=>d.kind==='pks');pks.status='perlu_revisi';pks.reviews.push({id:id(),decision:'perlu_revisi',note:'Data PKS dari PF diperbarui. Periksa data dan buat ulang dokumen sebelum mengajukan kembali.',actorName:user.name,created:now(),imported:false});}
+ const j=ensureJourney(c,r);
+ if(j.history.length){requestRevision(c,r,'pks',['dokumen'],'Data PKS dari PF diperbarui. Buat ulang PKS dan kirim perbaikan.',user);const pks=r.documents.find((d:any)=>d.kind==='pks');pks.status='perlu_revisi';pks.reviews.push({id:id(),decision:'perlu_revisi',note:'Data PKS dari PF diperbarui. Buat ulang PKS dan kirim perbaikan.',actorName:user.name,created:now(),imported:false});}
+ else touchJourney(c,r,['pks']);
+ touchJourney(c,r,['permohonan']);
 }
 
  async function request(url:string,method='GET',body:any={}):Promise<any>{
@@ -67,7 +84,7 @@ function revisePfData(c:any,r:any,user:AppSession){
    const kuasa=parts[4]==='surat-kuasa';
    if(!kuasa&&!isMergeKind(parts[5]))throw Error('Jenis dokumen tidak dikenal.');
    const view=await request(`/api/pencairan/${parts[2]}/pengajuan`);
-   if(!write&&!kuasa&&(view.journey.status==='selesai'||!view.stale.includes(parts[5]))){const stored=await transaction(s=>{const r=s.fullDummy.campuses[parts[2]],v=r.documents.find((d:any)=>d.kind===parts[5])?.versions.filter((v:any)=>v.origin==='generated').at(-1);return v&&s.files[v.id];});if(!stored)throw Error('Dokumen yang disetujui belum tersedia.');return view.journey.status==='selesai'?finalJourneyDocx(new Uint8Array(await stored.arrayBuffer())):stored;}
+   if(!write&&!kuasa&&(view.journey.status==='selesai'||!view.stale.includes(parts[5]))){const stored=await transaction(s=>{const r=s.fullDummy.campuses[parts[2]],v=r.documents.find((d:any)=>d.kind===parts[5])?.versions.filter((v:any)=>v.origin==='generated').at(-1);return v&&s.files[v.id];});if(!stored)throw Error('Dokumen yang disetujui belum tersedia.');if(options.dummy&&parts[5]==='pks'&&view.journey.status!=='selesai'&&!view.paid)return pendingPfJourneyDocx(new Uint8Array(await stored.arrayBuffer()));return view.journey.status==='selesai'?finalJourneyDocx(new Uint8Array(await stored.arrayBuffer())):stored;}
    if(kuasa){
     if(write)throw Error('Gunakan unduh template surat kuasa.');
     const f=view.journey.fields;
@@ -102,23 +119,48 @@ function revisePfData(c:any,r:any,user:AppSession){
     return {rows:campuses.map(c=>{const r=db.campuses[c.id],v=card(c,r,user);return {campus:v.campus,amountSen:BUDGET,limitSen:LIMIT,stage:r.payment.stage,requestedSen:r.payment.requestedSen,paidSen:r.payment.paidSen,paidAt:r.payment.paidAt,lampiranCount:r.attachments.length,statuses:Object.fromEntries(v.documents.map((d:any)=>[d.kind,d.status])),assessment:v.readiness,checkedAt:now(),bukti:{r100:r.versions.length?'ada':'',r70:r.versions.length?'ada':'',r30:r.versions.length?'ada':''}};})};
    }
    const c=s.data.campuses.find(c=>c.id===parts[2]);if(!c)throw Error('Kampus tidak ditemukan.');if(user.role!=='admin'&&user.campusId!==c.id)throw Error('Akun ini tidak boleh mengakses kampus lain.');const r=db.campuses[c.id];
+   if(write&&r.payment.paidAt)throw Error('Pengajuan yang sudah dibayar terkunci.');
    if(parts[3]==='pengajuan'){
     const j=ensureJourney(c,r),settings=db.settings.find((v:any)=>v.programYear===c.programYear);
     const view=()=>journeyView(c,r,settings,templates!);
     const locked=r.payment.paidAt||j.status==='menunggu';
+    if(parts[4]==='edit-requests'){
+     if(method!=='POST')throw Error('Operasi permintaan revisi tidak valid.');
+     j.editRequests??=[];
+     if(parts[5]){
+      admin();const request=j.editRequests.find(request=>request.id===parts[5]);
+      if(!request||request.status!=='pending')throw Error('Permintaan sudah diputuskan atau tidak ditemukan.');
+      if(!['approved','rejected'].includes(body.decision))throw Error('Keputusan tidak valid.');
+      if(typeof body.note!=='string'||body.note.length>2000||body.decision==='rejected'&&!body.note.trim())throw Error('Isi catatan keputusan, maksimal 2000 karakter.');
+      if(body.decision==='approved'){
+       if(canRevise(j,request.section))throw Error('Bagian ini sudah terbuka untuk revisi.');
+       const kind={program:'pks',rab:'rab',administrasi:'invois',pks:'pks'}[request.section];
+       requestRevision(c,r,kind,[request.section],body.note.trim()||request.reason,user,false);
+      }
+      Object.assign(request,{status:body.decision,decisionNote:body.note.trim(),decidedByName:user.name,decidedAt:now()});
+      return card(c,r,user);
+     }
+     if(user.role!=='campus')throw Error('Hanya kampus dapat mengajukan revisi.');
+     if(!editableSections.includes(body.section)||!['menunggu','selesai','revisi'].includes(j.status)||canRevise(j,body.section))throw Error('Bagian ini tidak terkunci untuk revisi.');
+     if(typeof body.reason!=='string'||!body.reason.trim()||body.reason.length>2000)throw Error('Isi alasan revisi, maksimal 2000 karakter.');
+     if(j.editRequests.some(request=>request.section===body.section&&request.status==='pending'))throw Error('Permintaan bagian ini masih menunggu persetujuan admin.');
+     j.editRequests.push({id:id(),section:body.section,reason:body.reason.trim(),actorName:user.name,created:now(),status:'pending'});
+     return view();
+    }
     if(parts[4]==='checklist'){
      if(method!=='PATCH'||typeof body.checked!=='boolean'||!Object.entries(documentGuides).some(([kind,items])=>items.some((_,i)=>body.key===kind+'-'+i)))throw Error('Checklist tidak valid.');
+     const scope=revisionSection(body.key.split('-')[0]);if(user.role!=='admin'&&(locked||j.status==='selesai'||!canRevise(j,scope as any)&&!(body.key.startsWith('surat_kuasa-')&&canRevise(j,'program')&&requiresKuasaUpdate(j))))throw Error('Checklist bagian ini terkunci.');
      j.checklist![body.key]=body.checked;return view();
     }
     if(write&&body.requestPf===true){
-     if(method!=='PATCH'||locked||j.pf?.nomorPksPf)throw Error('Permintaan data PF sudah tidak diperlukan.');
+     if(method!=='PATCH'||locked||pfNumber(j))throw Error('Permintaan data PF sudah tidak diperlukan.');
      j.pfRequestedAt ||= now();return view();
     }
     if(parts[4]==='pf'){
      admin();if(method!=='PATCH'||r.payment.paidAt)throw Error('Data PF tidak dapat diubah.');
      if(typeof body.nomorPksPf!=='string'||!body.nomorPksPf.trim()||body.nomorPksPf.length>200)throw Error('Isi nomor PKS PF, maksimal 200 karakter.');
-     if(j.pf!.nomorPksPf!==body.nomorPksPf.trim()){
-      j.pf!.nomorPksPf=body.nomorPksPf.trim();revisePfData(c,r,user);
+     if(j.pf!.nomorPksPf!==body.nomorPksPf.trim()||!j.pf!.confirmedByAdmin){
+      j.pf!.nomorPksPf=body.nomorPksPf.trim();j.pf!.confirmedByAdmin=true;revisePfData(c,r,user);
      }return card(c,r,user);
     }
     if(parts[4]==='file'){
@@ -126,40 +168,42 @@ function revisePfData(c:any,r:any,user:AppSession){
     }
     if(parts[4]==='dokumen'&&generated){
      if(j.revision!==expectedRevision||settingsSource(settings)!==renderedSettings)throw Error('Data berubah saat dokumen dibuat. Coba kembali.');
-     if(locked)throw Error('Pengajuan terkunci selama pemeriksaan atau setelah pembayaran.');
+     if(locked||j.status==='selesai')throw Error('Pengajuan terkunci selama pemeriksaan atau setelah pembayaran.');
+     if(j.status==='revisi'&&(!j.revisionDocuments?.includes(parts[5])||!view().stale.includes(parts[5])))throw Error('Dokumen ini tidak termasuk perbaikan.');
      const d=r.documents.find((d:any)=>d.kind===parts[5]),v=documentVersion(parts[5],`${MERGE_LABEL[parts[5] as keyof typeof MERGE_LABEL]}_${c.id}_v${d.versions.length+1}.docx`,d.versions.length+1);
-     Object.assign(v,{origin:'generated',mime:DOCX_MIME,size:generated.size,journeyRevision:j.revision,generation:{settingsSource:renderedSettings},fields:{...j.fields,nominalSen:r.versions.at(-1)?.term1Sen}});
+     Object.assign(v,{origin:'generated',mime:DOCX_MIME,size:generated.size,journeyRevision:j.documentRevisions![parts[5]],generation:{settingsSource:renderedSettings},fields:{...j.fields,nomorPksPf:pfNumberForDocument(j),nominalSen:r.versions.at(-1)?.term1Sen}});
      d.versions.push(v);d.currentVersionId=v.id;d.status='belum_ada';s.files[v.id]=generated;return view();
     }
     if(parts[4]==='submit'){
      if(method!=='POST'||locked||j.status==='selesai')throw Error('Pengajuan tidak dapat dikirim ulang.');
      const current=view();if(current.blockers.length||current.stale.length)throw Error('Lengkapi data dan buat ulang dokumen sebelum mengajukan.');
-     if(current.revisionBlockers.length)throw Error('Selesaikan catatan revisi: unggah ulang berkas, buat ulang dokumen, atau ubah alokasi RAB yang diminta sebelum mengajukan.');
-     check(r.versions.at(-1));j.status='menunggu';
-     j.history.push({id:id(),number:j.history.length+1,revision:j.revision,created:now(),actorName:user.name,fields:clone(j.fields),files:clone(j.files),rabVersionId:r.versions.at(-1).id,documents:r.documents.map((d:any)=>({kind:d.kind,versionId:d.currentVersionId}))});
-     r.versions.at(-1).status='menunggu';r.payment.properties={...r.payment.properties,...j.fields,nomorPksPf:j.pf!.nomorPksPf};
-     r.documents.forEach((d:any)=>{if(d.kind==='sk')return;const version=d.versions.find((v:any)=>v.id===d.currentVersionId);if(version){const f=j.fields;const amount=r.versions.at(-1).term1Sen;if(d.kind==='pks')version.fields={nomorPksPf:j.pf!.nomorPksPf,nomorPksKampus:f.nomorPksKampus,tanggalPerjanjian:f.tanggalPerjanjian,penandatangan:f.penandatanganNama+' - '+f.penandatanganJabatan,nilaiBantuanSen:BUDGET};if(d.kind==='rekening')version.fields={namaBank:f.namaBank,nomorRekening:f.nomorRekening,namaPemilik:[f.namaPemilik]};if(d.kind==='surat_kuasa')version.fields={pemberiKuasa:f.pemberiKuasa,penerimaKuasa:[f.penerimaKuasa]};if(d.kind==='invois')Object.assign(version.fields,{namaBank:f.namaBank,rekeningTujuan:f.nomorRekening,namaPemilik:[f.namaPemilik],tanggal:f.tanggalInvois,nominalSen:amount});if(d.kind==='permohonan')Object.assign(version.fields,{nomorSurat:f.nomorSuratPermohonan,tanggalSurat:f.tanggalSuratPermohonan,penandatangan:f.penandatanganNama,nominalSen:amount});if(d.kind==='kuitansi')Object.assign(version.fields,{tanggal:f.tanggalKuitansi,nominalSen:amount,terbilang:terbilang(amount)});}d.status=d.kind==='surat_kuasa'&&j.fields.jenisRekening==='kampus'?'tidak_perlu':'menunggu_review';});return view();
+     if(current.revisionBlockers.length){const unchanged=[...new Set(openRevisions(j).flatMap(request=>revisionPending(r,request).map(scope=>REVISION_SCOPES[scope].label)))];if(unchanged.length)throw Error(`Belum ada perubahan pada bagian ${unchanged.join(', ')}. Perbaiki semua bagian yang dibuka PF sebelum mengirim.`);throw Error('Selesaikan catatan revisi: unggah ulang berkas, buat ulang dokumen, atau ubah alokasi RAB yang diminta sebelum mengajukan.');}
+     check(r.versions.at(-1));const resubmit=j.status==='revisi'&&Boolean(j.revisionRequests);j.status='menunggu';
+     for(const request of openRevisions(j))request.status='submitted';
+     j.history.push({id:id(),number:j.history.length+1,revision:j.revision,created:now(),actorName:user.name,fields:{...clone(j.fields),nomorPksPf:pfNumberForDocument(j)},files:clone(j.files),rabVersionId:r.versions.at(-1).id,revisionRequests:clone(j.revisionRequests||[]),documents:r.documents.map((d:any)=>({kind:d.kind,versionId:d.currentVersionId}))});
+     if(!resubmit||r.versions.at(-1).status==='draf')r.versions.at(-1).status='menunggu';r.payment.properties={...r.payment.properties,...j.fields,nomorPksPf:pfNumberForDocument(j)};
+     r.documents.forEach((d:any)=>{if(d.kind==='sk'||resubmit&&['sesuai','tidak_perlu'].includes(d.status))return;const version=d.versions.find((v:any)=>v.id===d.currentVersionId);if(version){const f=j.fields;const amount=r.versions.at(-1).term1Sen;if(d.kind==='pks')version.fields={nomorPksPf:pfNumberForDocument(j),nomorPksKampus:f.nomorPksKampus,tanggalPerjanjian:f.tanggalPerjanjian,penandatangan:f.penandatanganNama+' - '+f.penandatanganJabatan,nilaiBantuanSen:BUDGET};if(d.kind==='rekening')version.fields={namaBank:f.namaBank,nomorRekening:f.nomorRekening,namaPemilik:[f.namaPemilik]};if(d.kind==='surat_kuasa')version.fields={pemberiKuasa:f.pemberiKuasa,penerimaKuasa:[f.penerimaKuasa]};if(d.kind==='invois')Object.assign(version.fields,{namaBank:f.namaBank,rekeningTujuan:f.nomorRekening,namaPemilik:[f.namaPemilik],tanggal:f.tanggalInvois,nominalSen:amount});if(d.kind==='permohonan')Object.assign(version.fields,{nomorSurat:f.nomorSuratPermohonan,tanggalSurat:f.tanggalSuratPermohonan,penandatangan:f.penandatanganNama,nominalSen:amount});if(d.kind==='kuitansi')Object.assign(version.fields,{tanggal:f.tanggalKuitansi,nominalSen:amount,terbilang:terbilang(amount)});}d.status=d.kind==='surat_kuasa'&&j.fields.jenisRekening==='kampus'?'tidak_perlu':'menunggu_review';});return view();
     }
     if(write){
      if(parts[4]==='upload'){
       if(locked||j.status==='selesai')throw Error('Pengajuan terkunci.');
-      const key=body.get('slot');if(!['kop','rekening','kuasa'].includes(key)||!file||!file.size||file.size>2*1024*1024)throw Error('Pilih berkas maksimal 2 MB.');
+      const key=body.get('slot');if(!canUploadFile(j,key)&&!(key==='kuasa'&&canRevise(j,'program')&&requiresKuasaUpdate(j)))throw Error('Berkas ini terkunci dan tidak diminta untuk direvisi.');if(!['kop','rekening','kuasa'].includes(key)||!file||!file.size||file.size>2*1024*1024)throw Error('Pilih berkas maksimal 2 MB.');
       if(key==='kop'&&!['image/png','image/jpeg'].includes(file.type)||key!=='kop'&&!['image/png','image/jpeg','application/pdf'].includes(file.type))throw Error('Format berkas tidak sesuai.');
       const width=Number(body.get('width')),height=Number(body.get('height'));
       if(key==='kop'&&(!Number.isFinite(width)||!Number.isFinite(height)||width<=0||height<=0))throw Error('Kop surat tidak dapat dibaca.');
       const ref={id:id(),name:file.name,mime:file.type,width,height,...(key==='kuasa'?{source:kuasaSource(j.fields)}:{})};j.files[key]=ref;s.files[ref.id]=file;
       if(key!=='kop'){const d=r.documents.find((d:any)=>d.kind===(key==='kuasa'?'surat_kuasa':'rekening')),v=documentVersion(d.kind,file.name,d.versions.length+1);Object.assign(v,{mime:file.type,size:file.size});d.versions.push(v);d.currentVersionId=v.id;d.status='belum_ada';s.files[v.id]=file;}
-      touchJourney(c,r);
+      touchJourney(c,r,key==='kop'?['permohonan','invois','kuitansi']:[]);
      }else{
       if(body.fields){
        if(locked||j.status==='selesai')throw Error('Pengajuan terkunci.');
        if(body.revision!==j.revision)throw Error('Draf berubah di tab lain. Muat ulang sebelum menyimpan.');
        if(typeof body.fields!=='object'||Array.isArray(body.fields))throw Error('Data isian tidak valid.');
-       const fields={...j.fields};for(const [key,value] of Object.entries(body.fields)){if(!(key in fields)||typeof value!=='string'||value.length>2000)throw Error('Isian tidak valid.');fields[key]=value.trim();}
+       const fields={...j.fields};for(const [key,value] of Object.entries(body.fields)){if(!(key in fields)||typeof value!=='string'||value.length>2000)throw Error('Isian tidak valid.');if(value.trim()!==j.fields[key]&&!canEditField(j,key))throw Error('Isian '+key+' terkunci dan tidak diminta untuk direvisi.');fields[key]=value.trim();}
        const locationErrors=programLocationErrors(fields);if(locationErrors.length)throw Error(locationErrors[0]);
        if(fields.tanggalPerjanjian!==PKS_DATE)throw Error('Tanggal PKS wajib 17 Juni 2026.');
        if(!['kampus','kuasa'].includes(fields.jenisRekening))throw Error('Pilih jenis rekening.');
-       if(JSON.stringify(fields)!==JSON.stringify(j.fields)){j.fields=fields;touchJourney(c,r);}
+       if(JSON.stringify(fields)!==JSON.stringify(j.fields)){const before=j.fields;j.fields=fields;touchJourney(c,r,changedLetters(c,r,settings,templates!,before));if(['namaBank','nomorRekening','namaPemilik','jenisRekening'].some(key=>before[key]!==fields[key])){delete j.files.rekening;const evidence=r.documents.find((d:any)=>d.kind==='rekening');evidence.status='belum_ada';}}
       }
       if(body.lastSection&&sections.includes(body.lastSection))j.lastSection=body.lastSection;
      }
@@ -167,6 +211,7 @@ function revisePfData(c:any,r:any,user:AppSession){
     return view();
    }
    if(user.role!=='admin'&&write&&parts[3]==='rab'&&(r.payment.paidAt||r.journey?.status==='menunggu'||r.journey?.status==='selesai'))throw Error('Pengajuan terkunci. Tunggu hasil pemeriksaan PF.');
+   if(parts[3]==='rab'&&write&&parts[4]!=='keputusan'&&user.role!=='admin'&&r.journey&&!canRevise(r.journey,'rab'))throw Error('RAB terkunci dan tidak diminta untuk direvisi.');
    if(parts[3]==='rab'){
     let v=r.versions.find((v:any)=>v.id===parts[5])||r.versions.at(-1);
     if(parts[4]==='import'&&imported){const next=version((v?.number||0)+1,imported);next.sourceFile=file!.name;
@@ -190,7 +235,7 @@ function revisePfData(c:any,r:any,user:AppSession){
        if(body.kind!=='rab_penuh'&&(volume!==changed.volume||unitPriceSen!==changed.unitPriceSen)||body.kind==='rab_penuh'&&term1Volume!==changed.flags?.term1Volume)throw Error('Hanya kolom RAB yang dipilih boleh diubah.');
        Object.assign(changed,{volume,unitPriceSen,amountSen:Math.round(volume*unitPriceSen),term1Sen:Math.round(term1Volume*unitPriceSen),term2Sen:Math.round(volume*unitPriceSen)-Math.round(term1Volume*unitPriceSen),flags:{...changed.flags,term1Volume,term2Volume:Math.round((volume-term1Volume)*10000)/10000}});
       }
-      if(r.journey){next.status='draf';next.campusStep=1;r.journey.status='revisi';r.journey.lastSection='rab';}
+      if(r.journey){if(r.journey.history.length)requestRevision(c,r,body.kind,['rab'],next.note,user);next.status='draf';next.campusStep=1;}
       next.quantityAllocation=true;
       next.lines=lines(next.lines.map((l:any)=>({...l,key:l.id,parentKey:l.parentId})));totals(next);
       r.versions.push(next);touchJourney(c,r);r.documents.filter((d:any)=>isRabKind(d.kind)).forEach((d:any)=>d.status=next.status==='draf'?(r.journey?'perlu_revisi':'belum_ada'):'menunggu_review');
@@ -216,7 +261,7 @@ function revisePfData(c:any,r:any,user:AppSession){
       const changed=JSON.stringify(next.lines)!==JSON.stringify(v.lines);
       totals(next);next.updated=now();Object.assign(v,next);touchJourney(c,r);if(changed)r.documents.filter((d:any)=>isRabKind(d.kind)&&d.status==='perlu_revisi').forEach((d:any)=>d.status='belum_ada');return overview(c,r,v.id);
      }
-     if(method==='PATCH'){if(v.status!=='draf')throw Error('Versi terkunci.');v.lines=lines(body.lines);totals(v);v.updated=now();}
+     if(method==='PATCH'){if(v.status!=='draf')throw Error('Versi terkunci.');v.lines=lines(body.lines);totals(v);v.updated=now();touchJourney(c,r);}
      if(parts[6]==='submit'){if(r.journey)throw Error('Ajukan RAB bersama dokumen melalui Ringkasan pengajuan.');if(v.quantityAllocation&&v.lines.some((l:any)=>l.level===4&&typeof l.flags?.term1Volume!=='number'))throw Error('Bagikan jumlah setiap item terlebih dahulu.');check(v);v.status='menunggu';r.documents.filter((d:any)=>isRabKind(d.kind)).forEach((d:any)=>d.status='menunggu_review');}
      if(parts[6]==='approve'){admin();if(r.journey)throw Error('Periksa RAB melalui keputusan tiap butir pengajuan.');check(v);r.versions.forEach((previous:any)=>previous.active=false);v.status='disetujui';v.active=true;v.approvedAt=now();v.approvedByName=user.name;r.payment.requestedSen=v.term1Sen;r.documents.filter((d:any)=>isRabKind(d.kind)).forEach((d:any)=>d.status='sesuai');}
      if(parts[6]==='revoke'){admin();v.status='draf';v.active=false;r.documents.filter((d:any)=>isRabKind(d.kind)).forEach((d:any)=>d.status='perlu_revisi');}
@@ -228,17 +273,19 @@ function revisePfData(c:any,r:any,user:AppSession){
     const kind=parts[3]==='rab'?'rab':parts[4],d=r.documents.find((d:any)=>d.kind===kind);if(!d)throw Error('Dokumen tidak ditemukan.');
     if(parts.includes('file')||(method==='GET'&&parts[5]==='versions'&&parts[6])){if(!d.versions.some((v:any)=>v.id===parts[6]))throw Error('Versi tidak sesuai dokumen.');if(s.files[parts[6]])return s.files[parts[6]];if(!options.dummy)throw Error('Berkas lokal tidak tersedia.');return samplePdf(`${c.name} ${KIND_LABEL[kind as keyof typeof KIND_LABEL]} DUMMY`,1);}
     if(parts[5]==='review'||parts[4]==='keputusan'){
-     admin();const v=r.versions.at(-1);if(isRabKind(kind)&&(!v||v.status==='draf'))throw Error('Kampus belum mengajukan RAB.');
+     admin();const v=r.versions.at(-1);if(isRabKind(kind)&&(!v||v.status==='draf'&&body.decision!=='perlu_revisi'))throw Error('Kampus belum mengajukan RAB.');
      const decision=body.decision==='batal'?'menunggu_review':body.decision;
      if(decision==='perlu_revisi'&&!body.note?.trim())throw Error('Catatan revisi wajib diisi.');if(isRabKind(kind)&&decision==='sesuai')check(v);if(r.journey&&decision==='sesuai'&&!['menunggu','selesai'].includes(r.journey.status))throw Error('Kampus belum mengajukan paket terbaru.');
      if(r.journey&&decision==='sesuai'){const settings=db.settings.find((s:any)=>s.programYear===c.programYear);if(r.documents.filter((d:any)=>MERGE_KINDS.includes(d.kind)).some((d:any)=>d.versions.filter((v:any)=>v.origin==='generated').at(-1)?.generation?.settingsSource!==settingsSource(settings)))throw Error('Pengaturan PF berubah. Minta kampus membuat ulang dokumen sebelum menyetujui.');}
+     if(r.journey&&decision==='perlu_revisi'){const section=body.section||revisionSection(kind);if(!['program','rab','administrasi','pks'].includes(section)||section!==revisionSection(kind)&&!(kind==='pks'&&section==='program'))throw Error('Bagian revisi tidak sesuai.');requestRevision(c,r,kind,[section],body.note.trim(),user);}
+     if(r.journey&&decision!=='perlu_revisi'&&openRevisions(r.journey).some(request=>request.kind===kind))throw Error('Tunggu kampus mengirim perbaikan sebelum mengubah keputusan.');
      d.status=decision;d.decidedByName=user.name;d.decidedAt=now();d.reviews.push({id:id(),decision,note:body.note||'',actorName:user.name,created:now(),imported:false});
      if(isRabKind(kind)&&!['sesuai','perlu_revisi'].includes(decision)){v.status='menunggu';v.active=false;}
-     if(isRabKind(kind)){if(decision==='perlu_revisi'){v.status='draf';v.note=body.note;r.documents.filter((other:any)=>isRabKind(other.kind)).forEach((other:any)=>other.status='perlu_revisi');}else if(r.documents.filter((d:any)=>isRabKind(d.kind)).every((d:any)=>d.status==='sesuai')){r.versions.forEach((previous:any)=>previous.active=false);v.status='disetujui';v.active=true;v.approvedAt=now();v.approvedByName=user.name;r.payment.requestedSen=v.term1Sen;}}
+     if(isRabKind(kind)){if(decision==='perlu_revisi'&&(!r.journey||canRevise(r.journey,'rab'))){v.status='draf';v.note=body.note;r.documents.filter((other:any)=>isRabKind(other.kind)).forEach((other:any)=>other.status='perlu_revisi');}else if(r.documents.filter((d:any)=>isRabKind(d.kind)).every((d:any)=>d.status==='sesuai')){r.versions.forEach((previous:any)=>previous.active=false);v.status='disetujui';v.active=true;v.approvedAt=now();v.approvedByName=user.name;r.payment.requestedSen=v.term1Sen;}}
      if(r.journey){
-      if(decision==='perlu_revisi'){touchJourney(c,r);r.journey.status='revisi';r.journey.lastSection=isRabKind(kind)?'rab':kind==='pks'?'pks':'administrasi';r.versions.at(-1).status='draf';r.versions.at(-1).active=false;}
-      else if(!['sesuai','tidak_perlu'].includes(decision)&&r.journey.status==='selesai')r.journey.status='menunggu';
-      else if(r.journey.status==='menunggu'&&r.documents.every((other:any)=>['sesuai','tidak_perlu'].includes(other.status)))r.journey.status='selesai';
+      if(['sesuai','tidak_perlu'].includes(decision))for(const request of r.journey.revisionRequests||[])if(request.kind===kind&&request.status==='submitted')request.status='resolved';
+      if(decision!=='perlu_revisi'&&!['sesuai','tidak_perlu'].includes(decision)&&r.journey.status==='selesai')r.journey.status='menunggu';
+      else if(r.journey.status==='menunggu'&&r.documents.every((other:any)=>['sesuai','tidak_perlu'].includes(other.status))){r.journey.status='selesai';for(const request of r.journey.revisionRequests||[])if(request.status==='submitted')request.status='resolved';}
      }
     }else if(parts[5]==='catatan'){if(!body.body?.trim())throw Error('Isi catatan.');d.notes.push({id:id(),body:body.body,internal:user.role==='admin'&&!!body.internal,authorName:user.name,authorRole:user.role,created:now()});}
     else if(parts[5]==='versions'&&method==='POST'&&file){
