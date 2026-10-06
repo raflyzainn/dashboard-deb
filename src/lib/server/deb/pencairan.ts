@@ -100,7 +100,7 @@ export async function directory(pb: PocketBase): Promise<DirectoryRow[]> {
     const rab = rabVersion ? { id: rabVersion.id, number: Number(rabVersion.number), status: rabVersion.status, totalSen: Number(rabVersion.totalSen || 0), term1Sen: Number(rabVersion.term1Sen || 0), term2Sen: Number(rabVersion.term2Sen || 0) } : null;
     const lampiranCount = disbursement ? attachments.filter(a => a.disbursement === disbursement.id).length : 0;
     const { checks: list, suratKuasaRequired } = checks(docs, summary, { campus, bankResult: String(bank?.bankResult || 'belum'), rab, sheets: sheetTotals(rabVersions.filter(v => v.campus === campus.id)) });
-    const assessment = assess(statuses, { suratKuasaRequired, redChecks: list.filter(c => c.level === 'bad').length, paidAt: String(disbursement?.paidAt || ''), originalsAll: docs.filter(d => d.generated).every(d => d.originalReceived), lampiranCount });
+    const assessment = assess(statuses, { submissionStatus:disbursement?.submissionStatus, suratKuasaRequired, redChecks: list.filter(c => c.level === 'bad').length, paidAt: String(disbursement?.paidAt || ''), originalsAll: docs.filter(d => d.generated).every(d => d.originalReceived), lampiranCount });
     const checkedAt = own.map(d => String(d.updated || '')).sort().pop() || '';
     return { needsPfPks:Boolean(disbursement?.submissionStatus&&!disbursement?.paidAt&&!disbursement?.applicationData?.pf?.nomorPksPf),campus, amountSen, limitSen: limitSen(amountSen), stage: Number(disbursement?.stage || 1), requestedSen, paidSen: Number(disbursement?.paidSen || 0), paidAt: String(disbursement?.paidAt || ''), lampiranCount, statuses, assessment, checkedAt, bukti: rabEvidence(disbursement?.properties) };
   });
@@ -173,7 +173,7 @@ export async function workspace(pb: PocketBase, campusId: string) {
   const bankRow = bank.items[0] || null;
   const { checks: list, suratKuasaRequired } = checks(docs, summary, { campus, bankResult: String(bankRow?.bankResult || 'belum'), rab, sheets: sheetTotals(allRabVersions) });
   const statuses = Object.fromEntries(docs.map(d => [d.kind, d.status])) as Record<Kind, Status>;
-  const readiness = assess(statuses, { suratKuasaRequired, redChecks: list.filter(c => c.level === 'bad').length, paidAt: String(disbursement.paidAt || ''), originalsAll: docs.filter(d => d.generated).every(d => d.originalReceived), lampiranCount: attachments.length });
+  const readiness = assess(statuses, { submissionStatus:disbursement?.submissionStatus, suratKuasaRequired, redChecks: list.filter(c => c.level === 'bad').length, paidAt: String(disbursement.paidAt || ''), originalsAll: docs.filter(d => d.generated).every(d => d.originalReceived), lampiranCount: attachments.length });
   return {
     campus, summary,
     disbursement: { id: disbursement.id, stage: Number(disbursement.stage || 1), requestedSen, paidSen: Number(disbursement.paidSen || 0), paidAt: String(disbursement.paidAt || ''), paidRef: disbursement.paidRef || '', paidByName: disbursement.paidByName || '', properties: (disbursement.properties || {}) as Record<string, unknown>, clauseChecked: Boolean(disbursement.clauseChecked), templateMode: disbursement.templateMode || 'standard', revision: Number(disbursement.revision || 1) },
@@ -368,6 +368,7 @@ export const labelOf = (kind: Kind) => KIND_LABEL[kind];
 export async function recordPayment(pb: PocketBase, actor: AuditActor & { id: string }, campusId: string, input: { paidAt: string; paidSen: number; paidRef: string; paidNote?: string }, term = TERM) {
   const { campus } = await campusWithAward(pb, campusId);
   const { disbursement } = await ensureDisbursement(pb, campusId, term);
+  if(disbursement.submissionStatus&&disbursement.submissionStatus!=='selesai')throw new PreviewError(400,'Selesaikan revisi dan pemeriksaan pengajuan sebelum mencatat pembayaran.');
   const requested = Number(disbursement.requestedSen || 0);
   if (!requested) throw new PreviewError(400, 'Nominal Tahap 1 belum ditetapkan. Setujui RAB 70% dulu.');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.paidAt)) throw new PreviewError(400, 'Tanggal pembayaran harus diisi.');

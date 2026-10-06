@@ -1,6 +1,7 @@
 import { BUDGET, LIMIT, validQuantity } from '../../../mockups/rab/model';
 import { buildMergeData, missingFor, templateTags, MERGE_KINDS, type MergeKind } from '../merge';
 import { LOCATION_FIELDS, programLocationErrors } from './location';
+import { canRevise, openRevisions, revisionPending, type RevisionRequest, type EditRequest } from './revisions';
 
 export const sections = ['sk', 'program', 'rab', 'administrasi', 'penandatangan', 'surat', 'pks', 'ringkasan'] as const;
 export type Section = typeof sections[number];
@@ -25,10 +26,13 @@ export const documentGuides: Record<string, string[]> = {
 };
 export const validDate=(value:string)=>/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
 export const kuasaSource=(fields:Record<string,string>)=>JSON.stringify(['pemberiKuasa','penerimaKuasa','penandatanganNama','penandatanganJabatan','namaBank','nomorRekening','namaPemilik','judulProgram','tempatTandaTangan','tanggalKuasa'].map(key=>fields[key]||''));
+export const requiresKuasaUpdate=(j:any)=>j?.fields.jenisRekening==='kuasa'&&j.files.kuasa?.source!==kuasaSource(j.fields);
 export interface Journey {
  status: 'draf' | 'menunggu' | 'revisi' | 'selesai'; lastSection: Section;
  fields: Record<string, string>; files: Record<string, { id: string; name: string; mime: string; width?: number; height?: number; source?: string }>;
  revision: number; history: any[];
+ revisionRequests?: RevisionRequest[]; documentRevisions?: Record<string,number>; revisionDocuments?: string[];
+ editRequests?: EditRequest[];
  pfRequestedAt?: string;
  pf?: {nomorPksPf:string; confirmedByAdmin?:boolean}; checklist?: Record<string,boolean>;
 }
@@ -48,6 +52,7 @@ export function ensureJourney(c: any, r: any): Journey {
  journey.fields.lokasiAlamatLengkap??='';
  journey.pf??={nomorPksPf:''};
  journey.checklist??={};
+ journey.documentRevisions??=Object.fromEntries(MERGE_KINDS.map(kind=>[kind,journey.revision]));
  return journey;
 }
 /** Simulated PF numbers are not issued PKS numbers. */
@@ -75,13 +80,13 @@ export function validateJourney(c:any,r:any,settings:any,tags:Record<MergeKind,s
  const require=(section:Section,key:string,label:string)=>{if(!f[key]?.trim())warn(section,key,label+' belum diisi.');};
  if(!pfNumber(j)&&!j.pfRequestedAt)warn('pks','permintaanNomorPksPf','Klik Minta PF melengkapi nomor PKS terlebih dahulu.');
  for(const [key,label] of [['judulProgram','Nama kegiatan'],['alamat','Alamat kampus'],['desa','Desa program'],['kabupaten','Kabupaten/kota program'],['mentor','Mentor'],['koordinator','Koordinator']])require('program',key,label);
- if(j.status!=='menunggu'&&j.status!=='selesai'&&!r.payment?.paidAt)for(const text of programLocationErrors(f,true))warn('program',text,text);
+ if(canRevise(j,'program')&&!r.payment?.paidAt)for(const text of programLocationErrors(f,true))warn('program',text,text);
  if(!v)blockers.push({section:'rab',text:'Unggah RAB 100% terlebih dahulu.'});
  else if(v.totalSen!==BUDGET || v.term1Sen<=0 || v.term1Sen>LIMIT || v.term1Sen+v.term2Sen!==v.totalSen || !v.lines.some((l:any)=>l.level===4) || v.lines.some((l:any)=>l.level===4&&!validQuantity(l.flags?.term1Volume,l.volume)))blockers.push({section:'rab',text:'Periksa total RAB dan pembagian jumlah: Termin 1 maksimal 70% SK.'});
  if(v&&typeof v.campusStep==='number'&&v.campusStep<3)blockers.push({section:'rab',text:'Selesaikan pemeriksaan RAB 100%, Termin 1, dan Termin 2 melalui tombol Lanjut.'});
  for(const [key,label] of [['namaBank','Nama bank'],['nomorRekening','Nomor rekening'],['namaPemilik','Pemilik rekening'],['penandatanganNama','Penandatangan'],['penandatanganJabatan','Jabatan penandatangan'],['tempatTandaTangan','Tempat surat']])require(sectionForField(key),key,label);
  if(f.nomorRekening && !/^\d{5,40}$/.test(f.nomorRekening))blockers.push({section:'administrasi',text:'Nomor rekening harus berisi 5–40 angka.'});
- for(const [key,label] of [['rekening','Bukti rekening'],['kop','Kop surat']])if(!j.files[key])blockers.push({section:sectionForField(key),text:label+' belum diunggah.'});
+ for(const [key,label] of [['rekening','Foto Buku Rekening'],['kop','Kop surat']])if(!j.files[key])blockers.push({section:'administrasi',text:label+' belum diunggah.'});
  if(f.jenisRekening==='kuasa'){
   require('surat','pemberiKuasa','Pemberi kuasa');require('surat','penerimaKuasa','Penerima kuasa');
   if(!j.files.kuasa)blockers.push({section:'surat',text:'Surat kuasa wajib diunggah untuk rekening pihak yang diberi kuasa.'});
@@ -115,15 +120,25 @@ export function journeyView(c:any,r:any,settings:any,templates:Record<MergeKind,
  const {missing,blockers}=validateJourney(c,r,settings,tags);
  const validation={campus:{id:c.id,name:c.name,acronym:c.acronym,programYear:c.programYear,award:c.award},settings,tags,
   version:v?{totalSen:v.totalSen,term1Sen:v.term1Sen,term2Sen:v.term2Sen,campusStep:v.campusStep,lines:v.lines.map((l:any)=>({level:l.level,volume:l.volume,flags:{term1Volume:l.flags?.term1Volume}}))}:null};
- const stale=MERGE_KINDS.filter(k=>{const d=r.documents.find((d:any)=>d.kind===k);return !d?.versions.some((v:any)=>(v.id===d.currentVersionId||j.status==='selesai'&&d.signedReceived)&&v.origin==='generated'&&v.journeyRevision===j.revision&&(j.status==='selesai'||v.generation?.settingsSource===settingsSource(settings)));});
- return {validation,journey:j,pf:{nomorPksPf:pfNumber(j),name:settings.pfSignatoryName,title:settings.pfSignatoryTitle},campus:{id:c.id,name:c.name},summary:{amountSen:BUDGET,limitSen:LIMIT,skNumber:c.award?.skNumber||'SK-DUMMY/2026/'+c.id},rab:v?{id:v.id,number:v.number,totalSen:v.totalSen,term1Sen:v.term1Sen,term2Sen:v.term2Sen,status:v.status}:null,missing,blockers,stale,
-  revisionBlockers:r.documents.filter((d:any)=>d.status==='perlu_revisi'&&!(d.kind==='surat_kuasa'&&j.fields.jenisRekening==='kampus')).map((d:any)=>d.kind),
+ const stale=MERGE_KINDS.filter(k=>{const d=r.documents.find((d:any)=>d.kind===k);return !d?.versions.some((v:any)=>(v.id===d.currentVersionId||j.status==='selesai'&&d.signedReceived)&&v.origin==='generated'&&v.journeyRevision===j.documentRevisions![k]&&(j.status==='selesai'||v.generation?.settingsSource===settingsSource(settings)));});
+ return {validation,journey:j,pf:{nomorPksPf:j.pf?.nomorPksPf||(c.award?'':'PKS-PF/DUMMY/2026/'+c.id),name:settings.pfSignatoryName,title:settings.pfSignatoryTitle},campus:{id:c.id,name:c.name},summary:{amountSen:BUDGET,limitSen:LIMIT,skNumber:c.award?.skNumber||'SK-DUMMY/2026/'+c.id},rab:v?{id:v.id,number:v.number,totalSen:v.totalSen,term1Sen:v.term1Sen,term2Sen:v.term2Sen,status:v.status}:null,missing,blockers,stale,
+  revisionBlockers:[...new Set([...openRevisions(j).filter(request=>revisionPending(r,request).length).map(request=>request.kind),...r.documents.filter((d:any)=>d.status==='perlu_revisi'&&!(d.kind==='surat_kuasa'&&j.fields.jenisRekening==='kampus')&&!openRevisions(j).some(request=>request.kind===d.kind||request.scopes.includes('rab')&&['rab_penuh','rab','rab_tahap2'].includes(d.kind))).map((d:any)=>d.kind)])],
   documents:r.documents.map((d:any)=>({kind:d.kind,status:d.status,signedReceived:d.signedReceived,notes:d.reviews.filter((n:any)=>n.decision==='perlu_revisi'),versions:d.versions})),paid:!!r.payment.paidAt};
 }
-export function touchJourney(c:any,r:any) {
- const j=ensureJourney(c,r);j.revision++;j.checklist={};
+export function touchJourney(c:any,r:any,kinds:readonly string[]=MERGE_KINDS) {
+ const j=ensureJourney(c,r);j.revision++;
+ if(j.status==='revisi')j.revisionDocuments=[...new Set([...(j.revisionDocuments||[]),...kinds])];
+ for(const kind of kinds){j.documentRevisions![kind]=j.revision;for(const key of Object.keys(j.checklist!))if(key.startsWith(kind+'-'))delete j.checklist![key];}
  if(j.status==='selesai')j.status='draf';
- for(const d of r.documents)if(MERGE_KINDS.includes(d.kind)){
+ for(const d of r.documents)if(kinds.includes(d.kind)){
   if(d.status!=='perlu_revisi')d.status='belum_ada';d.signedReceived=false;d.originalReceived=false;
  }
+}
+
+// Compare the values actually used by each template rather than invalidating every letter.
+export function changedLetters(c:any,r:any,settings:any,templates:Record<MergeKind,Uint8Array>,before:Record<string,string>):MergeKind[] {
+ const current=r.journey.fields;
+ const prior=buildMergeData(mergeInput(c,{...r,journey:{...r.journey,fields:before}},settings));
+ const next=buildMergeData(mergeInput(c,r,settings));
+ return MERGE_KINDS.filter(kind=>templateTags(templates[kind]).some(key=>prior[key as keyof typeof prior]!==next[key as keyof typeof next])||before.jenisRekening!==current.jenisRekening&&['pks','permohonan'].includes(kind));
 }

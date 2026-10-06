@@ -191,3 +191,10 @@ pengiriman akhir; penyimpanan draf parsial tetap diperbolehkan.
 
 - Build npm run build berhasil (exit 0), mode mockup, menghasilkan situs statis di build. Warning ukuran chunk lebih dari 500 kB tetap ada.
 - Seluruh commit development 5e6fbf6 sudah masuk. Diff diperiksa. QA browser oleh agen belum dilakukan karena tool tidak tersedia; test suite, check, dan lint tidak dijalankan.
+
+
+### Gabungan PR Administrasi dan revisi bagian ? 6 Oktober 2026
+
+- Submenu Administrasi memakai izin edit pada kategori Administrasi yang sudah dipakai alur revisi; bagian lain tetap hanya dapat dilihat.
+- Nomor PKS PF yang belum tersedia memakai placeholder pada dokumen dan riwayat setelah permintaan dikirim, sementara isian admin untuk nomor sebenarnya tetap kosong.
+- Build dan QA browser untuk gabungan ini belum dilakukan saat catatan ini ditulis.
