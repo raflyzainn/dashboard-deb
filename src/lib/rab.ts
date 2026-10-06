@@ -31,6 +31,8 @@ export interface RabVersionInfo {
   approvedByName: string; approvedAt: string; created: string; updated: string; active: boolean;
 }
 export interface RabOverview {
+  itemDraft?: { rows: (string | number | null)[][]; lineIds: string[] } | null;
+  itemDraftRevision?: number;
   campus: { id: string; name: string; code: string; programYear: string };
   summary: { skNumber: string; amountSen: number; limitSen: number };
   disbursement: { id: string; stage: number; requestedSen: number; rabVersionId: string; clauseChecked: boolean };

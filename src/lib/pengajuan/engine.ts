@@ -1,7 +1,8 @@
 import { samplePdf } from '../data/demo/fixtures/pdf';
 import { KINDS, KIND_LABEL, documentReceiptFlags, assess, isRabKind, parseSen, terbilang } from '../pencairan';
 import { arrange, type LineInput } from '../rab';
-import { BUDGET, LIMIT, sampleItems, readExcel, validQuantity, validEditedVolume } from '../../../mockups/rab/model';
+import { RAB_TEMPLATE_HEADERS } from '../rab-template';
+import { BUDGET, LIMIT, sampleItems, readExcel, readRabRows, validQuantity, validEditedVolume } from '../../../mockups/rab/model';
 import { ensureJourney, journeyView, touchJourney, sections, PKS_DATE, validDate, documentGuides, kuasaSource, settingsSource, pfNumber, pfNumberForDocument, changedLetters, requiresKuasaUpdate } from './journey';
 import { journeyTemplates, journeyDocx, finalJourneyDocx, pendingPfJourneyDocx } from './journey-documents';
 import { MERGE_KINDS, isMergeKind, DOCX_MIME, MERGE_LABEL, type MergeKind } from '../merge';
@@ -14,7 +15,7 @@ const rabKinds=['rab_penuh','rab','rab_tahap2'];
 export function itemLines(items:ReturnType<typeof sampleItems>) {
  const input:LineInput[]=[], parents=new Map<string,string>();
  const base=(key:string,parentKey:string,title:string):LineInput=>({key,parentKey,title,calculation:'',volume:0,unit:'',unitPriceSen:0,amountSen:0,term1Sen:0,term2Sen:0});
- items.forEach((v,i)=>{let parent='';for(const title of [v.group,v.activity,v.section]){const path=parent+'|'+title;if(!parents.has(path)){const key='h'+parents.size;parents.set(path,key);input.push(base(key,parent,title));}parent=parents.get(path)!;}input.push({...base('i'+i,parent,v.title),volume:v.volume,unit:v.unit,unitPriceSen:v.priceSen,amountSen:v.amountSen,term1Sen:v.term1Sen||0,term2Sen:v.amountSen-(v.term1Sen||0)});});
+ items.forEach((v,i)=>{let parent='';for(const title of [v.group,v.activity,v.section]){const path=parent+'|'+title;if(!parents.has(path)){const key='h'+parents.size;parents.set(path,key);input.push(base(key,parent,title));}parent=parents.get(path)!;}input.push({...base('i'+i,parent,v.title),volume:v.volume,unit:v.unit,unitPriceSen:v.priceSen,amountSen:v.amountSen,term1Sen:v.term1Sen||0,term2Sen:v.amountSen-(v.term1Sen||0),flags:v.templateQuantity?{templateQuantity:v.templateQuantity}:{}});});
  return lines(input);
 }
 function lines(input:LineInput[]) {return arrange(input).map(n=>({id:n.key,parentId:n.parentKey,level:n.level,order:n.order,code:n.code,title:n.title,calculation:n.calculation,volume:n.volume,unit:n.unit,unitPriceSen:n.unitPriceSen,amountSen:n.sumSen,term1Sen:n.sumTerm1Sen,term2Sen:n.sumTerm2Sen,flags:n.flags||{}}));}
@@ -45,7 +46,7 @@ function init(c:any,index:number){
  return {versions,documents,payment:{id:id(),stage:4,requestedSen:versions[0]?.term1Sen||0,paidSen:scenario===4?LIMIT:0,paidAt:scenario===4?'2026-09-20':'',paidRef:scenario===4?'DUMMY-TRANSFER':'',paidByName:scenario===4?'Admin Dummy':'',properties:{},clauseChecked:true,templateMode:'standard'},attachments:[],entries:[],templates:[],note:'',bankCheck:{id:id(),bankResult:'sesuai',bankNameSeen:c.name,checkedAt:now(),evidence:true}};
 }
 function card(c:any,r:any,actor:AppSession){const v=r.versions.at(-1),documents=r.documents.map((d:any)=>({...d,status:isRabKind(d.kind)&&v?.status==='draf'&&d.status!=='perlu_revisi'?'belum_ada':d.status})),statuses=Object.fromEntries(documents.map((d:any)=>[d.kind,d.status]));const ready=assess(statuses as Parameters<typeof assess>[0],{submissionStatus:r.journey?.status,suratKuasaRequired:r.journey?.fields.jenisRekening==='kuasa',redChecks:0,paidAt:r.payment.paidAt,originalsAll:r.documents.filter((d:any)=>d.generated).every((d:any)=>d.originalReceived),lampiranCount:r.attachments.length});return {journey:r.journey?{revision:r.journey.revision,revisionRequests:r.journey.revisionRequests,editRequests:r.journey.editRequests,documentRevisions:r.journey.documentRevisions,files:r.journey.files,status:r.journey.status,lastSection:r.journey.lastSection,fields:r.journey.fields,pf:r.journey.pf,checklist:r.journey.checklist,history:r.journey.history}:null,campus:{...c,code:c.acronym||c.initials,signatoryName:r.journey?.fields.penandatanganNama||'',team:c.program?.pfTeam||'',contacts:{mentor:c.program?.mentor||'',coordinator:c.program?.coordinator||'',localHero:c.program?.localHero||''}},summary:{skNumber:c.award?.skNumber||'SK-DUMMY/2026/'+c.id,amountSen:BUDGET,limitSen:LIMIT,requestedSen:r.journey?.history.length?v?.term1Sen||0:r.payment.requestedSen,term2Sen:BUDGET-(r.journey?.history.length?v?.term1Sen||0:r.payment.requestedSen),term1Percent:70,term2Percent:30,programTitle:r.journey?.fields.judulProgram||c.program?.description||'Program Dummy',programYear:c.programYear,skFile:true},disbursement:r.payment,documents:documents.map((d:any)=>({...d,notes:d.notes.filter((n:any)=>actor.role==='admin'||!n.internal)})),bankCheck:r.bankCheck,rab:v?{id:v.id,number:v.number,status:v.status,totalSen:v.totalSen,term1Sen:v.term1Sen,term2Sen:v.term2Sen}:null,lampiranCount:r.attachments.length,checks:[{kind:'rab',level:v&&v.totalSen===BUDGET&&v.term1Sen<=LIMIT?'ok':'info',text:v?'Alokasi RAB tersimpan.':'Kampus belum mengunggah RAB.'}],readiness:ready};}
-function overview(c:any,r:any,versionId=''){return {campus:{...c,code:c.acronym||c.initials},summary:{skNumber:c.award?.skNumber||'SK-DUMMY/2026/'+c.id,amountSen:BUDGET,limitSen:LIMIT},disbursement:{...r.payment,rabVersionId:r.versions.find((v:any)=>v.active)?.id||''},versions:r.versions.map(({lines,...v}:any)=>v),version:r.versions.find((v:any)=>v.id===versionId)||r.versions.at(-1)||null,checks:[]};}
+function overview(c:any,r:any,versionId=''){return {itemDraft:!versionId||versionId===r.versions.at(-1)?.id?r.journey?.rabDraft||null:null,itemDraftRevision:r.journey?.rabDraftRevision||0,campus:{...c,code:c.acronym||c.initials},summary:{skNumber:c.award?.skNumber||'SK-DUMMY/2026/'+c.id,amountSen:BUDGET,limitSen:LIMIT},disbursement:{...r.payment,rabVersionId:r.versions.find((v:any)=>v.active)?.id||''},versions:r.versions.map(({lines,...v}:any)=>v),version:r.versions.find((v:any)=>v.id===versionId)||r.versions.at(-1)||null,checks:[]};}
 function requestRevision(c:any,r:any,kind:string,scopes:any,note:string,user:AppSession,invalidateDocument=true){
  const j=ensureJourney(c,r);
  if(r.payment.paidAt||!['menunggu','selesai','revisi'].includes(j.status))throw Error('Revisi hanya untuk pengajuan yang sudah dikirim dan belum dibayar.');
@@ -214,6 +215,31 @@ function revisePfData(c:any,r:any,user:AppSession){
    if(parts[3]==='rab'&&write&&parts[4]!=='keputusan'&&user.role!=='admin'&&r.journey&&!canRevise(r.journey,'rab'))throw Error('RAB terkunci dan tidak diminta untuk direvisi.');
    if(parts[3]==='rab'){
     let v=r.versions.find((v:any)=>v.id===parts[5])||r.versions.at(-1);
+    if(parts[4]==='items'&&method==='POST'){
+     if(user.role!=='campus')throw Error('Tabel item ini hanya untuk akun kampus.');
+     if((v?.id||'')!==body.sourceVersion||v&&v.status!=='draf')throw Error('Versi RAB berubah atau terkunci. Muat ulang draf terbaru.');
+     if(!Array.isArray(body.rows)||body.rows.length>500||body.rows.some((row:any)=>!Array.isArray(row)||row.length!==8||row.some((cell:any,i:number)=>[3,5,7].includes(i)?cell!==null&&(typeof cell!=='number'||!Number.isFinite(cell)||Math.abs(cell)>1e12):typeof cell!=='string'||cell.length>(i===4||i===6?60:500))))throw Error('Isi maksimal 500 item dengan delapan kolom input yang valid.');
+     if(!Array.isArray(body.lineIds)||body.lineIds.length!==body.rows.length||body.lineIds.some((id:any)=>typeof id!=='string'||id&&!v?.lines.some((l:any)=>l.id===id&&l.level===4))||new Set(body.lineIds.filter(Boolean)).size!==body.lineIds.filter(Boolean).length)throw Error('Identitas item RAB tidak valid. Muat ulang draf.');
+     const j=ensureJourney(c,r);
+     if(body.draft===true||j.rabDraft){if(body.itemDraftRevision!==(j.rabDraftRevision||0))throw Error('Draf RAB berubah di tab lain. Muat data terbaru sebelum menyimpan.');}
+     if(body.draft===true){
+      j.rabDraft={rows:clone(body.rows),lineIds:[...body.lineIds]};j.rabDraftRevision=(j.rabDraftRevision||0)+1;
+      touchJourney(c,r);return overview(c,r);
+     }
+     const imported=readRabRows([RAB_TEMPLATE_HEADERS,...body.rows]);
+     if(imported.length!==body.rows.length)throw Error('Hapus baris kosong atau lengkapi setiap item.');
+     const next=version((v?.number||0)+1,imported);next.source='manual';next.sourceFile='RAB dari tabel kampus';next.quantityAllocation=true;next.campusStep=1;
+     next.lines.filter((l:any)=>l.level===4).forEach((line:any)=>{
+      // arrange groups rows by category; iN retains the original input position.
+      const previous=v?.lines.find((l:any)=>l.id===body.lineIds[Number(line.id.slice(1))]);
+      const quantity=previous?.flags?.term1Volume;
+      const keep=previous&&previous.volume===line.volume&&previous.unit===line.unit&&previous.unitPriceSen===line.unitPriceSen&&previous.title===line.title&&validQuantity(quantity,line.volume);
+      line.flags={...line.flags,...(keep?{term1Volume:quantity,term2Volume:Math.round((line.volume-quantity)*10000)/10000}:{})};
+      line.term1Sen=keep?Math.round(quantity*line.unitPriceSen):0;line.term2Sen=keep?line.amountSen-line.term1Sen:0;
+     });
+     for(const line of [...next.lines].reverse().filter((l:any)=>l.level<4)){const children=next.lines.filter((l:any)=>l.parentId===line.id);line.term1Sen=children.reduce((sum:number,l:any)=>sum+l.term1Sen,0);line.term2Sen=children.reduce((sum:number,l:any)=>sum+l.term2Sen,0);}
+     totals(next);r.versions.push(next);delete j.rabDraft;j.rabDraftRevision=(j.rabDraftRevision||0)+1;touchJourney(c,r);rabKinds.forEach(k=>{r.documents.find((d:any)=>d.kind===k).status='belum_ada';});return overview(c,r);
+    }
     if(parts[4]==='import'&&imported){const next=version((v?.number||0)+1,imported);next.sourceFile=file!.name;
      if(body.get('mode')==='preview')return {preview:{rows:imported.length,kind:'penuh',totalSen:next.totalSen,term1Sen:next.term1Sen,term2Sen:next.term2Sen,problems:[],problemCount:0,fileName:file!.name}};
      if(next.totalSen!==BUDGET)throw Error('Total RAB harus sama dengan nilai SK.');next.quantityAllocation=true;next.campusStep=1;next.lines.forEach((l:any)=>{l.term1Sen=0;l.term2Sen=0;});totals(next);r.versions.push(next);touchJourney(c,r);rabKinds.forEach(k=>{r.documents.find((d:any)=>d.kind===k).status='belum_ada';});s.files[next.id]=file!;return overview(c,r);
@@ -231,7 +257,7 @@ function revisePfData(c:any,r:any,user:AppSession){
       for(const input of body.items){
        const changed=next.lines.find((l:any)=>l.id===input.lineId&&l.level===4);
        const {volume,unitPriceSen,term1Volume}=input;
-       if(!changed||!validEditedVolume(volume,changed.volume)||!Number.isSafeInteger(unitPriceSen)||unitPriceSen<=0||!Number.isSafeInteger(Math.round(volume*unitPriceSen))||!validQuantity(term1Volume,volume))throw Error('Isi jumlah positif, harga satuan positif, dan pembagian jumlah yang valid.');
+       if(!changed||!validEditedVolume(volume,changed.volume)||!Number.isSafeInteger(unitPriceSen)||unitPriceSen%100!==0||unitPriceSen<=0||!Number.isSafeInteger(Math.round(volume*unitPriceSen))||!validQuantity(term1Volume,volume))throw Error('Isi jumlah dan harga satuan dengan bilangan bulat positif, serta pembagian jumlah yang valid.');
        if(body.kind!=='rab_penuh'&&(volume!==changed.volume||unitPriceSen!==changed.unitPriceSen)||body.kind==='rab_penuh'&&term1Volume!==changed.flags?.term1Volume)throw Error('Hanya kolom RAB yang dipilih boleh diubah.');
        Object.assign(changed,{volume,unitPriceSen,amountSen:Math.round(volume*unitPriceSen),term1Sen:Math.round(term1Volume*unitPriceSen),term2Sen:Math.round(volume*unitPriceSen)-Math.round(term1Volume*unitPriceSen),flags:{...changed.flags,term1Volume,term2Volume:Math.round((volume-term1Volume)*10000)/10000}});
       }
@@ -242,6 +268,7 @@ function revisePfData(c:any,r:any,user:AppSession){
       return overview(c,r,next.id);
      }
      if(parts[6]==='progress'){
+      if(r.journey?.rabDraft)throw Error('Periksa perubahan item RAB 100% terlebih dahulu.');
       const current=v.campusStep??1,target=body.step;
       if(method!=='POST'||v.status!=='draf'||!Number.isInteger(target)||target<1||target>3||target>current+1)throw Error('Selesaikan tahap sebelumnya melalui tombol Lanjut.');
       if(target>=2&&v.totalSen!==BUDGET)throw Error('Total RAB harus sama dengan nilai SK.');
@@ -254,7 +281,7 @@ function revisePfData(c:any,r:any,user:AppSession){
       for(const l of next.lines.filter((l:any)=>l.level===4)){
        const q=body.quantities?.[l.id];
        if(q===null||q===undefined){l.flags={...l.flags,term1Volume:null,term2Volume:null};l.term1Sen=0;l.term2Sen=0;continue;}
-       if(!validQuantity(q,l.volume))throw Error(`${l.title}: jumlah harus antara 0 dan ${l.volume}${Number.isInteger(l.volume)?' dan berupa bilangan bulat':' dengan maksimal 4 desimal'}.`);
+       if(!validQuantity(q,l.volume))throw Error(`${l.title}: jumlah harus antara 0 dan ${l.volume} dan berupa bilangan bulat.`);
        l.flags={...l.flags,term1Volume:q,term2Volume:Math.round((l.volume-q)*10000)/10000};l.term1Sen=Math.round(q*l.unitPriceSen);l.term2Sen=l.amountSen-l.term1Sen;
       }
       for(const l of [...next.lines].reverse().filter((l:any)=>l.level<4)){const children=next.lines.filter((c:any)=>c.parentId===l.id);l.term1Sen=children.reduce((s:number,c:any)=>s+c.term1Sen,0);l.term2Sen=children.reduce((s:number,c:any)=>s+c.term2Sen,0);}

@@ -5,6 +5,7 @@
  import { page } from '$app/state';
  import Icon from '$lib/components/ui/Icon.svelte';
  import Modal from '$lib/components/ui/Modal.svelte';
+ import RabItemsEditor from './RabItemsEditor.svelte';
  import { beforeNavigate, goto } from '$app/navigation';
  import { dataService } from '$lib/data/service';
  import { onChange } from '$lib/realtime.svelte';
@@ -14,13 +15,14 @@
  import { validQuantity, validEditedVolume } from '../rab/model';
  let {campusId,kind,admin,onloaded,onediting=()=>{},journey=false,locked=false,oncontinue=()=>{}}:{campusId:string;kind:string;admin:boolean;onloaded:()=>void;onediting?:(editing:boolean)=>void;journey?:boolean;locked?:boolean;oncontinue?:()=>void}=$props();
  let data=$state<(RabOverview & {serverRevision?:number;disbursement:RabOverview['disbursement'] & {paidAt?:string}})|null>(null),error=$state(''),busy=$state(false),replace=$state(false),confirmed=$state(false),message=$state('');
- let editingAdmin=$state(false),remoteChanged=$state(false);
+ let editingAdmin=$state(false),remoteChanged=$state(false),editorDirty=$state(false);
+ let itemEditor=$state<RabItemsEditor>();
  let reducedMotion=$state(false);
  function reloadRemote(){leave(()=>{editingAdmin=false;sync();remoteChanged=false;saveFailed=false;void load();});}
  let edits=$state<Record<string,{volume:number;price:number;first:number}>>({});
  const v=$derived(data?.version),latest=$derived(data?.versions.at(-1)),historical=$derived(Boolean(v&&latest&&v.id!==latest.id));
  const items=$derived(v?.lines.filter(l=>l.level===4)||[]);
- const editsValid=$derived(items.every(l=>{const e=edits[l.id];return e&&validEditedVolume(e.volume,l.volume)&&e.price>0&&Math.abs(e.price*100-Math.round(e.price*100))<0.00001&&Number.isSafeInteger(Math.round(e.volume*e.price*100))&&validQuantity(e.first,e.volume);}));
+ const editsValid=$derived(items.every(l=>{const e=edits[l.id];return e&&validEditedVolume(e.volume,l.volume)&&e.price>0&&Number.isSafeInteger(e.price)&&Number.isSafeInteger(Math.round(e.volume*e.price*100))&&validQuantity(e.first,e.volume);}));
  const editedTotal=$derived(items.reduce((sum,l)=>sum+Math.round((edits[l.id]?.volume||0)*(edits[l.id]?.price||0)*100),0));
  const editedFirst=$derived(items.reduce((sum,l)=>sum+Math.round((edits[l.id]?.first||0)*(edits[l.id]?.price||0)*100),0));
  function startEdit(){edits=Object.fromEntries(items.map(l=>[l.id,{volume:l.volume,price:l.unitPriceSen/100,first:typeof l.flags?.term1Volume==='number'?l.flags.term1Volume:0}]));error='';editingAdmin=true;}
@@ -36,15 +38,16 @@
  let pendingLeave=$state<(()=>void)|null>(null);
  let quantities=$state<Record<string,number|null>>({}),saved=$state('{}');
  let autosaving=$state(false),saveFailed=$state(false);
+ let noticeText=$state('Draf RAB tersimpan');
  let savedNotice=$state(false),noticeTimer:ReturnType<typeof setTimeout>|undefined;
- function showSaved(){clearTimeout(noticeTimer);savedNotice=true;noticeTimer=setTimeout(()=>savedNotice=false,3000);}
+ function showSaved(text='Draf RAB tersimpan'){noticeText=text;clearTimeout(noticeTimer);savedNotice=true;noticeTimer=setTimeout(()=>savedNotice=false,3000);}
  const editable=$derived(!admin&&!locked&&!historical&&(!v||v.status==='draf'));
  let itemPage=$state(1);
  let itemsTop=$state<HTMLDivElement>();
  const pageCount=$derived(Math.max(1,Math.ceil(items.length/5)));
  const currentPage=$derived(Math.min(itemPage,pageCount));
  const pagedItems=$derived(items.slice((currentPage-1)*5,currentPage*5));
- const journeyStep=$derived(page.url.searchParams.get('rabStep')||(kind==='rab'?'term1':kind==='rab_tahap2'?'term2':!v?'upload':'full'));
+ const journeyStep=$derived(replace?'upload':page.url.searchParams.get('rabStep')||(kind==='rab'?'term1':kind==='rab_tahap2'?'term2':!v?'upload':'full'));
  const paginationContext=$derived((v?.id||'')+':'+journeyStep);
  $effect(()=>{if(paginationContext)itemPage=1;});
  function changeItemPage(next:number){itemPage=Math.max(1,Math.min(next,pageCount));itemsTop?.scrollIntoView({block:'start'});}
@@ -52,13 +55,13 @@
  const visibleLines=$derived((showGroups&&!search.trim()?v?.lines||[]:items).filter(line=>!search.trim()||`${line.code} ${line.title}`.toLocaleLowerCase('id-ID').includes(search.trim().toLocaleLowerCase('id-ID'))));
  const legacy=$derived(Boolean(v&&!('quantityAllocation' in v)));
  const approved=$derived(data?.versions.filter(version=>version.active&&version.status==='disetujui').at(-1));
- const dirty=$derived(editingAdmin||JSON.stringify(quantities)!==saved);
+ const dirty=$derived(editorDirty||editingAdmin||JSON.stringify(quantities)!==saved);
  const allocated=$derived(items.filter(l=>validQuantity(quantities[l.id],l.volume)).length);
  const first=$derived(legacy&&!editable?v?.term1Sen||0:items.reduce((sum,l)=>sum+(validQuantity(quantities[l.id],l.volume)?Math.round(quantities[l.id]!*l.unitPriceSen):0),0));
  const second=$derived(legacy&&!editable?v?.term2Sen||0:items.reduce((sum,l)=>sum+(validQuantity(quantities[l.id],l.volume)?l.amountSen-Math.round(quantities[l.id]!*l.unitPriceSen):0),0));
  const invalid=$derived(items.some(l=>quantities[l.id]!=null&&!validQuantity(quantities[l.id],l.volume)));
  const ready=$derived(allocated===items.length&&items.length>0&&!invalid&&first>0&&first<=(data?.summary.limitSen||0)&&v?.totalSen===data?.summary.amountSen);
- const unlockedStep=$derived(!v?0:v.status!=='draf'||historical?3:(v as typeof v & {campusStep?:number}).campusStep??1);
+ const unlockedStep=$derived(data?.itemDraft?0:!v?0:v.status!=='draf'||historical?3:(v as typeof v & {campusStep?:number}).campusStep??1);
  $effect(()=>{if(journey&&data&&!busy&&step>unlockedStep)void goto(journeyUrl(['upload','full','term1','term2'][unlockedStep]),{replaceState:true});});
  const editingAllocation=$derived(editable&&(journey?journeyStep==='term1':kind==='rab_penuh')&&!replace);
  const step=$derived(journey?['upload','full','term1','term2'].indexOf(journeyStep):!v||replace?0:editingAllocation?1:editable?kind==='rab'?2:3:4);
@@ -110,12 +113,12 @@
   return ()=>clearTimeout(timer);
  });
  function remaining(line:RabLine){const q=quantities[line.id];return validQuantity(q,line.volume)?formatVolume(Math.round((line.volume-q)*10000)/10000)+' '+line.unit:'—';}
- function leave(action:()=>void){if(dirty)pendingLeave=action;else action();}
- function discard(){const action=pendingLeave;pendingLeave=null;editingAdmin=false;sync();action?.();}
+ async function leave(action:()=>void){if(editorDirty&&itemEditor&&await itemEditor.flush()){action();return;}if(dirty)pendingLeave=action;else action();}
+ function discard(){const action=pendingLeave;pendingLeave=null;editingAdmin=false;itemEditor?.discardChanges();sync();action?.();}
  beforeNavigate(navigation=>{
   if(!dirty)return;
   const target=navigation.to?.url;
-  if(target?.pathname==='/campus/pencairan'&&['rab_penuh','rab','rab_tahap2'].includes(target.searchParams.get('butir')||''))return;
+  if(!editorDirty&&target?.pathname==='/campus/pencairan'&&['rab_penuh','rab','rab_tahap2'].includes(target.searchParams.get('butir')||''))return;
   if(!target)return;navigation.cancel();leave(()=>{if(target.origin===page.url.origin)void goto(target.href);else window.location.assign(target.href);});
  });
  $effect(()=>{
@@ -148,11 +151,12 @@
   window.addEventListener('beforelogout',logout);
   return ()=>{clearInterval(timer);window.removeEventListener('focus',focus);clearTimeout(noticeTimer);onediting(false);unsubscribe();window.removeEventListener('beforelogout',logout);};
  });
- async function upload(file?:File){
-  if(!file||busy)return;busy=true;error='';
-  try{const body=new FormData();body.set('file',file);if(data?.serverRevision!==undefined)body.set('expectedRevision',String(data.serverRevision));data=await dataService.api.post<RabOverview>(base+'/import',body);sync();message='Excel berhasil dibaca. Periksa seluruh rincian RAB 100% terlebih dahulu.';replace=false;confirmed=false;onloaded();if(journey)await goto(journeyUrl('full'));}
-  catch(e){error = reportError(e instanceof Error?e.message:'Unggahan gagal.');}finally{busy=false;}
+ async function saveItems(rows:unknown[][],lineIds:string[],draft=true){
+  if(busy||!editable)return false;busy=true;error='';
+  try{const next=await dataService.api.post<RabOverview>(base+'/items',{rows,lineIds,draft,itemDraftRevision:data?.itemDraftRevision||0,sourceVersion:v?.id||'',expectedRevision:data?.serverRevision});if(!draft)editorDirty=false;replace=true;data=next;sync();confirmed=false;showSaved();onloaded();return true;}
+  catch(e){error=reportError(e instanceof Error?e.message:'Draf gagal disimpan.');if((e as any).status===409)remoteChanged=true;return false;}finally{busy=false;}
  }
+ async function inspectItems(){if(busy||!itemEditor)return;if(await itemEditor.prepare()){replace=false;await goto(journeyUrl('full'));showSaved('Rincian RAB siap diperiksa.');}}
  async function advance(index:number){
   if(!v)return;
   if(index>unlockedStep)data=await dataService.api.post<RabOverview>(`${base}/versions/${v.id}/progress`,{step:index,expectedRevision:data?.serverRevision});
@@ -160,7 +164,7 @@
  }
  async function continueFull(){
   if(busy)return;busy=true;error='';
-  try{await advance(2);}catch(e){error = reportError(e instanceof Error?e.message:String(e));}finally{busy=false;}
+  try{await advance(2);showSaved('RAB 100% sudah diperiksa. Atur pembagian Termin 1.');}catch(e){error = reportError(e instanceof Error?e.message:String(e));}finally{busy=false;}
  }
  async function save(next=false,automatic=false){
   if(!v||invalid||busy)return;
@@ -179,11 +183,21 @@
   try{data=await dataService.api.post<RabOverview>(base+'/versions',{from:v.id,expectedRevision:data?.serverRevision});sync();confirmed=false;message='Draf terbaru dibuat dari versi yang dipilih. Pembagian lama tetap tersimpan. Periksa lalu ajukan kembali.';await goto(journey?journeyUrl('full'):'/campus/pencairan?butir=rab_penuh');onloaded();}
   catch(e){error = reportError(e instanceof Error?e.message:String(e));}finally{busy=false;}
  }
+ async function downloadTemplate(){
+  if(busy)return;busy=true;error='';
+  try{
+   const response=await fetch('/templat/Template_RAB_DEB.xlsx');
+   if(!response.ok)throw Error('Template belum dapat diunduh. Coba lagi.');
+   const url=URL.createObjectURL(await response.blob()),link=document.createElement('a');
+   link.href=url;link.download='Template_RAB_DEB.xlsx';link.click();setTimeout(()=>URL.revokeObjectURL(url),10000);
+   showSaved('Template siap. Unduhan dimulai.');
+  }catch(e){error=reportError(e instanceof Error?e.message:'Template gagal diunduh.');}finally{busy=false;}
+ }
  async function exportRab(share:'penuh'|'tahap1'|'tahap2'){
   if(!v||busy||dirty)return;busy=true;error='';
   try{
    const {downloadRabWorkbook,linesToRows}=await import('$lib/rab-excel');
-   await downloadRabWorkbook(`RAB_${share}_${campusId}_v${v.number}.xlsx`,{university:data!.campus.name,penuh:linesToRows(v.lines,'penuh'),tahap1:linesToRows(v.lines,'tahap1'),tahap2:linesToRows(v.lines,'tahap2')},share);
+   await downloadRabWorkbook(`RAB_${share}_${campusId}_v${v.number}.xlsx`,{university:data!.campus.name,penuh:linesToRows(v.lines,'penuh'),tahap1:linesToRows(v.lines,'tahap1'),tahap2:linesToRows(v.lines,'tahap2')},share);showSaved('File RAB siap. Unduhan dimulai.');
   }catch(e){error = reportError(e instanceof Error?e.message:String(e));}finally{busy=false;}
  }
 </script>
@@ -199,7 +213,7 @@
  {#if remoteChanged}<p role="alert" class="rounded-lg bg-amber-50 p-3 text-amber-900">Data diperbarui oleh akun lain. Isian Anda tetap tersedia.<button class={btn+' ml-2'} onclick={reloadRemote}>Muat data terbaru</button></p>{/if}
  {#if !admin&&!historical}
   <ol class="grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Langkah pengajuan RAB">
-   {#each journey?['Upload Excel','Periksa RAB 100%','Atur Termin 1','Periksa Termin 2']:['Unggah RAB 100%','Bagi jumlah item','Periksa Tahap 1','Periksa & ajukan'] as label,index}
+   {#each journey?['Isi / unggah RAB','Periksa RAB 100%','Atur Termin 1','Periksa Termin 2']:['Unggah RAB 100%','Bagi jumlah item','Periksa Tahap 1','Periksa & ajukan'] as label,index}
     <li>{#if journey}<button type="button" aria-current={step===index?'step':undefined} class="min-h-11 w-full rounded-lg border p-2 text-left disabled:cursor-not-allowed disabled:opacity-40 {step===index?'border-blue-300 bg-blue-50 font-bold text-blue-900':'border-slate-200 text-[#0066B2] hover:bg-slate-50'}" disabled={busy||step===index||(index===0&&!editable)||index>unlockedStep} onclick={()=>openStep(index)}>{index+1}. {label}</button>{:else}<span aria-current={step===index?'step':undefined} class="block rounded-lg border p-2 {step===index?'border-blue-300 bg-blue-50 font-bold text-blue-900':'border-slate-200 text-slate-500'}">{index+1}. {label}</span>{/if}</li>
    {/each}
   </ol>
@@ -220,13 +234,11 @@
  {#if admin&&data}<aside class="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3" aria-label="Hal yang perlu diperhatikan" aria-live="polite"><h2 class="font-semibold">Yang perlu diperhatikan / {data.campus.name}</h2><ul class="list-disc space-y-1 pl-5 text-sm text-slate-700">{#each attention as note}<li>{note}</li>{/each}</ul></aside>{/if}
  {#if !data}<p>Memuat RAB…</p>
  {:else if editable&&kind==='rab_penuh'&&(!v||replace||journey&&journeyStep==='upload')}
-  <h2 class="text-lg font-bold text-slate-900">Unggah satu file RAB 100%</h2>
-  <p>Isi seluruh kebutuhan di lembar RAB 100%. Pembagian Tahap 1 dan Tahap 2 dilakukan di aplikasi setelah unggah; tidak perlu mengunggah dua file lagi.</p>
-  <div class="grid gap-3 sm:grid-cols-2">
-   <div class="grid gap-2 rounded-xl border border-slate-200 p-4"><strong>1. Siapkan Excel</strong><p>Total RAB harus sama dengan nilai SK: <b>{formatSen(data.summary.amountSen)}</b>.</p><a class={btn+' justify-self-start'} href="/contoh-rab.xlsx" download="Contoh_RAB_100_Persen.xlsx">Unduh Excel contoh (.xlsx)</a><p class="text-xs text-slate-500">Ganti 6 item contoh dengan kebutuhan kampus. Pertahankan nama lembar dan kepala tabel.</p></div>
-   <div class="grid gap-2 rounded-xl border border-blue-200 bg-blue-50 p-4"><strong>2. Pilih file untuk diunggah</strong><label class="grid gap-2 font-semibold"><span class="field-caption">Excel RAB 100%</span><input class="min-w-0 w-full rounded-lg border border-slate-300 bg-white p-2 font-normal" type="file" required aria-label="Unggah Excel RAB 100%" accept=".xlsx" disabled={busy} onchange={e=>void upload(e.currentTarget.files?.[0])}/></label><p class="text-xs text-slate-600">.xlsx · maksimal 2 MB dan 500 item. File langsung dibaca setelah dipilih.</p>{#if busy}<p role="status">Membaca Excel…</p>{/if}</div>
-  </div>
-  {#if replace||journey&&v}<p class="text-amber-900">File baru akan membuat versi baru dan mengosongkan pembagian. Versi lama tetap tersimpan.</p>{#if journey}<button class={blue+' justify-self-end'} disabled={busy} onclick={()=>openStep(1)}>Lanjut</button>{:else}<button class={btn+' justify-self-start'} disabled={busy} onclick={()=>replace=false}>Batal ganti file</button>{/if}{/if}
+  <h2 class="text-lg font-bold text-slate-900">Isi RAB 100%</h2>
+  <p>Tambah item langsung pada tabel atau unggah Excel. Pembagian termin dilakukan setelah seluruh rincian diperiksa.</p>
+  <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-4"><div><strong>Template Excel dan contoh terisi</strong><p class="mt-1 text-xs text-slate-500">Buka Petunjuk, lihat Contoh Pengisian, lalu isi RAB 100%. Contoh tidak ikut diimpor. Format lama tetap diterima.</p></div><button class={btn} disabled={busy} onclick={downloadTemplate}>Unduh template &amp; contoh Excel</button></div>
+  <RabItemsEditor bind:this={itemEditor} version={v||null} draft={data.itemDraft} {busy} amountSen={data.summary.amountSen} onsave={saveItems} ondirty={value=>editorDirty=value}/>
+  <p class="text-xs text-slate-500">Periksa RAB untuk melanjutkan. Pembagian item yang tidak berubah dipertahankan; item baru atau yang jumlah/harganya berubah perlu dibagi kembali.</p><button class={blue+' justify-self-end'} disabled={busy} onclick={inspectItems}>Periksa RAB 100%</button>
  {:else if v}
   <div class="flex flex-wrap items-center gap-2" aria-label="Unduh hasil RAB">
    {#each [['penuh','100%'],['tahap1','Termin 1'],['tahap2','Termin 2']] as [share,label]}<button class="group inline-flex min-h-11 items-center justify-between gap-4 rounded-xl border border-slate-200/80 bg-white px-4 py-2.5 text-sm font-semibold text-[#0066B2] shadow-sm transition hover:border-blue-200 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0066B2] disabled:cursor-not-allowed disabled:opacity-40" disabled={busy||dirty||(share!=='penuh'&&(allocated!==items.length||invalid))} onclick={()=>exportRab(share as 'penuh'|'tahap1'|'tahap2')}><span>Unduh RAB {label}</span><span class="grid size-6 shrink-0 place-items-center rounded-full bg-[#0066B2] text-white transition group-hover:bg-[#005493]"><Icon name="download" size={14}/></span></button>{/each}
@@ -248,20 +260,27 @@
   <div bind:this={itemsTop} class="scroll-mt-28"></div>
   {#if editingAllocation}
    <div><h2 class="text-lg font-bold text-slate-900">Tentukan jumlah untuk setiap tahap</h2><p class="mt-1 text-slate-600">Isi jumlah Tahap 1; sisanya otomatis masuk Tahap 2. Contoh: 10 unit → 7 unit + 3 unit. Batas 70% berlaku untuk total dana, bukan jumlah setiap item.</p></div>
-   <div class="grid gap-3" aria-label="Pembagian jumlah item RAB">
-    {#each pagedItems as line (line.id)}
-     {@const q=quantities[line.id]}
-     {@const valid=validQuantity(q,line.volume)}
-     <article class="rounded-xl border p-4 {q!=null&&!valid?'border-red-300 bg-red-50/30':'border-slate-200'}">
-      <div class="flex flex-wrap items-start justify-between gap-2"><div><h3 class="font-bold text-slate-900">{line.title}</h3><p class="text-xs text-slate-500">{line.code} · {formatSen(line.unitPriceSen)} / {line.unit}</p></div><p class="rounded-lg bg-slate-100 px-3 py-1 text-sm">Jumlah awal: <b>{formatVolume(line.volume)} {line.unit}</b></p></div>
-      <div class="mt-3 grid gap-3 sm:grid-cols-2">
-       <label class="grid gap-1 font-semibold"><span class="field-caption">Jumlah Tahap 1 ({line.unit})</span><input class="min-h-11 w-full rounded-lg border bg-white p-2 font-normal {q!=null&&!valid?'border-red-400':'border-slate-300'}" type="number" required min="0" max={line.volume} step={Number.isInteger(line.volume)?1:0.0001} aria-invalid={q!=null&&!valid} aria-describedby={`help-${line.id}`} value={q??''} placeholder="Isi jumlah, termasuk 0" aria-label={`Jumlah Tahap 1: ${line.title}`} disabled={busy&&!autosaving} oninput={e=>setQuantity(line.id,e.currentTarget.value===''?null:e.currentTarget.valueAsNumber)}/><span class="text-xs font-normal text-slate-500">{valid?formatSen(Math.round(q!*line.unitPriceSen)):'Belum ada nominal valid'}</span></label>
-       <div class="grid content-start gap-1 rounded-lg bg-blue-50 p-3"><p class="font-semibold">Jumlah Tahap 2 · otomatis</p><strong class="text-lg text-blue-900">{remaining(line)}</strong><p class="text-xs">{valid?formatSen(line.amountSen-Math.round(q!*line.unitPriceSen)):'Diisi dari sisa jumlah Tahap 1'}</p></div>
-      </div>
-      <div class="mt-3 flex flex-wrap gap-2"><button class={q===line.volume?blue:btn} aria-pressed={q===line.volume} disabled={busy&&!autosaving} onclick={()=>setQuantity(line.id,line.volume)} aria-label={`Semua ke Tahap 1: ${line.title}`}>{q===line.volume?'✓ ':''}Semua ke Tahap 1</button><button class={q===0?blue:btn} aria-pressed={q===0} disabled={busy&&!autosaving} onclick={()=>setQuantity(line.id,0)} aria-label={`Semua ke Tahap 2: ${line.title}`}>{q===0?'✓ ':''}Semua ke Tahap 2</button></div>
-      <p id={`help-${line.id}`} class="mt-2 text-xs {q!=null&&!valid?'font-semibold text-red-700':'text-slate-500'}" aria-live="polite">{q==null?'Belum dibagi. Isi jumlah atau pilih semua ke salah satu tahap.':!valid?`Isi 0 sampai ${formatVolume(line.volume)} ${line.unit}${Number.isInteger(line.volume)?' dalam bilangan bulat.':' dengan maksimal 4 desimal.'}`:q===line.volume?'Seluruh item masuk Tahap 1.':q===0?'Seluruh item masuk Tahap 2.':`Dibagi: ${formatVolume(q!)} ${line.unit} + ${remaining(line)}.`}</p>
-     </article>
-    {/each}
+   <p class="text-xs text-slate-500">Untuk template baru, jumlah awal = Qty × Volume. Contoh: 25 orang × 2 hari = 50 orang-hari. Geser tabel ke samping pada layar kecil.</p>
+   <!-- svelte-ignore a11y_no_noninteractive_tabindex (Tabel dapat digeser dengan keyboard pada layar kecil.) -->
+   <div class="min-w-0 overflow-x-auto rounded-xl border border-slate-200" role="region" aria-label="Pembagian jumlah item RAB" tabindex="0">
+    <table class="w-full min-w-[660px] border-separate border-spacing-0 text-sm tabular-nums">
+     <caption class="sr-only">Pembagian termin per item. Isi jumlah Termin 1; Termin 2 dihitung otomatis.</caption>
+     <thead class="bg-slate-50 text-xs text-slate-600"><tr><th scope="col" class="sticky left-0 z-10 w-[30%] bg-slate-50 p-3 text-left">Item</th><th scope="col" class="p-3 text-right">Total RAB</th><th scope="col" class="w-[190px] p-3 text-left">Termin 1</th><th scope="col" class="p-3 text-right">Termin 2 - otomatis</th></tr></thead>
+     <tbody>{#each pagedItems as line (line.id)}
+      {@const q=quantities[line.id]}
+      {@const valid=validQuantity(q,line.volume)}
+      <tr class={q!=null&&!valid?'bg-red-50':'bg-white'}>
+       <th scope="row" class="sticky left-0 z-10 border-t border-slate-200 bg-inherit p-3 text-left font-normal"><p class="font-semibold">{line.title}</p><p class="mt-1 text-xs text-slate-500">{line.code} / {formatSen(line.unitPriceSen)} / {line.unit}</p></th>
+       <td class="border-t border-slate-200 p-3 text-right"><p class="font-semibold">{formatVolume(line.volume)} {line.unit}</p><p class="mt-1 text-xs text-slate-500">{formatSen(line.amountSen)}</p></td>
+       <td class="border-t border-slate-200 p-3 align-top"><input class="min-h-11 w-full rounded-lg border bg-white p-2 {q!=null&&!valid?'border-red-400':'border-slate-300'}" type="number" required min="0" max={line.volume} step="1" aria-invalid={q!=null&&!valid} aria-describedby={`help-${line.id}`} value={q??''} placeholder="Jumlah" aria-label={`Jumlah Tahap 1: ${line.title}`} disabled={busy&&!autosaving} oninput={e=>setQuantity(line.id,e.currentTarget.value===''?null:e.currentTarget.valueAsNumber)}/>
+        <p class="mt-1 text-xs text-slate-500">{valid?formatSen(Math.round(q!*line.unitPriceSen)):'Belum dibagi'}</p>
+        <div class="mt-1 flex gap-1"><button type="button" class="min-h-9 flex-1 rounded border px-2 text-xs {q===line.volume?'border-blue-300 bg-blue-50 font-semibold text-blue-900':'border-slate-200 text-[#0066B2]'}" aria-pressed={q===line.volume} disabled={busy&&!autosaving} onclick={()=>setQuantity(line.id,line.volume)} aria-label={`Semua ke Tahap 1: ${line.title}`}>Semua T1</button><button type="button" class="min-h-9 flex-1 rounded border px-2 text-xs {q===0?'border-blue-300 bg-blue-50 font-semibold text-blue-900':'border-slate-200 text-[#0066B2]'}" aria-pressed={q===0} disabled={busy&&!autosaving} onclick={()=>setQuantity(line.id,0)} aria-label={`Semua ke Tahap 2: ${line.title}`}>Semua T2</button></div>
+        <p id={`help-${line.id}`} class="mt-1 text-xs {q!=null&&!valid?'font-semibold text-red-700':'sr-only'}" aria-live="polite">{q==null?'Isi jumlah, termasuk 0.':!valid?`Isi 0 sampai ${formatVolume(line.volume)} ${line.unit} dalam bilangan bulat.`:`Sisa Termin 2: ${remaining(line)}.`}</p>
+       </td>
+       <td class="border-t border-slate-200 bg-blue-50/50 p-3 text-right"><p class="font-semibold text-blue-900">{remaining(line)}</p><p class="mt-1 text-xs text-slate-500">{valid?formatSen(line.amountSen-Math.round(q!*line.unitPriceSen)):'-'}</p></td>
+      </tr>
+     {/each}</tbody>
+    </table>
    </div>
   {:else if journey&&journeyStep==='full'}
    <h2 class="text-lg font-bold text-slate-900">Periksa RAB 100% dari Excel</h2>
@@ -290,10 +309,10 @@
      <tbody>{#each reviewItems as line (line.id)}
       {@const q=quantities[line.id]}
       {@const valid=validQuantity(q,line.volume)}
-      <tr class="bg-white hover:bg-slate-50"><th scope="row" class="min-w-[220px] border-b border-slate-100 p-3 text-left font-normal"><p class="text-xs font-semibold text-slate-500">{line.code}</p><p class="font-semibold">{line.title}</p>{#if editingAdmin}<label class="mt-2 grid gap-1 text-xs"><span class="field-caption">Harga satuan (Rp)</span><input class="min-h-11 w-full rounded-lg border border-slate-300 bg-white p-2" type="number" required min="0.01" step="0.01" aria-label={`Harga satuan: ${line.title}`} bind:value={edits[line.id].price} disabled={busy||kind!=='rab_penuh'}/></label>{:else}<p class="text-xs text-slate-500">{formatSen(line.unitPriceSen)} / {line.unit}</p>{/if}</th>
-       <td data-review-column="rab_penuh" class="cursor-pointer border-b border-slate-100 p-3 text-right {kind==='rab_penuh'||hoveredReview==='rab_penuh'?'bg-blue-100':''}">{#if editingAdmin}<b>{formatSen(Math.round((edits[line.id].volume||0)*(edits[line.id].price||0)*100))}</b><label class="mt-2 grid gap-1 text-xs text-left"><span class="field-caption">Jumlah awal ({line.unit})</span><input class="min-h-11 w-full rounded-lg border border-slate-300 bg-white p-2" type="number" required min={Number.isInteger(line.volume)?1:0.0001} step={Number.isInteger(line.volume)?1:0.0001} aria-invalid={!validEditedVolume(edits[line.id].volume,line.volume)} aria-label={`Jumlah awal: ${line.title}`} bind:value={edits[line.id].volume} disabled={busy||kind!=='rab_penuh'}/>{#if !validEditedVolume(edits[line.id].volume,line.volume)}<span class="text-red-700" role="alert">{Number.isInteger(line.volume)?'Jumlah awal harus bilangan bulat positif.':'Isi jumlah positif dengan maksimal 4 desimal.'}</span>{/if}</label>{:else}<b>{formatSen(line.amountSen)}</b><p class="mt-1 text-xs">{formatVolume(line.volume)} {line.unit}</p>{/if}</td>
-       <td data-review-column="rab" class="cursor-pointer border-b border-slate-100 p-3 text-right {kind==='rab'||hoveredReview==='rab'?'bg-blue-100':''}">{#if editingAdmin}<b>{formatSen(Math.round((edits[line.id].first||0)*(edits[line.id].price||0)*100))}</b><label class="mt-2 grid gap-1 text-xs text-left"><span class="field-caption">Jumlah Tahap 1 ({line.unit})</span><input class="min-h-11 w-full rounded-lg border border-slate-300 bg-white p-2" type="number" required min="0" max={edits[line.id].volume} step={Number.isInteger(edits[line.id].volume)?1:0.0001} aria-label={`Jumlah Tahap 1: ${line.title}`} bind:value={edits[line.id].first} disabled={busy||kind!=='rab'}/></label>{:else}<b>{legacy?formatSen(line.term1Sen):valid?formatSen(Math.round(q!*line.unitPriceSen)):'-'}</b><p class="mt-1 text-xs">{valid?formatVolume(q!)+' '+line.unit:legacy?'Jumlah belum tercatat':'Belum dibagi'}</p>{/if}</td>
-       <td data-review-column="rab_tahap2" class="cursor-pointer border-b border-slate-100 p-3 text-right {kind==='rab_tahap2'||hoveredReview==='rab_tahap2'?'bg-blue-100':''}">{#if editingAdmin&&(validQuantity(edits[line.id].first,edits[line.id].volume)||kind==='rab_tahap2')}<b>{formatSen(Math.round(edits[line.id].volume*edits[line.id].price*100)-Math.round(edits[line.id].first*edits[line.id].price*100))}</b><p class="mt-1 text-xs">{formatVolume(Math.round((edits[line.id].volume-edits[line.id].first)*10000)/10000)} {line.unit}</p>{#if kind==='rab_tahap2'}<label class="mt-2 grid gap-1 text-xs text-left"><span class="field-caption">Jumlah Tahap 2 ({line.unit})</span><input class="min-h-11 w-full rounded-lg border border-slate-300 bg-white p-2" type="number" required min="0" max={edits[line.id].volume} step={Number.isInteger(edits[line.id].volume)?1:0.0001} aria-invalid={!validQuantity(edits[line.id].first,edits[line.id].volume)} aria-label={`Jumlah Tahap 2: ${line.title}`} value={Math.round((edits[line.id].volume-edits[line.id].first)*10000)/10000} disabled={busy} oninput={e=>{edits[line.id].first=Math.round((edits[line.id].volume-e.currentTarget.valueAsNumber)*10000)/10000;}}/>{#if !validQuantity(edits[line.id].first,edits[line.id].volume)}<span class="text-red-700" role="alert">Jumlah Tahap 2 harus antara 0 dan jumlah awal, mengikuti aturan jumlah bulat.</span>{/if}</label>{:else}<p class="mt-1 text-xs text-slate-500">Otomatis dari sisa</p>{/if}{:else if editingAdmin}<span class="text-red-700">Pembagian tidak valid</span>{:else}<b>{legacy?formatSen(line.term2Sen):valid?formatSen(line.amountSen-Math.round(q!*line.unitPriceSen)):'-'}</b><p class="mt-1 text-xs">{legacy?'Jumlah belum tercatat':remaining(line)}</p>{/if}</td></tr>
+      <tr class="bg-white hover:bg-slate-50"><th scope="row" class="min-w-[220px] border-b border-slate-100 p-3 text-left font-normal"><p class="text-xs font-semibold text-slate-500">{line.code}</p><p class="font-semibold">{line.title}</p>{#if editingAdmin}<label class="mt-2 grid gap-1 text-xs"><span class="field-caption">Harga satuan (Rp)</span><input class="min-h-11 w-full rounded-lg border border-slate-300 bg-white p-2" type="number" required min="1" step="1" aria-label={`Harga satuan: ${line.title}`} bind:value={edits[line.id].price} disabled={busy||kind!=='rab_penuh'}/></label>{:else}<p class="text-xs text-slate-500">{formatSen(line.unitPriceSen)} / {line.unit}</p>{/if}</th>
+       <td data-review-column="rab_penuh" class="cursor-pointer border-b border-slate-100 p-3 text-right {kind==='rab_penuh'||hoveredReview==='rab_penuh'?'bg-blue-100':''}">{#if editingAdmin}<b>{formatSen(Math.round((edits[line.id].volume||0)*(edits[line.id].price||0)*100))}</b><label class="mt-2 grid gap-1 text-xs text-left"><span class="field-caption">Jumlah awal ({line.unit})</span><input class="min-h-11 w-full rounded-lg border border-slate-300 bg-white p-2" type="number" required min="1" step="1" aria-invalid={!validEditedVolume(edits[line.id].volume,line.volume)} aria-label={`Jumlah awal: ${line.title}`} bind:value={edits[line.id].volume} disabled={busy||kind!=='rab_penuh'}/>{#if !validEditedVolume(edits[line.id].volume,line.volume)}<span class="text-red-700" role="alert">Jumlah awal harus bilangan bulat positif.</span>{/if}</label>{:else}<b>{formatSen(line.amountSen)}</b><p class="mt-1 text-xs">{formatVolume(line.volume)} {line.unit}</p>{/if}</td>
+       <td data-review-column="rab" class="cursor-pointer border-b border-slate-100 p-3 text-right {kind==='rab'||hoveredReview==='rab'?'bg-blue-100':''}">{#if editingAdmin}<b>{formatSen(Math.round((edits[line.id].first||0)*(edits[line.id].price||0)*100))}</b><label class="mt-2 grid gap-1 text-xs text-left"><span class="field-caption">Jumlah Tahap 1 ({line.unit})</span><input class="min-h-11 w-full rounded-lg border border-slate-300 bg-white p-2" type="number" required min="0" max={edits[line.id].volume} step="1" aria-label={`Jumlah Tahap 1: ${line.title}`} bind:value={edits[line.id].first} disabled={busy||kind!=='rab'}/></label>{:else}<b>{legacy?formatSen(line.term1Sen):valid?formatSen(Math.round(q!*line.unitPriceSen)):'-'}</b><p class="mt-1 text-xs">{valid?formatVolume(q!)+' '+line.unit:legacy?'Jumlah belum tercatat':'Belum dibagi'}</p>{/if}</td>
+       <td data-review-column="rab_tahap2" class="cursor-pointer border-b border-slate-100 p-3 text-right {kind==='rab_tahap2'||hoveredReview==='rab_tahap2'?'bg-blue-100':''}">{#if editingAdmin&&(validQuantity(edits[line.id].first,edits[line.id].volume)||kind==='rab_tahap2')}<b>{formatSen(Math.round(edits[line.id].volume*edits[line.id].price*100)-Math.round(edits[line.id].first*edits[line.id].price*100))}</b><p class="mt-1 text-xs">{formatVolume(Math.round((edits[line.id].volume-edits[line.id].first)*10000)/10000)} {line.unit}</p>{#if kind==='rab_tahap2'}<label class="mt-2 grid gap-1 text-xs text-left"><span class="field-caption">Jumlah Tahap 2 ({line.unit})</span><input class="min-h-11 w-full rounded-lg border border-slate-300 bg-white p-2" type="number" required min="0" max={edits[line.id].volume} step="1" aria-invalid={!validQuantity(edits[line.id].first,edits[line.id].volume)} aria-label={`Jumlah Tahap 2: ${line.title}`} value={Math.round((edits[line.id].volume-edits[line.id].first)*10000)/10000} disabled={busy} oninput={e=>{edits[line.id].first=Math.round((edits[line.id].volume-e.currentTarget.valueAsNumber)*10000)/10000;}}/>{#if !validQuantity(edits[line.id].first,edits[line.id].volume)}<span class="text-red-700" role="alert">Jumlah Tahap 2 harus antara 0 dan jumlah awal, mengikuti aturan jumlah bulat.</span>{/if}</label>{:else}<p class="mt-1 text-xs text-slate-500">Otomatis dari sisa</p>{/if}{:else if editingAdmin}<span class="text-red-700">Pembagian tidak valid</span>{:else}<b>{legacy?formatSen(line.term2Sen):valid?formatSen(line.amountSen-Math.round(q!*line.unitPriceSen)):'-'}</b><p class="mt-1 text-xs">{legacy?'Jumlah belum tercatat':remaining(line)}</p>{/if}</td></tr>
      {:else}<tr><td colspan="4" class="p-6 text-center text-slate-500">Tidak ada item yang cocok.</td></tr>{/each}</tbody>
      <tfoot class="sticky bottom-0 bg-slate-100 font-bold"><tr><th scope="row" class="border-t p-3 text-left">Total seluruh RAB</th><td data-review-column="rab_penuh" class="cursor-pointer whitespace-nowrap border-t p-3 text-right {kind==='rab_penuh'||hoveredReview==='rab_penuh'?'bg-blue-100':''}">{formatSen(editingAdmin?editedTotal:v.totalSen)}</td><td data-review-column="rab" class="cursor-pointer whitespace-nowrap border-t p-3 text-right {kind==='rab'||hoveredReview==='rab'?'bg-blue-100':''}">{formatSen(editingAdmin?editedFirst:first)}</td><td data-review-column="rab_tahap2" class="cursor-pointer whitespace-nowrap border-t p-3 text-right {kind==='rab_tahap2'||hoveredReview==='rab_tahap2'?'bg-blue-100':''}">{formatSen(editingAdmin?editedTotal-editedFirst:second)}</td></tr></tfoot>
     </table>
@@ -332,8 +351,9 @@
    <div class="flex flex-wrap justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4" aria-label="Tindakan RAB">
     {#if journeyStep==='full'}
      {#if v.status==='disetujui'&&!locked&&!data.disbursement.paidAt}<button class={btn} disabled={busy} onclick={revise}>Buat draf perbaikan dari versi ini</button>{/if}
-     <button class={btn} disabled={busy||!editable} onclick={()=>leave(()=>{sync();replace=true;void goto(journeyUrl('upload'));})}>Kembali</button>
+     <button class={btn} disabled={busy||!editable} onclick={()=>leave(()=>{sync();replace=true;void goto(journeyUrl('upload'));})}>Edit item / tambah Excel</button>
      <button class={blue} disabled={busy||v.totalSen!==data.summary.amountSen} onclick={continueFull}>Lanjut</button>
+     {#if v.totalSen!==data.summary.amountSen}<p class="w-full text-sm text-amber-900" role="status">Total RAB {formatSen(v.totalSen)} belum sama dengan nilai SK {formatSen(data.summary.amountSen)}. Edit item terlebih dahulu untuk melanjutkan.</p>{/if}
     {:else if journeyStep==='term1'}
      <button class={btn} disabled={busy} onclick={()=>leave(()=>{sync();void goto(journeyUrl('full'));})}>Kembali</button>
      {#if editable}<button class={blue} disabled={busy||!ready} onclick={()=>save(true)}>Lanjut</button>{#if saveFailed}<p class="w-full text-xs text-red-700" role="alert">Draf gagal disimpan. Isian Anda tetap tersedia.<button type="button" class="ml-2 min-h-9 font-semibold text-[#0066B2] underline" disabled={busy||invalid} onclick={()=>save()}>Coba simpan lagi</button></p>{/if}{:else}<button class={blue} onclick={()=>goto(journeyUrl('term2'))}>Lanjut</button>{/if}
@@ -353,7 +373,7 @@
     {#if dirty}<p class="font-semibold text-amber-900" role="status">Perubahan belum disimpan. Simpan sebelum memeriksa atau mengajukan.</p>{:else}<p class="text-slate-600">Draf tersimpan. Pengajuan dikirim setelah konfirmasi pada langkah terakhir.</p>{/if}
     {#if editingAllocation}
      <div class="flex flex-wrap gap-2"><button class={btn} disabled={busy||invalid||!dirty} onclick={()=>save()}>Simpan draf pembagian</button><button class={blue} disabled={busy||!ready} onclick={()=>save(true)}>Simpan & periksa Tahap 1</button></div>
-     <button class={btn+' justify-self-start'} disabled={busy} onclick={()=>leave(()=>{sync();replace=true;})}>Ganti file RAB 100%</button>
+     <button class={btn+' justify-self-start'} disabled={busy} onclick={()=>leave(()=>{sync();replace=true;})}>Edit item / tambah Excel</button>
     {:else if kind==='rab'}
      <button class={blue+' justify-self-start'} disabled={busy||!ready||dirty} onclick={()=>goto('/campus/pencairan?butir=rab_tahap2')}>Lanjut: periksa Tahap 2 & ajukan</button>
     {:else}
@@ -369,7 +389,7 @@
 
 
 {#if savedNotice}
- <div class="fixed bottom-6 right-4 z-50 flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-xl bg-slate-900 px-4 py-3 text-sm text-white shadow-lg" role="status" aria-live="polite" transition:fly={{y:16,duration:reducedMotion?0:200}}><span aria-hidden="true">&#10003;</span><span>Draf RAB tersimpan</span><button type="button" class="grid size-9 shrink-0 place-items-center rounded-lg hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white" aria-label="Tutup notifikasi" onclick={()=>savedNotice=false}>&#215;</button></div>
+ <div class="fixed inset-x-4 bottom-5 z-50 mx-auto flex w-fit max-w-[calc(100%-2rem)] items-center gap-3 rounded-xl bg-slate-900 px-4 py-3 text-sm text-white shadow-lg" role="status" aria-live="polite" transition:fly={{y:16,duration:reducedMotion?0:200}}><span aria-hidden="true">&#10003;</span><span>{noticeText}</span><button type="button" class="grid size-9 shrink-0 place-items-center rounded-lg hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white" aria-label="Tutup notifikasi" onclick={()=>savedNotice=false}>&#215;</button></div>
 {/if}
 
 {#if pendingLeave}

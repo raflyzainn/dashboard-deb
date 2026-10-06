@@ -28,6 +28,7 @@ export const validDate=(value:string)=>/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Numbe
 export const kuasaSource=(fields:Record<string,string>)=>JSON.stringify(['pemberiKuasa','penerimaKuasa','penandatanganNama','penandatanganJabatan','namaBank','nomorRekening','namaPemilik','judulProgram','tempatTandaTangan','tanggalKuasa'].map(key=>fields[key]||''));
 export const requiresKuasaUpdate=(j:any)=>j?.fields.jenisRekening==='kuasa'&&j.files.kuasa?.source!==kuasaSource(j.fields);
 export interface Journey {
+ rabDraft?: {rows:(string|number|null)[][];lineIds:string[]}; rabDraftRevision?: number;
  status: 'draf' | 'menunggu' | 'revisi' | 'selesai'; lastSection: Section;
  fields: Record<string, string>; files: Record<string, { id: string; name: string; mime: string; width?: number; height?: number; source?: string }>;
  revision: number; history: any[];
@@ -80,6 +81,7 @@ export function validateJourney(c:any,r:any,settings:any,tags:Record<MergeKind,s
  const require=(section:Section,key:string,label:string)=>{if(!f[key]?.trim())warn(section,key,label+' belum diisi.');};
  for(const [key,label] of [['judulProgram','Nama kegiatan'],['alamat','Alamat kampus'],['desa','Desa program'],['kabupaten','Kabupaten/kota program'],['mentor','Mentor'],['koordinator','Koordinator']])require('program',key,label);
  if(canRevise(j,'program')&&!r.payment?.paidAt)for(const text of programLocationErrors(f,true))warn('program',text,text);
+ if(j.rabDraft)blockers.push({section:'rab',text:'Periksa perubahan item RAB 100% sebelum mengajukan.'});
  if(!v)blockers.push({section:'rab',text:'Unggah RAB 100% terlebih dahulu.'});
  else if(v.totalSen!==BUDGET || v.term1Sen<=0 || v.term1Sen>LIMIT || v.term1Sen+v.term2Sen!==v.totalSen || !v.lines.some((l:any)=>l.level===4) || v.lines.some((l:any)=>l.level===4&&!validQuantity(l.flags?.term1Volume,l.volume)))blockers.push({section:'rab',text:'Periksa total RAB dan pembagian jumlah: Termin 1 maksimal 70% SK.'});
  if(v&&typeof v.campusStep==='number'&&v.campusStep<3)blockers.push({section:'rab',text:'Selesaikan pemeriksaan RAB 100%, Termin 1, dan Termin 2 melalui tombol Lanjut.'});
