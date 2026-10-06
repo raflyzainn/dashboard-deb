@@ -11,8 +11,8 @@ try{
  await page.getByRole('button',{name:'Masuk ke ruang kerja'}).click();await page.waitForURL('**/campus/dashboard');
  await page.goto(origin+'/campus/pencairan?butir=ringkasan');
  const checklist=page.getByRole('region',{name:'Kelengkapan pengajuan'});
- await expect(checklist).toBeVisible();await expect(checklist.locator('details[open]')).toHaveCount(0);
- await checklist.getByRole('button',{name:'Lengkapi Identitas Surat dan Kop',exact:true}).click();
+ await page.getByRole('region',{name:'Dokumen otomatis',exact:true}).waitFor();await expect(checklist).toHaveCount(0);await expect(page.getByRole('button',{name:'Ajukan untuk diperiksa',exact:true})).toBeDisabled();
+ await page.goto(origin+'/campus/pencairan?butir=surat');
  await expect(page.getByLabel('Kop surat kampus',{exact:true})).toBeVisible();
  for(const [butir,label,value] of [['administrasi','Nama bank','Bank Autosave QA'],['penandatangan','Nama penandatangan kampus','Penandatangan Autosave QA'],['surat','Nomor invoice','INV-AUTOSAVE-QA'],['pks','Nomor PKS kampus','PKS-AUTOSAVE-QA']]){
   await page.goto(origin+'/campus/pencairan?butir='+butir);
@@ -36,8 +36,8 @@ const saved=await page.evaluate(async()=>(await(await fetch('/api/pencairan/camp
 await page.getByRole('button',{name:'Coba simpan lagi',exact:true}).click();await expect(page.getByText('Draf tersimpan otomatis. Belum dikirim ke PF.',{exact:true})).toBeVisible();await page.reload();await expect(field).toHaveValue('Bank Tidak Hilang QA');
 
  await page.screenshot({path:root+'/autosave-pks.png',fullPage:true});
- await page.goto(origin+'/campus/pencairan?butir=ringkasan');await expect(checklist).toBeVisible();await page.screenshot({path:root+'/kelengkapan.png',fullPage:true});
- console.log('PASS: grouped validation, correct letterhead link, autosave four forms, navigation, reload, PF placeholder.');
+ await page.goto(origin+'/campus/pencairan?butir=ringkasan');await expect(checklist).toHaveCount(0);await page.screenshot({path:root+'/kelengkapan.png',fullPage:true});
+ console.log('PASS: no global checklist, incomplete submission blocked, autosave four forms, navigation, reload, PF placeholder.');
  await fs.writeFile(root+'/results.json',JSON.stringify({passed:true,failureRetry:true,errors,dialogs,result},null,2));
 }catch(e){await page.screenshot({path:root+'/failure.png',fullPage:true});await fs.writeFile(root+'/results.json',JSON.stringify({passed:false,error:e.message,errors,dialogs},null,2));throw e;}
 finally{await browser.close();}

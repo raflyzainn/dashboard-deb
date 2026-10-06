@@ -17,13 +17,14 @@ Tombol kartu ringkas (tinggi minimum 36 px): Buat ulang, PDF, DOCX. Tautan unduh
 - Cache di memori menggunakan SHA-256 isi DOCX, maksimum 8 dokumen atau 32 MB. Preview dan unduhan berbagi hasil yang sama. Permintaan konversi diproses berurutan dan permintaan serentak dengan sumber sama digabungkan; kegagalan dapat dicoba ulang.
 - Aset PDF contoh tetap dan skrip pembuatnya sudah dihapus. Tidak perlu LibreOffice pada deployment statis.
 
-## Mode PocketBase lokal (5176)
+## PocketBase lokal dan pratinjau admin ? pembaruan 6 Oktober 2026
 
-- GET format=pdf melewati otorisasi kampus/admin dan pemeriksaan versi yang sudah ada; download=1 menghasilkan attachment.
-- DOCX diberi QR polos lalu dikonversi LibreOffice lokal. PDF memiliki kode, hash SHA-256, dan cache plain-pdf-1 tersendiri.
-- Antrean maksimum 12 permintaan aktif/menunggu. Profil dan folder sementara per proses, timeout 60 detik, lalu dibersihkan. Hasil disimpan melalui object storage lokal yang sudah ada.
-- Backend konversi hanya aktif pada development dengan instance lokal 8097. Tidak mengubah konfigurasi atau layanan production.
-- Jalankan npm run dev:local dan buka http://127.0.0.1:5176. DEB_LIBREOFFICE_PATH dapat dipakai untuk lokasi instalasi khusus.
+- Pratinjau dan tombol PDF mengunduh DOCX melalui otorisasi yang sudah ada, kemudian mengonversinya di browser menggunakan converter yang sama dengan dummy. Tidak membutuhkan LibreOffice atau layanan konversi eksternal di server.
+- QR asli dari DOCX lokal dipertahankan. Footer simulasi hanya digunakan dalam mode mockup. Dokumen unggahan tidak diganti atau dikonversi otomatis.
+- Hash pada halaman verifikasi mengacu pada **berkas sumber DOCX**, bukan byte PDF hasil konversi browser. PDF adalah salinan tampilan dari sumber tersebut; belum memiliki hash arsip PDF tersendiri.
+- Pratinjau dan unduhan berbagi cache browser. Isi DOCX berubah menghasilkan PDF baru. PDF berupa gambar halaman, bukan teks yang dapat dicari; tata letak perlu diperiksa ketika template diubah.
+- Handler konversi LibreOffice server telah dihapus. URL lama `?format=pdf` pada backend lokal mengembalikan pesan untuk membuka PDF melalui halaman pengajuan.
+- Tidak mengubah layanan atau konfigurasi production. Hasil browser QA terbaru dicatat pada QA-DEVELOPMENT-14-POIN-2026-10-06.md.
 
 ## Status pemeriksaan
 

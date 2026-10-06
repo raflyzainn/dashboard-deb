@@ -3,7 +3,7 @@
  import { reportError } from '$lib/feedback';
  import { formatSen } from '$lib/pencairan';
  import type { RabOverview } from '$lib/rab';
- import { RAB_TEMPLATE_HEADERS, type TemplateQuantity } from '$lib/rab-template';
+ import { RAB_TEMPLATE_HEADERS, mergeRabRows, validRabUnit, type TemplateQuantity } from '$lib/rab-template';
  import { readExcel, readRabRows } from '../rab/model';
  let {version,draft,busy=false,amountSen,onsave,ondirty}:{version:RabOverview['version'];draft?:RabOverview['itemDraft'];busy?:boolean;amountSen:number;onsave:(rows:unknown[][],lineIds:string[],draft:boolean)=>Promise<boolean>;ondirty:(value:boolean)=>void}=$props();
  type Row={id:string;cells:(string|number|null|undefined)[]};
@@ -40,9 +40,9 @@
    const imported=await readExcel(file);
    const empty=(row:Row)=>!row.id&&![0,1,2,4,7].some(c=>String(row.cells[c]??'').trim());
    const existing=rows.filter(row=>!empty(row));
-   if(existing.length+imported.length>500)throw Error('Gabungan data maksimal 500 item. Kurangi item sebelum menambahkan Excel.');
-   rows=[...existing,...imported.map(item=>{const t=item.templateQuantity;return {id:'',cells:[item.group,item.activity,item.title,t?.qty??item.volume,t?.unit??item.unit,t?.volume??1,t?.volumeUnit??'kali',item.priceSen/100]};})];
-   message=`${imported.length} item ditambahkan dari ${file.name}. Draf disimpan otomatis. Item lama tetap ada.`;
+   const merged=mergeRabRows(existing,imported.map(item=>{const t=item.templateQuantity;return {id:'',cells:[item.group,item.activity,item.title,t?.qty??item.volume,t?.unit??item.unit,t?.volume??1,t?.volumeUnit??'kali',item.priceSen/100]};}));
+   rows=merged.rows;
+   message=`${merged.added} item ditambahkan, ${merged.updated} item diperbarui. Draf disimpan otomatis.`;
   }catch(e){error=reportError(e instanceof Error?e.message:'Excel tidak dapat dibaca.');}finally{reading=false;}
  }
  function save(automatic=true):Promise<boolean>{
@@ -67,7 +67,7 @@
 <section class="grid min-w-0 gap-3" aria-label="Tabel input RAB">
  <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
   <label class="grid gap-2 font-semibold">Tambah item dari Excel<input type="file" class="w-full min-w-0 rounded-lg border bg-white p-2 font-normal" aria-label="Tambah item dari Excel" accept=".xlsx" disabled={busy||reading} onchange={e=>{void append(e.currentTarget.files?.[0]);e.currentTarget.value='';}}/></label>
-  <p class="mt-2 text-xs text-slate-600">.xlsx · maksimal 2 MB dan total 500 item. Upload menambah baris; nama yang sama tetap menjadi item terpisah. Perubahan disimpan otomatis sebagai draf.</p>
+  <p class="mt-2 text-xs text-slate-600">.xlsx · maksimal 2 MB dan total 500 item. Kategori, sub kategori, dan nama yang sama memperbarui item lama; item baru ditambahkan. Autosave.</p>
  </div>
  <div class="flex flex-wrap items-center justify-between gap-2"><h3 class="font-bold">Isi RAB langsung atau tambahkan Excel</h3><button type="button" class="min-h-11 rounded-lg border border-blue-300 px-3 font-semibold text-[#0066B2] disabled:opacity-40" disabled={busy||reading||rows.length>=500} onclick={()=>rows=[...rows,blank()]}>Tambah item</button></div>
  <p class="text-xs text-slate-600">Kolom sama dengan template. Total Harga dihitung dari Qty × Volume × Harga Satuan. Draf tersimpan otomatis meskipun belum lengkap; lengkapi setiap baris sebelum memeriksa RAB.</p>
@@ -79,7 +79,7 @@
    <tbody>{#each rows as row,i}<tr>
     {#each RAB_TEMPLATE_HEADERS.slice(0,8) as title,c}<td class="border-t p-2 {c===2?'min-w-[200px]':c===3||c===5?'w-[90px]':'min-w-[120px]'}">
      {#if [3,5,7].includes(c)}{@const invalid=row.cells[c]!=null&&(!Number.isSafeInteger(row.cells[c])||Number(row.cells[c])<1)}<input class={input} type="number" required min="1" step="1" aria-invalid={invalid} aria-describedby={invalid?`integer-${i}-${c}`:undefined} bind:value={row.cells[c]} aria-label={`${title} baris ${i+1}`} disabled={busy&&!automaticSave||reading}/>{#if invalid}<p id={`integer-${i}-${c}`} class="mt-1 text-xs text-red-700">Gunakan bilangan bulat minimal 1.</p>{/if}
-     {:else}<input class={input} required maxlength={c===4||c===6?60:500} bind:value={row.cells[c]} aria-label={`${title} baris ${i+1}`} disabled={busy&&!automaticSave||reading}/>{/if}
+     {:else}{@const invalid=[4,6].includes(c)&&Boolean(row.cells[c])&&!validRabUnit(row.cells[c])}<input class={input} required maxlength={c===4||c===6?60:500} aria-invalid={invalid} bind:value={row.cells[c]} aria-label={`${title} baris ${i+1}`} disabled={busy&&!automaticSave||reading}/>{#if invalid}<p class="mt-1 text-xs text-red-700">Isi satuan, misalnya unit atau hari.</p>{/if}{/if}
     </td>{/each}
     <td class="whitespace-nowrap border-t p-2 font-semibold">{Number.isFinite(rowTotal(row))&&rowTotal(row)>0?formatSen(rowTotal(row)):'—'}</td>
     <td class="border-t p-2"><button type="button" class="min-h-11 rounded-md px-2 text-red-700 hover:bg-red-50" aria-label={`Hapus item baris ${i+1}`} disabled={busy||reading} onclick={()=>rows=rows.filter((_,index)=>index!==i)}>Hapus</button></td>

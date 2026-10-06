@@ -1,4 +1,4 @@
-/** PDF untuk dummy statis: halaman berasal dari DOCX tersimpan, tanpa data contoh tetap. */
+/** PDF dari DOCX tersimpan, dibuat di browser tanpa layanan konversi server. */
 import { DOCX_MIME, withVerificationFooter } from '../merge';
 import { qrPng, qrPngSide } from '../qr';
 import html2canvasSource from 'html2canvas/dist/html2canvas.min.js?url';
@@ -8,18 +8,19 @@ const pending = new Map<string, Promise<Blob>>();
 let queue: Promise<unknown> = Promise.resolve();
 let cacheBytes = 0;
 
-export async function browserDocumentPdf(source: Blob): Promise<Blob> {
+export async function browserDocumentPdf(source: Blob, simulated = false): Promise<Blob> {
  if (source.type === 'application/pdf') return source;
  if (source.type !== DOCX_MIME) throw new Error('PDF hanya tersedia untuk dokumen DOCX yang dibuat aplikasi.');
  const bytes = await source.arrayBuffer();
  const digest = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), value => value.toString(16).padStart(2, '0')).join('');
- const cached = cache.get(digest);
+ const key = (simulated ? 'dummy-' : '') + digest;
+ const cached = cache.get(key);
  if (cached) return cached;
- const running = pending.get(digest);
+ const running = pending.get(key);
  if (running) return running;
  const task = queue.then(async () => {
-  const pdf = await renderPdf(bytes, digest);
-  cache.set(digest, pdf); cacheBytes += pdf.size;
+  const pdf = await renderPdf(bytes, digest, simulated);
+  cache.set(key, pdf); cacheBytes += pdf.size;
   while (cache.size > 8 || cacheBytes > 32 * 1024 * 1024) {
    const first = cache.keys().next().value!;
    cacheBytes -= cache.get(first)!.size; cache.delete(first);
@@ -27,11 +28,11 @@ export async function browserDocumentPdf(source: Blob): Promise<Blob> {
   return pdf;
  });
  queue = task.catch(() => {});
- pending.set(digest, task);
- try { return await task; } finally { pending.delete(digest); }
+ pending.set(key, task);
+ try { return await task; } finally { pending.delete(key); }
 }
 
-async function renderPdf(bytes: ArrayBuffer, digest: string): Promise<Blob> {
+async function renderPdf(bytes: ArrayBuffer, digest: string, simulated: boolean): Promise<Blob> {
  const [{ renderAsync }, { PDFDocument }] = await Promise.all([
   import('docx-preview'), import('pdf-lib')
  ]);
@@ -54,10 +55,10 @@ async function renderPdf(bytes: ArrayBuffer, digest: string): Promise<Blob> {
   const code = 'DUMMY-' + digest.slice(0, 16).toUpperCase();
   const qrText = 'Dokumen simulasi DEB ' + code;
   const options = { scale: 6, margin: 4, level: 'H' } as const;
-  const stamped = withVerificationFooter(new Uint8Array(bytes), {
+  const stamped = simulated ? withVerificationFooter(new Uint8Array(bytes), {
    png: qrPng(qrText, options), pngSide: qrPngSide(qrText, options), code,
    line: 'Dokumen simulasi DEB', issuer: 'Salinan PDF dari data pengajuan'
-  });
+  }) : new Uint8Array(bytes);
   await renderAsync(stamped, doc.body, doc.head, {
    className: 'deb-pdf', inWrapper: true, ignoreWidth: false, ignoreHeight: false,
    breakPages: true, ignoreLastRenderedPageBreak: true, useBase64URL: true, renderHeaders: true, renderFooters: true
@@ -125,4 +126,16 @@ async function renderPdf(bytes: ArrayBuffer, digest: string): Promise<Blob> {
   }
   return new Blob([new Uint8Array(await pdf.save()).buffer], { type: 'application/pdf' });
  } finally { frame.remove(); }
+}
+
+export async function downloadDocumentPdf(url: string, name: string): Promise<void> {
+ const response = await fetch(url, { cache: 'no-store' });
+ if (!response.ok) {
+  const detail = await response.json().catch(() => null);
+  throw new Error(detail?.message || 'Dokumen belum dapat diunduh.');
+ }
+ const blob = await browserDocumentPdf(await response.blob(), import.meta.env.MODE === 'mockup');
+ const href = URL.createObjectURL(blob), link = document.createElement('a');
+ link.href = href; link.download = name.replace(/\.docx$/i, '') + (name.endsWith('.pdf') ? '' : '.pdf');
+ link.click(); setTimeout(() => URL.revokeObjectURL(href), 60000);
 }

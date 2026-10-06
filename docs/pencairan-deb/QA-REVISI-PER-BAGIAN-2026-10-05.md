@@ -1,5 +1,7 @@
 # Revisi per halaman pencairan
 
+> Pembaruan 6 Oktober: request edit Administrasi kini per submenu Rekening, Penandatangan, atau Identitas Surat/Kop. Laporan di bawah historis untuk scope Administrasi gabungan. QA terbaru: [14 poin development](QA-DEVELOPMENT-14-POIN-2026-10-06.md).
+
 Implementasi lokal pada `feat/scoped-program-revisions`, setelah PR alamat #31 dibuat ke `development`. PR #31 tidak berisi perubahan revisi ini. Koreksi pengguna: seluruh halaman yang diminta revisi dibuka, bukan memilih kolom melalui checkbox.
 
 ## Alur

@@ -3,17 +3,19 @@ import { LOCATION_FIELDS } from './location';
 export const REVISION_SCOPES = {
  program: { label: 'Data Program', section: 'program', fields: ['judulProgram','alamat','mentor','koordinator',...Object.values(LOCATION_FIELDS),'lokasiAlamatLengkap'], files: [] },
  rab: { label: 'RAB', section: 'rab', fields: [], files: [] },
- administrasi: { label: 'Administrasi', section: 'administrasi', fields: ['jenisRekening','namaBank','nomorRekening','namaPemilik','pemberiKuasa','penerimaKuasa','tanggalKuasa','penandatanganNama','penandatanganJabatan','tempatTandaTangan','nomorSuratPermohonan','tanggalSuratPermohonan','nomorInvois','tanggalInvois','nomorKuitansi','tanggalKuitansi'], files: ['rekening','kuasa','kop'] },
+ administrasi: { label: 'Rekening Penerima', section: 'administrasi', fields: ['jenisRekening','namaBank','nomorRekening','namaPemilik','pemberiKuasa','penerimaKuasa','tanggalKuasa'], files: ['rekening','kuasa'] },
+ penandatangan: { label: 'Penandatangan Kampus', section: 'penandatangan', fields: ['penandatanganNama','penandatanganJabatan','tempatTandaTangan'], files: ['kuasa'] },
+ surat: { label: 'Identitas Surat dan Kop', section: 'surat', fields: ['nomorSuratPermohonan','tanggalSuratPermohonan','nomorInvois','tanggalInvois','nomorKuitansi','tanggalKuitansi'], files: ['kop'] },
  pks: { label: 'PKS', section: 'pks', fields: ['nomorPksKampus'], files: [] },
  dokumen: { label: 'PKS', section: 'pks', fields: [], files: [] }
 } satisfies Record<string,{label:string;section:string;fields:string[];files:string[]}>;
 export type RevisionScope = keyof typeof REVISION_SCOPES;
-export type EditableSection = 'program'|'rab'|'administrasi'|'pks';
+export type EditableSection = 'program'|'rab'|'administrasi'|'penandatangan'|'surat'|'pks';
 export interface EditRequest {
  id:string; section:EditableSection; reason:string; actorName:string; created:string;
  status:'pending'|'approved'|'rejected'; decidedByName?:string; decidedAt?:string; decisionNote?:string;
 }
-export const editableSections:EditableSection[] = ['program','rab','administrasi','pks'];
+export const editableSections:EditableSection[] = ['program','rab','administrasi','penandatangan','surat','pks'];
 export function editRequestStatus(j:any,row:string):string|null {
  const section=revisionSection(row) as EditableSection;
  const request=[...(j?.editRequests||[])].reverse().find((item:EditRequest)=>item.section===section);
@@ -30,7 +32,7 @@ export interface RevisionRequest {
  status: 'open'|'submitted'|'resolved'; baseline: Record<string,string>;
 }
 export const openRevisions = (j:any):RevisionRequest[] => (j?.revisionRequests || []).filter((r:RevisionRequest)=>r.status==='open');
-export const revisionSection = (row:string) => ['rab_penuh','rab','rab_tahap2'].includes(row)?'rab':['rekening','surat_kuasa','permohonan','invois','kuitansi','administrasi','penandatangan','surat'].includes(row)?'administrasi':row;
+export const revisionSection = (row:string) => ['rab_penuh','rab','rab_tahap2'].includes(row)?'rab':['rekening','surat_kuasa','administrasi'].includes(row)?'administrasi':['permohonan','invois','kuitansi','surat'].includes(row)?'surat':row;
 export const canRevise = (j:any,scope:RevisionScope) => Boolean(REVISION_SCOPES[scope]) && (j?.status==='draf' || j?.status==='revisi' && openRevisions(j).some(r=>r.scopes.some(key=>REVISION_SCOPES[key]?.section===REVISION_SCOPES[scope].section)));
 export const canEditField = (j:any,key:string) => j?.status==='draf' || Object.entries(REVISION_SCOPES).some(([scope,value])=>(value.fields as string[]).includes(key)&&canRevise(j,scope as RevisionScope));
 export const canUploadFile = (j:any,key:string) => j?.status==='draf' || Object.entries(REVISION_SCOPES).some(([scope,value])=>(value.files as string[]).includes(key)&&canRevise(j,scope as RevisionScope));
@@ -45,5 +47,13 @@ export function revisionValue(r:any,scope:RevisionScope,kind:string):string {
  return JSON.stringify([(group.fields as string[]).map(key=>j.fields[key]||''),(group.files as string[]).map(key=>j.files[key]?.id||'')]);
 }
 export function revisionPending(r:any,request:RevisionRequest) {
- return request.scopes.filter(scope=>revisionValue(r,scope,request.kind)===request.baseline[scope]);
+ return request.scopes.filter(scope=>{
+  let baseline=request.baseline[scope];
+  // Compare the retained bank fields of a legacy broad Administration request.
+  if(scope==='administrasi'){
+   const stored=JSON.parse(baseline);
+   if(stored[0]?.length>REVISION_SCOPES.administrasi.fields.length)baseline=JSON.stringify([stored[0].slice(0,7),stored[1].slice(0,2)]);
+  }
+  return revisionValue(r,scope,request.kind)===baseline;
+ });
 }

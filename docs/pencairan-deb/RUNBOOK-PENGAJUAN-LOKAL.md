@@ -1,5 +1,9 @@
 # Runbook pengajuan lokal untuk sesi berikutnya
 
+## QA terbaru ? 6 Oktober 2026
+
+QA development memakai aplikasi lokal 5176 dan PocketBase 8097. Akun QA 1/2/3 diprovision ulang khusus sesi QA; catatan penghapusan lama di bawah adalah historis. Pratinjau dan unduhan PDF kini dibuat di browser tanpa LibreOffice; backend tetap mengotorisasi dan mengarsipkan DOCX sumber beserta QR. Baca [hasil 14 poin](QA-DEVELOPMENT-14-POIN-2026-10-06.md) dan [perilaku PDF terbaru](PDF-RINGKASAN-2026-10-05.md). Tidak ada perubahan production atau publikasi remote pada pekerjaan ini.
+
 ## Pembaruan terakhir — 1 Oktober 2026
 
 Branch aktif `feat/pencairan-pocketbase-local`. Migrasi dasar sudah dipublikasikan pada commit `bb368ac`; perubahan UX dan perbaikan penutupan terbaru masih lokal. Baca [QA alur lokal dari awal sampai pembayaran + LPJ](QA-ALUR-LOKAL-2026-10-01.md) sebelum mengandalkan status historis di bawah.

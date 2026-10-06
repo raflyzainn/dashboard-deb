@@ -135,7 +135,7 @@ function revisePfData(c:any,r:any,user:AppSession){
       if(typeof body.note!=='string'||body.note.length>2000||body.decision==='rejected'&&!body.note.trim())throw Error('Isi catatan keputusan, maksimal 2000 karakter.');
       if(body.decision==='approved'){
        if(canRevise(j,request.section))throw Error('Bagian ini sudah terbuka untuk revisi.');
-       const kind={program:'pks',rab:'rab',administrasi:'invois',pks:'pks'}[request.section];
+       const kind={program:'pks',rab:'rab',administrasi:'rekening',penandatangan:'pks',surat:'invois',pks:'pks'}[request.section];
        requestRevision(c,r,kind,[request.section],body.note.trim()||request.reason,user,false);
       }
       Object.assign(request,{status:body.decision,decisionNote:body.note.trim(),decidedByName:user.name,decidedAt:now()});
@@ -304,7 +304,7 @@ function revisePfData(c:any,r:any,user:AppSession){
      const decision=body.decision==='batal'?'menunggu_review':body.decision;
      if(decision==='perlu_revisi'&&!body.note?.trim())throw Error('Catatan revisi wajib diisi.');if(isRabKind(kind)&&decision==='sesuai')check(v);if(r.journey&&decision==='sesuai'&&!['menunggu','selesai'].includes(r.journey.status))throw Error('Kampus belum mengajukan paket terbaru.');
      if(r.journey&&decision==='sesuai'){const settings=db.settings.find((s:any)=>s.programYear===c.programYear);if(r.documents.filter((d:any)=>MERGE_KINDS.includes(d.kind)).some((d:any)=>d.versions.filter((v:any)=>v.origin==='generated').at(-1)?.generation?.settingsSource!==settingsSource(settings)))throw Error('Pengaturan PF berubah. Minta kampus membuat ulang dokumen sebelum menyetujui.');}
-     if(r.journey&&decision==='perlu_revisi'){const section=body.section||revisionSection(kind);if(!['program','rab','administrasi','pks'].includes(section)||section!==revisionSection(kind)&&!(kind==='pks'&&section==='program'))throw Error('Bagian revisi tidak sesuai.');requestRevision(c,r,kind,[section],body.note.trim(),user);}
+     if(r.journey&&decision==='perlu_revisi'){const section=body.section||revisionSection(kind);if(!editableSections.includes(section)||section!==revisionSection(kind)&&!(kind==='pks'&&['program','penandatangan'].includes(section)))throw Error('Bagian revisi tidak sesuai.');requestRevision(c,r,kind,[section],body.note.trim(),user);}
      if(r.journey&&decision!=='perlu_revisi'&&openRevisions(r.journey).some(request=>request.kind===kind))throw Error('Tunggu kampus mengirim perbaikan sebelum mengubah keputusan.');
      d.status=decision;d.decidedByName=user.name;d.decidedAt=now();d.reviews.push({id:id(),decision,note:body.note||'',actorName:user.name,created:now(),imported:false});
      if(isRabKind(kind)&&!['sesuai','perlu_revisi'].includes(decision)){v.status='menunggu';v.active=false;}

@@ -1,13 +1,14 @@
 <script lang="ts">
+  import { browserDocumentPdf, downloadDocumentPdf } from '$lib/pengajuan/browser-document-pdf';
   import { reportError } from '$lib/feedback';
   import { untrack } from 'svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
 
   /** Shows one stored file inside the page: PDF and images natively, Word and Excel drawn in the browser. Files never leave the app. */
-  let { src, mime = '', name = '', height = 640, showDownload = true }: { src: string; mime?: string; name?: string; height?: number; showDownload?: boolean } = $props();
+  let { src, mime = '', name = '', height = 640, showDownload = true, pdf = false }: { src: string; mime?: string; name?: string; height?: number; showDownload?: boolean; pdf?: boolean } = $props();
 
   const ext = $derived((name.split('.').pop() || '').toLowerCase());
-  const kind = $derived(mime.includes('pdf') || ext === 'pdf' ? 'pdf' : mime.startsWith('image/') || ['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext) ? 'image' : ['docx', 'doc'].includes(ext) ? 'docx' : ['xlsx', 'xls', 'csv'].includes(ext) ? 'xlsx' : 'other');
+  const kind = $derived(pdf || mime.includes('pdf') || ext === 'pdf' ? 'pdf' : mime.startsWith('image/') || ['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext) ? 'image' : ['docx', 'doc'].includes(ext) ? 'docx' : ['xlsx', 'xls', 'csv'].includes(ext) ? 'xlsx' : 'other');
   let container = $state<HTMLDivElement | null>(null);
   let loading = $state(false);
   let error = $state('');
@@ -31,7 +32,8 @@
         throw new Error(detail?.message || 'Berkas belum dapat dibuka.');
       }
       if (type === 'pdf' || type === 'image') {
-        const blob = await response.blob();
+        const original = await response.blob();
+        const blob = pdf ? await browserDocumentPdf(original, import.meta.env.MODE === 'mockup') : original;
         if (generation !== renderGeneration) return;
         nativeSource = URL.createObjectURL(blob);
       } else if (type === 'docx') {
@@ -71,7 +73,7 @@
         <span class="w-10 text-center tabular-nums">{Math.round(zoom * 100)}%</span>
         <button type="button" class="rounded-md px-2 py-1 hover:bg-slate-100" onclick={() => (zoom = Math.min(2, zoom + 0.1))} aria-label="Perbesar">+</button>
       {/if}
-      {#if showDownload}<a class="ml-2 flex items-center gap-1 rounded-md px-2 py-1 font-semibold text-[#0066B2] hover:bg-blue-50" href={src + (src.includes('?') ? '&' : '?') + 'download=1'} download={name}><Icon name="download" size={14} />Unduh berkas asli</a>{/if}
+      {#if showDownload}{#if pdf}<button type="button" class="ml-2 rounded-md px-2 py-1 font-semibold text-[#0066B2]" disabled={loading} onclick={() => downloadDocumentPdf(src, name).catch(e => reportError(e.message))}>Unduh PDF</button>{/if}<a class="ml-2 flex items-center gap-1 rounded-md px-2 py-1 font-semibold text-[#0066B2] hover:bg-blue-50" href={src + (src.includes('?') ? '&' : '?') + 'download=1'} download={name}><Icon name="download" size={14} />Unduh berkas asli</a>{/if}
     </span>
   </div>
   <div class="relative min-h-0 flex-1 overflow-auto">

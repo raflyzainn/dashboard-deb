@@ -7,7 +7,7 @@ Revisi lokal pada branch `feat/rab-template-termin`, dari development `9c3345c`,
 - Unduhan memakai `static/templat/Template_RAB_DEB.xlsx`, salinan desain `output/Template_RAB_DEB.xlsx`. Petunjuk menjadi lembar pembuka; RAB 100%, Contoh Pengisian (8 item ilustrasi), dan Ringkasan tetap tersedia. Rumus dan grafik sumber dipertahankan. Format angka diubah menjadi tanpa desimal dan validasi sel angka menjadi bilangan bulat positif. Lembar contoh tidak diimpor.
 - Kolom tabel kampus sama dengan Excel: Kategori, Sub Kategori, Nama, Qty, Satuan, Volume, Satuan Volume, Harga Satuan, Total Harga. Kampus dapat menambah, mengedit, dan menghapus item; perubahan disimpan otomatis setelah jeda mengetik 800 ms.
 - Total Harga dihitung ulang dari input, tanpa mengandalkan cache rumus Excel. Qty × Volume menjadi jumlah yang dibagi di aplikasi; 25 orang × 2 hari menjadi 50 orang-hari. Kedua faktor aslinya tetap disimpan untuk pengeditan.
-- Upload dari halaman ini menambah item ke tabel yang sedang dikerjakan. Nama sama tidak dipakai untuk menimpa/mencocokkan baris; upload file yang sama dua kali menambah duplikat. Hasil langsung disimpan sebagai draf dan dapat diedit kembali tanpa tombol simpan manual. Format Excel lama tetap diterima.
+- Upload mencocokkan Kategori + Sub Kategori + Nama, tanpa membedakan huruf besar/kecil atau spasi berlebih. Item yang cocok diperbarui (Qty, satuan, Volume, harga), item baru ditambahkan. ID baris lama dipertahankan. Upload ulang tidak menambah duplikat. Item dengan nama sama di kategori berbeda tetap terpisah. Jika identitas berulang di Excel atau memiliki beberapa kandidat di tabel, upload ditolak tanpa mengubah tabel. Hasil langsung disimpan sebagai draf dan dapat diedit kembali tanpa tombol simpan manual. Format Excel lama tetap diterima.
 - Maksimal 2 MB per file dan 500 item gabungan. Draf boleh belum lengkap, termasuk nol baris setelah semua item dihapus. Sebelum **Periksa RAB 100%**, baris harus lengkap, angka positif; Qty, Volume, Harga Satuan, serta pembagian termin wajib bilangan bulat. Pecahan ditandai dan ditolak saat pemeriksaan/impor, tanpa pembulatan otomatis. Total yang belum sesuai SK boleh disimpan sebagai draf, tetapi tidak boleh dilanjutkan ke pembagian/pengajuan.
 - Autosave menyimpan tabel kerja pada data pengajuan, termasuk isian yang belum lengkap. **Periksa RAB 100%** memvalidasi tabel lalu membuat versi baru jika ada perubahan, mempertahankan versi sebelumnya. Autosave tidak membuat versi baru pada setiap ketikan. Pembagian item lama dipertahankan berdasarkan identitas baris saat jumlah, satuan, harga, dan nama tidak berubah. Item baru atau berubah perlu dibagi kembali. Penguncian pengajuan dan lingkup revisi tetap berlaku.
 - Pembagian termin memakai tabel ringkas dengan Item, Total RAB, Termin 1, dan Termin 2 otomatis. Input jumlah serta pintasan Semua T1/T2 tersedia. Pagination tetap lima item; total dan validasi mencakup semua halaman. Tabel dapat digeser horizontal pada layar sempit tanpa memperlebar halaman.
@@ -22,7 +22,20 @@ Revisi lokal pada branch `feat/rab-template-termin`, dari development `9c3345c`,
 - `POST /api/pencairan/:campus/rab/items` pada engine bersama: validasi bentuk draf, kontrol status/versi sumber dan nomor revisi tabel, serta validasi lengkap saat membuat versi RAB. Tabel kerja tersimpan pada applicationData yang sudah ada; perubahan yang belum diperiksa menghalangi pembagian/pengajuan sampai Periksa RAB 100% dijalankan. Handler PocketBase lokal mengizinkan rute ini pada instance lokal yang telah dibatasi sebelumnya.
 - `scripts/templat/prepare-rab-template.py <path-sumber.xlsx>` menyalin workbook dan memperbarui lembar pembuka/petunjuk. File asli di output tidak diubah.
 
-## QA yang dilakukan
+## QA tambahan: perbaikan poin 6
+
+Playwright Chrome terlihat pada 5176/PocketBase lokal 8097, menggunakan Kampus QA Lokal 1:
+
+- [x] Item lama diperbarui dan item baru ditambahkan; upload file sama kembali tetap dua item. Qty/harga baru tersimpan setelah reload.
+- [x] Excel berisi identitas berulang ditolak tanpa mengubah jumlah/item tabel; data lama tidak dihapus.
+- [x] Upload ulang item yang tidak berubah mempertahankan jumlah alokasi Termin 1 (3 dan 1 unit) setelah membuat versi baru.
+- [x] Update pada tabel 500 item diterima; penambahan menjadi 501 ditolak.
+- [x] Satuan yang hanya angka ditolak saat pemeriksaan/impor; satuan seperti m2 diterima. Draf yang belum valid tetap dapat autosave.
+- [x] Label RAB memakai Termin 1/Termin 2, dan jumlah/satuan dipisahkan pada tabel pembagian.
+
+Bukti lokal: `.qa/development-14points/fix-findings/`, `allocation-merge/`, dan `final-findings/`. Pageerror kosong pada ketiga pemeriksaan. Test suite/check/build tidak dijalankan. Checkpoint `rab-template-editor.playwright.js` disesuaikan dengan perilaku merge; checkpoint lama di bawah adalah hasil historis sebelum perbaikan ini.
+
+## QA historis sebelum perbaikan poin 6
 
 Tool Playwright pada dummy worktree 5297, akun Universitas Hasanuddin, menggunakan data QA browser terisolasi:
 
