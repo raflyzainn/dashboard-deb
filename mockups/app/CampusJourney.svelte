@@ -27,22 +27,6 @@
  const base=$derived(`/api/pencairan/${campusId}/pengajuan`);
  const section=$derived((sections.includes(page.url.searchParams.get('bagian') as Section)?page.url.searchParams.get('bagian'):page.url.searchParams.get('butir')==='sk'?'sk':['rab_penuh','rab','rab_tahap2'].includes(page.url.searchParams.get('butir')||'')?'rab':page.url.searchParams.get('butir')==='program'?'program':['administrasi','penandatangan','surat'].includes(page.url.searchParams.get('butir')||'')?page.url.searchParams.get('butir'):page.url.searchParams.get('butir')==='ringkasan'?'ringkasan':page.url.searchParams.get('butir')==='pks'?'pks':page.url.searchParams.get('butir')==='rekening'?'administrasi':page.url.searchParams.get('butir')==='surat_kuasa'?'surat':['invois','permohonan','kuitansi'].includes(page.url.searchParams.get('butir')||'')?'ringkasan':data?.journey.lastSection||'sk') as Section);
  const index=$derived(sections.indexOf(section));
- let sectionElement=$state<HTMLElement>();
- function allowForward(next:Section){
-  if(data?.journey.status!=='draf')return true;
-  const nextIndex=sections.indexOf(next);
-  const adminSteps=['administrasi','penandatangan','surat','pks'];
-  if(nextIndex<=index||locked||(section==='program'&&next==='rab')||adminSteps.includes(section)&&adminSteps.includes(next))return true;
-  const pendingSteps=blockers.filter((b:any)=>sections.indexOf(b.section)>=index&&sections.indexOf(b.section)<nextIndex);
-  if(!pendingSteps.length)return true;
-  error=reportError(pendingSteps.map((b:any)=>b.text).join(' '));
-  if(pendingSteps.some((b:any)=>b.section===section)){
-   const controls=sectionElement?.querySelectorAll<HTMLInputElement|HTMLSelectElement|HTMLTextAreaElement>('input:required,select:required,textarea:required');
-   const first=Array.from(controls||[]).find(el=>!el.disabled&&(!el.value.trim()||!el.validity.valid));
-   first?.focus();first?.reportValidity();
-  }
-  return false;
- }
  const kopId=$derived(data?.journey.files.kop?.id||'');
  const dirty=$derived(JSON.stringify(fields)!==saved);
  $effect(()=>{if(!message)return;const timer=setTimeout(()=>message='',4000);return()=>clearTimeout(timer);});
@@ -84,7 +68,7 @@
   try{sync(await dataService.api.patch(base,{fields:submitted,revision:data.journey.revision,expectedRevision:data.serverRevision}),submitted);if(!dirty&&Date.now()-lastDraftNotice>=20000){message='Draf tersimpan. Belum dikirim ke PF.';lastDraftNotice=Date.now();}return !dirty;}
   catch(e){error = reportError(e instanceof Error?e.message:String(e));if((e as any).status===409)remoteChanged=true;return false;}finally{busy=false;saving=false;}
  }
- async function navigate(next:Section){if(section==='rab')await load();if(!allowForward(next)||!await save())return;preview=null;error='';await goto('/campus/pencairan?bagian='+next+'&butir='+({sk:'sk',program:'program',rab:'rab_penuh',administrasi:'administrasi',penandatangan:'penandatangan',surat:'surat',pks:'pks',ringkasan:'ringkasan'}[next]));}
+ async function navigate(next:Section){if(section==='rab')await load();if(!await save())return;preview=null;error='';await goto('/campus/pencairan?bagian='+next+'&butir='+({sk:'sk',program:'program',rab:'rab_penuh',administrasi:'administrasi',penandatangan:'penandatangan',surat:'surat',pks:'pks',ringkasan:'ringkasan'}[next]));}
  async function upload(slot:string,file?:File,control?:HTMLInputElement){
   if(!file)return;uploadErrors[slot]='';
   if(!await save()){uploadErrors[slot]='Draf belum tersimpan. Coba pilih berkas lagi setelah penyimpanan berhasil.';if(control)control.value='';return;}busy=true;error='';message='';
@@ -133,10 +117,6 @@
  }
  function requestLeave(action:()=>void){if(dirty)pending=action;else action();}
  beforeNavigate(n=>{if(!n.to)return;
-  if(n.to.url.pathname==='/campus/pencairan'){
-   const target=n.to.url.searchParams.get('bagian')||({sk:'sk',program:'program',rab_penuh:'rab',rab:'rab',rab_tahap2:'rab',administrasi:'administrasi',penandatangan:'penandatangan',surat:'surat',rekening:'administrasi',surat_kuasa:'surat',invois:'ringkasan',permohonan:'ringkasan',kuitansi:'ringkasan',pks:'pks',ringkasan:'ringkasan'} as Record<string,Section>)[n.to.url.searchParams.get('butir')||''];
-   if(target&&sections.includes(target as Section)&&!allowForward(target as Section)){n.cancel();return;}
-  }
   if(!dirty)return;n.cancel();const target=n.to.url.href;requestLeave(()=>void goto(target));});
  onMount(()=>{
   reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -159,7 +139,7 @@
 <div class={embedded?'grid min-w-0 gap-3 '+(section==='rab'?'':'p-4'):'mx-auto grid w-full max-w-[1400px] min-w-0 gap-5 p-4 sm:p-6'}>
  {#if !embedded}<header><p class="text-sm text-slate-500">Pencairan Dana</p><h1 class="mt-1 text-2xl font-bold text-slate-900">Pengajuan pencairan</h1><p class="mt-2 text-sm text-slate-600">Lengkapi data sekali. Simpan draf kapan saja, lalu ajukan setelah semuanya siap.</p></header>{/if}
  {#if remoteChanged}<p class="rounded-lg bg-amber-50 p-3 text-amber-900" role="alert">Data diperbarui oleh akun lain. Isian Anda tetap tersedia.<button class={btn+' ml-2'} onclick={()=>requestLeave(()=>{fields={...data.journey.fields};saved=JSON.stringify(fields);remoteChanged=false;void load();})}>Muat data terbaru</button></p>{/if}
- {#if error}<p class="rounded-lg bg-red-50 p-3 text-sm text-red-700" role="alert">{error}</p>{/if}
+ {#if error}<p class="rounded-lg bg-red-50 p-3 text-sm text-red-700 {embedded&&section==='rab'?'mx-4 mt-4':''}" role="alert">{error}</p>{/if}
  {#if message}<div class="fixed inset-x-4 bottom-5 z-50 mx-auto flex w-fit max-w-[calc(100%-2rem)] items-center gap-3 rounded-xl bg-slate-900 px-4 py-3 text-sm text-white shadow-lg" role="status" aria-live="polite" transition:fly={{y:16,duration:reducedMotion?0:200}}><span aria-hidden="true" class="text-green-400">✓</span><span>{message}</span><button type="button" class="grid size-8 shrink-0 place-items-center rounded-md hover:bg-white/15 focus-visible:outline focus-visible:outline-2" aria-label="Tutup pemberitahuan" onclick={()=>message=''}>×</button></div>{/if}
  {#if !data}<p role="status">Memuat pengajuan…</p>{:else}
  {#if !embedded}<div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4"><div><strong>{data.campus.name}</strong><p class="mt-1 text-sm text-slate-500">{data.paid?'Tahap 1 sudah dibayar':data.journey.status==='menunggu'?'Menunggu pemeriksaan PF':data.journey.status==='selesai'?'Disetujui · lanjutkan tanda tangan':data.journey.status==='revisi'?'Perlu revisi · periksa catatan PF':'Draf · belum diajukan'}</p></div><span class="rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-[#0066B2]">Nilai SK {formatSen(data.summary.amountSen)}</span></div>{/if}
@@ -167,7 +147,7 @@
   {#if !embedded}<nav class="flex gap-2 overflow-x-auto lg:block" aria-label="Bagian pengajuan pencairan">
    {#each sections as item,i}<button class="mb-2 flex min-h-14 min-w-[145px] flex-col items-start rounded-lg border px-3 py-2 text-left lg:w-full {section===item?'border-blue-300 bg-blue-50 text-[#0066B2]':'border-slate-200 bg-white text-slate-700'}" aria-current={section===item?'step':undefined} disabled={busy} onclick={()=>navigate(item)}><span class="text-sm font-bold">{i+1}. {sectionLabels[i]}</span><span class="mt-1 text-xs">{item==='ringkasan'?'Periksa sebelum mengirim':locked?'Lihat hasil pemeriksaan':blockers.some((b:any)=>b.section===item)?'Belum lengkap':'Siap diperiksa'}</span></button>{/each}
   </nav>{/if}
-  <section bind:this={sectionElement} class={embedded?'min-w-0':'min-w-0 rounded-xl border border-slate-200 bg-white p-4 sm:p-5'} aria-label="Isi pengajuan">
+  <section class={embedded?'min-w-0':'min-w-0 rounded-xl border border-slate-200 bg-white p-4 sm:p-5'} aria-label="Isi pengajuan">
    {#if !embedded||section!=='rab'}<h2 class="mb-2 text-xl font-bold">{sectionLabels[index]}</h2>{/if}
    {#if sectionRequests.length}<aside class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm" aria-label="Catatan revisi bagian ini"><h3 class="font-semibold text-amber-950">Catatan perbaikan dari PF</h3>{#each sectionRequests as request}<p class="mt-1 whitespace-pre-wrap text-amber-950">{request.note}</p>{/each}</aside>{/if}
    {#if locked}<p class="mb-3 text-sm text-slate-500">Hanya lihat. Data dapat diubah setelah akses revisi disetujui admin.</p>{:else if ['program','administrasi','pks'].includes(section)}<p class="mb-3 text-xs text-slate-500"><span class="font-bold text-red-600">*</span> {data.journey.status==='revisi'?'Wajib dilengkapi sebelum mengirim perbaikan.':section==='program'?'Wajib dilengkapi sebelum mengajukan. Anda tetap dapat melanjutkan ke RAB.':'Wajib dilengkapi sebelum melanjutkan langkah ini.'} Draf boleh disimpan saat isian belum lengkap.</p>{/if}

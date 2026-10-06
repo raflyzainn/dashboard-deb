@@ -198,3 +198,22 @@ pengiriman akhir; penyimpanan draf parsial tetap diperbolehkan.
 - Submenu Administrasi memakai izin edit pada kategori Administrasi yang sudah dipakai alur revisi; bagian lain tetap hanya dapat dilihat.
 - Nomor PKS PF yang belum tersedia memakai placeholder pada dokumen dan riwayat setelah permintaan dikirim, sementara isian admin untuk nomor sebenarnya tetap kosong.
 - Build dan QA browser untuk gabungan ini belum dilakukan saat catatan ini ditulis.
+
+### Navigasi draf tanpa pesan gabungan — 6 Oktober 2026
+
+- Menu dapat membuka bagian pengajuan, termasuk seluruh submenu Administrasi, tanpa melengkapi RAB atau isian sebelumnya. Validasi kelengkapan tidak lagi berjalan saat pindah menu; pesan merah gabungan kekurangan RAB/rekening/kop dihapus dari alur navigasi.
+- Tombol Lanjut tetap mengikuti kelengkapan langkah (Data Program tetap boleh lanjut ke RAB). Pembuatan dokumen dan pengajuan tetap memerlukan data lengkap. Dialog perubahan belum disimpan serta izin edit/revisi tetap berlaku.
+- Error operasi yang benar-benar gagal tetap memakai snackbar dan pesan inline; pesan inline pada RAB diberi jarak dari tepi seperti halaman lain.
+- [x] QA Playwright di localhost:5176, akun Universitas Hasanuddin dengan RAB belum diunggah: Rekening Penerima, Penandatangan Kampus, Identitas Surat dan Kop, PKS, serta Dokumen terbuka tanpa alert merah.
+- [x] Checkpoint `scripts/qa/journey-required-navigation.playwright.js` dijalankan melalui tool Playwright dengan mutasi dicegat: Data Program kosong dapat lanjut ke RAB dan semua submenu administrasi; pengajuan tidak lengkap tetap nonaktif.
+- [x] Dialog perubahan belum disimpan muncul saat berpindah dari rekening; batal mempertahankan isian, buang perubahan mengembalikan isian tersimpan. Tidak menyimpan isian QA, mengunggah berkas, atau mengirim pengajuan.
+- [x] Viewport 390 × 844 pada rekening: tidak ada overflow horizontal atau alert merah.
+- Tes/check/lint/build terminal tidak dijalankan. Tidak ada commit, push, PR, atau deployment; perubahan lokal pada development.
+
+### Sinkronisasi dan build sebelum push GitHub — 6 Oktober 2026
+
+- Atas permintaan pengguna, development GitHub diperbarui ke `752e7d0` (PR #37), lalu tiga perubahan navigasi di atas dikembalikan tanpa konflik. Tidak mengubah branch atau layanan production.
+- QA checkpoint navigasi diulang melalui tool Playwright setelah sinkronisasi: empat hasil berhasil, termasuk semua submenu Administrasi dan pemblokiran pengajuan tidak lengkap.
+- Build awal gagal karena html2canvas dari PR #37 belum terpasang lokal. `npm install --ignore-scripts --no-audit --no-fund` memasang dependensi sesuai lockfile tanpa perubahan manifest/lockfile; warning Node lokal 25.5.0 berbeda dari kebutuhan repo 22.x.
+- `npm run build` ulang berhasil exit 0, mode mockup, adapter-static menulis `build`. Pemeriksaan diff whitespace bersih. Test suite, check, dan lint tidak dijalankan.
+- Pengiriman dibatasi ke development GitHub; direktori lokal delivery-pr35, delivery-pr37, dan output tidak diikutkan. Tidak membuat PR atau melakukan deploy.

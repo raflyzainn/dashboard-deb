@@ -2,7 +2,7 @@
 // Respons Data Program dibuat kosong di browser; seluruh mutasi dicegat.
 async (page) => {
   const origin = new URL(page.url()).origin;
-  if (origin !== 'http://127.0.0.1:5176') throw Error('Gunakan aplikasi lokal 5176.');
+  if (!['http://127.0.0.1:5176', 'http://localhost:5176'].includes(origin)) throw Error('Gunakan aplikasi lokal 5176.');
   const originalUrl = page.url();
   const pattern = '**/api/pencairan/**';
   let fixture;
@@ -33,7 +33,14 @@ async (page) => {
     await page.getByRole('heading', { name: 'Data Program', exact: true }).waitFor();
     await page.getByRole('button', { name: /^RAB 100%/ }).click();
     await page.waitForURL('**/campus/pencairan?butir=rab_penuh');
-    return { incompleteProgramNext: true, incompleteProgramSidebar: true };
+    await page.getByRole('button', { name: 'Administrasi Draf', exact: true }).click();
+    for (const [name, section] of [['Rekening Penerima', 'administrasi'], ['Penandatangan Kampus', 'penandatangan'], ['Identitas Surat dan Kop', 'surat'], ['PKS', 'pks'], ['Dokumen', 'ringkasan']]) {
+      await page.getByRole('button', { name: new RegExp('^' + name) }).click();
+      await page.waitForURL('**/campus/pencairan?butir=' + section);
+      if (await page.getByRole('alert').count()) throw Error('Navigasi ' + name + ' masih menampilkan error.');
+    }
+    if (!await page.getByRole('button', { name: 'Ajukan untuk diperiksa', exact: true }).isDisabled()) throw Error('Pengajuan kosong masih bisa dikirim.');
+    return { incompleteProgramNext: true, incompleteProgramSidebar: true, administrationSidebar: true, incompleteSubmitBlocked: true };
   } finally {
     await page.unroute(pattern, intercept);
     await page.goto(originalUrl);
