@@ -12,7 +12,7 @@ export function createApi(actor:()=>Promise<AppSession>) {
    const source=await engine.request(target.pathname+target.search,method,body);
    if(!(source instanceof Blob))throw Error('Dokumen belum tersedia untuk dibuat PDF.');
    const {browserDocumentPdf}=await import('../../src/lib/pengajuan/browser-document-pdf');
-   return browserDocumentPdf(source);
+   return browserDocumentPdf(source,true);
   }
   return engine.request(url,method,body);
  }

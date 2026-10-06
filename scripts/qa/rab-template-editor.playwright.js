@@ -29,6 +29,12 @@ async page => {
   rejected=false;try{await readExcel(new File([X.write({SheetNames:['RAB 100%'],Sheets:{'RAB 100%':malformed}},{type:'array',bookType:'xlsx'})],'invalid.xlsx'));}catch{rejected=true;}
   if(!rejected)throw Error('Qty negatif diterima.');
   const {readRabRows}=await import('/mockups/rab/model.ts');
+  const {mergeRabRows}=await import('/src/lib/rab-template.ts');
+  const original={id:'old',cells:['A','B','Panel',10,'unit',1,'kali',1000]};
+  const changed={id:'',cells:[' a ','b','PANEL',20,'unit',1,'kali',2000]};
+  const merged=mergeRabRows([original],[changed]);
+  if(merged.rows.length!==1||merged.updated!==1||merged.rows[0].id!=='old'||merged.rows[0].cells[3]!==20||original.cells[3]!==10)throw Error('Merge item lama salah.');
+  if(mergeRabRows(merged.rows,[changed]).rows.length!==1)throw Error('Upload ulang menghasilkan duplikat.');
   const header=['Kategori','Sub Kategori','Nama','Qty','Satuan','Volume','Satuan Volume','Harga Satuan','Total Harga'];
   for(const col of [3,5,7]){const row=['A','B','Pecahan',1,'unit',1,'kali',1000];row[col]=1.5;let rejected=false;try{readRabRows([header,row]);}catch{rejected=true;}if(!rejected)throw Error('Pecahan diterima pada kolom '+col);}
   return Array.from(new Uint8Array(data));
@@ -102,17 +108,14 @@ async page => {
  await name.fill('Panel tambahan QA');
  await page.getByText('Draf tersimpan otomatis. Belum dikirim ke PF.',{exact:true}).waitFor();
  await page.getByLabel('Tambah item dari Excel',{exact:true}).setInputFiles(file);
- await page.getByRole('textbox',{name:'Nama baris 17',exact:true}).waitFor();
+ await page.getByRole('status').filter({hasText:'0 item ditambahkan, 8 item diperbarui.'}).waitFor();
  await page.getByText('Draf tersimpan otomatis. Belum dikirim ke PF.',{exact:true}).waitFor();
  await page.getByRole('button',{name:'Periksa RAB 100%',exact:true}).click();
  await page.getByRole('button',{name:'Edit item / tambah Excel',exact:true}).click();
  const preserved=await page.evaluate(async()=>{const {transaction}=await import('/src/lib/data/demo/store.ts');return transaction(s=>{const v=s.fullDummy.campuses['campus-016'].versions.at(-1);return {count:v.lines.filter(l=>l.level===4).length,total:v.totalSen,term1:v.term1Sen,quantity:v.lines.find(l=>l.level===4).flags.term1Volume};});});
- assert(preserved.count===17&&preserved.total===3258500000&&preserved.term1===741500000&&preserved.quantity===1,'Upload kedua menimpa item atau pembagian lama.');
+ assert(preserved.count===9&&preserved.total===2000000000&&preserved.term1===741500000&&preserved.quantity===1,'Upload ulang menggandakan item atau menghilangkan pembagian lama.');
  const names=await page.getByRole('textbox',{name:/^Nama baris /}).evaluateAll(xs=>xs.map(x=>x.value));
- const duplicates=names.map((name,i)=>names.indexOf(name)<i?i+1:0).filter(Boolean).reverse();
- for(const i of duplicates)await page.getByRole('button',{name:`Hapus item baris ${i}`,exact:true}).click();
- await page.getByText('Draf tersimpan otomatis. Belum dikirim ke PF.',{exact:true}).waitFor();
- assert(await page.getByRole('textbox',{name:/^Nama baris /}).count()===9,'Hapus duplikat tidak mempertahankan sembilan item awal.');
+ assert(new Set(names).size===9&&names.length===9,'Upload ulang menghasilkan duplikat.');
  await page.setViewportSize({width:390,height:844});
  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Tabel input melebar pada mobile.');
  await page.setViewportSize({width:1366,height:900});
@@ -170,5 +173,5 @@ async page => {
  await page.getByText('Draf tersimpan otomatis. Belum dikirim ke PF.',{exact:true}).waitFor();
  await page.reload();await page.getByRole('button',{name:'Tambah item',exact:true}).waitFor();
  assert(await page.getByRole('textbox',{name:/^Nama baris /}).count()===0,'Baris yang dihapus muncul lagi.');
- return {typingDuringAutosave:true,integerOnly:true,incompleteAutosave:true,successSnackbar:true,failureSnackbar:true,retryPreservesInput:true,emptyDraftPersisted:true,templateGuideFirst:true,exampleEightItems:true,legacyAccepted:true,invalidRejected:true,manualDraftPersisted:true,appendPreservesItems:true,quantityFactorsPersisted:true,compactTable:true,allocationPersisted:true,mobile:true,navigationAutosave:true,duplicateAppend:true,oldAllocationPreserved:true,removeItem:true,engineChecks};
+ return {typingDuringAutosave:true,integerOnly:true,incompleteAutosave:true,successSnackbar:true,failureSnackbar:true,retryPreservesInput:true,emptyDraftPersisted:true,templateGuideFirst:true,exampleEightItems:true,legacyAccepted:true,invalidRejected:true,manualDraftPersisted:true,appendPreservesItems:true,quantityFactorsPersisted:true,compactTable:true,allocationPersisted:true,mobile:true,navigationAutosave:true,mergeUpdatesExisting:true,oldAllocationPreserved:true,removeItem:true,engineChecks};
 }

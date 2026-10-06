@@ -1,5 +1,9 @@
 # Perbaikan kemudahan penggunaan Pencairan ? 6 Oktober 2026
 
+## Pembaruan sesuai arahan pengguna
+
+Pada QA development 6 Oktober, panel global kelengkapan dikelompokkan dihapus atas permintaan pengguna. Validasi per bagian dan penguncian tombol pengajuan ketika belum lengkap tetap berlaku. Pesan error unggah inline yang berulang juga dihapus; penolakan ukuran/format tetap ditampilkan melalui snackbar. Playwright Chrome terlihat memeriksa autosave, kegagalan simpan, retry, dan penolakan file setelah perubahan tersebut. Hasil terbaru: [QA development 14 poin](QA-DEVELOPMENT-14-POIN-2026-10-06.md).
+
 ## Lingkup
 
 Branch lokal `fix/pencairan-onboarding`, berdasarkan `development` pada `9c3345c`.

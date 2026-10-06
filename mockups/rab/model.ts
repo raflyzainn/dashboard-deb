@@ -1,6 +1,6 @@
 import { buildRabWorkbook, type RabRow } from '../../src/lib/rab-excel';
 import { parseGridSheet } from '../../src/lib/rab-grid';
-import { parseRabTemplate, type TemplateQuantity } from '../../src/lib/rab-template';
+import { parseRabTemplate, validRabUnit, type TemplateQuantity } from '../../src/lib/rab-template';
 
 export const BUDGET = 2_000_000_000; // Rp20 juta, stored in integer sen.
 export const LIMIT = BUDGET * 7 / 10;
@@ -148,6 +148,7 @@ export function readRabRows(rows: unknown[][]): Item[] {
       volume: i.volume, unit: i.unit, priceSen: i.unitPriceSen, amountSen: i.amountSen, term1Sen: 0, templateQuantity: i.flags?.templateQuantity as TemplateQuantity | undefined };
   });
   if (!items.length || items.length > 500) throw Error('Isi 1 sampai 500 baris barang/jasa pada lembar RAB 100%.');
+  if(items.some(i=>!validRabUnit(i.unit)||i.templateQuantity&&(!validRabUnit(i.templateQuantity.unit)||!validRabUnit(i.templateQuantity.volumeUnit))))throw Error('Satuan tidak boleh hanya angka. Gunakan satuan seperti unit, orang, atau hari.');
   if (items.some(i => !Number.isSafeInteger(i.volume) || i.priceSen % 100 !== 0)) throw Error('Volume dan Harga Satuan wajib bilangan bulat tanpa desimal. Perbaiki angka pada Excel.');
   if (items.some(i => !i.title || !i.unit || !(i.volume > 0) || !Number.isFinite(i.volume) || !Number.isSafeInteger(i.priceSen) || i.priceSen <= 0 || !Number.isSafeInteger(i.amountSen) || i.amountSen <= 0 || Math.round(i.volume * i.priceSen) !== i.amountSen) || total(items, 'amountSen') > 1e12) throw Error('Periksa uraian, satuan, volume, harga dan jumlah. Angka harus positif dan jumlah sama dengan volume × harga satuan.');
   return allocate(items);

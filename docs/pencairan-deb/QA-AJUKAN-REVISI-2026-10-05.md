@@ -1,5 +1,7 @@
 # Permintaan revisi kampus per bagian
 
+> Pembaruan 6 Oktober: request edit Administrasi kini per submenu Rekening, Penandatangan, atau Identitas Surat/Kop. Laporan di bawah historis untuk scope Administrasi gabungan. QA terbaru: [14 poin development](QA-DEVELOPMENT-14-POIN-2026-10-06.md).
+
 Poin 14 melanjutkan poin 13. Implementasi lokal berada pada aplikasi port 5176; perubahan ini belum di-commit, dipush, atau dimasukkan ke PR.
 
 ## Perilaku

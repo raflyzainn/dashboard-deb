@@ -110,7 +110,6 @@
       <li><strong>Tangani revisi atau tanda tangan.</strong> Jika Perlu revisi, baca catatan PF, perbaiki, lalu kirim ulang. Setelah disetujui, unduh dokumen final dan ikuti checklist tanda tangan/meterai serta dua rangkap PKS. Unggah melalui tombol Unggah bertanda tangan pada setiap dokumen di Dokumen.</li>
       <li><strong>Pantau pembayaran.</strong> PF memeriksa berkas, melengkapi lampiran, lalu mencatat pembayaran. Setelah Dana dibayar, lihat tanggal, nominal, referensi, dan bukti transfer jika PF melampirkannya.</li>
     </ol>
-    <p class="mt-4 text-sm text-slate-600">Pembagian RAB Termin 2 tersedia. Pengajuan dan pembayaran Tahap 2 belum tersedia di aplikasi.</p>
   </section>
 
   <aside

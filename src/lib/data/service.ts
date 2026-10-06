@@ -40,7 +40,7 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
       if (options.method && options.method !== 'GET') reportError('');
       return result;
     } catch (error) {
-      const failure = error instanceof DataReadError ? error : new DataReadError(503, controller.signal.aborted ? 'Permintaan terlalu lama. Periksa koneksi, lalu coba lagi.' : error instanceof SyntaxError ? 'Respons server tidak dapat dibaca. Coba muat ulang data atau ulangi tindakan Anda.' : 'Tidak dapat terhubung ke server. Periksa koneksi, lalu coba lagi.');
+      const failure = started !== generation ? new DataReadError(409, 'Pilihan akun sudah berubah.') : error instanceof DataReadError ? error : new DataReadError(503, controller.signal.aborted ? 'Permintaan terlalu lama. Periksa koneksi, lalu coba lagi.' : error instanceof SyntaxError ? 'Respons server tidak dapat dibaca. Coba muat ulang data atau ulangi tindakan Anda.' : 'Tidak dapat terhubung ke server. Periksa koneksi, lalu coba lagi.');
       // Account changes cancel obsolete requests; an anonymous session probe is expected.
       if (started === generation && !(url === '/api/session' && failure.status === 401)) reportError(failure.message);
       throw failure;

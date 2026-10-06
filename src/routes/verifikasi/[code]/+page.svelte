@@ -60,7 +60,7 @@
           <div><dt class="text-[12px] font-semibold uppercase tracking-[0.06em] text-slate-500">Nominal</dt><dd class="mt-1 text-sm font-semibold tabular-nums text-slate-900">{result.amountSen ? formatSen(result.amountSen) : 'Tidak tercatat'}</dd></div>
           <div><dt class="text-[12px] font-semibold uppercase tracking-[0.06em] text-slate-500">Kode</dt><dd class="mt-1 font-mono text-sm font-semibold text-slate-900">{result.code}</dd></div>
           <div class="sm:col-span-2">
-            <dt class="text-[12px] font-semibold uppercase tracking-[0.06em] text-slate-500">SHA-256 berkas</dt>
+            <dt class="text-[12px] font-semibold uppercase tracking-[0.06em] text-slate-500">SHA-256 berkas sumber</dt>
             <dd class="mt-1 flex flex-wrap items-start gap-2">
               <code class="min-w-0 flex-1 rounded-lg bg-slate-100 px-3 py-2 font-mono text-[13px] leading-6 text-slate-800 [overflow-wrap:anywhere]">{result.sha256 || 'Tidak tercatat'}</code>
               {#if result.sha256}

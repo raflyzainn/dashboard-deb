@@ -12,7 +12,6 @@
   const tabs = [
     { key: 'dashboard', href: '/admin/pencairan', label: 'Dashboard', hint: 'Semua kampus' },
     { key: 'tahap-1', href: '/admin/pencairan/tahap-1', label: 'Tahap 1', hint: 'Paling banyak 70%' },
-    { key: 'tahap-2', href: '/admin/pencairan/tahap-2', label: 'Tahap 2', hint: 'Sisanya' },
     { key: 'periksa', href: '/admin/pencairan/periksa', label: 'Periksa', hint: 'Antrean admin' }
   ] as const;
 </script>

@@ -28,7 +28,7 @@ export function localJourney(event:RequestEvent):Promise<Response>{
   if(!actor.admin&&(actor.role!=='campus'||actor.campusId!==campusId))fail(403,'Anda tidak memiliki akses ke kampus ini.');
   const method=event.request.method,write=method!=='GET';
   const route=parts.slice(3).join('/');
-  const format=event.url.searchParams.get('format')==='pdf'?'pdf':'docx';
+  if(event.url.searchParams.get('format')==='pdf')throw new PreviewError(400,'Buka PDF melalui halaman pengajuan.');
   const allowed=method==='GET'?/^(|pengajuan(?:\/(?:file\/(?:kop|rekening|kuasa)|dokumen\/(?:pks|permohonan|kuitansi|invois)|surat-kuasa))?|rab|documents\/[^/]+\/versions\/[^/]+(?:\/file)?|buat(?:\/[^/]+)?)$/.test(route)
    :method==='PATCH'?/^(pengajuan(?:\/(?:checklist|pf))?|rab\/versions\/[^/]+\/allocation|documents\/[^/]+)$/.test(route)
    :method==='POST'?/^(buat\/(?:pks|permohonan|kuitansi|invois)|pengajuan\/(?:upload|submit|edit-requests(?:\/[^/]+)?|dokumen\/(?:pks|permohonan|kuitansi|invois))|rab\/(?:import|items|versions(?:\/[^/]+\/(?:progress|correction))?|keputusan)|documents\/[^/]+\/(?:review|catatan|versions))$/.test(route):false;
@@ -41,7 +41,14 @@ export function localJourney(event:RequestEvent):Promise<Response>{
   const navigationOnly=route==='pengajuan'&&method==='PATCH'&&Object.keys(body).every(k=>['lastSection','expectedRevision'].includes(k));
   const expected=body instanceof FormData?Number(body.get('expectedRevision')):body.expectedRevision;
   if(parts.includes('review')&&body.decision==='tidak_perlu'&&parts[4]!=='surat_kuasa')fail(400,'Hanya surat kuasa dapat ditandai tidak diperlukan.');
-  if(body instanceof FormData){const file=body.get('file');if(!(file instanceof File)||!file.size||file.size>40*1024*1024||!ALLOWED_EXTENSIONS.includes(extensionOf(file.name)))fail(400,'Pilih berkas PDF, gambar, Word, atau Excel maksimal 40 MB.');}
+  if(body instanceof FormData){
+   const file=body.get('file');
+   if(route==='pengajuan/upload'){
+    const slot=body.get('slot'),types=slot==='kop'?['image/png','image/jpeg']:['application/pdf','image/png','image/jpeg'];
+    if(!(file instanceof File)||!file.size||file.size>2*1024*1024)fail(400,'Berkas maksimal 2 MB.');
+    if(!types.includes(file.type)||!['pdf','png','jpg','jpeg'].includes(extensionOf(file.name)))fail(400,slot==='kop'?'Kop surat harus berupa PNG atau JPG.':'Pilih PDF, PNG, atau JPG maksimal 2 MB.');
+   }else if(!(file instanceof File)||!file.size||file.size>40*1024*1024||!ALLOWED_EXTENSIONS.includes(extensionOf(file.name)))fail(400,'Pilih berkas PDF, gambar, Word, atau Excel maksimal 40 MB.');
+  }
   const selected=(await pb.collection('disbursements').getList(1,1,{filter:pb.filter('campus = {:c} && term = 1',{c:campusId})})).items[0];
   if(!selected?.submissionStatus)fail(409,'Pengajuan lama tetap menggunakan alur sebelumnya. Gunakan kampus QA lokal untuk alur baru.');
   const storeFiles=storage(settings);
@@ -115,7 +122,7 @@ export function localJourney(event:RequestEvent):Promise<Response>{
    templates:async()=>Object.fromEntries(await Promise.all(MERGE_KINDS.map(async kind=>{const response=await event.fetch('/templat/'+TEMPLATE_FILE[kind]);if(!response.ok)fail(503,'Template belum tersedia.');return [kind,new Uint8Array(await response.arrayBuffer())];}))),
    image:async file=>{try{const pdf=await PDFDocument.create(),bytes=new Uint8Array(await file.arrayBuffer()),image=file.type==='image/png'?await pdf.embedPng(bytes):await pdf.embedJpg(bytes);return {width:image.width,height:image.height};}catch{return fail(400,'Kop surat bukan PNG/JPG yang valid.');}}
   });
-  try{let result=await engine.request(event.url.pathname+event.url.search,method,body);if(method==='GET'&&result instanceof Blob)result=await verifyJourneyDownload(pb,settings,campusId,route,event.url.origin,result,{id:actor.record.id,name:actor.record.name},format);if(requestedPf)await notifyAdmins(pb,campusId,'pencairan_pks_pf','Nomor PKS PF diperlukan','Kampus meminta nomor PKS PF agar dokumen pencairan dapat disiapkan.',`/admin/pencairan/${campusId}?butir=pks`);if(method==='POST'&&route==='pengajuan/edit-requests'&&!actor.admin){const section=body?.section as keyof typeof REVISION_SCOPES;const label=REVISION_SCOPES[section]?.label||'bagian pengajuan';await notifyAdmins(pb,campusId,'pencairan_edit_access','Permintaan akses revisi',`${actor.record.name} meminta akses revisi ${label}. Alasan: ${String(body?.reason||'').trim()}`,`/admin/pencairan/${campusId}?butir=${section}`);}if(pfUpdated)await notifyCampus(pb,campusId,'pencairan_pks_pf_ready','Nomor PKS PF sudah tersedia','Lanjutkan menyiapkan dokumen dari ringkasan pengajuan.',`/campus/pencairan?bagian=ringkasan&butir=ringkasan`);return result instanceof Blob?new Response(result,{headers:{'Content-Type':result.type,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...(result.type==='application/pdf'?{'Content-Disposition':`${event.url.searchParams.get('download')==='1'?'attachment':'inline'}; filename="${parts[3]==='documents'?parts[4]:parts.at(-1)}.pdf"`}:{})}}):json(result,{headers:{'Cache-Control':'no-store'}});}
+  try{let result=await engine.request(event.url.pathname+event.url.search,method,body);if(method==='GET'&&result instanceof Blob)result=await verifyJourneyDownload(pb,settings,campusId,route,event.url.origin,result,{id:actor.record.id,name:actor.record.name});if(requestedPf)await notifyAdmins(pb,campusId,'pencairan_pks_pf','Nomor PKS PF diperlukan','Kampus meminta nomor PKS PF agar dokumen pencairan dapat disiapkan.',`/admin/pencairan/${campusId}?butir=pks`);if(method==='POST'&&route==='pengajuan/edit-requests'&&!actor.admin){const section=body?.section as keyof typeof REVISION_SCOPES;const label=REVISION_SCOPES[section]?.label||'bagian pengajuan';await notifyAdmins(pb,campusId,'pencairan_edit_access','Permintaan akses revisi',`${actor.record.name} meminta akses revisi ${label}. Alasan: ${String(body?.reason||'').trim()}`,`/admin/pencairan/${campusId}?butir=${section}`);}if(pfUpdated)await notifyCampus(pb,campusId,'pencairan_pks_pf_ready','Nomor PKS PF sudah tersedia','Lanjutkan menyiapkan dokumen dari ringkasan pengajuan.',`/campus/pencairan?bagian=ringkasan&butir=ringkasan`);return result instanceof Blob?new Response(result,{headers:{'Content-Type':result.type,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...(result.type==='application/pdf'?{'Content-Disposition':`${event.url.searchParams.get('download')==='1'?'attachment':'inline'}; filename="${parts[3]==='documents'?parts[4]:parts.at(-1)}.pdf"`}:{})}}):json(result,{headers:{'Cache-Control':'no-store'}});}
   catch(e){if(e instanceof PreviewError)throw e;throw new PreviewError(400,e instanceof Error?e.message:'Pengajuan tidak dapat diproses.');}
  });
 }

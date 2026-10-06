@@ -8,13 +8,13 @@ export const RAB_SHARE = { rab_penuh: 'penuh', rab: 'tahap1', rab_tahap2: 'tahap
 export type RabKind = keyof typeof RAB_SHARE;
 export const isRabKind = (kind: string): kind is RabKind => kind in RAB_SHARE;
 export const KIND_LABEL: Record<Kind, string> = {
-  sk: 'SK penetapan penerima', pks: 'Draft PKS', rab_penuh: 'RAB 100%', rab: 'RAB 70%', rab_tahap2: 'RAB 30%', permohonan: 'Permohonan pencairan dana', kuitansi: 'Kuitansi penerimaan dana', invois: 'Invoice penerimaan dana',
+  sk: 'SK penetapan penerima', pks: 'Draft PKS', rab_penuh: 'RAB 100%', rab: 'RAB Termin 1', rab_tahap2: 'RAB Termin 2', permohonan: 'Permohonan pencairan dana', kuitansi: 'Kuitansi penerimaan dana', invois: 'Invoice penerimaan dana',
   rekening: 'Buku rekening', surat_kuasa: 'Surat kuasa'
 };
-export const KIND_SHORT: Record<Kind, string> = { sk: 'SK', pks: 'PKS', rab_penuh: 'RAB 100%', rab: 'RAB 70%', rab_tahap2: 'RAB 30%', permohonan: 'Permohonan', kuitansi: 'Kuitansi', invois: 'Invois', rekening: 'Rekening', surat_kuasa: 'Surat kuasa' };
+export const KIND_SHORT: Record<Kind, string> = { sk: 'SK', pks: 'PKS', rab_penuh: 'RAB 100%', rab: 'RAB Termin 1', rab_tahap2: 'RAB Termin 2', permohonan: 'Permohonan', kuitansi: 'Kuitansi', invois: 'Invois', rekening: 'Rekening', surat_kuasa: 'Surat kuasa' };
 /** What file each item expects, shown in the item panel. */
 export const KIND_FILE: Record<Kind, string> = {
-  sk: 'Satu SK untuk semua kampus', pks: 'Berkas Word', rab_penuh: 'Lembar RAB 100% dari RAB terkelola; berkas Excel asli tetap bisa dilihat', rab: 'Lembar RAB 70% dari RAB terkelola; berkas Excel asli tetap bisa dilihat', rab_tahap2: 'Lembar RAB 30% dari RAB terkelola; berkas Excel asli tetap bisa dilihat', permohonan: 'Word atau PDF', kuitansi: 'Word atau PDF', invois: 'Word atau PDF',
+  sk: 'Satu SK untuk semua kampus', pks: 'Berkas Word', rab_penuh: 'Lembar RAB 100% dari RAB terkelola; berkas Excel asli tetap bisa dilihat', rab: 'Lembar RAB Termin 1 dari RAB terkelola; berkas Excel asli tetap bisa dilihat', rab_tahap2: 'Lembar RAB Termin 2 dari RAB terkelola; berkas Excel asli tetap bisa dilihat', permohonan: 'Word atau PDF', kuitansi: 'Word atau PDF', invois: 'Word atau PDF',
   rekening: 'Pindaian halaman depan buku rekening (PDF atau gambar)', surat_kuasa: 'Pindaian atau Word'
 };
 /** The two buttons of each item: the green one is the right answer, the grey one the wrong one (asks for a note). */
@@ -27,9 +27,9 @@ export const DECISION_LABEL: Record<Kind, { ok: string; bad: string; none?: stri
 export const LOOK_AT: Record<Kind, string[]> = {
   sk: ['Baris kampus ini di Lampiran I: nama, tahun program, nilai bantuan', 'Nilai yang dimuat sama dengan yang tercetak di SK'],
   pks: ['Nama kampus, tahun program, pihak kedua dan jabatannya', 'Nilai bantuan dan terbilang pada pasal Bantuan Dana sama dengan SK', 'Pasal Termin 1 dan Termin 2 masih standar, atau perubahan kampus diterima', 'Semua halaman terbaca, tidak ada sorotan kuning, logo dan kop ada', 'Penandatangan pihak kedua satu orang'],
-  rab_penuh: ['Seluruh anggaran program, satu baris untuk satu barang atau jasa', 'RAB 100% sama dengan Nilai SK', 'Baris kegiatan masuk akal dan mengikuti format DEB', 'Nomor baris sama dengan lembar RAB 70% dan RAB 30%'],
-  rab: ['Bagian tiap baris yang dicairkan di Tahap 1', 'RAB 70% tidak melebihi Batas Tahap 1', 'Total di berkas sama dengan RAB terkelola', 'Nama koordinator dan mentor di kolom tanda tangan berkas asli'],
-  rab_tahap2: ['Bagian tiap baris yang dicairkan di Tahap 2', 'RAB 70% + RAB 30% sama dengan RAB 100% pada tiap baris', 'RAB 30% sama dengan sisa Nilai SK setelah Tahap 1'],
+  rab_penuh: ['Seluruh anggaran program, satu baris untuk satu barang atau jasa', 'RAB 100% sama dengan Nilai SK', 'Baris kegiatan masuk akal dan mengikuti format DEB', 'Nomor baris sama dengan lembar RAB Termin 1 dan RAB Termin 2'],
+  rab: ['Bagian tiap baris yang dicairkan di Tahap 1', 'RAB Termin 1 tidak melebihi Batas Tahap 1', 'Total di berkas sama dengan RAB terkelola', 'Nama koordinator dan mentor di kolom tanda tangan berkas asli'],
+  rab_tahap2: ['Bagian tiap baris yang dicairkan di Tahap 2', 'RAB Termin 1 + RAB Termin 2 sama dengan RAB 100% pada tiap baris', 'RAB Termin 2 sama dengan sisa Nilai SK setelah Tahap 1'],
   permohonan: ['Kop surat kampus, nomor dan tanggal surat', 'Ditujukan ke Pertamina Foundation, menyebut program dan tahun', 'Nominal dan terbilang Termin 1 saja, tidak ada halaman Termin 2', 'Penandatangan adalah pihak kedua PKS, tanpa tanda tangan tambahan'],
   kuitansi: ['Kop, nomor dan tanggal kuitansi', '"Telah terima dari" Pertamina Foundation, keterangan Termin 1 program DEB', 'Jumlah uang dan terbilang sama', 'Tempat meterai dan tanda tangan pihak kedua ada, tanpa sorotan kuning'],
   invois: ['Kop, nomor dan tanggal invois', 'Nominal Termin 1 saja', 'Nama bank, nomor rekening dan nama pemilik tertulis dan sama dengan buku rekening', 'Penandatangan pihak kedua'],
@@ -61,7 +61,7 @@ export type ItemState = Status;
 export const ITEM_STATE_LABEL: Record<ItemState, string> = { ...STATUS_LABEL, tidak_perlu: 'Tanpa surat kuasa' };
 export const isDone = (state: ItemState) => state === 'sesuai' || state === 'tidak_perlu';
 /** Short names used inside phrases: "Masih 2 yang perlu dilengkapi: surat kuasa dan buku rekening." */
-export const ITEM_NAME: Record<Kind, string> = { sk: 'nilai SK', pks: 'draft PKS', rab_penuh: 'RAB 100%', rab: 'RAB 70%', rab_tahap2: 'RAB 30%', permohonan: 'surat permohonan', kuitansi: 'kuitansi', invois: 'invois', rekening: 'buku rekening', surat_kuasa: 'surat kuasa' };
+export const ITEM_NAME: Record<Kind, string> = { sk: 'nilai SK', pks: 'draft PKS', rab_penuh: 'RAB 100%', rab: 'RAB Termin 1', rab_tahap2: 'RAB Termin 2', permohonan: 'surat permohonan', kuitansi: 'kuitansi', invois: 'invois', rekening: 'buku rekening', surat_kuasa: 'surat kuasa' };
 /** Rail word per state: short, for the list on the left. */
 export const RAIL_WORD: Record<ItemState, string> = { sesuai: 'Sesuai', tidak_perlu: 'Tanpa', perlu_konfirmasi: 'Periksa', menunggu_review: 'Periksa', perlu_revisi: 'Revisi', belum_ada: 'Belum' };
 
@@ -127,7 +127,7 @@ export const FIELDS: Record<Kind, { key: string; label: string; type: 'text' | '
     { key: 'tanggalPerjanjian', label: 'Tanggal perjanjian', type: 'date' }, { key: 'penandatangan', label: 'Pejabat penandatangan dan jabatan', type: 'text' }, { key: 'nilaiBantuanSen', label: 'Nilai bantuan', type: 'money' }
   ],
   rab_penuh: [],
-  rab: [{ key: 'termin1Sen', label: 'Total RAB 70% di berkas', type: 'money' }],
+  rab: [{ key: 'termin1Sen', label: 'Total RAB Termin 1 di berkas', type: 'money' }],
   rab_tahap2: [],
   permohonan: [{ key: 'nomorSurat', label: 'Nomor surat', type: 'text' }, { key: 'tanggalSurat', label: 'Tanggal surat', type: 'date' }, { key: 'nominalSen', label: 'Nominal Termin 1', type: 'money' }, { key: 'penandatangan', label: 'Penandatangan', type: 'text' }],
   invois: [{ key: 'nomorInvois', label: 'Nomor invois', type: 'text' }, { key: 'tanggal', label: 'Tanggal', type: 'date' }, { key: 'nominalSen', label: 'Nominal', type: 'money' }, { key: 'namaBank', label: 'Nama bank di invois', type: 'text' }, { key: 'rekeningTujuan', label: 'Nomor rekening di invois', type: 'text' }, { key: 'namaPemilik', label: 'Nama pemilik rekening di invois', type: 'names' }],

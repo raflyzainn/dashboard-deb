@@ -29,7 +29,7 @@
    * mode campus: the same screen read only, with an upload button where a file is needed.
    */
   type Row = Kind | 'program' | 'administrasi' | 'penandatangan' | 'surat' | 'ringkasan' | 'ttd' | 'lampiran' | 'bayar' | 'edit_requests';
-  const CAMPUS_ROWS: {key:Row;label:string}[]=[{key:'sk',label:'SK'},{key:'program',label:'Data Program'},{key:'rab_penuh',label:'RAB 100%'},{key:'rab',label:'RAB 70%'},{key:'rab_tahap2',label:'RAB 30%'},{key:'administrasi',label:'Rekening Penerima'},{key:'penandatangan',label:'Penandatangan Kampus'},{key:'surat',label:'Identitas Surat dan Kop'},{key:'pks',label:'PKS'},{key:'ringkasan',label:'Dokumen'}];
+  const CAMPUS_ROWS: {key:Row;label:string}[]=[{key:'sk',label:'SK'},{key:'program',label:'Data Program'},{key:'rab_penuh',label:'RAB 100%'},{key:'rab',label:'RAB Termin 1'},{key:'rab_tahap2',label:'RAB Termin 2'},{key:'administrasi',label:'Rekening Penerima'},{key:'penandatangan',label:'Penandatangan Kampus'},{key:'surat',label:'Identitas Surat dan Kop'},{key:'pks',label:'PKS'},{key:'ringkasan',label:'Dokumen'}];
   const ADMINISTRATION_KEYS: Row[] = ['administrasi','penandatangan','surat','pks','ringkasan'];
   let administrationOpen = $state(false);
   const CLOSING: { key: Row; label: string }[] = [{ key: 'ttd', label: 'Tanda tangan' }, { key: 'lampiran', label: 'Lampiran' }, { key: 'bayar', label: 'Pembayaran' }];
@@ -79,8 +79,10 @@
   const base = $derived(admin ? `/admin/pencairan/${campusId}` : '/campus/pencairan');
   const belumAda = $derived(data ? KINDS.filter(k => data!.readiness.items[k] === 'belum_ada') : []);
   const perluRevisi = $derived(data ? KINDS.filter(k => data!.readiness.items[k] === 'perlu_revisi') : []);
+  const revisionLabels = $derived(campusJourney?.status==='revisi'?[...new Set(openRevisions(campusJourney).flatMap(request=>request.scopes.map(scope=>REVISION_SCOPES[scope].label)))]:perluRevisi.map(k=>KIND_SHORT[k]));
   const menungguPf = $derived(data ? KINDS.filter(k => ['menunggu_review', 'perlu_konfirmasi'].includes(data!.readiness.items[k])) : []);
   const campusJourney=$derived(fullDummy&&(data as any)?.journey);
+  const administrationRevisionOpen=$derived(openRevisions(campusJourney).some(request=>request.scopes.some(scope=>['administrasi','penandatangan','surat','pks'].includes(REVISION_SCOPES[scope].section))));
   const campusStages = $derived(campusJourney?['Isi pengajuan','Siapkan dokumen','Kirim pengajuan','Pemeriksaan PF','Tanda tangan','Pembayaran','Dana dibayar']:data?.disbursement.paidAt ? [...STAGES, 'Dana dibayar'] : [...STAGES]);
   const campusStage = $derived.by(()=>{
     if(data?.disbursement.paidAt)return campusStages.length;
@@ -145,7 +147,7 @@
   const isItem = $derived((KINDS as readonly string[]).includes(selected));
   const kind = $derived<Kind>(isItem ? (selected as Kind) : 'sk');
   const doc = $derived(data?.documents.find(d => d.kind === kind) || null);
-  /** The three RAB items share one workbook and one typed total, kept on the RAB 70% slot. */
+  /** The three RAB items share one workbook and one typed total, kept on the RAB Termin 1 slot. */
   const isRab = $derived(isRabKind(kind));
   const fileKind = $derived<Kind>(isRab ? 'rab' : kind);
   const fileDoc = $derived(isRab ? data?.documents.find(d => d.kind === 'rab') || null : doc);
@@ -369,7 +371,7 @@
         {#if data.disbursement.paidAt&&import.meta.env.MODE!=='mockup'}<BuktiTransfer {campusId} {data}/>{/if}
         <div class="flex flex-wrap items-center justify-between gap-2"><h2 class="font-bold text-slate-900">Progres Tahap 1 · {data.readiness.done} dari {data.readiness.total} selesai</h2><button type="button" class="font-semibold text-[#0066B2] disabled:opacity-50" disabled={busy} onclick={load}>Perbarui status</button></div>
         {#if belumAda.length}<p><strong class="text-slate-900">{fullDummy && data.rab ? 'Belum diajukan' : 'Belum ada'} ({belumAda.length}):</strong> {belumAda.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
-        {#if perluRevisi.length}<p><strong class="text-amber-900">Perlu revisi ({perluRevisi.length}):</strong> {perluRevisi.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
+        {#if revisionLabels.length}<p><strong class="text-amber-900">Perlu revisi ({revisionLabels.length}):</strong> {revisionLabels.join(', ')}.</p>{/if}
         {#if menungguPf.length}<p><strong class="text-[#015a9a]">Menunggu PF ({menungguPf.length}):</strong> {menungguPf.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
         {#if data.readiness.missing.length === 0}<p>{data.readiness.phrase}</p>{/if}
         <p class="text-xs text-slate-500">{data.disbursement.paidAt?'Pembayaran Tahap 1 sudah tercatat. Proses pencairan Tahap 1 selesai.':fullDummy && (data as any).journey ? (data as any).journey.status==='menunggu' ? 'Pengajuan telah dikirim. Tunggu hasil pemeriksaan PF.' : (data as any).journey.status==='selesai' ? campusStage===6?'Pindaian bertanda tangan tersimpan. Menunggu penerimaan dokumen asli, lampiran, dan pembayaran oleh PF.':'Pengajuan disetujui. Unggah empat dokumen bertanda tangan.' : 'Lengkapi data program, RAB, rekening penerima, penandatangan, identitas surat dan kop, lalu PKS. Pengajuan dikirim sekali setelah semuanya siap.' : fullDummy ? !data.rab ? 'Mulai dengan satu file RAB 100%. Pembagian kedua tahap dilakukan di aplikasi.' : data.rab.status === 'menunggu' ? 'RAB telah dikirim. Tunggu keputusan PF; pembagian terkunci selama pemeriksaan.' : data.rab.status === 'disetujui' ? 'RAB telah disetujui. Pantau langkah pencairan berikutnya.' : 'Draf RAB belum diajukan. Lengkapi pembagian, periksa kedua tahap, lalu kirim seluruh RAB ke PF.' : 'Pilih dokumen untuk melihat berkas dan catatan pemeriksa. SK dan RAB hanya dapat dilihat; unggah RAB belum dibuka.'}</p>
@@ -421,7 +423,7 @@
          {/each}
          <div class="min-w-0 w-[220px] shrink-0 self-start lg:w-auto lg:self-auto">
           <button type="button" class="flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] {ADMINISTRATION_KEYS.includes(selected)?'bg-white font-bold text-slate-900 shadow-[0_4px_12px_#0b254514]':'text-slate-700 hover:bg-white/70'}" aria-expanded={administrationOpen} aria-controls={'administration-menu-'+campusId} onclick={()=>administrationOpen=!administrationOpen}>
-           <i class="size-2.5 shrink-0 rounded-full bg-[#2868ad]" aria-hidden="true"></i><span>Administrasi</span><span class="ml-auto text-[11px] font-medium text-slate-500">{campusJourney?.status==='menunggu'?'':campusJourney?.status==='selesai'?'Sesuai':campusJourney?.status==='revisi'?'Revisi':'Draf'}</span><span class="shrink-0 text-slate-500" aria-hidden="true"><Icon name={administrationOpen?'down':'chevron'} size={12}/></span>
+           <i class="size-2.5 shrink-0 rounded-full bg-[#2868ad]" aria-hidden="true"></i><span>Administrasi</span><span class="ml-auto text-[11px] font-medium text-slate-500">{campusJourney?.status==='menunggu'?'':campusJourney?.status==='selesai'?'Sesuai':campusJourney?.status==='revisi'?administrationRevisionOpen?'Revisi':'Hanya lihat':'Draf'}</span><span class="shrink-0 text-slate-500" aria-hidden="true"><Icon name={administrationOpen?'down':'chevron'} size={12}/></span>
           </button>
           <div id={'administration-menu-'+campusId} hidden={!administrationOpen}>
            <div class="administration-submenu ml-[17px] mt-1 grid min-w-0 gap-0.5 border-l border-[#0b2545]/15 pl-3" role="group" aria-label="Administrasi">
@@ -474,7 +476,7 @@
             <button type="button" class="rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold {rabTab === 'digital' ? 'bg-[#0066B2] text-white' : 'border border-slate-200 bg-white text-slate-600'}" onclick={() => (rabTab = 'digital')}>RAB terkelola</button>
 {#if !fullDummy}            <button type="button" class="rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold {rabTab === 'asli' ? 'bg-[#0066B2] text-white' : 'border border-slate-200 bg-white text-slate-600'}" onclick={() => (rabTab = 'asli')}>Berkas asli{fileDoc?.versions.length ? '' : ' (belum ada)'}</button>{/if}
             {#if admin && !fullDummy}
-              <label class="cursor-pointer rounded-full border border-dashed border-slate-300 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-[#0066B2] hover:border-[#0066B2]" title="Excel tiga lembar dari templat: RAB 100%, RAB 70%, RAB 30%. Menjadi versi RAB berikutnya.">Impor Excel<input type="file" class="sr-only" accept=".xlsx,.xlsm,.xls" onchange={(e) => importRab((e.currentTarget as HTMLInputElement).files?.[0] || null)} /></label>
+              <label class="cursor-pointer rounded-full border border-dashed border-slate-300 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-[#0066B2] hover:border-[#0066B2]" title="Excel tiga lembar dari templat: RAB 100%, RAB Termin 1, RAB Termin 2. Menjadi versi RAB berikutnya.">Impor Excel<input type="file" class="sr-only" accept=".xlsx,.xlsm,.xls" onchange={(e) => importRab((e.currentTarget as HTMLInputElement).files?.[0] || null)} /></label>
               <button type="button" class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300 disabled:opacity-50" disabled={busy} onclick={exportRab}>Ekspor Excel</button>
               <a class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300" href="/templat/RAB_DEB.xlsx" download>Templat</a>
             {/if}
@@ -560,7 +562,7 @@
                 {#if bukti.r100 || bukti.r70 || bukti.r30}
                   <div class="mb-3 rounded-xl border border-slate-200/70 bg-slate-50 px-3 py-2">
                     <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px]"><span class="font-bold uppercase tracking-[0.05em] text-slate-500">Bukti di berkas kampus</span>
-                      {#each [['RAB 100%', bukti.r100], ['RAB 70%', bukti.r70], ['RAB 30%', bukti.r30]] as [label, mark]}
+                      {#each [['RAB 100%', bukti.r100], ['RAB Termin 1', bukti.r70], ['RAB Termin 2', bukti.r30]] as [label, mark]}
                         <span class="rounded-full px-2 py-0.5 font-semibold {mark === 'ada' ? 'bg-green-100 text-green-900' : mark === 'tidak' ? 'bg-slate-200 text-slate-600' : 'bg-white text-slate-400'}">{label} {mark === 'ada' ? 'ada' : mark === 'tidak' ? 'tidak ada' : 'belum diperiksa'}</span>
                       {/each}
                     </p>
@@ -574,7 +576,7 @@
                 {/if}
               </div>
             {:else if version}
-              <FileViewer src={fileUrl} mime={version.mime} name={version.originalName} height={docHeight} />
+              <FileViewer src={fileUrl} pdf={version.origin === 'generated' && version.mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'} mime={version.mime} name={version.originalName} height={docHeight} />
             {:else}
               <div class="flex h-full flex-col items-center justify-center gap-2 text-sm text-slate-600"><Icon name="upload" size={26} /><span>Belum ada berkas.</span>{#if canUpload}<span class="text-xs text-slate-500">{admin ? 'Pilih "+ versi baru" di atas.' : 'Gunakan formulir unggah di atas.'}</span>{/if}</div>
             {/if}
@@ -627,8 +629,8 @@
               <dl class="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm tabular-nums lg:grid-cols-4" aria-label="Ringkasan nilai sebelum keputusan">
                 <div class="rounded-lg p-2"><dt class="text-xs text-slate-500">Nilai SK</dt><dd class="mt-1 font-bold text-slate-900">{formatSen(data.summary.amountSen)}</dd></div>
                 <div class="rounded-lg p-2 {kind === 'rab_penuh' ? 'bg-blue-100 ring-1 ring-blue-200' : ''}"><dt class="text-xs text-slate-600">Total RAB 100%</dt><dd class="mt-1 font-bold text-slate-900">{formatSen(data.rab.totalSen)}</dd></div>
-                <div class="rounded-lg p-2 {kind === 'rab' ? 'bg-blue-100 ring-1 ring-blue-200' : ''}"><dt class="text-xs text-slate-600">Termin 1 - RAB 70%</dt><dd class="mt-1 font-bold text-slate-900">{formatSen(data.rab.term1Sen)}</dd><dd class="mt-1 text-xs text-slate-500">Batas {formatSen(data.summary.limitSen)}</dd></div>
-                <div class="rounded-lg p-2 {kind === 'rab_tahap2' ? 'bg-blue-100 ring-1 ring-blue-200' : ''}"><dt class="text-xs text-slate-600">Termin 2 - RAB 30%</dt><dd class="mt-1 font-bold text-slate-900">{formatSen(data.rab.term2Sen ?? data.rab.totalSen - data.rab.term1Sen)}</dd><dd class="mt-1 text-xs text-slate-500">Sisa alokasi dari RAB 100%</dd></div>
+                <div class="rounded-lg p-2 {kind === 'rab' ? 'bg-blue-100 ring-1 ring-blue-200' : ''}"><dt class="text-xs text-slate-600">Termin 1 - RAB Termin 1</dt><dd class="mt-1 font-bold text-slate-900">{formatSen(data.rab.term1Sen)}</dd><dd class="mt-1 text-xs text-slate-500">Batas {formatSen(data.summary.limitSen)}</dd></div>
+                <div class="rounded-lg p-2 {kind === 'rab_tahap2' ? 'bg-blue-100 ring-1 ring-blue-200' : ''}"><dt class="text-xs text-slate-600">Termin 2 - RAB Termin 2</dt><dd class="mt-1 font-bold text-slate-900">{formatSen(data.rab.term2Sen ?? data.rab.totalSen - data.rab.term1Sen)}</dd><dd class="mt-1 text-xs text-slate-500">Sisa alokasi dari RAB 100%</dd></div>
               </dl>
             {/if}
             {#if rabApprovalWarning}<p class="mb-3 text-sm font-semibold text-red-700" role="alert">{rabApprovalWarning}</p>{/if}
