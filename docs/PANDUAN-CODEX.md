@@ -1,5 +1,15 @@
 # Panduan proyek untuk Codex
 
+## Beranda dan breadcrumb kampus, 7 Oktober 2026
+
+Beranda memakai dua kartu dengan jarak lebih ringkas agar alur pengajuan baru
+muat pada satu layar desktop. Konten tetap boleh menggulir pada layar sempit
+atau bila daftar tugas lebih panjang; jangan memotongnya dengan overflow hidden.
+Halaman kampus selain Beranda menampilkan breadcrumb **Ruang kerja / Beranda /
+nama halaman**. Tautan Beranda menuju `/campus/dashboard`; halaman aktif ditandai
+`aria-current="page"`. Menu akun tetap tersedia.
+Hasil pemeriksaan: [QA Beranda dan breadcrumb](pencairan-deb/QA-BERANDA-BREADCRUMB-2026-10-07.md).
+
 ## Build wajib sebelum push atau PR/MR — 5 Oktober 2026
 
 Setiap permintaan pengguna untuk push atau membuat PR/MR sekaligus mengizinkan

@@ -170,10 +170,15 @@
         aria-label="Buka navigasi"
         aria-expanded={mobile}
         onclick={openDrawer}><Icon name="menu" /></button
-      ><span
+      ><nav
+        aria-label="Breadcrumb"
         class="text-[13px] text-[#64748b] [&_span]:text-[#94a3b8] [&_span]:mx-[10px] [&_span]:my-[0px] [&_strong]:font-[500] [&_strong]:text-[#1e477f] max-[700.01px]:text-[12px] max-[700.01px]:[&_span]:mx-[5px] max-[700.01px]:[&_span]:my-[0px] breadcrumb"
-        >Ruang kerja <span>/</span>
-        <strong class="font-[600]">{app.session?.role === 'campus' && section === 'pencairan' ? 'Pencairan Dana' : labels[section] || 'Detail'}</strong></span
+        >Ruang kerja <span aria-hidden="true">/</span>
+        {#if campus && section !== 'dashboard'}
+          <a href="/campus/dashboard" class="rounded text-[#0066B2] hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500" onclick={() => (accountMenu = false)}>Beranda</a>
+          <span aria-hidden="true">/</span>
+        {/if}
+        <strong class="font-[600]" aria-current="page">{campus && section === 'pencairan' ? 'Pencairan Dana' : labels[section] || 'Detail'}</strong></nav
       >
     </div>
     <div
@@ -290,6 +295,7 @@
   </header>
   <main
     id="main-content"
+    style:padding-block={campus && section === 'dashboard' ? '16px' : undefined}
     class="pt-[32px] pb-[36px] max-w-[1640px] w-[100%] grow shrink [flex-basis:0%] [background-image:initial] [background-color:transparent] px-[36px] mx-[auto] my-[0px] max-[1200.01px]:px-[24px] max-[1200.01px]:py-[27px] max-[900.01px]:px-[20px] max-[900.01px]:py-[24px] max-[700.01px]:px-[16px] max-[700.01px]:py-[25px] content"
   >
     {#if false}
