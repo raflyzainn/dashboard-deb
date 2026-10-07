@@ -1,5 +1,12 @@
 # Panduan proyek untuk Codex
 
+Label Email dan Kata sandi pada login memakai `.field-caption`, sehingga tanda
+wajib `*` mengikuti teks label di kiri. QA tool Playwright pada 7 Oktober 2026
+memastikan penanda tidak lagi berada di ujung kanan, atribut `required` tetap
+aktif, dan tidak ada overflow horizontal pada lebar 1366 serta 390 px.
+Build sebelum push berhasil (exit 0, mode mockup, adapter-static), dengan warning
+ukuran chunk lebih dari 500 kB. Test suite, check, dan lint tidak dijalankan.
+
 ## Beranda dan breadcrumb kampus, 7 Oktober 2026
 
 Beranda memakai dua kartu dengan jarak lebih ringkas agar alur pengajuan baru

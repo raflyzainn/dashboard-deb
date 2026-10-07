@@ -100,11 +100,11 @@
 
       <form class="grid gap-4" onsubmit={submit} novalidate>
         <label class="grid gap-1.5 text-sm font-medium text-slate-700">
-          Email
+          <span class="field-caption">Email</span>
           <input class="min-h-[44px] rounded-xl border border-slate-300 px-3 text-[15px] text-slate-900 outline-none focus:border-[#0066B2] focus:ring-2 focus:ring-blue-100" type="email" name="email" autocomplete="username" bind:value={email} required />
         </label>
         <label class="grid gap-1.5 text-sm font-medium text-slate-700">
-          Kata sandi
+          <span class="field-caption">Kata sandi</span>
           <span class="relative flex">
             <input class="min-h-[44px] w-full rounded-xl border border-slate-300 px-3 pr-11 text-[15px] text-slate-900 outline-none focus:border-[#0066B2] focus:ring-2 focus:ring-blue-100" type={showPassword ? 'text' : 'password'} name="password" autocomplete="current-password" bind:value={password} required />
             <button type="button" class="absolute right-1 top-1 flex size-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100" onclick={() => (showPassword = !showPassword)} aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}><Icon name="eye" size={16} /></button>
