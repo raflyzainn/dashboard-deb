@@ -1,4 +1,4 @@
-import { BUDGET, LIMIT, validQuantity } from '../../../mockups/rab/model';
+import { validQuantity } from './rab-model';
 import { buildMergeData, missingFor, templateTags, MERGE_KINDS, type MergeKind } from '../merge';
 import { LOCATION_FIELDS, programLocationErrors } from './location';
 import { canRevise, openRevisions, revisionPending, type RevisionRequest, type EditRequest } from './revisions';
@@ -67,15 +67,16 @@ export function pfNumberForDocument(journey:Pick<Journey,'pf'>):string {
 export function mergeInput(c: any, r: any, settings: any) {
  const f = ensureJourney(c,r).fields;
  return {campus:{...c, code:c.acronym || c.id, program:{...c.program, address:f.alamat,village:f.desa,district:f.kecamatan,regency:f.kabupaten,...(f.lokasiProvinsiId?{province:f.lokasiProvinsi,postalCode:f.lokasiKodePos}:{}),mentor:f.mentor,coordinator:f.koordinator}},
-  award:{skNumber:'SK-DUMMY/2026/'+c.id,skDate:'2026-06-01',amountSen:BUDGET,...c.award,programTitle:f.judulProgram,programYear:c.programYear}, settings,
+  award:{...c.award,programTitle:f.judulProgram,programYear:c.programYear}, settings,
   disbursement:{requestedSen:r.versions.at(-1)?.term1Sen || 0,properties:{...f,nomorPksPf:pfNumberForDocument(r.journey)}},
   rekening:{namaBank:f.namaBank,nomorRekening:f.nomorRekening,namaPemilik:[f.namaPemilik]}};
 }
 export const settingsSource=(settings:any)=>JSON.stringify(['pfSignatoryName','pfSignatoryTitle','agreementStart','agreementEnd','reportDeadline'].map(k=>settings?.[k]||''));
 export function validateJourney(c:any,r:any,settings:any,tags:Record<MergeKind,string[]>) {
- const j=ensureJourney(c,r),v=r.versions.at(-1),f=j.fields,BUDGET=c.award?.amountSen??2000000000,LIMIT=Math.floor(BUDGET*0.7);
+ const j=ensureJourney(c,r),v=r.versions.at(-1),f=j.fields,BUDGET=c.award?.amountSen??0,LIMIT=Math.floor(BUDGET*0.7);
  const missing=Object.fromEntries(MERGE_KINDS.map(k=>[k,missingFor(tags[k],buildMergeData(mergeInput(c,r,settings)))]));
  const blockers:{section:Section;text:string}[]=[];
+ if(!Number.isSafeInteger(BUDGET)||BUDGET<=0||!c.award?.skNumber)blockers.push({section:'sk',text:'Nilai dan nomor SK belum tersedia di PocketBase.'});
  const warned=new Set<string>();
  const warn=(section:Section,key:string,text:string)=>{if(!warned.has(key)){warned.add(key);blockers.push({section,text});}};
  const require=(section:Section,key:string,label:string)=>{if(!f[key]?.trim())warn(section,key,label+' belum diisi.');};
@@ -116,13 +117,14 @@ export function validateJourney(c:any,r:any,settings:any,tags:Record<MergeKind,s
  return {missing,blockers};
 }
 export function journeyView(c:any,r:any,settings:any,templates:Record<MergeKind,Uint8Array>) {
- const j=ensureJourney(c,r),v=r.versions.at(-1),BUDGET=c.award?.amountSen??2000000000,LIMIT=Math.floor(BUDGET*0.7);
+ const j=ensureJourney(c,r),v=r.versions.at(-1),BUDGET=c.award?.amountSen??0,LIMIT=Math.floor(BUDGET*0.7);
  const tags=Object.fromEntries(MERGE_KINDS.map(k=>[k,templateTags(templates[k])])) as Record<MergeKind,string[]>;
  const {missing,blockers}=validateJourney(c,r,settings,tags);
  const validation={campus:{id:c.id,name:c.name,acronym:c.acronym,programYear:c.programYear,award:c.award},settings,tags,
   version:v?{totalSen:v.totalSen,term1Sen:v.term1Sen,term2Sen:v.term2Sen,campusStep:v.campusStep,lines:v.lines.map((l:any)=>({level:l.level,volume:l.volume,flags:{term1Volume:l.flags?.term1Volume}}))}:null};
  const stale=MERGE_KINDS.filter(k=>{const d=r.documents.find((d:any)=>d.kind===k);return !d?.versions.some((v:any)=>(v.id===d.currentVersionId||j.status==='selesai'&&d.signedReceived)&&v.origin==='generated'&&v.journeyRevision===j.documentRevisions![k]&&(j.status==='selesai'||v.generation?.settingsSource===settingsSource(settings)));});
- return {validation,journey:j,pf:{nomorPksPf:pfNumber(j),name:settings.pfSignatoryName,title:settings.pfSignatoryTitle},campus:{id:c.id,name:c.name},summary:{amountSen:BUDGET,limitSen:LIMIT,skNumber:c.award?.skNumber||'SK-DUMMY/2026/'+c.id},rab:v?{id:v.id,number:v.number,totalSen:v.totalSen,term1Sen:v.term1Sen,term2Sen:v.term2Sen,status:v.status}:null,missing,blockers,stale,
+ return {validation,journey:j,pf:{nomorPksPf:pfNumber(j),name:settings.pfSignatoryName,title:settings.pfSignatoryTitle},campus:{id:c.id,name:c.name},summary:{amountSen:BUDGET,limitSen:LIMIT,skNumber:c.award?.skNumber||''},rab:v?{id:v.id,number:v.number,totalSen:v.totalSen,term1Sen:v.term1Sen,term2Sen:v.term2Sen,status:v.status}:null,missing,blockers,stale,
+  pendingRevisionScopes:[...new Set(openRevisions(j).flatMap(request=>revisionPending(r,request)).filter(scope=>scope!=='dokumen'))],
   revisionBlockers:[...new Set([...openRevisions(j).filter(request=>revisionPending(r,request).length).map(request=>request.kind),...r.documents.filter((d:any)=>d.status==='perlu_revisi'&&!(d.kind==='surat_kuasa'&&j.fields.jenisRekening==='kampus')&&!openRevisions(j).some(request=>request.kind===d.kind||request.scopes.includes('rab')&&['rab_penuh','rab','rab_tahap2'].includes(d.kind))).map((d:any)=>d.kind)])],
   documents:r.documents.map((d:any)=>({kind:d.kind,status:d.status,signedReceived:d.signedReceived,notes:d.reviews.filter((n:any)=>n.decision==='perlu_revisi'),versions:d.versions})),paid:!!r.payment.paidAt};
 }

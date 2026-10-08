@@ -19,7 +19,7 @@ Kewajiban membaca berlaku pada setiap chat baru, bukan mengulang seluruh dokumen
 - **Jangan push atau membuat PR/MR sebelum pengguna menyuruh secara eksplisit.** Selesai implementasi atau QA bukan izin publikasi.
 - **Setiap pengguna meminta push atau PR/MR, wajib jalankan `npm run build` terlebih dahulu.** Permintaan tersebut sekaligus mengizinkan build terminal. Build harus berhasil (exit 0) pada kode yang akan dikirim sebelum push atau membuat PR/MR; jika gagal, perbaiki dan ulangi build. Catat hasil dan warning yang relevan dalam deskripsi PR/MR. Jangan melanjutkan publikasi jika build belum berhasil.
 - Jangan melakukan merge, deploy, atau perubahan remote tanpa instruksi pengguna.
-- **Jangan mengubah branch `production`, deployment, konfigurasi, database, atau layanan production sebelum pengguna menyuruh secara eksplisit.** Izin membuat PR, push, atau QA ke `development` tidak mencakup production. `development` dipakai untuk dummy; koneksi layanan aktif berada pada `production`.
+- **Jangan mengubah branch `production`, deployment, konfigurasi, database, atau layanan production sebelum pengguna menyuruh secara eksplisit.** Izin membuat PR, push, atau QA ke `development` tidak mencakup production. Sejak arahan 7 Oktober 2026, kode kerja menggunakan PocketBase tanpa mode dummy; QA tetap memakai instance lokal melalui `npm run dev` atau `npm run dev:local`.
 - Kerjakan perubahan secara lokal. Pertahankan perubahan pengguna dan berkas yang tidak terkait. Jangan otomatis commit kecuali diminta.
 
 ## Pengujian

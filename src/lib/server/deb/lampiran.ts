@@ -5,11 +5,13 @@ import { KIND_SHORT, formatSen, formatPercent, percentOf, type Kind, type Status
 import { MAX_LEVEL, formatVolume, type RabLine } from '../../rab';
 import { qrMatrix, type QrMatrix } from '../../qr';
 import { PreviewError } from './preview-error';
-import { writeAudit, type AuditActor } from './audit';
-import { workspace, updateDisbursement, context, TERM, type DocumentInfo } from './pencairan';
+import { auditData, type AuditActor } from './audit';
+import { workspace, context, TERM, type DocumentInfo } from './pencairan';
+import { atomic, StoreRecord } from './rest-store';
+import { payoutReads, assertPayoutEditable, assertRevision } from './pencairan-store';
 import { listVersions, versionLines } from './rab';
 import { extensionOf, type Storage } from './r2';
-import { mintCode, createVerification, verificationUrl, verificationLine, SAMPLE_CODE, ISSUER_LINE } from './verifikasi';
+import { mintCode, verificationUrl, verificationLine, SAMPLE_CODE, ISSUER_LINE } from './verifikasi';
 
 /**
  * Lampiran pencairan Tahap 1: one PDF per campus in the order of the review sheet (lembar 2). Sources are the signed scans of the
@@ -64,7 +66,7 @@ export interface LampiranView {
 
 type Workspace = Awaited<ReturnType<typeof workspace>>;
 interface ApprovedRab { id: string; number: number; totalSen: number; term1Sen: number; approvedByName: string; approvedAt: string; created: string }
-interface Plan { ws: Workspace; view: LampiranView; rows: Map<string, RecordModel>; rab: ApprovedRab | null }
+interface Plan { ws: Workspace; view: LampiranView; rows: Map<string, RecordModel>; rab: ApprovedRab | null; rabLines: RabLine[] }
 
 /** The checklist readiness from the workspace when the payload carries it; otherwise every item must be Sesuai and the surat kuasa is required. */
 function readinessOf(ws: Workspace): Readiness {
@@ -100,7 +102,7 @@ async function inspect(pb: PocketBase, campusId: string): Promise<Plan> {
   const ws = await workspace(pb, campusId);
   const rd = readinessOf(ws);
   const docs = ORDER.map(kind => ws.documents.find(d => d.kind === kind)!);
-  const rowList = await pb.collection('document_versions').getFullList({ filter: docs.map(d => pb.filter('document = {:id}', { id: d.id })).join(' || '), fields: 'id,document,number,originalName,mime,r2Key,signed,created', sort: 'number', ...opts });
+  const rowList = await pb.collection('document_versions').getFullList({ filter: docs.map(d => pb.filter('document = {:id}', { id: d.id })).join(' || '), fields: 'id,document,number,originalName,mime,r2Key,signed,created,origin,generation', sort: 'number', ...opts });
   const rows = new Map(rowList.map(r => [r.id, r]));
   const rabVersions = await listVersions(pb, campusId, ws.rab?.id || '');
   const approved = rabVersions.find(v => v.id === ws.rab?.id && v.status === 'disetujui') || null;
@@ -115,8 +117,11 @@ async function inspect(pb: PocketBase, campusId: string): Promise<Plan> {
     }
     const mine = rowList.filter(r => r.document === doc.id);
     if (SIGNED.includes(kind)) {
-      const signed = [...mine].reverse().find(r => r.signed);
+      const signed = mine.find(r => r.id === doc.currentVersionId && r.signed);
       if (!signed) return { ...base, blocker: 'Pindaian bertanda tangan belum diunggah di halaman Tanda tangan basah' };
+      const generated = [...mine].reverse().find(r => r.origin === 'generated');
+      if(!doc.signedReceived||generated&&Number(signed.number)<Number(generated.number))return {...base,blocker:'Pindaian bertanda tangan bukan versi dokumen terbaru'};
+      if(signed.generation?.sourceVersionId&&signed.generation.sourceVersionId!==generated?.id)return {...base,blocker:'Dokumen sumber tanda tangan telah diganti'};
       if (!partType(signed.originalName || '', signed.mime || '')) return { ...base, version: toVersion(signed), blocker: 'Unggah pindaian bertanda tangan dalam PDF atau gambar' };
       const mark = sesuaiMark(doc, signed.id);
       return { ...base, ready: true, version: toVersion(signed), state: `Versi ${signed.number}, pindaian bertanda tangan`, checkedByName: mark.name, checkedAt: mark.at, checkedVersion: mark.version };
@@ -124,7 +129,7 @@ async function inspect(pb: PocketBase, campusId: string): Promise<Plan> {
     if (kind === 'surat_kuasa' && rd.suratKuasaSkipped) return { ...base, skipped: true, ready: true, state: 'Tanpa surat kuasa' };
     const noun = kind === 'rekening' ? 'buku rekening' : 'surat kuasa';
     if (doc.status !== 'sesuai') return { ...base, blocker: 'Belum ditandai Sesuai di kartu pemeriksaan' };
-    const scan = [...mine].reverse().find(r => partType(r.originalName || '', r.mime || ''));
+    const scan = mine.find(r => r.id === doc.currentVersionId && partType(r.originalName || '', r.mime || ''));
     if (!scan) return { ...base, blocker: `Unggah pindaian ${noun} dalam PDF atau gambar` };
     const mark = sesuaiMark(doc, scan.id);
     return { ...base, ready: true, version: toVersion(scan), state: `Versi ${scan.number}, pindaian`, checkedByName: mark.name, checkedAt: mark.at, checkedVersion: mark.version };
@@ -141,7 +146,7 @@ async function inspect(pb: PocketBase, campusId: string): Promise<Plan> {
     stage: ws.disbursement.stage, entries, readiness: rd, blockers, ready, reason, attachments: await attachmentsOf(pb, ws.disbursement.id),
     payment: { requestedSen: ws.summary.requestedSen, paidSen: Number(paid.paidSen || 0), paidAt: paid.paidAt ? String(paid.paidAt).slice(0, 10) : '', paidRef: paid.paidRef || '', paidByName: paid.paidByName || '', paidNote: paid.paidNote || '' }
   };
-  return { ws, view, rows, rab };
+  return { ws, view, rows, rab, rabLines:rab?await versionLines(pb,rab.id):[] };
 }
 
 export async function readiness(pb: PocketBase, campusId: string): Promise<LampiranView> {
@@ -415,7 +420,7 @@ async function assemble(pb: PocketBase, store: Storage, settings: Record<string,
     const item = view.entries.flatMap(e => e.items).find(i => i.kind === kind)!;
     if (item.skipped) { skipped.push({ label: item.label, note: item.state }); composition.push({ kind, versionId: '', number: 0, originalName: '', note: item.state }); continue; }
     if (kind === 'rab') {
-      const lines = await versionLines(pb, rab!.id);
+      const lines = plan.rabLines;
       if (!lines.length) throw new PreviewError(400, 'RAB 70% belum berisi baris.');
       parts.push({ kind, label: item.label, number: rab!.number, originalName: item.version!.originalName, type: 'rab', rab: { number: rab!.number, lines, totalSen: rab!.totalSen, term1Sen: rab!.term1Sen, approvedByName: rab!.approvedByName, approvedAt: rab!.approvedAt }, checkedByName: item.checkedByName, checkedAt: item.checkedAt, checkedVersion: 0 });
       composition.push({ kind, versionId: rab!.id, number: rab!.number, originalName: item.version!.originalName });
@@ -445,26 +450,34 @@ export async function previewAttachment(pb: PocketBase, store: Storage, settings
 }
 
 /** Builds, stores and records the next attachment number with its hash and verification code. */
-export async function saveAttachment(pb: PocketBase, store: Storage, settings: Record<string, string>, actor: Actor, campusId: string) {
+export async function saveAttachment(pb: PocketBase, store: Storage, settings: Record<string, string>, actor: Actor, campusId: string, input:{expectedRevision?:number;operationId?:string}={}) {
+  if(!/^[a-z0-9]{15}$/.test(input.operationId||''))throw new PreviewError(400,'Identitas penyimpanan lampiran tidak valid. Muat ulang halaman.');
+  const existing=await pb.collection('attachments').getOne(input.operationId!,opts).catch((error:{status?:number})=>{if(error.status!==404)throw error;return null;});
+  if(existing){const owner=await pb.collection('disbursements').getOne(existing.disbursement,opts);if(owner.campus!==campusId)throw new PreviewError(409,'Identitas penyimpanan sudah dipakai.');return existing;}
   const plan = await inspect(pb, campusId);
   const { view, ws } = plan;
   const createdByName = actor.name || actor.email || 'Sistem';
   const code = await mintCode(pb, view.campus.code, TERM, 'lampiran');
-  const { bytes, pages, composition, createdAt } = await assemble(pb, store, settings, plan, createdByName, { code, watermark: '' });
-  const last = await pb.collection('attachments').getList(1, 1, { filter: pb.filter('disbursement = {:d}', { d: ws.disbursement.id }), sort: '-number', fields: 'number', ...opts });
-  const number = (last.items[0]?.number || 0) + 1;
-  const stamp = createdAt.toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
-  const key = `kampus/${view.campus.code}/termin-${TERM}/lampiran/v${number}_${stamp}.pdf`;
+  const { bytes, pages, composition } = await assemble(pb, store, settings, plan, createdByName, { code, watermark: '' });
+  const key = `kampus/${view.campus.code}/termin-${TERM}/lampiran/${crypto.randomUUID()}.pdf`;
   await store.put(key, bytes, 'application/pdf');
   const sha256 = await sha256Hex(bytes);
-  const record = await pb.collection('attachments').create({ disbursement: ws.disbursement.id, number, r2Key: key, size: bytes.byteLength, composition, createdBy: actor.id, createdByName, sha256, verification: code, pages }, opts);
-  await createVerification(pb, { code, campus: campusId, term: TERM, kind: 'lampiran', attachment: record.id, sha256, amountSen: view.summary.requestedSen, label: `Lampiran pencairan Termin 1 ${view.campus.name}`, issuedBy: actor.id, issuedByName: createdByName });
-  await writeAudit(pb, {
-    actor, action: `menyimpan lampiran Tahap 1 nomor ${number}`, context: context(campusId), collection: 'attachments', record: record.id, campus: campusId,
-    after: { nomor: number, halaman: pages, ukuran: `${Math.round(bytes.byteLength / 1024)} KB`, kode: code, sha256, sumber: composition.map(c => c.note ? `${KIND_SHORT[c.kind]} ${c.note.toLowerCase()}` : `${KIND_SHORT[c.kind]} v${c.number}`).join(', ') }
-  });
-  if (ws.disbursement.stage < LAMPIRAN_STAGE) await updateDisbursement(pb, actor, campusId, { stage: LAMPIRAN_STAGE });
-  return record;
+  // ponytail: failed transactions may leave an unreferenced immutable object; no visible partial archive.
+  return atomic(pb,async tx=>{
+    const retry=tx.records.get('attachments')!.find(row=>row.id===input.operationId);
+    if(retry)return retry.data as RecordModel;
+    const payment=assertPayoutEditable(tx);assertRevision(payment.data.revision,input.expectedRevision);
+    const latest=await inspect(pb,campusId);
+    const stamp=(p:Plan)=>JSON.stringify([p.ws.summary,p.ws.disbursement,p.ws.documents.map(d=>[d.id,d.currentVersionId,d.status,d.signedReceived,d.originalReceived]),p.view.entries,p.rabLines]);
+    if(!latest.view.ready||stamp(latest)!==stamp(plan))throw new PreviewError(409,'Sumber dokumen berubah saat lampiran dibuat. Muat ulang dan periksa pratinjau terbaru.');
+    const number=Math.max(0,...tx.records.get('attachments')!.map(row=>Number(row.data.number||0)))+1;
+    const record=new StoreRecord('attachments');record.id=input.operationId!;
+    Object.assign(record.data,{id:record.id,disbursement:ws.disbursement.id,number,r2Key:key,size:bytes.byteLength,composition,createdBy:actor.id,createdByName,sha256,verification:code,pages});tx.save(record);
+    const verification=new StoreRecord('verifications');Object.assign(verification.data,{code,campus:campusId,term:TERM,kind:'lampiran',attachment:record.id,documentVersion:'',sha256,amountSen:view.summary.requestedSen,label:`Lampiran pencairan Termin 1 ${view.campus.name}`,issuedBy:actor.id,issuedByName:createdByName});tx.save(verification);
+    const audit=new StoreRecord('audit');Object.assign(audit.data,auditData({actor,action:`menyimpan lampiran Tahap 1 nomor ${number}`,context:context(campusId),collection:'attachments',record:record.id,campus:campusId,after:{nomor:number,halaman:pages,ukuran:`${Math.round(bytes.byteLength/1024)} KB`,kode:code,sha256,sumber:composition.map(c=>c.note?`${KIND_SHORT[c.kind]} ${c.note.toLowerCase()}`:`${KIND_SHORT[c.kind]} v${c.number}`).join(', ')}}));tx.save(audit);
+    payment.set('stage',Math.max(LAMPIRAN_STAGE,Number(payment.data.stage||1)));payment.set('revision',Number(payment.data.revision||1)+1);tx.save(payment);
+    return record.data as RecordModel;
+  },payoutReads(pb,campusId));
 }
 
 export function previewResponse(bytes: Uint8Array) {

@@ -134,12 +134,24 @@ test('missing/invalid/out-of-map coordinates do not fabricate markers or lose ca
   assert.ok(mapCampuses(data).some(point => point.id === campus.id));
 });
 
-test('demo fixtures stay isolated from presentation components', async () => {
+test('runtime source has no seeded demo data', async () => {
   async function files(directory: string): Promise<string[]> {
     return (await Promise.all((await readdir(directory, { withFileTypes: true })).map(entry => entry.isDirectory() ? files(path.join(directory, entry.name)) : [path.join(directory, entry.name)]))).flat();
   }
-  for (const file of (await files('src')).filter(f => /\.(ts|svelte)$/.test(f) && !f.replaceAll('\\', '/').includes('/data/demo/'))) {
+  for (const file of (await files('src')).filter(f => /\.(ts|svelte)$/.test(f))) {
     const content = await readFile(file, 'utf8');
     assert.ok(!/createMockService|createSeed|fake-indexeddb|from ['"]dexie|scripts\/fixtures|DEMO_CAMPUS|['"]campus-001['"]/.test(content), file);
   }
+});
+
+
+test('PocketBase is the sole runtime service and mockup entrypoints are removed', async () => {
+  const service = await readFile('src/lib/data/service.ts', 'utf8');
+  const scripts = JSON.parse(await readFile('package.json', 'utf8')).scripts;
+  assert.match(service, /export const dataService = createHttpService\(\);/);
+  assert.doesNotMatch(service, /createFullDemoService|createDemoService|mockups|indexedDB/);
+  assert.equal(scripts.dev, scripts['dev:local']);
+  assert.equal(scripts.build, 'vite build');
+  assert.ok(!(await readdir('.')).includes('mockups'));
+  assert.ok(!(await readdir('src/lib/data')).includes('demo'));
 });

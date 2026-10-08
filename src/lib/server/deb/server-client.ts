@@ -13,7 +13,7 @@ export async function serverSettings(): Promise<Record<string, string>> {
     delete settings.PB_SUPER_TOKEN;
     Object.assign(settings, local);
     settings.DEB_LOCAL_INSTANCE_ID = 'local';
-    settings.DEB_PUBLIC_URL ||= settings.PB_URL.endsWith('8097') ? 'http://127.0.0.1:5177' : 'http://127.0.0.1:5176';
+    settings.DEB_PUBLIC_URL ||= 'http://127.0.0.1:5176';
   }
   if (import.meta.env.MODE === 'pocketbase-local') for (const key of Object.keys(settings)) if (key.startsWith('R2_')) delete settings[key];
   return settings;

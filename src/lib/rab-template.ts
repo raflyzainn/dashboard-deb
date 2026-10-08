@@ -5,6 +5,8 @@ export const RAB_TEMPLATE_HEADERS = ['Kategori', 'Sub Kategori', 'Nama', 'Qty', 
 export type TemplateQuantity = { qty: number; unit: string; volume: number; volumeUnit: string };
 const text = (value: unknown) => String(value ?? '').trim();
 export const validRabUnit = (value: unknown) => typeof value === 'string' && Boolean(value.trim()) && !/^[\d\s.,+-]+$/.test(value.trim());
+/** Preserve legacy subkegiatan in the flat template's visible subcategory. */
+export const rabSubcategory = (activity:string,section='') => section&&section!=='Rincian'?`${activity} / ${section}`:activity;
 
 /** Match category, subcategory and name; quantities and price are editable values. */
 export type RabInputRow = { id: string; cells: (string | number | null | undefined)[] };

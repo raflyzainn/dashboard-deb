@@ -35,7 +35,7 @@ export interface RabOverview {
   itemDraftRevision?: number;
   campus: { id: string; name: string; code: string; programYear: string };
   summary: { skNumber: string; amountSen: number; limitSen: number };
-  disbursement: { id: string; stage: number; requestedSen: number; rabVersionId: string; clauseChecked: boolean };
+  disbursement: { id: string; stage: number; requestedSen: number; rabVersionId: string; clauseChecked: boolean; revision: number };
   versions: RabVersionInfo[];
   version: (RabVersionInfo & { lines: RabLine[] }) | null;
   checks: RabCheck[];

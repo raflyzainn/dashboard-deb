@@ -1,8 +1,9 @@
 import type { AppSession, PreviewAccount, Snapshot } from './types';
 import { dataService, DataReadError, READ_ONLY_MESSAGE } from './data/service';
 import { emptyPageData, pageKey, type PageRequest, type NavigationData } from './page-data';
+import { reportError } from './feedback';
 
-const SESSION_KEY = 'deb-standalone-demo-account';
+const SESSION_KEY = 'deb-preview-account';
 class AppState {
   session = $state<AppSession | null>(null);
   data = $state<Snapshot | null>(null);
@@ -76,7 +77,13 @@ class AppState {
     } finally { if (revision === this.revision) this.loading = false; }
   }
   async logout() {
-    try { await fetch('/api/auth/logout', { method: 'POST', cache: 'no-store' }); } catch (error) { console.warn('Logout request failed', error); }
+    try {
+      const response=await fetch('/api/auth/logout',{method:'POST',cache:'no-store'});
+      if(!response.ok)throw Error('Keluar belum dapat dipastikan. Coba lagi atau muat ulang untuk memeriksa sesi.');
+    } catch {
+      this.error=reportError('Keluar belum dapat dipastikan. Periksa koneksi lalu coba lagi.');
+      return false;
+    }
     this.revision++; dataService.selectAccount('');
     this.pageRevision++; this.currentPage = null; this.pageId = ''; this.navigation = { pendingCount: 0, revisionCount: 0, unreadCount: 0 };
     this.readOnly = true; this.session = null; this.data = null; this.error = ''; this.toast = ''; this.loadedAt = ''; this.stale = false; this.loading = false; this.busy = false; this.dialogs = 0;

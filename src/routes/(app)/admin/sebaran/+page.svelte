@@ -159,7 +159,7 @@
       Peta Persebaran Kampus
     </h1>
     <p class="leading-[1.6] m-[0px]">
-      Lihat jangkauan {app.data!.campuses.length} kampus mitra dan progres simulasi program DEB di berbagai
+      Lihat jangkauan {app.data!.campuses.length} kampus mitra dan progres program DEB di berbagai
       wilayah Indonesia.
     </p>
   </div>
@@ -241,7 +241,7 @@
       <p
         class="leading-[1.6] [&&]:text-[11px] [&&]:text-[#64748b] m-[0px] max-[700.01px]:[&&]:hidden"
       >
-        Perhitungan data simulasi
+        Perhitungan capaian indikator
       </p>
     </div>
   </article>
@@ -263,7 +263,7 @@
       <p
         class="leading-[1.6] [&&]:text-[11px] [&&]:text-[#64748b] m-[0px] max-[700.01px]:[&&]:hidden"
       >
-        Progres simulasi minimal 70%
+        Progres minimal 70%
       </p>
     </div>
   </article>
@@ -516,8 +516,8 @@
       <p
         class="[&&]:mt-[7px] mb-[0px] [&&]:leading-[1.55] [&&]:text-[11px] [&&]:text-[#475569] mx-[0px]"
       >
-        Nama kampus berasal dari daftar proyek. Posisi dan seluruh nilai capaian masih bersifat
-        simulasi untuk kebutuhan prototype.
+        Nama dan lokasi kampus mengikuti data tersimpan. Capaian dihitung dari indikator kampus;
+        penanda yang berdekatan digeser agar mudah dipilih.
       </p>
     </div>
   </aside>

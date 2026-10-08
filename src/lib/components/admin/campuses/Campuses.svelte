@@ -52,7 +52,7 @@
         {app.data!.campuses.length} kampus, beragam perjalanan, satu komitmen untuk dampak berkelanjutan.
       </p>
     </div>
-    <Badge tone="green">{app.data!.campuses.length} kampus · Capaian simulasi</Badge>
+    <Badge tone="green">{app.data!.campuses.length} kampus · Capaian indikator</Badge>
   </div>
   <div class="flex justify-end mt-[0px] mb-[16px] mx-[0px] master-toolbar"><CampusMaster /></div>
   <section

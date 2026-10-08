@@ -159,7 +159,7 @@
   class="[&&]:ml-[224px] min-h-[100vh] flex flex-col max-[1200.01px]:[&&]:ml-[224px] max-[900.01px]:[&&]:ml-[196px] max-[700.01px]:[&&]:ml-[0] app-main"
 >
   <header
-    class="h-[77px] sticky top-[0] [background-image:initial] [background-color:rgba(255,_255,_255,_0.92)] [backdrop-filter:blur(12px)] [border-bottom-width:1px] [border-bottom-style:solid] flex items-center justify-between gap-y-[15px] gap-x-[15px] z-[25] [box-shadow:0_5px_20px_#24549208] px-[36px] py-[0px] border-[color:rgb(220,_232,_247)] max-[1200.01px]:px-[24px] max-[900.01px]:[&_.demo-label]:hidden max-[700.01px]:h-[65px] max-[700.01px]:[box-shadow:0_5px_18px_#1646790d] max-[700.01px]:px-[16px] max-[700.01px]:py-[0px] topbar"
+    class="h-[77px] sticky top-[0] [background-image:initial] [background-color:rgba(255,_255,_255,_0.92)] [backdrop-filter:blur(12px)] [border-bottom-width:1px] [border-bottom-style:solid] flex items-center justify-between gap-y-[15px] gap-x-[15px] z-[25] [box-shadow:0_5px_20px_#24549208] px-[36px] py-[0px] border-[color:rgb(220,_232,_247)] max-[1200.01px]:px-[24px] max-[900.01px]:[&_.connection-label]:hidden max-[700.01px]:h-[65px] max-[700.01px]:[box-shadow:0_5px_18px_#1646790d] max-[700.01px]:px-[16px] max-[700.01px]:py-[0px] topbar"
   >
     <div
       class="flex items-center gap-y-[13px] gap-x-[13px] max-[700.01px]:gap-y-[7px] max-[700.01px]:gap-x-[7px] topbar-left"
@@ -184,22 +184,25 @@
     <div
       class="flex items-center gap-y-[13px] gap-x-[13px] max-[700.01px]:gap-y-[8px] max-[700.01px]:gap-x-[8px] topbar-right"
     >
+      <span
+        class="inline-flex items-center gap-y-[7px] gap-x-[7px] text-[11px] text-[#4274ad] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [&>span]:w-[5px] [&>span]:h-[5px] [&>span]:[background-image:initial] [&>span]:[background-color:rgb(21,_130,_232)] [&>span]:rounded-[100%] connection-label"
+        ><span></span>Tersambung ke server</span
+      >
+      <div
+        class="w-[1px] h-[26px] [background-image:initial] [background-color:var(--line)] mx-[3px] my-[0px] max-[700.01px]:hidden header-divider"
+      ></div>
       <a
-        class="[-webkit-tap-highlight-color:transparent] text-[#53739c] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] inline-flex items-center justify-center w-[34px] h-[34px] [background-image:initial] [background-color:transparent] [&&&]:relative border-[0px] border-none border-[color:currentcolor] rounded-[7px] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:text-[#075fc7] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(233,_243,_255)] icon-button"
-        style:display={campus ? 'none' : undefined}
+        class="[-webkit-tap-highlight-color:transparent] text-[#53739c] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] inline-flex items-center justify-center w-[44px] h-[44px] shrink-0 [background-image:initial] [background-color:transparent] [&&&]:relative border-[0px] border-none border-[color:currentcolor] rounded-[7px] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:text-[#075fc7] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(233,_243,_255)] icon-button"
         href={`${prefix}/notifications`}
+        title="Notifikasi"
+        aria-current={section === 'notifications' ? 'page' : undefined}
+        onclick={() => (accountMenu = false)}
         aria-label={`Notifikasi, ${unreadCount} belum dibaca`}
         ><Icon name="notifications" />{#if unreadCount}<span
             class="[&&]:absolute [&&]:top-[5px] [&&]:right-[5px] [&&]:w-[8px] [&&]:h-[8px] [&&]:[background-image:initial] [&&]:[background-color:rgb(213,_72,_62)] [&&]:border-[2px] [&&]:border-solid [&&]:border-[color:white] [&&]:rounded-[50%] notification-dot"
             aria-hidden="true"
           ></span>{/if}</a
-      ><span
-        class="inline-flex items-center gap-y-[7px] gap-x-[7px] text-[11px] text-[#4274ad] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [&>span]:w-[5px] [&>span]:h-[5px] [&>span]:[background-image:initial] [&>span]:[background-color:rgb(21,_130,_232)] [&>span]:rounded-[100%] demo-label"
-        ><span></span>{import.meta.env.MODE === 'mockup' ? 'Ruang kerja' : 'Tersambung ke server'}</span
       >
-      <div
-        class="w-[1px] h-[26px] [background-image:initial] [background-color:var(--line)] mx-[3px] my-[0px] max-[700.01px]:hidden header-divider"
-      ></div>
       <details class="relative z-50" bind:open={accountMenu}>
         <summary
           class="flex cursor-pointer list-none items-center gap-2 rounded-lg p-1 text-[#17365f] hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-400 [&::-webkit-details-marker]:hidden"

@@ -10,7 +10,7 @@
   import { startRealtime } from '$lib/realtime.svelte';
   let { children } = $props();
   const routeRole = $derived(page.url.pathname.split('/')[1]);
-  const campusRouteAllowed = $derived(app.session?.role !== 'campus' || /^\/campus\/(dashboard|pencairan|guide)\/?$/.test(page.url.pathname));
+  const campusRouteAllowed = $derived(app.session?.role !== 'campus' || /^\/campus\/(dashboard|pencairan|guide|notifications)\/?$/.test(page.url.pathname));
   const authorized = $derived(app.ready && app.session && !app.session.passwordChangeRequired && routeRole === app.session.role && campusRouteAllowed);
   const request = $derived(pageRequest(page.url));
   const requestKey = $derived(pageKey(request));

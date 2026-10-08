@@ -1,5 +1,19 @@
 # Panduan proyek untuk Codex
 
+## Pemeriksaan kesiapan rilis - 8 Oktober 2026
+
+RAB lama kini menyimpan mutasi, audit, dan pemeriksaan lock pembayaran dalam satu transaksi. Notifikasi permintaan/nomor PKS PF dan permintaan akses revisi ikut transaksi pengajuan. Tombol kirim perbaikan menunggu perubahan pada lingkup yang dibuka; revisi khusus dokumen tetap dapat dibuat ulang otomatis. Hasil dan temuan terbuka: [QA kesiapan production](pencairan-deb/QA-KESIAPAN-PRODUCTION-2026-10-08.md). Kelulusan lokal bukan persetujuan deploy.
+
+## QA pengguna baru - 8 Oktober 2026
+
+Ringkasan Dokumen menampilkan seluruh isian yang belum lengkap beserta navigasi ke bagiannya. Kampus dapat melihat tanggal, nominal dan referensi pembayaran di panel progres. Admin tidak ditawari perubahan keputusan setelah dibayar. Petunjuk nomor PKS PF mengikuti alur yang memperbolehkan pengajuan sambil menunggu PF. Bukti browser dan batas pengujian: [QA pengguna baru](pencairan-deb/QA-PENGGUNA-BARU-2026-10-08.md).
+
+## Acuan aktif — PocketBase tanpa dummy, 7 Oktober 2026
+
+Arahan terbaru pengguna menghapus mode dummy. `npm run dev` dan `npm run dev:local` sama-sama menjalankan PocketBase lokal 8097 dan frontend 5176. Build memakai adapter Cloudflare dengan API server, bukan situs SPA statis. Folder `mockups` dan `src/lib/data/demo` dihapus; komponen aktif dipindahkan ke `src/lib/components/campus/pencairan`. Alur baru memakai data PocketBase dan penanda submissionStatus pada semua mode server. Pengajuan lama tetap memakai backend PocketBase lama; jangan mengubah data historis otomatis.
+
+Bagian dokumentasi lama yang menyebut development sebagai dummy adalah riwayat, bukan perintah untuk mengembalikan mode itu. Detail perubahan dan bukti QA: [PocketBase tanpa dummy](pencairan-deb/POCKETBASE-TANPA-DUMMY-2026-10-07.md). Production, database remote dan hosting tidak diubah oleh pekerjaan lokal ini.
+
 Label Email dan Kata sandi pada login memakai `.field-caption`, sehingga tanda
 wajib `*` mengikuti teks label di kiri. QA tool Playwright pada 7 Oktober 2026
 memastikan penanda tidak lagi berada di ujung kanan, atribut `required` tetap
@@ -140,3 +154,10 @@ Setiap chat baru wajib membaca semua dokumentasi sebagaimana diatur AGENTS.md. T
 Jika kode dan dokumen berbeda, periksa kode yang benar-benar dipakai dan instruksi pengguna terbaru, lalu perbarui dokumen terkait. Jangan menyatakan seluruh fitur selesai hanya berdasarkan checklist lama.
 
 Selesaikan perubahan lokal, QA browser yang relevan, lalu laporkan singkat apa yang berubah, hasil QA, dan bagian yang belum diverifikasi. **Jangan commit, push, membuat PR/MR, merge, atau deploy otomatis.** Tunggu instruksi pengguna untuk tindakan tersebut.
+## Penguatan pencairan — 7 Oktober 2026
+
+Pembayaran dan penyimpanan lampiran mengirim `expectedRevision` dari workspace. Lampiran juga mengirim `operationId` 15 karakter alfanumerik yang dipertahankan ketika retry; retry identik mengembalikan arsip yang sama. Pembayaran identik boleh diulang dengan revisi lama, sedangkan perubahan berbeda harus memakai revisi terbaru. Pengajuan berbayar terkunci; koreksi pembayaran dan bukti transfer admin mengikuti izin tersendiri.
+
+Rute kampus yang diizinkan mencakup Beranda, Pencairan Dana, Panduan dan Notifikasi. Ikon notifikasi harus membuka `/campus/notifications`, bukan dialihkan kembali ke Beranda.
+
+Unggahan memeriksa isi berkas, menormalkan MIME, memakai key objek unik, dan membatasi dekompresi Office. Pindaian harus mengikuti sumber generated terbaru; versi baru membatalkan penerimaan asli. Lampiran dan pembayaran memeriksa versi sumber aktif. Rincian implementasi, hasil browser, dan batas konkurensi jalur lama tercatat di [laporan QA 7 Oktober](pencairan-deb/QA-EDGE-CASES-DAN-14-REVISI-2026-10-07.md). Jangan menyamakan QA lokal dengan bukti production atau test suite terminal.

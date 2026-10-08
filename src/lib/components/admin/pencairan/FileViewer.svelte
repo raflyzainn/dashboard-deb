@@ -33,7 +33,7 @@
       }
       if (type === 'pdf' || type === 'image') {
         const original = await response.blob();
-        const blob = pdf ? await browserDocumentPdf(original, import.meta.env.MODE === 'mockup') : original;
+        const blob = pdf ? await browserDocumentPdf(original) : original;
         if (generation !== renderGeneration) return;
         nativeSource = URL.createObjectURL(blob);
       } else if (type === 'docx') {

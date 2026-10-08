@@ -2,9 +2,9 @@
   import { reportError } from '$lib/feedback';
   import { REVISION_SCOPES, canRevise, editRequestStatus, openRevisions, revisionSection, type EditableSection } from '$lib/pengajuan/revisions';
   import { untrack } from 'svelte';
-  import DocumentGuide from '../../../../../mockups/app/DocumentGuide.svelte';
-  import CampusJourney from '../../../../../mockups/app/CampusJourney.svelte';
-  import DummyRabUpload from '../../../../../mockups/app/RabUpload.svelte';
+  import DocumentGuide from '$lib/components/campus/pencairan/DocumentGuide.svelte';
+  import CampusJourney from '$lib/components/campus/pencairan/CampusJourney.svelte';
+  import RabUpload from '$lib/components/campus/pencairan/RabUpload.svelte';
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { dataService } from '$lib/data/service';
@@ -36,7 +36,7 @@
   let { campusId, mode = 'admin' }: { campusId: string; mode?: 'admin' | 'campus' } = $props();
 
   let data = $state<KartuData | null>(null);
-  const fullDummy = $derived(import.meta.env.MODE === 'mockup'||import.meta.env.MODE === 'pocketbase-local'&&Boolean((data as any)?.journey));
+  const hasJourney = $derived(Boolean((data as any)?.journey));
   let error = $state('');
   let notice = $state('');
   let busy = $state(false);
@@ -79,9 +79,9 @@
   const base = $derived(admin ? `/admin/pencairan/${campusId}` : '/campus/pencairan');
   const belumAda = $derived(data ? KINDS.filter(k => data!.readiness.items[k] === 'belum_ada') : []);
   const perluRevisi = $derived(data ? KINDS.filter(k => data!.readiness.items[k] === 'perlu_revisi') : []);
+  const campusJourney=$derived(data?.journey);
   const revisionLabels = $derived(campusJourney?.status==='revisi'?[...new Set(openRevisions(campusJourney).flatMap(request=>request.scopes.map(scope=>REVISION_SCOPES[scope].label)))]:perluRevisi.map(k=>KIND_SHORT[k]));
   const menungguPf = $derived(data ? KINDS.filter(k => ['menunggu_review', 'perlu_konfirmasi'].includes(data!.readiness.items[k])) : []);
-  const campusJourney=$derived(fullDummy&&(data as any)?.journey);
   const administrationRevisionOpen=$derived(openRevisions(campusJourney).some(request=>request.scopes.some(scope=>['administrasi','penandatangan','surat','pks'].includes(REVISION_SCOPES[scope].section))));
   const campusStages = $derived(campusJourney?['Isi pengajuan','Siapkan dokumen','Kirim pengajuan','Pemeriksaan PF','Tanda tangan','Pembayaran','Dana dibayar']:data?.disbursement.paidAt ? [...STAGES, 'Dana dibayar'] : [...STAGES]);
   const campusStage = $derived.by(()=>{
@@ -98,7 +98,7 @@
   });
   const nextCampusUpload = $derived.by(() => {
     if (!data) return null;
-    if (fullDummy) {
+    if (hasJourney) {
       const rabNeedsRevision = perluRevisi.some(isRabKind);
       const current = page.url.searchParams.get('butir');
       if (data.rab?.status === 'draf' || rabNeedsRevision || belumAda.some(isRabKind)) return { kind: data.rab && current && isRabKind(current as Kind) ? current as Kind : 'rab_penuh' as Kind, state: rabNeedsRevision ? 'perlu_revisi' : 'belum_ada' };
@@ -133,10 +133,10 @@
     belum_ada: 'border-slate-200 bg-slate-50 text-slate-700'
   };
 
-  const requested = $derived.by<Row>(() => { const k = page.url.searchParams.get('butir'); return k && (admin ? [...KINDS, ...(fullDummy?['program','edit_requests']:[]), 'ttd', 'lampiran', 'bayar'] : fullDummy?[...KINDS,'program','administrasi','penandatangan','surat','pks','ringkasan']:[...KINDS] as string[]).includes(k) ? (k as Row) : firstOpen(); });
+  const requested = $derived.by<Row>(() => { const k = page.url.searchParams.get('butir'); return k && (admin ? [...KINDS, ...(hasJourney?['program','edit_requests']:[]), 'ttd', 'lampiran', 'bayar'] : hasJourney?[...KINDS,'program','administrasi','penandatangan','surat','pks','ringkasan']:[...KINDS] as string[]).includes(k) ? (k as Row) : firstOpen(); });
   function firstOpen(): Row {
     if (!data) return 'sk';
-    if(!admin&&fullDummy&&(data as any).journey)return ({sk:'sk',program:'program',rab:'rab_penuh',administrasi:'administrasi',penandatangan:'penandatangan',surat:'surat',pks:'pks',ringkasan:'ringkasan'} as Record<string,Row>)[page.url.searchParams.get('bagian')||(data as any).journey.lastSection]||'sk';
+    if(!admin&&hasJourney&&(data as any).journey)return ({sk:'sk',program:'program',rab:'rab_penuh',administrasi:'administrasi',penandatangan:'penandatangan',surat:'surat',pks:'pks',ringkasan:'ringkasan'} as Record<string,Row>)[page.url.searchParams.get('bagian')||(data as any).journey.lastSection]||'sk';
     const k = KINDS.find(k => !['sesuai', 'tidak_perlu'].includes(data!.readiness.items[k]));
     return k || (admin && data.readiness.lengkap ? 'ttd' : 'sk');
   }
@@ -153,7 +153,7 @@
   const fileDoc = $derived(isRab ? data?.documents.find(d => d.kind === 'rab') || null : doc);
   const itemState = $derived<ItemState>(data ? data.readiness.items[kind] : 'belum_ada');
   const uploadBlocked = $derived(campusUploadBlockedReason(kind, itemState, doc, Boolean(data?.disbursement.paidAt)) || (doc?.versions.find(v => v.id === doc.currentVersionId)?.signed ? 'Berkas bertanda tangan tidak dapat diganti lewat unggah revisi.' : ''));
-  const signedJourneyReady=$derived(fullDummy&&!admin&&(data as any)?.journey?.status==='selesai'&&['pks','permohonan','invois','kuitansi'].includes(kind)&&!data?.disbursement.paidAt&&!doc?.signedReceived);
+  const signedJourneyReady=$derived(hasJourney&&!admin&&(data as any)?.journey?.status==='selesai'&&['pks','permohonan','invois','kuitansi'].includes(kind)&&!data?.disbursement.paidAt&&!doc?.signedReceived);
   const canUpload = $derived(admin || signedJourneyReady || (Boolean(data) && !uploadBlocked));
   const version = $derived<Version | null>(fileDoc ? fileDoc.versions.find(v => v.id === selectedVersionId) || fileDoc.versions.find(v => v.id === fileDoc.currentVersionId) || fileDoc.versions[fileDoc.versions.length - 1] || null : null);
   const isCurrent = $derived(Boolean(version && fileDoc && version.id === fileDoc.currentVersionId));
@@ -191,9 +191,9 @@
   const decisionLabel = $derived(itemState === 'perlu_revisi' ? DECISION_LABEL[kind].bad : itemState === 'tidak_perlu' ? 'Tanpa surat kuasa' : DECISION_LABEL[kind].ok);
   /** A surat kuasa counted as not needed because the account holder signs the PKS has no decision to take back. */
   const computedOnly = $derived(itemState === 'tidak_perlu' && doc?.status !== 'tidak_perlu');
-  const rabApprovalWarning = $derived(isRab && fullDummy && data?.rab ? data.rab.totalSen !== data.summary.amountSen ? `Total RAB ${formatSen(data.rab.totalSen)} belum sesuai nilai SK ${formatSen(data.summary.amountSen)}. Sesuaikan RAB sebelum menyetujui.` : data.rab.term1Sen > data.summary.limitSen ? 'Total Tahap 1 melebihi batas 70% SK. Perbaiki pembagian sebelum menyetujui.' : data.rab.term1Sen <= 0 ? 'Total Tahap 1 harus lebih dari Rp0 sebelum menyetujui.' : data.rab.term1Sen + (data.rab.term2Sen ?? 0) !== data.rab.totalSen ? 'Jumlah nominal kedua tahap belum sama dengan total RAB.' : '' : '');
-  const canRequestRevision=$derived(admin&&fullDummy&&Boolean((data as any)?.journey)&&!data?.disbursement.paidAt&&!rabEditing&&['menunggu','selesai','revisi'].includes((data as any)?.journey?.status));
-  const canDecide = $derived(admin && (!fullDummy||!(data as any)?.journey||['menunggu','selesai'].includes((data as any).journey.status)) && !rabEditing && data !== null && (kind === 'sk' || (isRab ? !fullDummy || data.rab?.status === 'menunggu' : Boolean(version))));
+  const rabApprovalWarning = $derived(isRab && hasJourney && data?.rab ? data.rab.totalSen !== data.summary.amountSen ? `Total RAB ${formatSen(data.rab.totalSen)} belum sesuai nilai SK ${formatSen(data.summary.amountSen)}. Sesuaikan RAB sebelum menyetujui.` : data.rab.term1Sen > data.summary.limitSen ? 'Total Tahap 1 melebihi batas 70% SK. Perbaiki pembagian sebelum menyetujui.' : data.rab.term1Sen <= 0 ? 'Total Tahap 1 harus lebih dari Rp0 sebelum menyetujui.' : data.rab.term1Sen + (data.rab.term2Sen ?? 0) !== data.rab.totalSen ? 'Jumlah nominal kedua tahap belum sama dengan total RAB.' : '' : '');
+  const canRequestRevision=$derived(admin&&hasJourney&&Boolean((data as any)?.journey)&&!data?.disbursement.paidAt&&!rabEditing&&['menunggu','selesai','revisi'].includes((data as any)?.journey?.status));
+  const canDecide = $derived(admin && !data?.disbursement.paidAt && (!hasJourney||!(data as any)?.journey||['menunggu','selesai'].includes((data as any).journey.status)) && !rabEditing && data !== null && (kind === 'sk' || (isRab ? !hasJourney || data.rab?.status === 'menunggu' : Boolean(version))));
   /** What the campus file really contains, marked after checking the file itself (decision 47). */
   const bukti = $derived.by(() => {
     const p = data?.disbursement.properties || {};
@@ -291,7 +291,7 @@
     if (which === 'bad' && !note) { error = reportError(kind === 'sk' ? 'Tulis nilai yang tercetak di SK di kolom catatan.' : 'Tulis catatan untuk kampus dulu.'); noteInput?.focus(); return; }
     if (!await saveIfChanged()) return;
     const decision = which === 'ok' ? 'sesuai' : which === 'none' ? 'tidak_perlu' : 'perlu_revisi';
-    const body: Record<string, unknown> = { decision, note, expectedRevision:(data as any).serverRevision };
+    const body: Record<string, unknown> = { decision, note, expectedRevision:data?.serverRevision ?? data?.disbursement.revision };
     if (kind === 'rekening') body.bank = { result: which === 'ok' ? 'sesuai' : 'berbeda', nameSeen: bankNameSeen.trim() };
     const url = kind === 'rab' ? `/api/pencairan/${campusId}/rab/keputusan` : `/api/pencairan/${campusId}/documents/${kind}/review`;
     const ok = await run(() => dataService.api.post<KartuData>(url, body), which === 'ok' ? `${KIND_SHORT[kind]}: ${DECISION_LABEL[kind].ok}.` : which === 'none' ? 'Ditandai tanpa surat kuasa.' : `${KIND_SHORT[kind]}: catatan revisi tersimpan.`);
@@ -302,7 +302,7 @@
     if (!data || !admin || !isItem) return;
     const url = kind === 'rab' ? `/api/pencairan/${campusId}/rab/keputusan` : `/api/pencairan/${campusId}/documents/${kind}/review`;
     const body = kind === 'rab' ? { decision: 'batal' } : { decision: 'perlu_konfirmasi', note: '' };
-    const ok = await run(() => dataService.api.post<KartuData>(url, {...body,expectedRevision:(data as any).serverRevision}), `${KIND_SHORT[kind]}: keputusan dibatalkan, butir kembali ke Periksa.`);
+    const ok = await run(() => dataService.api.post<KartuData>(url, {...body,expectedRevision:data?.serverRevision ?? data?.disbursement.revision}), `${KIND_SHORT[kind]}: keputusan dibatalkan, butir kembali ke Periksa.`);
     if (ok) editing = false;
   }
   /** The latest managed RAB version in the same workbook layout as the template, built in the browser. */
@@ -368,13 +368,13 @@
     {#if !admin}
       <section aria-label="Progres pencairan" class="my-2 grid gap-2 rounded-xl border border-blue-100 bg-blue-50/60 p-4 text-sm text-slate-700">
         <p class="text-sm text-slate-700">Nilai SK <strong class="tabular-nums text-slate-900">{formatSen(data.summary.amountSen)}</strong></p>
-        {#if data.disbursement.paidAt&&import.meta.env.MODE!=='mockup'}<BuktiTransfer {campusId} {data}/>{/if}
+        {#if data.disbursement.paidAt}<BuktiTransfer {campusId} {data} details/>{/if}
         <div class="flex flex-wrap items-center justify-between gap-2"><h2 class="font-bold text-slate-900">Progres Tahap 1 · {data.readiness.done} dari {data.readiness.total} selesai</h2><button type="button" class="font-semibold text-[#0066B2] disabled:opacity-50" disabled={busy} onclick={load}>Perbarui status</button></div>
-        {#if belumAda.length}<p><strong class="text-slate-900">{fullDummy && data.rab ? 'Belum diajukan' : 'Belum ada'} ({belumAda.length}):</strong> {belumAda.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
+        {#if belumAda.length}<p><strong class="text-slate-900">{hasJourney && data.rab ? 'Belum diajukan' : 'Belum ada'} ({belumAda.length}):</strong> {belumAda.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
         {#if revisionLabels.length}<p><strong class="text-amber-900">Perlu revisi ({revisionLabels.length}):</strong> {revisionLabels.join(', ')}.</p>{/if}
         {#if menungguPf.length}<p><strong class="text-[#015a9a]">Menunggu PF ({menungguPf.length}):</strong> {menungguPf.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
         {#if data.readiness.missing.length === 0}<p>{data.readiness.phrase}</p>{/if}
-        <p class="text-xs text-slate-500">{data.disbursement.paidAt?'Pembayaran Tahap 1 sudah tercatat. Proses pencairan Tahap 1 selesai.':fullDummy && (data as any).journey ? (data as any).journey.status==='menunggu' ? 'Pengajuan telah dikirim. Tunggu hasil pemeriksaan PF.' : (data as any).journey.status==='selesai' ? campusStage===6?'Pindaian bertanda tangan tersimpan. Menunggu penerimaan dokumen asli, lampiran, dan pembayaran oleh PF.':'Pengajuan disetujui. Unggah empat dokumen bertanda tangan.' : 'Lengkapi data program, RAB, rekening penerima, penandatangan, identitas surat dan kop, lalu PKS. Pengajuan dikirim sekali setelah semuanya siap.' : fullDummy ? !data.rab ? 'Mulai dengan satu file RAB 100%. Pembagian kedua tahap dilakukan di aplikasi.' : data.rab.status === 'menunggu' ? 'RAB telah dikirim. Tunggu keputusan PF; pembagian terkunci selama pemeriksaan.' : data.rab.status === 'disetujui' ? 'RAB telah disetujui. Pantau langkah pencairan berikutnya.' : 'Draf RAB belum diajukan. Lengkapi pembagian, periksa kedua tahap, lalu kirim seluruh RAB ke PF.' : 'Pilih dokumen untuk melihat berkas dan catatan pemeriksa. SK dan RAB hanya dapat dilihat; unggah RAB belum dibuka.'}</p>
+        <p class="text-xs text-slate-500">{data.disbursement.paidAt?'Pembayaran Tahap 1 sudah tercatat. Proses pencairan Tahap 1 selesai.':hasJourney && (data as any).journey ? (data as any).journey.status==='menunggu' ? 'Pengajuan telah dikirim. Tunggu hasil pemeriksaan PF.' : (data as any).journey.status==='selesai' ? campusStage===6?'Pindaian bertanda tangan tersimpan. Menunggu penerimaan dokumen asli, lampiran, dan pembayaran oleh PF.':'Pengajuan disetujui. Unggah empat dokumen bertanda tangan.' : 'Lengkapi data program, RAB, rekening penerima, penandatangan, identitas surat dan kop, lalu PKS. Pengajuan dikirim sekali setelah semuanya siap.' : hasJourney ? !data.rab ? 'Mulai dengan satu file RAB 100%. Pembagian kedua tahap dilakukan di aplikasi.' : data.rab.status === 'menunggu' ? 'RAB telah dikirim. Tunggu keputusan PF; pembagian terkunci selama pemeriksaan.' : data.rab.status === 'disetujui' ? 'RAB telah disetujui. Pantau langkah pencairan berikutnya.' : 'Draf RAB belum diajukan. Lengkapi pembagian, periksa kedua tahap, lalu kirim seluruh RAB ke PF.' : 'Pilih dokumen untuk melihat berkas dan catatan pemeriksa. SK dan RAB hanya dapat dilihat; unggah RAB belum dibuka.'}</p>
       </section>
       <section aria-labelledby="timeline-title" class="grid min-w-0 gap-3 rounded-xl border border-slate-200 bg-white p-4">
         <div>
@@ -395,9 +395,9 @@
           </ol>
         </details>
         <div class="grid gap-2 rounded-lg bg-slate-50 p-3 text-sm sm:grid-cols-2">
-          <p><strong class="text-slate-900">Yang bertindak:</strong> {data.disbursement.paidAt?'Selesai':fullDummy&&(data as any).journey?(data as any).journey.status==='menunggu'||(data as any).journey.status==='selesai'&&data.documents.filter(d=>d.generated).every(d=>d.signedReceived)?'Pertamina Foundation':'Kampus':nextCampusUpload ? 'Kampus' : 'Pertamina Foundation'}</p>
+          <p><strong class="text-slate-900">Yang bertindak:</strong> {data.disbursement.paidAt?'Selesai':hasJourney&&(data as any).journey?(data as any).journey.status==='menunggu'||(data as any).journey.status==='selesai'&&data.documents.filter(d=>d.generated).every(d=>d.signedReceived)?'Pertamina Foundation':'Kampus':nextCampusUpload ? 'Kampus' : 'Pertamina Foundation'}</p>
           <div>
-            <p><strong class="text-slate-900">Langkah selanjutnya:</strong> {#if fullDummy&&(data as any).journey}{data.disbursement.paidAt?'Pembayaran Tahap 1 sudah tercatat. Tidak ada tindakan lagi untuk Tahap 1.':campusStage===6?'Pindaian bertanda tangan sudah tersimpan. Tunggu PF menerima dokumen asli, menyimpan lampiran, dan mencatat pembayaran.':(data as any).journey.status==='menunggu'?'Tunggu pemeriksaan PF atas pengajuan Anda.':(data as any).journey.status==='selesai'?'Unduh, tandatangani, lalu unggah pindaian PKS, permohonan, invois, dan kuitansi melalui tombol Unggah bertanda tangan di ringkasan.':(data as any).journey.status==='revisi'?'Buka bagian yang diminta PF, lalu kirim perbaikan langsung dari bagian tersebut.':'Lanjutkan draf, lalu periksa ringkasan sebelum mengajukan.'}{:else if nextCampusUpload}{fullDummy && data.rab && isRabKind(nextCampusUpload.kind) ? kind === 'rab' ? 'Periksa pembagian Tahap 1' : kind === 'rab_tahap2' ? 'Periksa Tahap 2 lalu ajukan seluruh RAB' : 'Lengkapi pembagian jumlah item' : nextCampusUpload.state === 'perlu_revisi' ? 'Kirim revisi' : 'Lengkapi dokumen'} {fullDummy && data.rab && isRabKind(nextCampusUpload.kind) ? '' : KIND_SHORT[nextCampusUpload.kind]}{:else if data.disbursement.paidAt}Tidak ada tindakan lagi untuk Tahap 1.{:else if menungguPf.length}Tunggu pemeriksaan PF untuk {menungguPf.map(k => KIND_SHORT[k]).join(', ')}.{:else if data.readiness.lengkap}PF melanjutkan penyelesaian proses.{:else}PF melanjutkan pemeriksaan dokumen.{/if}</p>
+            <p><strong class="text-slate-900">Langkah selanjutnya:</strong> {#if hasJourney&&(data as any).journey}{data.disbursement.paidAt?'Pembayaran Tahap 1 sudah tercatat. Tidak ada tindakan lagi untuk Tahap 1.':campusStage===6?'Pindaian bertanda tangan sudah tersimpan. Tunggu PF menerima dokumen asli, menyimpan lampiran, dan mencatat pembayaran.':(data as any).journey.status==='menunggu'?'Tunggu pemeriksaan PF atas pengajuan Anda.':(data as any).journey.status==='selesai'?'Unduh, tandatangani, lalu unggah pindaian PKS, permohonan, invois, dan kuitansi melalui tombol Unggah bertanda tangan di ringkasan.':(data as any).journey.status==='revisi'?'Buka bagian yang diminta PF, lalu kirim perbaikan langsung dari bagian tersebut.':'Lanjutkan draf, lalu periksa ringkasan sebelum mengajukan.'}{:else if nextCampusUpload}{hasJourney && data.rab && isRabKind(nextCampusUpload.kind) ? kind === 'rab' ? 'Periksa pembagian Tahap 1' : kind === 'rab_tahap2' ? 'Periksa Tahap 2 lalu ajukan seluruh RAB' : 'Lengkapi pembagian jumlah item' : nextCampusUpload.state === 'perlu_revisi' ? 'Kirim revisi' : 'Lengkapi dokumen'} {hasJourney && data.rab && isRabKind(nextCampusUpload.kind) ? '' : KIND_SHORT[nextCampusUpload.kind]}{:else if data.disbursement.paidAt}Tidak ada tindakan lagi untuk Tahap 1.{:else if menungguPf.length}Tunggu pemeriksaan PF untuk {menungguPf.map(k => KIND_SHORT[k]).join(', ')}.{:else if data.readiness.lengkap}PF melanjutkan penyelesaian proses.{:else}PF melanjutkan pemeriksaan dokumen.{/if}</p>
             {#if nextCampusUpload}<a class="mt-1 inline-flex font-semibold text-[#0066B2] hover:underline" href={`/campus/pencairan?butir=${campusJourney?.status==='revisi'?REVISION_SCOPES[openRevisions(campusJourney)[0]?.scopes[0]]?.section||nextCampusUpload.kind:nextCampusUpload.kind}`}>Buka langkah ini <Icon name="arrow" size={14} /></a>{/if}
           </div>
         </div>
@@ -408,8 +408,9 @@
       <div class="document-navigation min-w-0 border-b border-slate-200/70 bg-slate-50/80 lg:border-b-0 lg:border-r">
       <aside use:trackRail class="flex gap-1 overflow-x-auto p-2 lg:grid lg:content-start lg:gap-0.5 lg:overflow-visible lg:p-2.5" aria-label="Butir">
         <span class="hidden px-2.5 pb-1 text-[10.5px] font-bold uppercase tracking-[0.06em] text-slate-400 lg:block">Butir</span>
-        {#if !admin&&fullDummy&&(!page.url.searchParams.has('signed')||campusJourney?.status!=='selesai')}
+        {#if !admin&&hasJourney&&(!page.url.searchParams.has('signed')||campusJourney?.status!=='selesai')}
          {#snippet campusStep(item: {key: Row; label: string})}
+          {#if data}
           {@const j=(data as any).journey}
           {@const requestStatus=editRequestStatus(j,item.key)}
           {@const revisionOpen=j?.status==='revisi'&&canRevise(j,revisionSection(item.key) as EditableSection)}
@@ -417,6 +418,7 @@
           <button type="button" class="campus-step self-start lg:self-auto flex shrink-0 items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] transition {selected===item.key?'bg-white font-bold text-slate-900 shadow-[0_4px_12px_#0b254514]':'text-slate-700 hover:bg-white/70'}" disabled={busy} onclick={()=>open(item.key)} aria-current={selected===item.key?'true':undefined}>
            {#if revisionOpen}<span class="grid size-4 shrink-0 place-items-center rounded-full bg-amber-500 text-[10px] font-bold leading-none text-white" aria-label="Bagian ini perlu direvisi" title="Bagian ini perlu direvisi">!</span>{:else}<i class="size-2.5 shrink-0 rounded-full {requestStatus==='Menunggu admin'?'bg-amber-500':['belum_ada','menunggu_review'].includes(status)?'bg-[#2868ad]':dot[status]}"></i>{/if}<span class="whitespace-nowrap">{item.label}</span><span class="ml-auto whitespace-nowrap pl-2 text-[11px] font-medium {requestStatus==='Menunggu admin'?'text-amber-700':'text-slate-500'}">{requestStatus||(j?.status!=='draf'&&!canRevise(j,revisionSection(item.key) as EditableSection)?'Hanya lihat':status==='perlu_revisi'?'Perlu revisi':status==='sesuai'?'Sesuai':status==='menunggu_review'?'Menunggu PF':'Draf')}</span>
           </button>
+          {/if}
          {/snippet}
          {#each CAMPUS_ROWS.filter(item=>!ADMINISTRATION_KEYS.includes(item.key)) as item}
           {@render campusStep(item)}
@@ -434,14 +436,14 @@
           </div>
          </div>
         {:else}
-        {#if admin&&fullDummy}<button type="button" class="min-h-11 rounded-lg px-2.5 text-left text-sm font-semibold text-[#0066B2]" onclick={()=>open('program')}>Data Program</button>{/if}
+        {#if admin&&hasJourney}<button type="button" class="min-h-11 rounded-lg px-2.5 text-left text-sm font-semibold text-[#0066B2]" onclick={()=>open('program')}>Data Program</button>{/if}
         {#each KINDS as k}
           {@const s = data.readiness.items[k]}
           <button type="button" class="flex shrink-0 items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] transition {selected === k ? 'bg-white font-bold text-slate-900 shadow-[0_4px_12px_#0b254514]' : 'text-slate-700 hover:bg-white/70'}" disabled={busy} onclick={() => open(k)} aria-current={selected === k ? 'true' : undefined} title={ITEM_STATE_LABEL[s]}>
-            <i class="size-2.5 shrink-0 rounded-full {dot[s]}"></i><span class="whitespace-nowrap">{KIND_SHORT[k]}</span><span class="ml-auto whitespace-nowrap pl-2 text-[11px] font-medium text-slate-500">{fullDummy && isRabKind(k) && data.rab?.status === 'draf' && s === 'belum_ada' ? 'Draf' : admin ? RAIL_WORD[s] : s === 'perlu_revisi' ? 'Perlu revisi' : s === 'belum_ada' ? 'Belum ada' : s === 'sesuai' ? 'Sesuai' : s === 'tidak_perlu' ? 'Tidak perlu' : 'Menunggu PF'}</span>
+            <i class="size-2.5 shrink-0 rounded-full {dot[s]}"></i><span class="whitespace-nowrap">{KIND_SHORT[k]}</span><span class="ml-auto whitespace-nowrap pl-2 text-[11px] font-medium text-slate-500">{hasJourney && isRabKind(k) && data.rab?.status === 'draf' && s === 'belum_ada' ? 'Draf' : admin ? RAIL_WORD[s] : s === 'perlu_revisi' ? 'Perlu revisi' : s === 'belum_ada' ? 'Belum ada' : s === 'sesuai' ? 'Sesuai' : s === 'tidak_perlu' ? 'Tidak perlu' : 'Menunggu PF'}</span>
           </button>
         {/each}
-        {#if admin&&fullDummy&&campusJourney?.editRequests?.length}
+        {#if admin&&hasJourney&&campusJourney?.editRequests?.length}
           <button type="button" class="mt-2 flex min-h-10 items-center gap-2 rounded-lg px-2.5 text-left text-[13px] transition {selected==='edit_requests'?'bg-white font-bold text-slate-900 shadow-[0_4px_12px_#0b254514]':'text-slate-700 hover:bg-white/70'}" onclick={()=>open('edit_requests')} aria-current={selected==='edit_requests'?'true':undefined}>
             <span class="whitespace-nowrap">Permintaan revisi</span><span class="ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">{campusJourney.editRequests.filter((request:any)=>request.status==='pending').length||campusJourney.editRequests.length}</span>
           </button>
@@ -468,14 +470,14 @@
 
       <div class="document-content grid min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] [&>*]:min-w-0">
         <div class="document-toolbar flex flex-wrap items-center gap-2 border-b border-slate-200/70 px-3 py-2 text-xs text-slate-500">
-          <b class="text-[15px] text-slate-900">{isItem ? KIND_LABEL[kind] : !admin&&fullDummy?selected==='ringkasan'?'Dokumen':CAMPUS_ROWS.find(c=>c.key===selected)?.label:CLOSING.find(c => c.key === selected)?.label}</b>
+          <b class="text-[15px] text-slate-900">{isItem ? KIND_LABEL[kind] : !admin&&hasJourney?selected==='ringkasan'?'Dokumen':CAMPUS_ROWS.find(c=>c.key===selected)?.label:CLOSING.find(c => c.key === selected)?.label}</b>
           {#if isItem && kind === 'sk'}
             <span class="rounded-full bg-[#0066B2] px-2.5 py-0.5 text-[11.5px] font-semibold text-white">{data.summary.skNumber}{data.summary.skDate ? ` · ${time.format(new Date(data.summary.skDate))} ${new Date(data.summary.skDate).getFullYear()}` : ''}</span>
-            {#if data.summary.skFile}<a class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300" href={import.meta.env.MODE === 'mockup' ? '/sk-dummy.pdf' : '/api/pencairan/sk'} target="_blank" rel="noopener">Buka SK lengkap</a>{/if}
+            {#if data.summary.skFile}<a class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300" href={'/api/pencairan/sk'} target="_blank" rel="noopener">Buka SK lengkap</a>{/if}
           {:else if isItem && isRab}
             <button type="button" class="rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold {rabTab === 'digital' ? 'bg-[#0066B2] text-white' : 'border border-slate-200 bg-white text-slate-600'}" onclick={() => (rabTab = 'digital')}>RAB terkelola</button>
-{#if !fullDummy}            <button type="button" class="rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold {rabTab === 'asli' ? 'bg-[#0066B2] text-white' : 'border border-slate-200 bg-white text-slate-600'}" onclick={() => (rabTab = 'asli')}>Berkas asli{fileDoc?.versions.length ? '' : ' (belum ada)'}</button>{/if}
-            {#if admin && !fullDummy}
+{#if !hasJourney}            <button type="button" class="rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold {rabTab === 'asli' ? 'bg-[#0066B2] text-white' : 'border border-slate-200 bg-white text-slate-600'}" onclick={() => (rabTab = 'asli')}>Berkas asli{fileDoc?.versions.length ? '' : ' (belum ada)'}</button>{/if}
+            {#if admin && !hasJourney}
               <label class="cursor-pointer rounded-full border border-dashed border-slate-300 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-[#0066B2] hover:border-[#0066B2]" title="Excel tiga lembar dari templat: RAB 100%, RAB Termin 1, RAB Termin 2. Menjadi versi RAB berikutnya.">Impor Excel<input type="file" class="sr-only" accept=".xlsx,.xlsm,.xls" onchange={(e) => importRab((e.currentTarget as HTMLInputElement).files?.[0] || null)} /></label>
               <button type="button" class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300 disabled:opacity-50" disabled={busy} onclick={exportRab}>Ekspor Excel</button>
               <a class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300" href="/templat/RAB_DEB.xlsx" download>Templat</a>
@@ -488,13 +490,13 @@
           {#if admin && isItem && kind !== 'sk' && (!isRab || rabTab === 'asli')}
             <label class="cursor-pointer rounded-full border border-dashed border-slate-300 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-[#0066B2] hover:border-[#0066B2]">+ versi baru<input type="file" class="sr-only" bind:this={fileInput} accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.doc,.xlsx,.xls" onchange={(e) => upload((e.currentTarget as HTMLInputElement).files?.[0] || null)} /></label>
           {/if}
-          {#if !(isRab && fullDummy)}<span class="ml-auto hidden xl:inline">Nilai SK <b class="tabular-nums text-slate-800">{formatSen(data.summary.amountSen)}</b> · Batas <b class="tabular-nums text-slate-800">{formatSen(data.summary.limitSen)}</b> · Diajukan <b class="tabular-nums text-slate-800">{data.summary.requestedSen ? formatSen(data.summary.requestedSen) : 'belum'}</b></span>{/if}
+          {#if !(isRab && hasJourney)}<span class="ml-auto hidden xl:inline">Nilai SK <b class="tabular-nums text-slate-800">{formatSen(data.summary.amountSen)}</b> · Batas <b class="tabular-nums text-slate-800">{formatSen(data.summary.limitSen)}</b> · Diajukan <b class="tabular-nums text-slate-800">{data.summary.requestedSen ? formatSen(data.summary.requestedSen) : 'belum'}</b></span>{/if}
           <span class="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11.5px] font-semibold text-[#015a9a] {'xl:ml-0 ml-auto'}">{data.readiness.done} dari {data.readiness.total} selesai</span>
-          {#if admin && isItem && !(isRab && fullDummy)}<button type="button" class="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11.5px] font-bold text-slate-500 hover:border-slate-300" onclick={() => (showLook = !showLook)} aria-label="Yang dilihat" title="Yang dilihat">?</button>{/if}
+          {#if admin && isItem && !(isRab && hasJourney)}<button type="button" class="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11.5px] font-bold text-slate-500 hover:border-slate-300" onclick={() => (showLook = !showLook)} aria-label="Yang dilihat" title="Yang dilihat">?</button>{/if}
           {#if admin}<button type="button" class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300" onclick={() => (showRiwayat = true)}>Riwayat</button>{/if}
         </div>
 
-        {#if admin&&fullDummy&&selected==='edit_requests'}
+        {#if admin&&hasJourney&&selected==='edit_requests'}
          <section class="grid content-start gap-3 p-4" aria-label="Permintaan revisi kampus"><h2 class="font-bold">Permintaan revisi kampus</h2>
           {#if campusJourney?.editRequests?.length}
           {#each [...campusJourney.editRequests].reverse() as request}
@@ -502,21 +504,22 @@
             {#if request.status==='pending'}<form class="grid gap-2" aria-label={'Keputusan revisi '+REVISION_SCOPES[request.section].label} onsubmit={event=>{event.preventDefault();const form=event.currentTarget,submitter=(event as SubmitEvent).submitter as HTMLButtonElement;const decision=submitter.value,note=String(new FormData(form).get('note')||'');if(decision==='rejected'&&!note.trim()){const input=form.querySelector('textarea');input?.setCustomValidity('Isi alasan penolakan.');input?.reportValidity();return;}void run(()=>dataService.api.post<KartuData>(`/api/pencairan/${campusId}/pengajuan/edit-requests/${request.id}`,{decision,note,expectedRevision:(data as any).serverRevision}),'Keputusan permintaan revisi tersimpan.');}}><label class="grid gap-1">Catatan keputusan (wajib jika ditolak)<textarea name="note" oninput={event=>event.currentTarget.setCustomValidity('')} class="rounded-lg border border-slate-300 p-2" maxlength="2000" rows="2" disabled={busy}></textarea></label><div class="flex flex-wrap gap-2"><button value="approved" onclick={event=>event.currentTarget.form?.querySelector('textarea')?.setCustomValidity('')} class="min-h-11 rounded-lg bg-[#0066B2] px-4 font-semibold text-white disabled:opacity-40" disabled={busy||Boolean(data.disbursement.paidAt)||canRevise(campusJourney,request.section)}>Setujui akses edit</button><button value="rejected" class="min-h-11 rounded-lg border border-red-300 px-4 font-semibold text-red-700 disabled:opacity-40" disabled={busy||Boolean(data.disbursement.paidAt)}>Tolak permintaan</button></div></form>{:else}<p class="whitespace-pre-wrap">{request.decisionNote||'Disetujui sesuai alasan kampus.'} / {request.decidedByName}</p>{/if}
            </article>
           {/each}
-          {#if campusJourney.status==='menunggu'&&campusJourney.revisionRequests?.some(request=>request.status==='submitted')&&data.documents.every(document=>['sesuai','tidak_perlu'].includes(document.status))}
-           <p class="text-sm">Kampus mengirim perbaikan data tanpa mengubah isi dokumen. Periksa data pada bagian yang diajukan.</p><button class="min-h-11 justify-self-start rounded-lg bg-[#0066B2] px-4 font-semibold text-white disabled:opacity-40" disabled={busy||Boolean(data.disbursement.paidAt)} onclick={()=>void run(()=>dataService.api.post<KartuData>(`/api/pencairan/${campusId}/documents/${campusJourney.revisionRequests.find(request=>request.status==='submitted').kind}/review`,{decision:'sesuai',note:'Perbaikan data kampus diperiksa dan disetujui.',expectedRevision:(data as any).serverRevision}),'Perbaikan data disetujui.')}>Setujui perbaikan data</button>
+          {@const submittedRevision=campusJourney.revisionRequests?.find(request=>request.status==='submitted')}
+          {#if campusJourney.status==='menunggu'&&submittedRevision&&data.documents.every(document=>['sesuai','tidak_perlu'].includes(document.status))}
+           <p class="text-sm">Kampus mengirim perbaikan data tanpa mengubah isi dokumen. Periksa data pada bagian yang diajukan.</p><button class="min-h-11 justify-self-start rounded-lg bg-[#0066B2] px-4 font-semibold text-white disabled:opacity-40" disabled={busy||Boolean(data.disbursement.paidAt)} onclick={()=>void run(()=>dataService.api.post<KartuData>(`/api/pencairan/${campusId}/documents/${submittedRevision.kind}/review`,{decision:'sesuai',note:'Perbaikan data kampus diperiksa dan disetujui.',expectedRevision:(data as any).serverRevision}),'Perbaikan data disetujui.')}>Setujui perbaikan data</button>
           {/if}
           {:else}<p class="text-sm text-slate-600">Belum ada permintaan revisi kampus.</p>{/if}
          </section>
         {:else}
-        {#if !admin&&fullDummy&&(!page.url.searchParams.has('signed')||campusJourney?.status!=='selesai')}
+        {#if !admin&&hasJourney&&(!page.url.searchParams.has('signed')||campusJourney?.status!=='selesai')}
          <CampusJourney {campusId} embedded={true} onloaded={()=>void load()}/>
-        {:else if admin&&fullDummy&&selected==='program'}
+        {:else if admin&&campusJourney&&selected==='program'}
          <section class="grid gap-4 p-4" aria-label="Pemeriksaan Data Program"><h2 class="text-lg font-bold">Data Program</h2><dl class="grid gap-3 sm:grid-cols-2">{#each [['judulProgram','Nama kegiatan / program'],['alamat','Alamat kampus'],['lokasiAlamatLengkap','Alamat lengkap lokasi program'],['desa','Desa/kelurahan'],['kecamatan','Kecamatan'],['kabupaten','Kabupaten/kota'],['lokasiProvinsi','Provinsi'],['lokasiKodePos','Kode pos'],['mentor','Nama mentor'],['koordinator','Nama koordinator']] as [key,label]}<div><dt class="text-xs text-slate-500">{label}</dt><dd class="mt-1 text-sm font-semibold">{campusJourney.fields[key]||'Belum diisi'}</dd></div>{/each}</dl><label class="grid gap-1 text-sm font-semibold">Catatan revisi Data Program<textarea class="rounded-lg border border-slate-300 p-3 font-normal" rows="3" bind:value={reviewNote}></textarea></label><p class="text-sm text-slate-600">Meminta revisi akan membuka seluruh Data Program untuk kampus. Bagian lainnya tetap terkunci.</p><button class="min-h-11 justify-self-start rounded-lg bg-amber-600 px-4 font-semibold text-white disabled:opacity-40" disabled={busy||!canRequestRevision||!reviewNote.trim()} onclick={()=>void run(()=>dataService.api.post<KartuData>(`/api/pencairan/${campusId}/documents/pks/review`,{decision:'perlu_revisi',section:'program',note:reviewNote.trim(),expectedRevision:(data as any).serverRevision}),'Revisi Data Program dikirim ke kampus.')}>Minta revisi Data Program</button></section>
         {:else}
-        {#if admin&&fullDummy&&kind==='pks'&&(data as any).journey}<details class="border-b border-slate-200 p-3 text-sm"><summary class="cursor-pointer font-semibold text-[#0066B2]">Data PKS yang diisi PF</summary><form class="mt-3 flex flex-wrap items-end gap-2" aria-label="Data PKS PF" onsubmit={event=>{event.preventDefault();const fields=new FormData(event.currentTarget);void run(()=>dataService.api.patch<KartuData>(`/api/pencairan/${campusId}/pengajuan/pf`,{nomorPksPf:fields.get('nomorPksPf'),expectedRevision:(data as any).serverRevision}),'Data PF tersimpan. Dokumen kampus perlu dibuat ulang.');}}><label class="grid flex-1 gap-1">Nomor PKS PF (diisi PF)<input class="min-h-11 rounded-lg border border-slate-300 p-2" name="nomorPksPf" value={(data as any).journey.pf?.nomorPksPf||''} required maxlength="200" disabled={busy||Boolean(data.disbursement.paidAt)}/></label><button class="min-h-11 rounded-lg bg-[#0066B2] px-4 text-white disabled:opacity-40" disabled={busy||Boolean(data.disbursement.paidAt)}>Simpan data PF</button></form><p class="mt-2 text-xs text-slate-500">Perubahan data PF mewajibkan kampus memperbarui dokumen dan mengajukan kembali. Tanggal PKS tetap 17 Juni 2026.</p><a class="mt-2 inline-block text-[#0066B2] underline" href="/admin/pencairan/pengaturan">Atur penandatangan dan masa perjanjian PF</a></details>{/if}
-        {#if isRab && fullDummy}<DummyRabUpload {campusId} {kind} {admin} onediting={value => rabEditing = value} onloaded={() => void load()} />{/if}
-        {#if !admin && isItem && !(isRab && fullDummy)}
-          {#if fullDummy&&(data as any).journey&&['pks','permohonan','kuitansi','invois','surat_kuasa'].includes(kind)}<div class="p-3"><DocumentGuide {kind} disabled={busy||Boolean(data.disbursement.paidAt)||!admin&&!canRevise(campusJourney,revisionSection(kind) as EditableSection)} checklist={(data as any).journey.checklist} kuasa={(data as any).journey.fields.jenisRekening==='kuasa'} onchange={async(key,checked)=>{await dataService.api.patch(`/api/pencairan/${campusId}/pengajuan/checklist`,{key,checked,expectedRevision:(data as any).serverRevision});await load();}}/></div>{/if}
+        {#if admin&&hasJourney&&kind==='pks'&&(data as any).journey}<details class="border-b border-slate-200 p-3 text-sm"><summary class="cursor-pointer font-semibold text-[#0066B2]">Data PKS yang diisi PF</summary><form class="mt-3 flex flex-wrap items-end gap-2" aria-label="Data PKS PF" onsubmit={event=>{event.preventDefault();const fields=new FormData(event.currentTarget);void run(()=>dataService.api.patch<KartuData>(`/api/pencairan/${campusId}/pengajuan/pf`,{nomorPksPf:fields.get('nomorPksPf'),expectedRevision:(data as any).serverRevision}),'Data PF tersimpan. Dokumen kampus perlu dibuat ulang.');}}><label class="grid flex-1 gap-1">Nomor PKS PF (diisi PF)<input class="min-h-11 rounded-lg border border-slate-300 p-2" name="nomorPksPf" value={(data as any).journey.pf?.nomorPksPf||''} required maxlength="200" disabled={busy||Boolean(data.disbursement.paidAt)}/></label><button class="min-h-11 rounded-lg bg-[#0066B2] px-4 text-white disabled:opacity-40" disabled={busy||Boolean(data.disbursement.paidAt)}>Simpan data PF</button></form><p class="mt-2 text-xs text-slate-500">Perubahan data PF mewajibkan kampus memperbarui dokumen dan mengajukan kembali. Tanggal PKS tetap 17 Juni 2026.</p><a class="mt-2 inline-block text-[#0066B2] underline" href="/admin/pencairan/pengaturan">Atur penandatangan dan masa perjanjian PF</a></details>{/if}
+        {#if isRab && hasJourney}<RabUpload {campusId} {kind} {admin} onediting={value => rabEditing = value} onloaded={() => void load()} />{/if}
+        {#if !admin && isItem && !(isRab && hasJourney)}
+          {#if hasJourney&&(data as any).journey&&['pks','permohonan','kuitansi','invois','surat_kuasa'].includes(kind)}<div class="p-3"><DocumentGuide {kind} disabled={busy||Boolean(data.disbursement.paidAt)||!admin&&!canRevise(campusJourney,revisionSection(kind) as EditableSection)} checklist={(data as any).journey.checklist} kuasa={(data as any).journey.fields.jenisRekening==='kuasa'} onchange={async(key,checked)=>{await dataService.api.patch(`/api/pencairan/${campusId}/pengajuan/checklist`,{key,checked,expectedRevision:(data as any).serverRevision});await load();}}/></div>{/if}
           <section aria-label="Status dokumen" class="grid gap-3 border-b border-slate-200 p-3 text-sm">
             <div class="grid gap-1 rounded-lg border border-l-4 p-3 {campusStatusClass[itemState]}" role="status">
               <strong>{ITEM_STATE_LABEL[itemState]}</strong>
@@ -543,7 +546,7 @@
             {:else}<PembayaranView {campusId} {data} onchange={apply} />{/if}
           </div>
         {:else}
-          {#if !(isRab && fullDummy)}
+          {#if !(isRab && hasJourney)}
           <div class="relative min-h-0 min-w-0 overflow-hidden bg-[#e5e9f0]" style={`height:${docHeight}px`}>
             {#if showLook}
               <div class="absolute right-3 top-3 z-10 w-[min(360px,90%)] rounded-xl border border-slate-200 bg-white p-3 text-sm shadow-[0_12px_32px_#0b254522]">
@@ -553,7 +556,7 @@
             {/if}
             {#if kind === 'sk'}
               {#if data.summary.skFile}
-                <iframe title="SK" src={`${import.meta.env.MODE === 'mockup' ? '/sk-dummy.pdf' : '/api/pencairan/sk'}#page=${data.summary.skLampiranPage || 1}`} class="h-full w-full border-0 bg-white"></iframe>
+                <iframe title="SK" src={`${'/api/pencairan/sk'}#page=${data.summary.skLampiranPage || 1}`} class="h-full w-full border-0 bg-white"></iframe>
               {:else}
                 <div class="flex h-full items-center justify-center text-sm text-slate-600">Berkas SK belum dimuat.</div>
               {/if}
@@ -569,10 +572,10 @@
                     {#if bukti.note}<p class="mt-1 text-[13px] leading-relaxed text-slate-700">{bukti.note}</p>{/if}
                   </div>
                 {/if}
-                {#if fullDummy && !data.rab}
+                {#if hasJourney && !data.rab}
                   <p class="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">{admin ? 'Belum ada unggahan RAB dari kampus.' : 'Hasil pembacaan Excel akan muncul di sini setelah file berhasil diunggah.'}</p>
                 {:else}
-                  <RabTable {campusId} compact {refresh} canEdit={admin && !fullDummy} share={RAB_SHARE[kind as keyof typeof RAB_SHARE]} />
+                  <RabTable {campusId} compact {refresh} canEdit={admin && !hasJourney} share={RAB_SHARE[kind as keyof typeof RAB_SHARE]} />
                 {/if}
               </div>
             {:else if version}
@@ -583,7 +586,7 @@
           </div>
 
           {/if}
-          {#if admin && isRab && fullDummy && data.rab?.status === 'draf'}<p class="bg-amber-50 px-4 py-3 text-sm text-amber-900">Draf belum diajukan: kampus harus mengajukan versi ini sebelum admin memberi keputusan.</p>{/if}
+          {#if admin && isRab && hasJourney && data.rab?.status === 'draf'}<p class="bg-amber-50 px-4 py-3 text-sm text-amber-900">Draf belum diajukan: kampus harus mengajukan versi ini sebelum admin memberi keputusan.</p>{/if}
           {#if admin || kind === 'sk' || spec.some(f => version?.fields?.[f.key] !== null && version?.fields?.[f.key] !== undefined && version?.fields?.[f.key] !== '')}
           <div class="document-review grid gap-2.5 border-t border-slate-200/70 bg-white px-3 py-3">
             {#if kind === 'sk'}
@@ -597,13 +600,13 @@
                 {#each spec as f}
                   <label class="grid min-w-0 gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400 {f.type === 'names' || ['terbilang', 'penandatangan', 'pemberiKuasa', 'rekeningTujuan'].includes(f.key) ? 'sm:col-span-2' : ''}">{f.label}
                     {#if f.type === 'bool'}
-                      <span class="flex min-h-[36px] items-center gap-1.5 text-[13px] font-medium normal-case tracking-normal text-slate-800"><input type="checkbox" bind:checked={draft[f.key] as boolean} disabled={!isCurrent || (fullDummy && Boolean((data as any).journey))} onchange={saveIfChanged} />Ya</span>
+                      <span class="flex min-h-[36px] items-center gap-1.5 text-[13px] font-medium normal-case tracking-normal text-slate-800"><input type="checkbox" bind:checked={draft[f.key] as boolean} disabled={!isCurrent || (hasJourney && Boolean((data as any).journey))} onchange={saveIfChanged} />Ya</span>
                     {:else if f.type === 'date'}
-                      <input type="date" class="min-h-[36px] w-full rounded-lg border border-slate-300 px-2 text-[13px] font-medium normal-case tracking-normal text-slate-900" bind:value={draft[f.key] as string} disabled={!isCurrent || (fullDummy && Boolean((data as any).journey))} onblur={saveIfChanged} />
+                      <input type="date" class="min-h-[36px] w-full rounded-lg border border-slate-300 px-2 text-[13px] font-medium normal-case tracking-normal text-slate-900" bind:value={draft[f.key] as string} disabled={!isCurrent || (hasJourney && Boolean((data as any).journey))} onblur={saveIfChanged} />
                     {:else if f.type === 'money'}
-                      <input class="min-h-[36px] w-full rounded-lg border border-slate-300 px-2 text-right text-[13px] font-medium normal-case tracking-normal tabular-nums text-slate-900" bind:value={draft[f.key] as string} placeholder="0" inputmode="numeric" disabled={!isCurrent || (fullDummy && Boolean((data as any).journey))} onblur={saveIfChanged} />
+                      <input class="min-h-[36px] w-full rounded-lg border border-slate-300 px-2 text-right text-[13px] font-medium normal-case tracking-normal tabular-nums text-slate-900" bind:value={draft[f.key] as string} placeholder="0" inputmode="numeric" disabled={!isCurrent || (hasJourney && Boolean((data as any).journey))} onblur={saveIfChanged} />
                     {:else}
-                      <input class="min-h-[36px] w-full rounded-lg border border-slate-300 px-2 text-[13px] font-medium normal-case tracking-normal text-slate-900" bind:value={draft[f.key] as string} placeholder={f.type === 'names' ? 'Nama, pisahkan dengan koma' : ''} disabled={!isCurrent || (fullDummy && Boolean((data as any).journey))} onblur={saveIfChanged} />
+                      <input class="min-h-[36px] w-full rounded-lg border border-slate-300 px-2 text-[13px] font-medium normal-case tracking-normal text-slate-900" bind:value={draft[f.key] as string} placeholder={f.type === 'names' ? 'Nama, pisahkan dengan koma' : ''} disabled={!isCurrent || (hasJourney && Boolean((data as any).journey))} onblur={saveIfChanged} />
                     {/if}
                   </label>
                 {/each}
@@ -644,8 +647,9 @@
                     {#if latestNote && !computedOnly && latestNote.trim().toLowerCase() !== decisionLabel.toLowerCase()}<p class="mt-1 whitespace-pre-wrap text-[14px] leading-relaxed text-slate-800">{latestNote}</p>{/if}
                   </div>
                   <div class="col-span-2 flex flex-wrap justify-end gap-2 lg:col-span-1">
-                    <button type="button" class="min-h-[44px] rounded-lg border border-slate-300 bg-white px-3.5 text-[13px] font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-40" disabled={busy} onclick={() => (editing = true)}>{computedOnly ? 'Periksa juga' : 'Ubah keputusan'}</button>
-                    {#if !computedOnly}<button type="button" class="min-h-[44px] rounded-lg border border-red-200 bg-white px-3.5 text-[13px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-40" disabled={busy} title="Butir kembali ke Periksa; riwayat tetap tersimpan" onclick={() => void undo()}>Batalkan keputusan</button>{/if}
+                    {#if data?.disbursement.paidAt}<p class="w-full text-sm text-slate-500">Pengajuan sudah dibayar. Keputusan terkunci.</p>{/if}
+                    <button type="button" class="min-h-[44px] rounded-lg border border-slate-300 bg-white px-3.5 text-[13px] font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-40" disabled={busy || Boolean(data?.disbursement.paidAt)} onclick={() => (editing = true)}>{computedOnly ? 'Periksa juga' : 'Ubah keputusan'}</button>
+                    {#if !computedOnly}<button type="button" class="min-h-[44px] rounded-lg border border-red-200 bg-white px-3.5 text-[13px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-40" disabled={busy || Boolean(data?.disbursement.paidAt)} title={data?.disbursement.paidAt ? 'Pengajuan sudah dibayar dan terkunci.' : 'Butir kembali ke Periksa; riwayat tetap tersimpan'} onclick={() => void undo()}>Batalkan keputusan</button>{/if}
                   </div>
                 </div>
               {:else if admin}
@@ -690,7 +694,7 @@
         {/if}
       </div>
     </div>
-    {#if isItem}<p class="text-[11.5px] text-slate-400">{isRab && fullDummy ? 'Satu RAB 100% dengan pembagian Tahap 1 dan Tahap 2.' : KIND_FILE[kind]}{admin ? ' · Enter untuk tombol hijau, Esc kembali ke Tahap 1' : ''}</p>{/if}
+    {#if isItem}<p class="text-[11.5px] text-slate-400">{isRab && hasJourney ? 'Satu RAB 100% dengan pembagian Tahap 1 dan Tahap 2.' : KIND_FILE[kind]}{admin ? ' · Enter untuk tombol hijau, Esc kembali ke Tahap 1' : ''}</p>{/if}
   </div>
   {#if showRiwayat}<RiwayatSheet context={`kampus:${campusId}/pencairan/t1`} title="Riwayat perubahan kampus ini" onclose={() => (showRiwayat = false)} />{/if}
 {/if}

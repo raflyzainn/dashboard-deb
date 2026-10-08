@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'vite';
 
-test('logout clears local session even when the backend request fails', async t => {
+test('logout failure is reported and does not pretend the server session ended', async t => {
   const server = await createServer({ server: { middlewareMode: true, ws: false, watch: null, preTransformRequests: false }, appType: 'custom' });
   t.after(() => server.close());
   const { app } = await server.ssrLoadModule('/src/lib/state.svelte.ts');
@@ -12,8 +12,9 @@ test('logout clears local session even when the backend request fails', async t 
   globalThis.fetch = async () => { requests++; throw new Error('No backend in demo'); };
   app.session = { role: 'admin', id: 'admin-1', name: 'Demo' };
   app.data = { private: 'old account' };
-  assert.equal(await app.logout(), true);
-  assert.equal(app.session, null);
-  assert.equal(app.data, null);
+  assert.equal(await app.logout(), false);
+  assert.equal(app.session.id, 'admin-1');
+  assert.deepEqual(app.data, { private: 'old account' });
+  assert.match(app.error, /Keluar belum dapat dipastikan/);
   assert.equal(requests, 1);
 });

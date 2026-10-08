@@ -25,6 +25,7 @@
   let busy = $state<'' | 'preview' | 'simpan'>('');
   let previewUrl = $state('');
   let copied = $state(false);
+  let operationId='';
   let copyTimer: ReturnType<typeof setTimeout> | undefined;
 
   const ENTRY_SHORT = ['Permohonan', 'Invois', 'Kuitansi', 'RAB 70%', 'Rekening', 'Surat kuasa, PKS'];
@@ -71,7 +72,9 @@
     if (busy || !view?.ready) return;
     busy = 'simpan'; error = '';
     try {
-      const next = await dataService.api.post<View>(`${base}/lampiran`, { mode: 'simpan' });
+      operationId ||= crypto.randomUUID().replaceAll('-','').slice(0,15);
+      const next = await dataService.api.post<View>(`${base}/lampiran`, { mode: 'simpan', operationId, expectedRevision:data.disbursement.revision });
+      operationId='';
       view = next;
       if (previewUrl) { URL.revokeObjectURL(previewUrl); previewUrl = ''; }
       onchange(await dataService.api.get<KartuData>(base), `Lampiran ${next.attachments[0]?.number || ''} tersimpan.`);

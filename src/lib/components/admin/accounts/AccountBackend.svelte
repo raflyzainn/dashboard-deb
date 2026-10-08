@@ -5,7 +5,7 @@
   import Icon from '$lib/components/ui/Icon.svelte';
   import Modal from '$lib/components/ui/Modal.svelte';
   import { normalizeEmail, validEmail } from '$lib/account-validation';
-  import type { DemoAccount as Account } from '$lib/data/demo/store';
+  interface Account { id:string; slot:1|2; campusId:string; campus:string; name:string; email:string; revision:number; status:string; active:boolean }
   let cache = $state<Record<string, Account>>({}),
     ids = $state<string[]>([]);
   const cached = $derived(Object.values(cache));
@@ -169,15 +169,14 @@
       Akun kampus
     </h1>
     <p class="leading-[1.6] m-[0px]">
-      Simulasi pengelolaan nama dan email PIC. Perubahan hanya tersimpan di browser ini.
+      Kelola nama dan email PIC kampus.
     </p>
   </div>
 </div>
 <p
   class="mt-[0px] [&&]:mb-[22px] [&&]:leading-[1.6] [&&]:text-[13px] [&&]:text-[#475569] [&&]:[background-image:initial] [&&]:[background-color:rgb(241,_247,_255)] [&&]:px-[17px] [&&]:py-[13px] mx-[0px] [&&]:border-[1px] [&&]:border-dashed [&&]:border-[color:rgb(189,_212,_240)] [&&]:rounded-[9px] mock-note"
 >
-  Mode demo: email tidak dikirim dan akun nyata tidak dibuat. Gunakan pilihan role pada halaman
-  masuk untuk mencoba alur kampus dan admin. <button
+  Periksa nama, email, dan status akun sebelum menyimpan perubahan. <button
     class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[600] [font-stretch:inherit] [&&]:text-[13px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[#0668ce] inline-flex items-center gap-y-[7px] gap-x-[7px] [background-image:none] [background-color:initial] [white-space-collapse:collapse] [text-wrap-mode:nowrap] p-[0px] border-[0px] border-none border-[color:currentcolor] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.4] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:text-[#0a3eaa] text-link"
     onclick={() => load()}>Muat ulang status</button
   >
@@ -271,7 +270,7 @@
   {#if changed.length}<p
       class="[&&]:leading-[1.6] [&&]:text-[13px] [&&]:text-[#475569] [&&]:mx-[24px] [&&]:my-[12px] max-[750.01px]:[&&]:mx-[18px] hint"
     >
-      Simpan nama dan email contoh untuk simulasi pengelolaan PIC. Tidak ada email yang dikirim.
+      Simpan nama dan email PIC setelah memastikan isian sudah benar.
     </p>{/if}
   {#if hasErrors}<p
       class="[&&]:leading-[1.6] [&&]:text-[13px] [&&]:text-[#a33b31] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_240,_238)] [&&]:p-[12px] [&&]:mx-[24px] [&&]:my-[12px] [&&]:rounded-[7px] max-[750.01px]:[&&]:mx-[18px] error"
@@ -443,8 +442,7 @@
 </section>
 {#if resetAccounts}<Modal title="Ubah email akun aktif?" onclose={() => (resetAccounts = null)}
     ><p class="leading-[1.6] m-[0px]">
-      Perubahan ini hanya mengganti email contoh di browser ini. Tidak ada tautan aktivasi atau
-      email yang dikirim.
+      Email akun aktif berikut akan diubah. Pastikan alamat baru sudah benar sebelum menyimpan.
     </p>
     <ul
       class="[&&]:[list-style-position:initial] [&&]:[list-style-image:initial] [&&]:[list-style-type:none] [&&]:max-h-[320px] [&&]:overflow-x-auto [&&]:overflow-y-auto [&&]:p-[0px] [&&]:mx-[0px] [&&]:my-[20px] recipient-list"
@@ -464,7 +462,7 @@
       ><button
         class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] font-[600] [font-stretch:inherit] text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] cursor-pointer text-[white] inline-flex items-center justify-center gap-y-[9px] gap-x-[9px] min-h-[42px] [background-image:linear-gradient(135deg,_rgb(8,_119,_216),_rgb(21,_89,_214))] [background-color:initial] [transition-behavior:normal,_normal] [transition-duration:0.15s,_0.15s] [transition-timing-function:ease,_ease] [transition-delay:0s,_0s] [transition-property:background,_box-shadow] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [box-shadow:0_8px_18px_#075fc71a] px-[18px] py-[11px] border-[1px] border-solid border-[color:rgb(8,_107,_201)] rounded-[8px] [&:disabled]:cursor-not-allowed [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:[background-image:linear-gradient(135deg,_rgb(5,_104,_196),_rgb(18,_75,_197))] [&:hover:not(:disabled)]:[background-color:initial] [&:hover:not(:disabled)]:[box-shadow:0_10px_24px_#075fc72c] max-[700.01px]:text-[13px] max-[700.01px]:px-[15px] max-[700.01px]:py-[10px] button"
         disabled={busy}
-        onclick={commitEmails}>Simpan email demo</button
+        onclick={commitEmails}>Simpan perubahan email</button
       >
     </div></Modal
   >{/if}

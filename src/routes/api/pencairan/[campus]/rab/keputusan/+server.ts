@@ -1,7 +1,7 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import { secured, ok, fail, ADMIN, actorInfo, recordId } from '$lib/server/deb/access';
 import { readJsonBody } from '$lib/server/deb/request-body';
-import { reviewDocument, workspace } from '$lib/server/deb/pencairan';
+import { workspace } from '$lib/server/deb/pencairan';
 import { decideVersion } from '$lib/server/deb/rab';
 
 /**
@@ -15,7 +15,6 @@ export const POST: RequestHandler = event => secured(event, ADMIN, async ({ acto
   const decision = String(body.decision || '');
   if (decision !== 'sesuai' && decision !== 'perlu_revisi' && decision !== 'batal') fail(400, 'Pilih keputusan.');
   const note = String(body.note || '').trim().slice(0, 4000);
-  await decideVersion(pb, actorInfo(actor), campusId, decision, note);
-  await reviewDocument(pb, actorInfo(actor), campusId, 'rab', decision === 'batal' ? 'perlu_konfirmasi' : decision, decision === 'batal' ? '' : note);
+  await decideVersion(pb, actorInfo(actor), campusId, decision, note, body.expectedRevision as number | undefined);
   return ok(await workspace(pb, campusId));
 });

@@ -1,7 +1,6 @@
-import { createDemoService } from './demo/service';
 import { reportError } from '../feedback';
-import { createFullDemoService } from '../../../mockups/app/service';
-import type { DataService, PreviewAccount } from '../types';
+import type { DataService, PreviewAccount, ProgramProfile } from '../types';
+import type { DocumentKind, KpiEvidence, PaymentAction } from '../payments';
 import type { PageRequest, PageResponse, SessionResponse, NavigationData } from '../page-data';
 
 export const READ_ONLY_MESSAGE = 'Penyimpanan tidak tersedia pada sesi ini.';
@@ -82,10 +81,6 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
   const done = async (value: Promise<unknown>): Promise<void> => { await value; };
   const idPath = (id: string) => encodeURIComponent(id);
   const service: DataService = {
-    demoActivation: () => Promise.reject(new DataReadError(404, 'Aktivasi demo hanya tersedia pada demo mandiri.')),
-    requestDemoActivation: () => Promise.reject(new DataReadError(404, 'Aktivasi demo hanya tersedia pada demo mandiri.')),
-    activateDemo: () => Promise.reject(new DataReadError(404, 'Aktivasi demo hanya tersedia pada demo mandiri.')),
-    loginDemo: () => Promise.reject(new DataReadError(404, 'Aktivasi demo hanya tersedia pada demo mandiri.')),
     createPeriod: name => done(write('/api/admin/periods', 'POST', { name })),
     openPeriod: period => done(write('/api/admin/periods/open', 'POST', { period })),
     masters: () => request('/api/admin/masters', response => response.json()),
@@ -124,7 +119,7 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
   // Plain JSON helpers for the modules built on the real backend (users, pencairan, audit).
   const send = <T,>(url: string, method: string, body?: object | FormData): Promise<T> => {
     const revision=revisions.get(url.match(/^\/api\/pencairan\/([^/?]+)/)?.[1]||'');
-    if(import.meta.env?.MODE==='pocketbase-local'&&revision!==undefined){if(body instanceof FormData){if(!body.has('expectedRevision'))body.set('expectedRevision',String(revision));}else body={expectedRevision:revision,...body};}
+    if(revision!==undefined){if(body instanceof FormData){if(!body.has('expectedRevision'))body.set('expectedRevision',String(revision));}else body={expectedRevision:revision,...body};}
     return request<T>(url, response => response.json(), {
     method, body: body instanceof FormData ? body : body === undefined ? undefined : JSON.stringify(body),
     headers: body instanceof FormData || body === undefined ? {} : { 'Content-Type': 'application/json' }
@@ -137,13 +132,22 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
     blob: (url: string) => request(url, response => response.blob())
   };
   const unavailable = () => Promise.reject(new DataReadError(404, 'Fitur ini belum tersedia pada sistem produksi.'));
-  const legacy = { updateReadiness: unavailable, updateIndicatorTarget: unavailable, commentProposal: unavailable, createPayment: unavailable, paymentAction: unavailable,
-    uploadPaymentDocument: unavailable, reviewPaymentDocument: unavailable, addPaymentFeedback: unavailable, savePaymentKpi: unavailable, exportPayment: unavailable, paymentFile: (_id: string, _fileId: string): Promise<Blob> => unavailable(),
+  const legacy = {
+    updateReadiness: (_id: string, _values: Partial<ProgramProfile>): Promise<void> => unavailable(),
+    updateIndicatorTarget: (_id: string, _target: number): Promise<void> => unavailable(),
+    commentProposal: (_id: string, _comment: string): Promise<void> => unavailable(),
+    createPayment: (_id: string, _amount: number): Promise<void> => unavailable(),
+    paymentAction: (_id: string, _revision: number, _kind: PaymentAction, _note: string): Promise<void> => unavailable(),
+    uploadPaymentDocument: (_id: string, _revision: number, _kind: DocumentKind, _file: File): Promise<void> => unavailable(),
+    reviewPaymentDocument: (_id: string, _revision: number, _kind: DocumentKind, _approved: boolean, _note: string): Promise<void> => unavailable(),
+    addPaymentFeedback: (_id: string, _revision: number, _feedback: string): Promise<void> => unavailable(),
+    savePaymentKpi: (_id: string, _revision: number, _amount: number, _kpis: KpiEvidence[]): Promise<void> => unavailable(),
+    exportPayment: (_id: string, _revision: number): Promise<{ blob: Blob; filename: string }> => unavailable(),
+    paymentFile: (_id: string, _fileId: string): Promise<Blob> => unavailable(),
     accountsAdmin: (path: string, body?: { changes?: { id: string; name: string; email: string; revision: number }[] }) => body ? api.post(path, body) : api.get(path),
     updateProgram: (campusId: string, values: Record<string, unknown>) => done(write('/api/campuses/' + idPath(campusId) + '/program', 'PATCH', values)) };
   return { ...service, ...legacy, api, selectAccount, session, navigation, page, async accounts(): Promise<PreviewAccount[]> {
     return request('/api/dev/accounts', async response => (await response.json()).accounts);
   } };
 }
-export const dataService = import.meta.env?.MODE === 'mockup' ? createFullDemoService() : createHttpService();
-export { createDemoService };
+export const dataService = createHttpService();

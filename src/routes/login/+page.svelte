@@ -21,7 +21,7 @@
     { label: 'Akun kampus', accounts: localAccounts.filter(a => a.role === 'campus' && a.disbursementStarted === undefined) },
     { label: 'Admin', accounts: localAccounts.filter(a => a.role === 'admin') }
   ].filter(group => group.accounts.length));
-  const showLocalAccounts = dev || import.meta.env.MODE === 'mockup';
+  const showLocalAccounts = dev;
 
   $effect(() => {
     untrack(() => {

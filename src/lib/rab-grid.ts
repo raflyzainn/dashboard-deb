@@ -15,9 +15,9 @@ const text = (v: unknown) => (v === null || v === undefined ? '' : String(v).rep
 const isNum = (v: unknown) => typeof v === 'number' && Number.isFinite(v);
 const numberOf = (v: unknown): number | null => (isNum(v) ? (v as number) : typeof v === 'string' && v.trim() ? (parseVolume(v) ?? null) : null);
 const rupiahOf = (v: unknown): number | null => (isNum(v) ? Math.round((v as number) * 100) : typeof v === 'string' && v.trim() ? parseSen(v) : null);
-const TOTAL = /^(sub ?total|jumlah|total|grand total)\b/i;
+const TOTAL = /^(?:sub ?total\b|(?:jumlah|total|grand total)(?:\s+(?:keseluruhan|anggaran|biaya|rab))?\s*:?[\s]*$)/i;
 /** The grand total closes the table; the signature block and any repeated copy below it are not read. */
-const GRAND = /^(total|grand total)\b/i;
+const GRAND = /^(total|grand total)(?:\s+(?:keseluruhan|anggaran|biaya|rab))?\s*:?[\s]*$/i;
 const HEADER_TEXT = /uraian kegiatan|^perhitungan$|^volume$|^jumlah$|^harga satuan$/i;
 const RECAP = /rekapitulasi|^rekap\b/i;
 const ENUM = /^(?:[A-Z]{1,2}|[a-z]{1,2}|\d{1,2}|[ivxIVX]{1,4})[.)]?$/;
@@ -58,10 +58,11 @@ export function parseGridSheet(rows: unknown[][]): GridResult {
     if (!labels.length) continue;
     const first = labels[0];
     if (labels.some(l => HEADER_TEXT.test(l.value))) continue;
-    if (labels.some(l => GRAND.test(l.value))) break;
+    const summaryRow = volume === null && price === null;
+    if (summaryRow && labels.some(l => GRAND.test(l.value))) break;
     if (labels.some(l => RECAP.test(l.value))) break;
-    if (TOTAL.test(first.value)) continue;
-    if (labels.some(l => TOTAL.test(l.value)) && labels.length === 1) continue;
+    if (summaryRow && TOTAL.test(first.value)) continue;
+    if (summaryRow && labels.some(l => TOTAL.test(l.value)) && labels.length === 1) continue;
     // A heading: an enumerator in one cell and the name beside it, or an enumerator glued to the name, or a bare name without money.
     const m = first.value.match(ENUM_PREFIX);
     const enumOnly = ENUM.test(first.value) && labels.length > 1;

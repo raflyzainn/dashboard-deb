@@ -1,6 +1,7 @@
 import { AwsClient } from 'aws4fetch';
 import { dev } from '$app/environment';
 import { PreviewError } from './preview-error';
+import { FILE_MIME, fileExtension } from '../../upload-file';
 
 /**
  * Private object storage for every document version. One object per version, never overwritten, never deleted.
@@ -69,14 +70,10 @@ export function storage(settings: Record<string, string>): Storage {
 export function versionKey(code: string, term: number, kind: string, number: number, originalName: string) {
   const safe = originalName.normalize('NFKD').replace(/[^\w.\- ]+/g, '').replace(/\s+/g, '-').slice(0, 80) || 'berkas';
   const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
-  return `kampus/${code}/termin-${term}/${kind}/v${number}_${stamp}_${safe}`;
+  return `kampus/${code}/termin-${term}/${kind}/v${number}_${stamp}_${crypto.randomUUID()}_${safe}`;
 }
 
-export const MIME: Record<string, string> = {
-  pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif',
-  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', doc: 'application/msword',
-  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', xls: 'application/vnd.ms-excel', csv: 'text/csv'
-};
+export const MIME = FILE_MIME;
 export const ALLOWED_EXTENSIONS = Object.keys(MIME);
-export function extensionOf(name: string) { return (name.split('.').pop() || '').toLowerCase(); }
+export const extensionOf = fileExtension;
 export function mimeFor(name: string, fallback = '') { return MIME[extensionOf(name)] || fallback || 'application/octet-stream'; }

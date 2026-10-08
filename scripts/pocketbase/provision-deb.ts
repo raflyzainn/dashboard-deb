@@ -14,8 +14,8 @@ import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { loadEnv, requireEnv } from './env';
 import { debCollections, CAMPUS_EXTRA, USER_EXTRA, USER_ROLES } from './deb-schema';
-import { CAMPUSES, CAMPUS_REGIONS } from '../../src/lib/data/demo/fixtures/campuses';
-import { CAMPUS_LOCATIONS } from '../../src/lib/data/demo/fixtures/locations';
+import { CAMPUSES, CAMPUS_REGIONS } from '../fixtures/campuses';
+import { CAMPUS_LOCATIONS } from '../fixtures/locations';
 
 const SK_NUMBER = 'Kpts-150/06A0000/2026-S1A';
 const SK_DATE = '2026-06-02 00:00:00.000Z';

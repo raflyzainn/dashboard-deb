@@ -17,11 +17,11 @@ export const POST: RequestHandler = async event => {
   try {
     if (op === 'logout') {
       event.cookies.delete('deb_local_preview', { path: '/' });
+      event.cookies.delete(SESSION_COOKIE, { path: '/' });
       if (event.locals.pb) {
         const backend = await serverClient();
         await revokeSessions(backend.pb, event.locals.pb.authStore.record!);
       }
-      event.cookies.delete(SESSION_COOKIE, { path: '/' });
       return json({ ok: true });
     }
     const body=await readJsonBody(event.request,16384);

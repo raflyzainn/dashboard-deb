@@ -71,7 +71,7 @@
 
   const rows = $derived.by<Row[]>(() => MERGE_KINDS.map(kind => {
     const doc = data.documents.find(d => d.kind === kind)!;
-    const final = [...doc.versions].reverse().find(v => v.origin === 'generated' && (!(data as any).journey || import.meta.env.MODE==='mockup' || v.generation?.final)) || null;
+    const final = [...doc.versions].reverse().find(v => v.origin === 'generated' && (!(data as any).journey || v.generation?.final)) || null;
     const signed = [...doc.versions].reverse().find(v => v.signed && (!final || v.number > final.number)) || null;
     const missing = (info?.missing[kind] || []).map(m => m.label.toLowerCase());
     const clauseBlocks = kind === 'pks' && Boolean(info?.clauseRequired) && !data.disbursement.clauseChecked;

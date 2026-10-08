@@ -105,7 +105,7 @@
                 {#if note}<span class="mt-0.5 flex items-start gap-1 text-xs font-normal text-amber-900"><Icon name="alert" size={12} /><span>{note}</span></span>{/if}
               </td>
               {#if item}
-                <td class="{cell} text-right tabular-nums">{formatVolume(import.meta.env.MODE === 'mockup' && share !== 'penuh' && typeof line.flags?.[share === 'tahap1' ? 'term1Volume' : 'term2Volume'] === 'number' ? line.flags[share === 'tahap1' ? 'term1Volume' : 'term2Volume'] as number : line.volume)}</td>
+                <td class="{cell} text-right tabular-nums">{formatVolume(share !== 'penuh' && typeof line.flags?.[share === 'tahap1' ? 'term1Volume' : 'term2Volume'] === 'number' ? line.flags[share === 'tahap1' ? 'term1Volume' : 'term2Volume'] as number : line.volume)}</td>
                 <td class={cell}>{line.unit}</td>
                 <td class="{cell} text-right tabular-nums">{money(line.unitPriceSen)}</td>
               {:else}

@@ -30,7 +30,7 @@
     if (busy || !ready) return;
     busy = true; error = '';
     try {
-      const next = await dataService.api.patch<KartuData>(`/api/pencairan/${campusId}/pembayaran`, { paidAt, paidSen: requested, paidRef: paidRef.trim(), paidNote: '' });
+      const next = await dataService.api.patch<KartuData>(`/api/pencairan/${campusId}/pembayaran`, { paidAt, paidSen: requested, paidRef: paidRef.trim(), paidNote: '', expectedRevision:data.disbursement.revision });
       paidAt = ''; paidRef = '';
       onchange(next, 'Pembayaran Tahap 1 tercatat.');
     } catch (e) { error = reportError(e instanceof Error ? e.message : 'Pembayaran belum tercatat.'); }
@@ -55,7 +55,7 @@
       {:else}
         <p class="text-xs text-slate-500">Jumlah yang dibayar harus sama dengan yang diajukan.</p>{#if reason}<p class="text-sm text-amber-900" role="status">{reason}</p><div class="flex flex-wrap gap-3 text-sm font-semibold text-[#0066B2]"><a href={`/admin/pencairan/${campusId}?butir=ttd`}>Buka tanda tangan</a><a href={`/admin/pencairan/${campusId}?butir=lampiran`}>Buka lampiran</a></div>{/if}
       {/if}
-      {#if import.meta.env.MODE!=='mockup'}<section class="grid gap-3 border-t border-slate-200 pt-5" aria-label="Lampiran bukti transfer"><h4 class="text-sm font-semibold text-slate-900">Bukti transfer</h4><BuktiTransfer {campusId} {data} editable {onchange}/></section>{/if}
+      <section class="grid gap-3 border-t border-slate-200 pt-5" aria-label="Lampiran bukti transfer"><h4 class="text-sm font-semibold text-slate-900">Bukti transfer</h4><BuktiTransfer {campusId} {data} editable {onchange}/></section>
     </div>
   </div>
 
