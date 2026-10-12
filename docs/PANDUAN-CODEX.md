@@ -1,5 +1,9 @@
 # Panduan proyek untuk Codex
 
+## Label RAB - 12 Oktober 2026
+
+Menu, pemeriksaan, tabel pembagian, dan tombol unduh memakai **RAB 70%** dan **RAB 30%** sesuai arahan pengguna. Nilai sebenarnya tetap mengikuti alokasi: Tahap 1 maksimal 70% nilai SK dan Tahap 2 merupakan sisanya. QA Playwright memeriksa label admin/kampus dan layar 390 px tanpa overflow halaman. Perubahan ini hanya menyelaraskan teks; aturan alokasi dan data tersimpan tetap sama.
+
 ## Pemeriksaan kesiapan rilis - 8 Oktober 2026
 
 RAB lama kini menyimpan mutasi, audit, dan pemeriksaan lock pembayaran dalam satu transaksi. Notifikasi permintaan/nomor PKS PF dan permintaan akses revisi ikut transaksi pengajuan. Tombol kirim perbaikan menunggu perubahan pada lingkup yang dibuka; revisi khusus dokumen tetap dapat dibuat ulang otomatis. Hasil dan temuan terbuka: [QA kesiapan production](pencairan-deb/QA-KESIAPAN-PRODUCTION-2026-10-08.md). Kelulusan lokal bukan persetujuan deploy.

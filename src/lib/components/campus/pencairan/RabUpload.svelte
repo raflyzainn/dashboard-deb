@@ -77,7 +77,7 @@
   return {destroy(){node.removeEventListener('pointerover',hover);node.removeEventListener('pointerleave',clear);node.removeEventListener('click',click);}};
  }
  function selectReview(column:string){if(busy||column===kind)return;const url=new URL(page.url);url.searchParams.set('butir',column);void goto(url.pathname+url.search,{replaceState:true,noScroll:true,keepFocus:true});}
- const reviewLabel=$derived(kind==='rab'?'RAB Termin 1 - Tahap 1':kind==='rab_tahap2'?'RAB Termin 2 - Tahap 2':'RAB 100% - seluruh anggaran');
+ const reviewLabel=$derived(kind==='rab'?'RAB 70% - Tahap 1':kind==='rab_tahap2'?'RAB 30% - Tahap 2':'RAB 100% - seluruh anggaran');
  function openStep(index:number){
   if(index>unlockedStep||busy)return;
   const target=['upload','full','term1','term2'][index];
@@ -163,7 +163,7 @@
  }
  async function continueFull(){
   if(busy)return;busy=true;error='';
-  try{await advance(2);showSaved('RAB 100% sudah diperiksa. Atur pembagian Termin 1.');}catch(e){error = reportError(e instanceof Error?e.message:String(e));}finally{busy=false;}
+  try{await advance(2);showSaved('RAB 100% sudah diperiksa. Atur pembagian RAB 70%.');}catch(e){error = reportError(e instanceof Error?e.message:String(e));}finally{busy=false;}
  }
  async function save(next=false,automatic=false){
   if(!v||invalid||busy)return;
@@ -212,7 +212,7 @@
  {#if remoteChanged}<p role="alert" class="rounded-lg bg-amber-50 p-3 text-amber-900">Data diperbarui oleh akun lain. Isian Anda tetap tersedia.<button class={btn+' ml-2'} onclick={reloadRemote}>Muat data terbaru</button></p>{/if}
  {#if !admin&&!historical}
   <ol class="grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Langkah pengajuan RAB">
-   {#each journey?['Isi / unggah RAB','Periksa RAB 100%','Atur Termin 1','Periksa Termin 2']:['Unggah RAB 100%','Bagi jumlah item','Periksa Tahap 1','Periksa & ajukan'] as label,index}
+   {#each journey?['Isi / unggah RAB','Periksa RAB 100%','Atur RAB 70%','Periksa RAB 30%']:['Unggah RAB 100%','Bagi jumlah item','Periksa Tahap 1','Periksa & ajukan'] as label,index}
     <li>{#if journey}<button type="button" aria-current={step===index?'step':undefined} class="min-h-11 w-full rounded-lg border p-2 text-left disabled:cursor-not-allowed disabled:opacity-40 {step===index?'border-blue-300 bg-blue-50 font-bold text-blue-900':'border-slate-200 text-[#0066B2] hover:bg-slate-50'}" disabled={busy||step===index||(index===0&&!editable)||index>unlockedStep} onclick={()=>openStep(index)}>{index+1}. {label}</button>{:else}<span aria-current={step===index?'step':undefined} class="block rounded-lg border p-2 {step===index?'border-blue-300 bg-blue-50 font-bold text-blue-900':'border-slate-200 text-slate-500'}">{index+1}. {label}</span>{/if}</li>
    {/each}
   </ol>
@@ -240,7 +240,7 @@
   <p class="text-xs text-slate-500">Periksa RAB untuk melanjutkan. Pembagian item yang tidak berubah dipertahankan; item baru atau yang jumlah/harganya berubah perlu dibagi kembali.</p><button class={blue+' justify-self-end'} disabled={busy} onclick={inspectItems}>Periksa RAB 100%</button>
  {:else if v}
   <div class="flex flex-wrap items-center gap-2" aria-label="Unduh hasil RAB">
-   {#each [['penuh','100%'],['tahap1','Termin 1'],['tahap2','Termin 2']] as [share,label]}<button class="group inline-flex min-h-11 items-center justify-between gap-4 rounded-xl border border-slate-200/80 bg-white px-4 py-2.5 text-sm font-semibold text-[#0066B2] shadow-sm transition hover:border-blue-200 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0066B2] disabled:cursor-not-allowed disabled:opacity-40" disabled={busy||dirty||(share!=='penuh'&&(allocated!==items.length||invalid))} onclick={()=>exportRab(share as 'penuh'|'tahap1'|'tahap2')}><span>Unduh RAB {label}</span><span class="grid size-6 shrink-0 place-items-center rounded-full bg-[#0066B2] text-white transition group-hover:bg-[#005493]"><Icon name="download" size={14}/></span></button>{/each}
+   {#each [['penuh','100%'],['tahap1','70%'],['tahap2','30%']] as [share,label]}<button class="group inline-flex min-h-11 items-center justify-between gap-4 rounded-xl border border-slate-200/80 bg-white px-4 py-2.5 text-sm font-semibold text-[#0066B2] shadow-sm transition hover:border-blue-200 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0066B2] disabled:cursor-not-allowed disabled:opacity-40" disabled={busy||dirty||(share!=='penuh'&&(allocated!==items.length||invalid))} onclick={()=>exportRab(share as 'penuh'|'tahap1'|'tahap2')}><span>Unduh RAB {label}</span><span class="grid size-6 shrink-0 place-items-center rounded-full bg-[#0066B2] text-white transition group-hover:bg-[#005493]"><Icon name="download" size={14}/></span></button>{/each}
   </div>
   {#if dirty}<p class="text-xs text-slate-500">Simpan perubahan untuk mengunduh RAB terbaru.</p>{/if}
   <div class="rounded-xl border p-4 {v.status==='disetujui'?'border-green-200 bg-green-50 text-green-900':v.status==='menunggu'?'border-blue-200 bg-blue-50 text-blue-900':'border-amber-200 bg-amber-50 text-amber-950'}">
@@ -263,8 +263,8 @@
    <!-- svelte-ignore a11y_no_noninteractive_tabindex (Tabel dapat digeser dengan keyboard pada layar kecil.) -->
    <div class="min-w-0 overflow-x-auto rounded-xl border border-slate-200" role="region" aria-label="Pembagian jumlah item RAB" tabindex="0">
     <table class="w-full min-w-[660px] border-separate border-spacing-0 text-sm tabular-nums">
-     <caption class="sr-only">Pembagian termin per item. Isi jumlah Termin 1; Termin 2 dihitung otomatis.</caption>
-     <thead class="bg-slate-50 text-xs text-slate-600"><tr><th scope="col" class="sticky left-0 z-10 w-[30%] bg-slate-50 p-3 text-left">Item</th><th scope="col" class="p-3 text-right">Total RAB</th><th scope="col" class="w-[190px] p-3 text-left">Termin 1</th><th scope="col" class="p-3 text-right">Termin 2 - otomatis</th></tr></thead>
+     <caption class="sr-only">Pembagian termin per item. Isi jumlah RAB 70%; RAB 30% dihitung otomatis.</caption>
+     <thead class="bg-slate-50 text-xs text-slate-600"><tr><th scope="col" class="sticky left-0 z-10 w-[30%] bg-slate-50 p-3 text-left">Item</th><th scope="col" class="p-3 text-right">Total RAB</th><th scope="col" class="w-[190px] p-3 text-left">RAB 70%</th><th scope="col" class="p-3 text-right">RAB 30% - otomatis</th></tr></thead>
      <tbody>{#each pagedItems as line (line.id)}
       {@const q=quantities[line.id]}
       {@const valid=validQuantity(q,line.volume)}
@@ -274,7 +274,7 @@
        <td class="border-t border-slate-200 p-3 align-top"><input class="min-h-11 w-full rounded-lg border bg-white p-2 {q!=null&&!valid?'border-red-400':'border-slate-300'}" type="number" required min="0" max={line.volume} step="1" aria-invalid={q!=null&&!valid} aria-describedby={`help-${line.id}`} value={q??''} placeholder="Jumlah" aria-label={`Jumlah Tahap 1: ${line.title}`} disabled={busy&&!autosaving} oninput={e=>setQuantity(line.id,e.currentTarget.value===''?null:e.currentTarget.valueAsNumber)}/>
         <p class="mt-1 text-xs text-slate-500">{valid?formatSen(Math.round(q!*line.unitPriceSen)):'Belum dibagi'}</p>
         <div class="mt-1 flex gap-1"><button type="button" class="min-h-9 flex-1 rounded border px-2 text-xs {q===line.volume?'border-blue-300 bg-blue-50 font-semibold text-blue-900':'border-slate-200 text-[#0066B2]'}" aria-pressed={q===line.volume} disabled={busy&&!autosaving} onclick={()=>setQuantity(line.id,line.volume)} aria-label={`Semua ke Tahap 1: ${line.title}`}>Semua T1</button><button type="button" class="min-h-9 flex-1 rounded border px-2 text-xs {q===0?'border-blue-300 bg-blue-50 font-semibold text-blue-900':'border-slate-200 text-[#0066B2]'}" aria-pressed={q===0} disabled={busy&&!autosaving} onclick={()=>setQuantity(line.id,0)} aria-label={`Semua ke Tahap 2: ${line.title}`}>Semua T2</button></div>
-        <p id={`help-${line.id}`} class="mt-1 text-xs {q!=null&&!valid?'font-semibold text-red-700':'sr-only'}" aria-live="polite">{q==null?'Isi jumlah, termasuk 0.':!valid?`Isi 0 sampai ${formatVolume(line.volume)} ${line.unit} dalam bilangan bulat.`:`Sisa Termin 2: ${remaining(line)}.`}</p>
+        <p id={`help-${line.id}`} class="mt-1 text-xs {q!=null&&!valid?'font-semibold text-red-700':'sr-only'}" aria-live="polite">{q==null?'Isi jumlah, termasuk 0.':!valid?`Isi 0 sampai ${formatVolume(line.volume)} ${line.unit} dalam bilangan bulat.`:`Sisa RAB 30%: ${remaining(line)}.`}</p>
        </td>
        <td class="border-t border-slate-200 bg-blue-50/50 p-3 text-right"><p class="font-semibold text-blue-900">{remaining(line)}</p><p class="mt-1 text-xs text-slate-500">{valid?formatSen(line.amountSen-Math.round(q!*line.unitPriceSen)):'-'}</p></td>
       </tr>
@@ -283,7 +283,7 @@
    </div>
   {:else if journey&&journeyStep==='full'}
    <h2 class="text-lg font-bold text-slate-900">Periksa RAB 100% dari Excel</h2>
-   <p class="text-slate-600">Pastikan semua kebutuhan, jumlah, dan harga sudah benar. Setelah ini Anda memilih item untuk Termin 1.</p>
+   <p class="text-slate-600">Pastikan semua kebutuhan, jumlah, dan harga sudah benar. Setelah ini Anda memilih item untuk RAB 70%.</p>
      <div class="flex flex-wrap items-end gap-3"><label class="grid min-w-0 flex-1 gap-1 font-semibold"><span class="field-caption">Cari item atau kode</span><input type="search" class="min-h-11 rounded-lg border border-slate-300 p-2 font-normal" bind:value={search} placeholder="Contoh: panel atau A.1.a.1" /></label><label class="flex min-h-11 items-center gap-2"><input type="checkbox" bind:checked={showGroups} disabled={Boolean(search.trim())} />Tampilkan kelompok kegiatan</label></div>
      <p class="text-xs text-slate-500" role="status">{visibleLines.filter(line=>line.level===4).length} dari {items.length} item ditampilkan. Total tetap mencakup seluruh RAB 100%.</p>
  <!-- svelte-ignore a11y_no_noninteractive_tabindex (Focusable scroll region supports keyboard scrolling of wide RAB tables.) -->
@@ -304,7 +304,7 @@
    <div class="max-h-[60vh] overflow-auto rounded-xl border border-slate-200" tabindex="0" role="region" aria-label="Tabel perbandingan tiga RAB">
     <table use:reviewColumns class="w-full min-w-[720px] border-separate border-spacing-0 text-sm tabular-nums">
      <caption class="sr-only">Jumlah dan nominal sumber serta kedua tahap per item</caption>
-     <thead class="sticky top-0 z-10 bg-slate-100 text-left text-xs"><tr><th scope="col" class="border-b p-3">Kode, item, dan harga satuan</th>{#each [['rab_penuh','RAB 100%','Seluruh anggaran'],['rab','RAB Termin 1','Tahap 1 - maksimal 70% SK'],['rab_tahap2','RAB Termin 2','Tahap 2 - sisa']] as column}<th scope="col" data-review-column={column[0]} class="cursor-pointer border-b p-0 text-right {kind===column[0]||hoveredReview===column[0]?'bg-blue-100 text-blue-950':''}" aria-current={kind===column[0]?'true':undefined}><button type="button" class="min-h-11 w-full cursor-pointer p-3 text-right focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#0066B2] disabled:cursor-wait" aria-label={`Periksa ${column[1]}`} aria-pressed={kind===column[0]} disabled={busy} onclick={()=>selectReview(column[0])} onkeydown={event=>{if(event.key==='Enter')event.stopPropagation();}}><span class="block font-bold">{column[1]}</span><span class="mt-1 block font-normal">{column[2]}</span>{#if kind===column[0]}<span class="mt-1 inline-block rounded bg-[#0066B2] px-2 py-1 text-white">Sedang diperiksa</span>{/if}</button></th>{/each}</tr></thead>
+     <thead class="sticky top-0 z-10 bg-slate-100 text-left text-xs"><tr><th scope="col" class="border-b p-3">Kode, item, dan harga satuan</th>{#each [['rab_penuh','RAB 100%','Seluruh anggaran'],['rab','RAB 70%','Tahap 1 - maksimal 70% SK'],['rab_tahap2','RAB 30%','Tahap 2 - sisa']] as column}<th scope="col" data-review-column={column[0]} class="cursor-pointer border-b p-0 text-right {kind===column[0]||hoveredReview===column[0]?'bg-blue-100 text-blue-950':''}" aria-current={kind===column[0]?'true':undefined}><button type="button" class="min-h-11 w-full cursor-pointer p-3 text-right focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#0066B2] disabled:cursor-wait" aria-label={`Periksa ${column[1]}`} aria-pressed={kind===column[0]} disabled={busy} onclick={()=>selectReview(column[0])} onkeydown={event=>{if(event.key==='Enter')event.stopPropagation();}}><span class="block font-bold">{column[1]}</span><span class="mt-1 block font-normal">{column[2]}</span>{#if kind===column[0]}<span class="mt-1 inline-block rounded bg-[#0066B2] px-2 py-1 text-white">Sedang diperiksa</span>{/if}</button></th>{/each}</tr></thead>
      <tbody>{#each reviewItems as line (line.id)}
       {@const q=quantities[line.id]}
       {@const valid=validQuantity(q,line.volume)}
@@ -356,11 +356,11 @@
     {:else if journeyStep==='term1'}
      <button class={btn} disabled={busy} onclick={()=>leave(()=>{sync();void goto(journeyUrl('full'));})}>Kembali</button>
      {#if editable}<button class={blue} disabled={busy||!ready} onclick={()=>save(true)}>Lanjut</button>{#if saveFailed}<p class="w-full text-xs text-red-700" role="alert">Draf gagal disimpan. Isian Anda tetap tersedia.<button type="button" class="ml-2 min-h-9 font-semibold text-[#0066B2] underline" disabled={busy||invalid} onclick={()=>save()}>Coba simpan lagi</button></p>{/if}{:else}<button class={blue} onclick={()=>goto(journeyUrl('term2'))}>Lanjut</button>{/if}
-     {#if !ready&&editable}<p class="w-full text-sm text-amber-900">{invalid?'Perbaiki jumlah yang ditandai merah.':first>data.summary.limitSen?'Total Termin 1 melebihi batas 70% SK. Kurangi jumlah item.':allocated<items.length?'Isi jumlah setiap item. Gunakan 0 jika seluruhnya masuk Termin 2.':'Total Termin 1 harus lebih dari Rp0.'}</p>{/if}
+     {#if !ready&&editable}<p class="w-full text-sm text-amber-900">{invalid?'Perbaiki jumlah yang ditandai merah.':first>data.summary.limitSen?'Total RAB 70% melebihi batas 70% SK. Kurangi jumlah item.':allocated<items.length?'Isi jumlah setiap item. Gunakan 0 jika seluruhnya masuk RAB 30%.':'Total RAB 70% harus lebih dari Rp0.'}</p>{/if}
     {:else if journeyStep==='term2'}
      <button class={btn} disabled={busy} onclick={()=>goto(journeyUrl('term1'))}>Kembali</button>
      <button class={blue} disabled={busy||!ready||dirty} onclick={oncontinue}>Lanjut</button>
-     <p class="w-full text-xs text-slate-600">Termin 2 mengikuti sisa pembagian. Pengajuan dikirim sekali setelah administrasi dan PKS lengkap.</p>
+     <p class="w-full text-xs text-slate-600">RAB 30% mengikuti sisa pembagian. Pengajuan dikirim sekali setelah administrasi dan PKS lengkap.</p>
     {/if}
    </div>
   {:else if editable}

@@ -24,7 +24,7 @@
 
   const items = $derived([
     ...(import.meta.env.MODE==='pocketbase-local'?[]:[{ title: 'Laporan realisasi Tahap 1 (LPJ)', hint: 'Satu invois, satu pindaian, satu entri per pengeluaran', href: `/admin/pencairan/${campusId}/lpj` }]),
-    { title: 'RAB Tahap 2', hint: 'Total sama dengan sisa Tahap 2', href: '' },
+    { title: 'RAB 30%', hint: 'Total sama dengan sisa Tahap 2', href: '' },
     { title: 'Permohonan pencairan Tahap 2', hint: 'Nominal sama dengan sisa', href: '' },
     { title: 'Kuitansi Tahap 2', hint: 'Nominal dan terbilang', href: '' },
     { title: 'Invoice Tahap 2', hint: 'Rekening sama dengan Tahap 1', href: '' }
@@ -62,7 +62,7 @@
       {/if}
     </section>
 
-    <p class="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3 text-sm font-medium text-slate-800">{import.meta.env.MODE==='pocketbase-local'?'Pembagian dan ekspor RAB Termin 2 tersedia pada halaman RAB. Proses pencairan Tahap 2 belum dibuka.':'Tahap 2 dibuka setelah laporan realisasi Tahap 1 diterima.'}</p>
+    <p class="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3 text-sm font-medium text-slate-800">{import.meta.env.MODE==='pocketbase-local'?'Pembagian dan ekspor RAB 30% tersedia pada halaman RAB. Proses pencairan Tahap 2 belum dibuka.':'Tahap 2 dibuka setelah laporan realisasi Tahap 1 diterima.'}</p>
 
     <ul class="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 xl:grid-cols-3" aria-label="Butir Tahap 2">
       {#each items as item (item.title)}

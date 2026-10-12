@@ -29,7 +29,7 @@
    * mode campus: the same screen read only, with an upload button where a file is needed.
    */
   type Row = Kind | 'program' | 'administrasi' | 'penandatangan' | 'surat' | 'ringkasan' | 'ttd' | 'lampiran' | 'bayar' | 'edit_requests';
-  const CAMPUS_ROWS: {key:Row;label:string}[]=[{key:'sk',label:'SK'},{key:'program',label:'Data Program'},{key:'rab_penuh',label:'RAB 100%'},{key:'rab',label:'RAB Termin 1'},{key:'rab_tahap2',label:'RAB Termin 2'},{key:'administrasi',label:'Rekening Penerima'},{key:'penandatangan',label:'Penandatangan Kampus'},{key:'surat',label:'Identitas Surat dan Kop'},{key:'pks',label:'PKS'},{key:'ringkasan',label:'Dokumen'}];
+  const CAMPUS_ROWS: {key:Row;label:string}[]=[{key:'sk',label:'SK'},{key:'program',label:'Data Program'},{key:'rab_penuh',label:'RAB 100%'},{key:'rab',label:'RAB 70%'},{key:'rab_tahap2',label:'RAB 30%'},{key:'administrasi',label:'Rekening Penerima'},{key:'penandatangan',label:'Penandatangan Kampus'},{key:'surat',label:'Identitas Surat dan Kop'},{key:'pks',label:'PKS'},{key:'ringkasan',label:'Dokumen'}];
   const ADMINISTRATION_KEYS: Row[] = ['administrasi','penandatangan','surat','pks','ringkasan'];
   let administrationOpen = $state(false);
   const CLOSING: { key: Row; label: string }[] = [{ key: 'ttd', label: 'Tanda tangan' }, { key: 'lampiran', label: 'Lampiran' }, { key: 'bayar', label: 'Pembayaran' }];
@@ -147,7 +147,7 @@
   const isItem = $derived((KINDS as readonly string[]).includes(selected));
   const kind = $derived<Kind>(isItem ? (selected as Kind) : 'sk');
   const doc = $derived(data?.documents.find(d => d.kind === kind) || null);
-  /** The three RAB items share one workbook and one typed total, kept on the RAB Termin 1 slot. */
+  /** The three RAB items share one workbook and one typed total, kept on the RAB 70% slot. */
   const isRab = $derived(isRabKind(kind));
   const fileKind = $derived<Kind>(isRab ? 'rab' : kind);
   const fileDoc = $derived(isRab ? data?.documents.find(d => d.kind === 'rab') || null : doc);
@@ -478,7 +478,7 @@
             <button type="button" class="rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold {rabTab === 'digital' ? 'bg-[#0066B2] text-white' : 'border border-slate-200 bg-white text-slate-600'}" onclick={() => (rabTab = 'digital')}>RAB terkelola</button>
 {#if !hasJourney}            <button type="button" class="rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold {rabTab === 'asli' ? 'bg-[#0066B2] text-white' : 'border border-slate-200 bg-white text-slate-600'}" onclick={() => (rabTab = 'asli')}>Berkas asli{fileDoc?.versions.length ? '' : ' (belum ada)'}</button>{/if}
             {#if admin && !hasJourney}
-              <label class="cursor-pointer rounded-full border border-dashed border-slate-300 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-[#0066B2] hover:border-[#0066B2]" title="Excel tiga lembar dari templat: RAB 100%, RAB Termin 1, RAB Termin 2. Menjadi versi RAB berikutnya.">Impor Excel<input type="file" class="sr-only" accept=".xlsx,.xlsm,.xls" onchange={(e) => importRab((e.currentTarget as HTMLInputElement).files?.[0] || null)} /></label>
+              <label class="cursor-pointer rounded-full border border-dashed border-slate-300 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-[#0066B2] hover:border-[#0066B2]" title="Excel tiga lembar dari templat: RAB 100%, RAB 70%, RAB 30%. Menjadi versi RAB berikutnya.">Impor Excel<input type="file" class="sr-only" accept=".xlsx,.xlsm,.xls" onchange={(e) => importRab((e.currentTarget as HTMLInputElement).files?.[0] || null)} /></label>
               <button type="button" class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300 disabled:opacity-50" disabled={busy} onclick={exportRab}>Ekspor Excel</button>
               <a class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300" href="/templat/RAB_DEB.xlsx" download>Templat</a>
             {/if}
@@ -565,7 +565,7 @@
                 {#if bukti.r100 || bukti.r70 || bukti.r30}
                   <div class="mb-3 rounded-xl border border-slate-200/70 bg-slate-50 px-3 py-2">
                     <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px]"><span class="font-bold uppercase tracking-[0.05em] text-slate-500">Bukti di berkas kampus</span>
-                      {#each [['RAB 100%', bukti.r100], ['RAB Termin 1', bukti.r70], ['RAB Termin 2', bukti.r30]] as [label, mark]}
+                      {#each [['RAB 100%', bukti.r100], ['RAB 70%', bukti.r70], ['RAB 30%', bukti.r30]] as [label, mark]}
                         <span class="rounded-full px-2 py-0.5 font-semibold {mark === 'ada' ? 'bg-green-100 text-green-900' : mark === 'tidak' ? 'bg-slate-200 text-slate-600' : 'bg-white text-slate-400'}">{label} {mark === 'ada' ? 'ada' : mark === 'tidak' ? 'tidak ada' : 'belum diperiksa'}</span>
                       {/each}
                     </p>
@@ -632,8 +632,8 @@
               <dl class="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm tabular-nums lg:grid-cols-4" aria-label="Ringkasan nilai sebelum keputusan">
                 <div class="rounded-lg p-2"><dt class="text-xs text-slate-500">Nilai SK</dt><dd class="mt-1 font-bold text-slate-900">{formatSen(data.summary.amountSen)}</dd></div>
                 <div class="rounded-lg p-2 {kind === 'rab_penuh' ? 'bg-blue-100 ring-1 ring-blue-200' : ''}"><dt class="text-xs text-slate-600">Total RAB 100%</dt><dd class="mt-1 font-bold text-slate-900">{formatSen(data.rab.totalSen)}</dd></div>
-                <div class="rounded-lg p-2 {kind === 'rab' ? 'bg-blue-100 ring-1 ring-blue-200' : ''}"><dt class="text-xs text-slate-600">Termin 1 - RAB Termin 1</dt><dd class="mt-1 font-bold text-slate-900">{formatSen(data.rab.term1Sen)}</dd><dd class="mt-1 text-xs text-slate-500">Batas {formatSen(data.summary.limitSen)}</dd></div>
-                <div class="rounded-lg p-2 {kind === 'rab_tahap2' ? 'bg-blue-100 ring-1 ring-blue-200' : ''}"><dt class="text-xs text-slate-600">Termin 2 - RAB Termin 2</dt><dd class="mt-1 font-bold text-slate-900">{formatSen(data.rab.term2Sen ?? data.rab.totalSen - data.rab.term1Sen)}</dd><dd class="mt-1 text-xs text-slate-500">Sisa alokasi dari RAB 100%</dd></div>
+                <div class="rounded-lg p-2 {kind === 'rab' ? 'bg-blue-100 ring-1 ring-blue-200' : ''}"><dt class="text-xs text-slate-600">Termin 1 - RAB 70%</dt><dd class="mt-1 font-bold text-slate-900">{formatSen(data.rab.term1Sen)}</dd><dd class="mt-1 text-xs text-slate-500">Batas {formatSen(data.summary.limitSen)}</dd></div>
+                <div class="rounded-lg p-2 {kind === 'rab_tahap2' ? 'bg-blue-100 ring-1 ring-blue-200' : ''}"><dt class="text-xs text-slate-600">Termin 2 - RAB 30%</dt><dd class="mt-1 font-bold text-slate-900">{formatSen(data.rab.term2Sen ?? data.rab.totalSen - data.rab.term1Sen)}</dd><dd class="mt-1 text-xs text-slate-500">Sisa alokasi dari RAB 100%</dd></div>
               </dl>
             {/if}
             {#if rabApprovalWarning}<p class="mb-3 text-sm font-semibold text-red-700" role="alert">{rabApprovalWarning}</p>{/if}
