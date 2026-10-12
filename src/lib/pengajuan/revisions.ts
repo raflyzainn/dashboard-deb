@@ -34,8 +34,8 @@ export interface RevisionRequest {
 export const openRevisions = (j:any):RevisionRequest[] => (j?.revisionRequests || []).filter((r:RevisionRequest)=>r.status==='open');
 export const revisionSection = (row:string) => ['rab_penuh','rab','rab_tahap2'].includes(row)?'rab':['rekening','surat_kuasa','administrasi'].includes(row)?'administrasi':['permohonan','invois','kuitansi','surat'].includes(row)?'surat':row;
 export const canRevise = (j:any,scope:RevisionScope) => Boolean(REVISION_SCOPES[scope]) && (j?.status==='draf' || j?.status==='revisi' && openRevisions(j).some(r=>r.scopes.some(key=>REVISION_SCOPES[key]?.section===REVISION_SCOPES[scope].section)));
-export const canEditField = (j:any,key:string) => j?.status==='draf' || Object.entries(REVISION_SCOPES).some(([scope,value])=>(value.fields as string[]).includes(key)&&canRevise(j,scope as RevisionScope));
-export const canUploadFile = (j:any,key:string) => j?.status==='draf' || Object.entries(REVISION_SCOPES).some(([scope,value])=>(value.files as string[]).includes(key)&&canRevise(j,scope as RevisionScope));
+export const canEditField = (j:any,key:string) => j?.status==='draf' || j?.status==='revisi' && openRevisions(j).some(request=>request.scopes.some(scope=>(REVISION_SCOPES[scope].fields as string[]).includes(key)));
+export const canUploadFile = (j:any,key:string) => j?.status==='draf' || j?.status==='revisi' && openRevisions(j).some(request=>request.scopes.some(scope=>(REVISION_SCOPES[scope].files as string[]).includes(key)));
 export function revisionScopes(input:unknown):RevisionScope[] {
  if(!Array.isArray(input)||!input.length||input.some(key=>typeof key!=='string'||!Object.hasOwn(REVISION_SCOPES,key)))throw Error('Bagian revisi tidak valid.');
  return [...new Set<RevisionScope>(input)];

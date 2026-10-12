@@ -1,7 +1,7 @@
 import type PocketBase from 'pocketbase';
 import type { RecordModel } from 'pocketbase';
 import { versionHolds, type RabVersionShare } from '../../rab';
-import { campusUploadBlockedReason, documentReceiptFlags } from '../../pencairan';
+import { campusUploadBlockedReason, documentReceiptFlags, maskAccountNumber as mask } from '../../pencairan';
 import { KINDS, KIND_LABEL, FIELDS, GENERATED, LETTERS, isRabKind, limitSen, remainderSen, formatSen, percentOf, formatPercent, splitNames, namesMatch, terbilang, assess, type Assessment, type Kind, type Status } from '../../pencairan';
 import { PreviewError } from './preview-error';
 import { writeAudit, auditData, type AuditActor } from './audit';
@@ -190,7 +190,7 @@ export async function workspace(pb: PocketBase, campusId: string) {
   };
 }
 
-export const mask = (number: string) => (number.length > 3 ? '•••• •••• ' + number.slice(-3) : number ? '•••' : '');
+export { maskAccountNumber as mask } from '../../pencairan';
 
 function currentVersion(doc: DocumentInfo): VersionInfo | null {
   return doc.versions.find(v => v.id === doc.currentVersionId) || doc.versions[doc.versions.length - 1] || null;

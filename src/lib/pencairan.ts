@@ -3,6 +3,7 @@
 /** The SK first, then the check columns of the review sheet in the sheet's order, one checklist item each. The sheet's "Format laporan" column was a placeholder and is not an item (decision 39); its old document rows stay in the database unused. */
 export const KINDS = ['sk', 'pks', 'rab_penuh', 'rab', 'rab_tahap2', 'permohonan', 'kuitansi', 'invois', 'rekening', 'surat_kuasa'] as const;
 export type Kind = (typeof KINDS)[number];
+export const maskAccountNumber = (number: string) => (number.length > 3 ? '•••• •••• ' + number.slice(-3) : number ? '•••' : '');
 /** The three RAB items are pages of one managed RAB: `rab` (70%) carries the original workbook, the typed total and the approval; the two others are checks on the same lines. */
 export const RAB_SHARE = { rab_penuh: 'penuh', rab: 'tahap1', rab_tahap2: 'tahap2' } as const;
 export type RabKind = keyof typeof RAB_SHARE;

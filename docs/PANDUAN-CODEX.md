@@ -1,5 +1,9 @@
 # Panduan proyek untuk Codex
 
+## Izin revisi dokumen dan penyamaran rekening - 12 Oktober 2026
+
+Revisi `dokumen` hanya memberi akses regenerasi/kirim perbaikan; nomor PKS kampus tetap terkunci kecuali lingkup `pks` juga dibuka. Ringkasan dan riwayat pengajuan memakai penyamaran rekening yang sudah digunakan backend, hanya tiga digit terakhir terlihat. Layar Rekening dan dokumen resmi tetap tersedia untuk akun yang berhak. QA browser dan batasnya tercatat dalam [laporan perbaikan privasi](pencairan-deb/QA-PERBAIKAN-PRIVASI-2026-10-12.md).
+
 ## Label RAB - 12 Oktober 2026
 
 Menu, pemeriksaan, tabel pembagian, dan tombol unduh memakai **RAB 70%** dan **RAB 30%** sesuai arahan pengguna. Nilai sebenarnya tetap mengikuti alokasi: Tahap 1 maksimal 70% nilai SK dan Tahap 2 merupakan sisanya. QA Playwright memeriksa label admin/kampus dan layar 390 px tanpa overflow halaman. Perubahan ini hanya menyelaraskan teks; aturan alokasi dan data tersimpan tetap sama.
