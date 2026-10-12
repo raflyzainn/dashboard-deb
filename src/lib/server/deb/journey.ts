@@ -115,7 +115,11 @@ export function journeyRequest(event:RequestEvent):Promise<Response>{
       put('notifications',{id:uid(),recipientUser:user.id,campus:campusId,eventType,eventKey:`${eventType}:${payment.id}:${payment.revision}:${user.id}`,sourceId:campusId,title,body,target,simulated:false});
      }
     };
-    if(!requestedBefore&&r.journey.pfRequestedAt)notify('admin','pencairan_pks_pf','Nomor PKS PF diperlukan','Kampus meminta nomor PKS PF agar dokumen pencairan dapat disiapkan.',`/admin/pencairan/${campusId}?butir=pks`);
+    if(!actor.admin&&nextHistory.length>historyCount){
+     const submission=nextHistory.at(-1),revised=historyCount>0;
+     notify('admin','pencairan_pengajuan',`${c.name} mengirim ${revised?'perbaikan':'pengajuan'} pencairan`,`Pengajuan ${submission.number} sudah dikirim oleh kampus dan menunggu pemeriksaan PF. Buka pengajuan untuk memeriksa data dan dokumen.`,`/admin/pencairan/${campusId}?butir=pks`);
+    }
+    if(!requestedBefore&&r.journey.pfRequestedAt)notify('admin','pencairan_pks_pf','Nomor PKS PF diperlukan','Data PKS kampus sudah disimpan. Lengkapi nomor PKS PF; kampus dapat melanjutkan pengisian secara paralel.',`/admin/pencairan/${campusId}?butir=pks`);
     if(method==='POST'&&route==='pengajuan/edit-requests'&&!actor.admin){const section=body?.section as keyof typeof REVISION_SCOPES;const label=REVISION_SCOPES[section]?.label||'bagian pengajuan';notify('admin','pencairan_edit_access','Permintaan akses revisi',`${actor.record.name} meminta akses revisi ${label}. Alasan: ${String(body?.reason||'').trim()}`,`/admin/pencairan/${campusId}?butir=${section}`);}
     if(route==='pengajuan/pf'&&pfBefore!==r.journey.pf?.nomorPksPf)notify('campus','pencairan_pks_pf_ready','Nomor PKS PF sudah tersedia','Lanjutkan menyiapkan dokumen dari ringkasan pengajuan.','/campus/pencairan?bagian=ringkasan&butir=ringkasan');
     if(result&&typeof result==='object'&&!(result instanceof Blob))(result as any).serverRevision=payment.revision;

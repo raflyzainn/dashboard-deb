@@ -30,7 +30,7 @@ export const requiresKuasaUpdate=(j:any)=>j?.fields.jenisRekening==='kuasa'&&j.f
 export interface Journey {
  rabDraft?: {rows:(string|number|null)[][];lineIds:string[]}; rabDraftRevision?: number;
  status: 'draf' | 'menunggu' | 'revisi' | 'selesai'; lastSection: Section;
- fields: Record<string, string>; files: Record<string, { id: string; name: string; mime: string; width?: number; height?: number; source?: string }>;
+ fields: Record<string, string>; files: Record<string, { id: string; name: string; mime: string; width?: number; height?: number; source?: string; stale?: boolean }>;
  revision: number; history: any[];
  revisionRequests?: RevisionRequest[]; documentRevisions?: Record<string,number>; revisionDocuments?: string[];
  editRequests?: EditRequest[];
@@ -89,6 +89,7 @@ export function validateJourney(c:any,r:any,settings:any,tags:Record<MergeKind,s
  for(const [key,label] of [['namaBank','Nama bank'],['nomorRekening','Nomor rekening'],['namaPemilik','Pemilik rekening'],['penandatanganNama','Penandatangan'],['penandatanganJabatan','Jabatan penandatangan'],['tempatTandaTangan','Tempat surat']])require(sectionForField(key),key,label);
  if(f.nomorRekening && !/^\d{5,40}$/.test(f.nomorRekening))blockers.push({section:'administrasi',text:'Nomor rekening harus berisi 5–40 angka.'});
  for(const [key,label] of [['rekening','Foto Buku Rekening'],['kop','Kop surat']])if(!j.files[key])blockers.push({section:sectionForField(key),text:label+' belum diunggah.'});
+ if(j.files.rekening?.stale)blockers.push({section:'administrasi',text:'Data rekening berubah. Unggah kembali Foto Buku Rekening yang sesuai; berkas sebelumnya tetap dapat dilihat.'});
  if(f.jenisRekening==='kuasa'){
   require('surat','pemberiKuasa','Pemberi kuasa');require('surat','penerimaKuasa','Penerima kuasa');
   if(!j.files.kuasa)blockers.push({section:'surat',text:'Surat kuasa wajib diunggah untuk rekening pihak yang diberi kuasa.'});

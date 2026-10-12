@@ -2,7 +2,7 @@ import { KINDS, KIND_LABEL, documentReceiptFlags, assess, isRabKind, parseSen, t
 import { arrange, type LineInput } from '../rab';
 import { RAB_TEMPLATE_HEADERS } from '../rab-template';
 import { checkedUpload } from '../upload-file';
-import { readExcel, readRabRows, validQuantity, validEditedVolume, type Item } from './rab-model';
+import { readExcel, readRabRows, total, validQuantity, validEditedVolume, type Item } from './rab-model';
 import { ensureJourney, journeyView, touchJourney, sections, PKS_DATE, validDate, documentGuides, kuasaSource, settingsSource, pfNumber, pfNumberForDocument, changedLetters, requiresKuasaUpdate } from './journey';
 import { journeyTemplates, journeyDocx, finalJourneyDocx } from './journey-documents';
 import { MERGE_KINDS, isMergeKind, DOCX_MIME, MERGE_LABEL, type MergeKind } from '../merge';
@@ -120,6 +120,13 @@ function revisePfData(c:any,r:any,user:AppSession){
      const scope=revisionSection(body.key.split('-')[0]);if(user.role!=='admin'&&(locked||j.status==='selesai'||!canRevise(j,scope as any)&&!(body.key.startsWith('surat_kuasa-')&&canRevise(j,'program')&&requiresKuasaUpdate(j))))throw Error('Checklist bagian ini terkunci.');
      j.checklist![body.key]=body.checked;return view();
     }
+    if(method==='PATCH'&&parts.length===4&&body.removeFile!==undefined){
+     const slot=body.removeFile;
+     if(!['kop','rekening','kuasa'].includes(slot)||locked||j.status==='selesai'||!canUploadFile(j,slot))throw Error('Berkas ini terkunci dan tidak diminta untuk direvisi.');
+     if(body.revision!==j.revision)throw Error('Draf berubah di tab lain. Muat ulang sebelum menghapus berkas.');
+     if(j.files[slot]){delete j.files[slot];if(slot!=='kop')r.documents.find((d:any)=>d.kind===(slot==='rekening'?'rekening':'surat_kuasa')).status='belum_ada';touchJourney(c,r);}
+     return view();
+    }
     if(write&&body.requestPf===true){
      if(method!=='PATCH'||locked||pfNumber(j))throw Error('Permintaan data PF sudah tidak diperlukan.');
      j.pfRequestedAt ||= now();return view();
@@ -171,7 +178,8 @@ function revisePfData(c:any,r:any,user:AppSession){
        const locationErrors=programLocationErrors(fields);if(locationErrors.length)throw Error(locationErrors[0]);
        if(fields.tanggalPerjanjian!==PKS_DATE)throw Error('Tanggal PKS wajib 17 Juni 2026.');
        if(!['kampus','kuasa'].includes(fields.jenisRekening))throw Error('Pilih jenis rekening.');
-       if(JSON.stringify(fields)!==JSON.stringify(j.fields)){const before=j.fields;j.fields=fields;touchJourney(c,r,changedLetters(c,r,settings,templates!,before));if(['namaBank','nomorRekening','namaPemilik','jenisRekening'].some(key=>before[key]!==fields[key])){delete j.files.rekening;const evidence=r.documents.find((d:any)=>d.kind==='rekening');evidence.status='belum_ada';}}
+       if(user.role!=='admin'&&fields.nomorPksKampus&&!pfNumber(j))j.pfRequestedAt ||= now();
+       if(JSON.stringify(fields)!==JSON.stringify(j.fields)){const before=j.fields;j.fields=fields;touchJourney(c,r,changedLetters(c,r,settings,templates!,before));if(['namaBank','nomorRekening','namaPemilik','jenisRekening'].some(key=>before[key]!==fields[key])){if(j.files.rekening)j.files.rekening.stale=true;const evidence=r.documents.find((d:any)=>d.kind==='rekening');evidence.status='belum_ada';}}
       }
       if(body.lastSection&&sections.includes(body.lastSection))j.lastSection=body.lastSection;
      }
@@ -195,6 +203,7 @@ function revisePfData(c:any,r:any,user:AppSession){
      }
      const imported=readRabRows([RAB_TEMPLATE_HEADERS,...body.rows]);
      if(imported.length!==body.rows.length)throw Error('Hapus baris kosong atau lengkapi setiap item.');
+     if(total(imported,'amountSen')!==BUDGET)throw Error('Total RAB harus sama dengan nilai SK.');
      const next=version((v?.number||0)+1,imported);next.source='manual';next.sourceFile='RAB dari tabel kampus';next.quantityAllocation=true;next.campusStep=1;
      next.lines.filter((l:any)=>l.level===4).forEach((line:any)=>{
       // arrange groups rows by category; iN retains the original input position.
@@ -284,6 +293,7 @@ function revisePfData(c:any,r:any,user:AppSession){
     }else if(parts[5]==='catatan'){if(!body.body?.trim())throw Error('Isi catatan.');d.notes.push({id:id(),body:body.body,internal:user.role==='admin'&&!!body.internal,authorName:user.name,authorRole:user.role,created:now()});}
     else if(parts[5]==='versions'&&method==='POST'&&file){
      const signed=['true','1'].includes(String(body.get('signed')));
+     if(signed&&!['application/pdf','image/png','image/jpeg','image/webp'].includes(file.type))throw Error('Dokumen bertanda tangan harus PDF, PNG, JPG, atau WebP agar dapat disusun menjadi lampiran.');
      if(signed&&r.journey&&(r.journey.status!=='selesai'||!d.generated))throw Error('Pindaian bertanda tangan hanya untuk surat pengajuan yang sudah disetujui.');
      if(user.role!=='admin'&&r.journey&&(!signed||r.journey.status!=='selesai'||!d.generated||d.signedReceived||r.payment.paidAt))throw Error('Gunakan formulir pengajuan untuk memperbarui dokumen sebelum pemeriksaan selesai.');
      const v:any=documentVersion(kind,file.name,d.versions.length+1);v.mime=file.type;v.size=file.size;v.signed=signed;

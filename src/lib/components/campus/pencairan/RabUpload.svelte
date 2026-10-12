@@ -17,6 +17,7 @@
  let data=$state<(RabOverview & {serverRevision?:number;disbursement:RabOverview['disbursement'] & {paidAt?:string}})|null>(null),error=$state(''),busy=$state(false),replace=$state(false),confirmed=$state(false),message=$state('');
  let editingAdmin=$state(false),remoteChanged=$state(false),editorDirty=$state(false);
  let itemEditor=$state<RabItemsEditor>();
+ let itemsReady=$state(false);
  let reducedMotion=$state(false);
  function reloadRemote(){leave(()=>{editingAdmin=false;sync();remoteChanged=false;saveFailed=false;void load();});}
  let edits=$state<Record<string,{volume:number;price:number;first:number}>>({});
@@ -79,7 +80,9 @@
  function selectReview(column:string){if(busy||column===kind)return;const url=new URL(page.url);url.searchParams.set('butir',column);void goto(url.pathname+url.search,{replaceState:true,noScroll:true,keepFocus:true});}
  const reviewLabel=$derived(kind==='rab'?'RAB 70% - Tahap 1':kind==='rab_tahap2'?'RAB 30% - Tahap 2':'RAB 100% - seluruh anggaran');
  function openStep(index:number){
-  if(index>unlockedStep||busy)return;
+  if(busy)return;
+  if(step===0&&index>0){if(index===1)void inspectItems();return;}
+  if(index>unlockedStep)return;
   const target=['upload','full','term1','term2'][index];
   if(target==='term2'&&editingAllocation){void save(true);return;}
   leave(()=>{sync();replace=false;comparisonSearch='';void goto(journeyUrl(target));});
@@ -155,7 +158,7 @@
   try{const next=await dataService.api.post<RabOverview>(base+'/items',{rows,lineIds,draft,itemDraftRevision:data?.itemDraftRevision||0,sourceVersion:v?.id||'',expectedRevision:data?.serverRevision});if(!draft)editorDirty=false;replace=true;data=next;sync();confirmed=false;showSaved();onloaded();return true;}
   catch(e){error=reportError(e instanceof Error?e.message:'Draf gagal disimpan.');if((e as any).status===409)remoteChanged=true;return false;}finally{busy=false;}
  }
- async function inspectItems(){if(busy||!itemEditor)return;if(await itemEditor.prepare()){replace=false;await goto(journeyUrl('full'));showSaved('Rincian RAB siap diperiksa.');}}
+ async function inspectItems(){if(busy||!itemEditor||!itemsReady)return;if(await itemEditor.prepare()){replace=false;await goto(journeyUrl('full'));showSaved('Rincian RAB siap diperiksa.');}}
  async function advance(index:number){
   if(!v)return;
   if(index>unlockedStep)data=await dataService.api.post<RabOverview>(`${base}/versions/${v.id}/progress`,{step:index,expectedRevision:data?.serverRevision});
@@ -213,7 +216,7 @@
  {#if !admin&&!historical}
   <ol class="grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Langkah pengajuan RAB">
    {#each journey?['Isi / unggah RAB','Periksa RAB 100%','Atur RAB 70%','Periksa RAB 30%']:['Unggah RAB 100%','Bagi jumlah item','Periksa Tahap 1','Periksa & ajukan'] as label,index}
-    <li>{#if journey}<button type="button" aria-current={step===index?'step':undefined} class="min-h-11 w-full rounded-lg border p-2 text-left disabled:cursor-not-allowed disabled:opacity-40 {step===index?'border-blue-300 bg-blue-50 font-bold text-blue-900':'border-slate-200 text-[#0066B2] hover:bg-slate-50'}" disabled={busy||step===index||(index===0&&!editable)||index>unlockedStep} onclick={()=>openStep(index)}>{index+1}. {label}</button>{:else}<span aria-current={step===index?'step':undefined} class="block rounded-lg border p-2 {step===index?'border-blue-300 bg-blue-50 font-bold text-blue-900':'border-slate-200 text-slate-500'}">{index+1}. {label}</span>{/if}</li>
+    <li>{#if journey}<button type="button" aria-current={step===index?'step':undefined} class="min-h-11 w-full rounded-lg border p-2 text-left disabled:cursor-not-allowed disabled:opacity-40 {step===index?'border-blue-300 bg-blue-50 font-bold text-blue-900':'border-slate-200 text-[#0066B2] hover:bg-slate-50'}" disabled={busy||step===index||(index===0&&!editable)||(step===0&&index>0?index!==1||!itemsReady:index>unlockedStep)} onclick={()=>openStep(index)}>{index+1}. {label}</button>{:else}<span aria-current={step===index?'step':undefined} class="block rounded-lg border p-2 {step===index?'border-blue-300 bg-blue-50 font-bold text-blue-900':'border-slate-200 text-slate-500'}">{index+1}. {label}</span>{/if}</li>
    {/each}
   </ol>
  {/if}
@@ -236,8 +239,8 @@
   <h2 class="text-lg font-bold text-slate-900">Isi RAB 100%</h2>
   <p>Tambah item langsung pada tabel atau unggah Excel. Pembagian termin dilakukan setelah seluruh rincian diperiksa.</p>
   <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-4"><div><strong>Template Excel dan contoh terisi</strong><p class="mt-1 text-xs text-slate-500">Buka Petunjuk, lihat Contoh Pengisian, lalu isi RAB 100%. Contoh tidak ikut diimpor. Format lama tetap diterima.</p></div><button class={btn} disabled={busy} onclick={downloadTemplate}>Unduh template &amp; contoh Excel</button></div>
-  <RabItemsEditor bind:this={itemEditor} version={v||null} draft={data.itemDraft} {busy} amountSen={data.summary.amountSen} onsave={saveItems} ondirty={value=>editorDirty=value}/>
-  <p class="text-xs text-slate-500">Periksa RAB untuk melanjutkan. Pembagian item yang tidak berubah dipertahankan; item baru atau yang jumlah/harganya berubah perlu dibagi kembali.</p><button class={blue+' justify-self-end'} disabled={busy} onclick={inspectItems}>Periksa RAB 100%</button>
+  <RabItemsEditor bind:this={itemEditor} bind:ready={itemsReady} version={v||null} draft={data.itemDraft} {busy} amountSen={data.summary.amountSen} onsave={saveItems} ondirty={value=>editorDirty=value}/>
+  <p class="text-xs text-slate-500">Periksa RAB untuk melanjutkan. Pembagian item yang tidak berubah dipertahankan; item baru atau yang jumlah/harganya berubah perlu dibagi kembali.</p><button class={blue+' justify-self-end'} disabled={busy||!itemsReady} onclick={inspectItems}>Periksa RAB 100%</button>
  {:else if v}
   <div class="flex flex-wrap items-center gap-2" aria-label="Unduh hasil RAB">
    {#each [['penuh','100%'],['tahap1','70%'],['tahap2','30%']] as [share,label]}<button class="group inline-flex min-h-11 items-center justify-between gap-4 rounded-xl border border-slate-200/80 bg-white px-4 py-2.5 text-sm font-semibold text-[#0066B2] shadow-sm transition hover:border-blue-200 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0066B2] disabled:cursor-not-allowed disabled:opacity-40" disabled={busy||dirty||(share!=='penuh'&&(allocated!==items.length||invalid))} onclick={()=>exportRab(share as 'penuh'|'tahap1'|'tahap2')}><span>Unduh RAB {label}</span><span class="grid size-6 shrink-0 place-items-center rounded-full bg-[#0066B2] text-white transition group-hover:bg-[#005493]"><Icon name="download" size={14}/></span></button>{/each}

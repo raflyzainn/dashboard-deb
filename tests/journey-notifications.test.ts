@@ -4,6 +4,32 @@ import { readFile } from 'node:fs/promises';
 import { createServer } from 'vite';
 import { RestStore, StoreRecord } from '../src/lib/server/deb/rest-store';
 
+test('new campus submissions notify admins; draft saves and unchanged history do not',async()=>{
+ const source=await readFile('src/lib/server/deb/journey.ts','utf8');
+ const start=source.indexOf('    if(!actor.admin&&nextHistory.length>historyCount){');
+ assert.ok(start>=0);
+ const block=source.slice(start,source.indexOf('    if(!requestedBefore',start));
+ const execute=new Function('actor','nextHistory','historyCount','c','campusId','notify',block);
+ const notices:any[][]=[];
+ const notify=(...args:any[])=>notices.push(args);
+ const campus={name:'Kampus QA'};
+ execute({admin:false},[],0,campus,'campus1',notify);
+ assert.equal(notices.length,0);
+ execute({admin:false},[{number:1}],0,campus,'campus1',notify);
+ assert.equal(notices.length,1);
+ assert.equal(notices[0][0],'admin');
+ assert.equal(notices[0][1],'pencairan_pengajuan');
+ assert.match(notices[0][2],/mengirim pengajuan/);
+ assert.equal(notices[0][4],'/admin/pencairan/campus1?butir=pks');
+ execute({admin:false},[{number:1}],1,campus,'campus1',notify);
+ execute({admin:true},[{number:1},{number:2}],1,campus,'campus1',notify);
+ assert.equal(notices.length,1);
+ execute({admin:false},[{number:1},{number:2}],1,campus,'campus1',notify);
+ assert.equal(notices.length,2);
+ assert.match(notices[1][2],/mengirim perbaikan/);
+ assert.match(notices[1][3],/Pengajuan 2/);
+});
+
 test('notification targets allow super-admin routing but reject cross-role and cross-campus delivery',()=>{
  const tx=new RestStore({users:[{id:'root',role:'super_admin'},{id:'campus',role:'campus',campus:'c1'}] as any,notifications:[]});
  const save=(recipientUser:string,campus:string,target:string)=>{const row=new StoreRecord('notifications');Object.assign(row.data,{recipientUser,campus,target});tx.save(row);};

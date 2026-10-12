@@ -337,9 +337,10 @@
   async function upload(file: File | null) {
     if (!file || !canUpload) return;
     if (!file.size || file.size > 40 * 1024 * 1024) { error = reportError('Pilih berkas tidak kosong dengan ukuran maksimal 40 MB.'); return; }
+    if(signedJourneyReady&&!/\.(pdf|png|jpe?g|webp)$/i.test(file.name)){error=reportError('Dokumen bertanda tangan harus PDF, PNG, JPG, atau WebP agar dapat disusun menjadi lampiran.');return;}
     const body = new FormData();
     body.set('file', file); if(signedJourneyReady)body.set('signed','true'); body.set('note', admin ? '' : uploadNote.trim());
-    const ok = await run(async () => { const next = await dataService.api.post<KartuData>(`/api/pencairan/${campusId}/documents/${fileKind}/versions`, body); selectedVersionId = ''; return next; }, admin ? `Versi baru tersimpan.` : 'Berkas terkirim. Menunggu pemeriksaan Pertamina Foundation.');
+    const ok = await run(async () => { const next = await dataService.api.post<KartuData>(`/api/pencairan/${campusId}/documents/${fileKind}/versions`, body); selectedVersionId = ''; return next; }, admin ? `Versi baru tersimpan.` : signedJourneyReady?'Dokumen bertanda tangan tersimpan. PF akan memeriksa pindaian dan penerimaan asli.':'Berkas terkirim. Menunggu pemeriksaan Pertamina Foundation.');
     if (ok) { uploadFile = null; uploadNote = ''; if (fileInput) fileInput.value = ''; }
   }
 </script>
@@ -529,9 +530,9 @@
             {#if canUpload}
               <form class="grid min-w-0 gap-2" onsubmit={(e) => { e.preventDefault(); void upload(uploadFile); }}>
                 <label class="grid min-w-0 gap-1 font-semibold">{signedJourneyReady ? 'Berkas bertanda tangan' : itemState === 'perlu_revisi' ? 'Berkas revisi' : 'Berkas kelengkapan'}
-                  <input type="file" class="min-w-0 max-w-full rounded-lg border border-slate-300 p-2 text-sm font-normal" bind:this={fileInput} disabled={busy} accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.docx,.doc,.xlsx,.xls,.csv" onchange={(e) => { uploadFile = e.currentTarget.files?.[0] || null; error = ''; }} />
+                  <input type="file" class="min-w-0 max-w-full rounded-lg border border-slate-300 p-2 text-sm font-normal" bind:this={fileInput} disabled={busy} accept={signedJourneyReady?'.pdf,.png,.jpg,.jpeg,.webp':'.pdf,.png,.jpg,.jpeg,.webp,.gif,.docx,.doc,.xlsx,.xls,.csv'} onchange={(e) => { uploadFile = e.currentTarget.files?.[0] || null; error = ''; }} />
                 </label>
-                <p class="text-xs text-slate-500">PDF, gambar, Word, atau Excel · maksimal 40 MB. Berkas dikirim setelah tombol di bawah ditekan.</p>
+                <p class="text-xs text-slate-500">{signedJourneyReady?'PDF, PNG, JPG, atau WebP':'PDF, gambar, Word, atau Excel'} · maksimal 40 MB. Berkas dikirim setelah tombol di bawah ditekan.</p>
                 <label class="grid gap-1">Catatan unggahan (opsional)<textarea rows="2" maxlength="2000" class="w-full rounded-lg border border-slate-300 p-2" bind:value={uploadNote} disabled={busy}></textarea></label>
                 <button type="submit" class="justify-self-start rounded-lg bg-[#0066B2] px-4 py-2 font-semibold text-white disabled:opacity-50" disabled={busy || !uploadFile}>{busy ? 'Mengirim…' : itemState === 'perlu_revisi' ? 'Kirim revisi' : 'Kirim dokumen'}</button>
               </form>
@@ -700,13 +701,13 @@
 {/if}
 
 <style>
-  .administration-submenu .campus-step { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; min-width: 0; width: 100%; gap: 8px; }
-  .administration-submenu .campus-step > span:nth-child(2) { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
-  .administration-submenu .campus-step > span:nth-child(3) { padding-left: 0; }
+  .administration-submenu .campus-step { display: grid; grid-template-columns: 16px minmax(0, 1fr); min-width: 0; width: 100%; column-gap: 8px; row-gap: 2px; }
+  .administration-submenu .campus-step > span:nth-child(2) { min-width: 0; white-space: normal; overflow-wrap: normal; }
+  .administration-submenu .campus-step > span:nth-child(3) { grid-column: 2; margin-left: 0; padding-left: 0; }
   @media (min-width: 1024px) {
-    .campus-step { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; width: 100%; min-width: 0; gap: 8px; }
-    .campus-step > span:nth-child(2) { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
-    .campus-step > span:nth-child(3) { padding-left: 0; }
+    .campus-step { display: grid; grid-template-columns: 16px minmax(0, 1fr); width: 100%; min-width: 0; column-gap: 8px; row-gap: 2px; }
+    .campus-step > span:nth-child(2) { min-width: 0; white-space: normal; overflow-wrap: normal; }
+    .campus-step > span:nth-child(3) { grid-column: 2; margin-left: 0; padding-left: 0; }
   }
 
   @media (max-width: 1023px) {

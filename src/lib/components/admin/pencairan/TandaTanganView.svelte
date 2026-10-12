@@ -71,7 +71,7 @@
 
   const rows = $derived.by<Row[]>(() => MERGE_KINDS.map(kind => {
     const doc = data.documents.find(d => d.kind === kind)!;
-    const final = [...doc.versions].reverse().find(v => v.origin === 'generated' && (!(data as any).journey || v.generation?.final)) || null;
+    const final = [...doc.versions].reverse().find(v => v.origin === 'generated' && (!(data as any).journey || v.generation?.final || (data as any).journey.status==='selesai'&&v.generation?.journeyRevision===(data as any).journey.documentRevisions?.[kind])) || null;
     const signed = [...doc.versions].reverse().find(v => v.signed && (!final || v.number > final.number)) || null;
     const missing = (info?.missing[kind] || []).map(m => m.label.toLowerCase());
     const clauseBlocks = kind === 'pks' && Boolean(info?.clauseRequired) && !data.disbursement.clauseChecked;
@@ -222,9 +222,9 @@
     <button type="button" class={chipBtn} onclick={() => open('preview', row.kind)}><Icon name="eye" size={14} />Pratinjau</button>
     {#if row.final}
       <a class={chipBtn} href={`${base}/documents/${row.kind}/versions/${row.final.id}?download=1`}><Icon name="download" size={14} />Unduh</a>
-      <button type="button" class={chipBtn} title={row.blockedFull || 'Buat dokumen final baru dari data terkini'} disabled={Boolean(row.blocked) || Boolean(busy)} onclick={() => saveFinal(row)}>{busy === `final:${row.kind}` ? 'Membuat…' : 'Buat ulang'}</button>
+      <button type="button" class={chipBtn} title={row.blockedFull || 'Buat dokumen final baru dari data terkini'} disabled={Boolean(row.blocked) || Boolean(busy) || Boolean(data.disbursement.paidAt)} onclick={() => saveFinal(row)}>{busy === `final:${row.kind}` ? 'Membuat…' : 'Buat ulang'}</button>
     {:else}
-      <button type="button" class={chipMain} title={row.blockedFull || 'Simpan dokumen final dan unduh'} disabled={Boolean(row.blocked) || Boolean(busy)} onclick={() => saveFinal(row)}><Icon name="download" size={14} />{busy === `final:${row.kind}` ? 'Membuat…' : 'Unduh'}</button>
+      <button type="button" class={chipMain} title={row.blockedFull || 'Simpan dokumen final dan unduh'} disabled={Boolean(row.blocked) || Boolean(busy) || Boolean(data.disbursement.paidAt)} onclick={() => saveFinal(row)}><Icon name="download" size={14} />{busy === `final:${row.kind}` ? 'Membuat…' : 'Unduh'}</button>
     {/if}
   </div>
   {#if row.final}<span class="mt-1 block font-mono text-[11px] text-slate-500">v{row.final.number}{row.code ? ` · ${row.code}` : ''}</span>{/if}
@@ -236,9 +236,9 @@
       <a class={chipBtn} href={`${base}/documents/${row.kind}/versions/${row.signed.id}`} target="_blank" rel="noopener noreferrer" title={row.signed.originalName}>v{row.signed.number} · {when(row.signed.created)}</a>
       <button type="button" class={row.doc.signedReceived ? chipOk : chipBtn} onclick={() => open('compare', row.kind)}>{#if row.doc.signedReceived}✓ {/if}Bandingkan</button>
     {/if}
-    <label class="{chipBtn} focus-within:outline focus-within:outline-2 focus-within:outline-[#55a9f2] {row.final && !busy ? '' : 'cursor-not-allowed opacity-50 hover:bg-white'}" title={row.final ? 'Pilih berkas PDF atau gambar' : 'Unduh dokumen final dulu.'}>
+    <label class="{chipBtn} focus-within:outline focus-within:outline-2 focus-within:outline-[#55a9f2] {row.final && !busy && !data.disbursement.paidAt ? '' : 'cursor-not-allowed opacity-50 hover:bg-white'}" title={row.final ? 'Pilih berkas PDF atau gambar' : 'Unduh dokumen final dulu.'}>
       <Icon name="upload" size={14} />{busy === `scan:${row.kind}` ? 'Mengunggah…' : row.signed ? 'Unggah ulang' : 'Unggah pindaian'}
-      <input type="file" class="sr-only" accept=".pdf,.png,.jpg,.jpeg,.webp" disabled={!row.final || Boolean(busy)} onchange={(e) => pickScan(row, e)} />
+      <input type="file" class="sr-only" accept=".pdf,.png,.jpg,.jpeg,.webp" disabled={!row.final || Boolean(busy) || Boolean(data.disbursement.paidAt)} onchange={(e) => pickScan(row, e)} />
     </label>
   </div>
 {/snippet}
@@ -299,7 +299,6 @@
     {#if missingLine}<span class="text-xs font-medium text-amber-900">{missingLine}</span>{/if}
     {#if error}<span class="text-xs font-medium text-red-700" role="alert">{error}</span>{/if}
     <span class="ml-auto flex items-center gap-2">
-      {#if received === 4}<span class={chipOk}>✓ Siap dilampirkan</span>{/if}
     </span>
   </div>
 </div>
@@ -328,7 +327,7 @@
         <span class="text-xs text-slate-500">Biru: nilai terisi. Merah: belum diisi.</span>
         <span class="ml-auto flex items-center gap-2">
           {#if current.blocked}<span class="text-xs font-medium text-amber-900" title={current.blockedFull}>{current.blocked}</span>{/if}
-          <Button size="sm" icon="download" onclick={() => { const row = current; close(); if (row) void saveFinal(row); }} disabled={Boolean(current.blocked) || Boolean(busy)}>{current.final ? 'Buat ulang dan unduh' : 'Unduh dokumen final'}</Button>
+          <Button size="sm" icon="download" onclick={() => { const row = current; close(); if (row) void saveFinal(row); }} disabled={Boolean(current.blocked) || Boolean(busy) || Boolean(data.disbursement.paidAt)}>{current.final ? 'Buat ulang dan unduh' : 'Unduh dokumen final'}</Button>
         </span>
       </div>
 

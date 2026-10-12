@@ -152,6 +152,16 @@ QA browser menyesuaikan fitur yang diubah, misalnya:
 
 ## Dokumentasi dan penyelesaian pekerjaan
 
+Pemeriksaan RAB manual memerlukan seluruh baris valid dan total persis sesuai SK. Draf belum lengkap tetap boleh disimpan; tombol utama dan navigasi langkah pemeriksaan memakai validasi yang sama. Daftar dokumen otomatis hanya tampil pada tab Dokumen, bukan Rekening Penerima atau PKS. Bukti dan batas QA: [QA UX 12 Oktober](pencairan-deb/QA-UX-RAB-DAN-DOKUMEN-2026-10-12.md).
+
+Penyimpanan nomor PKS kampus otomatis memberi tahu admin jika nomor PKS PF belum tersedia. Tidak ada tombol permintaan manual pada tab PKS. Permintaan hanya ditandai sekali dan notifikasi mengikuti transaksi penyimpanan; kampus dapat melanjutkan pengisian tanpa menunggu PF.
+
+Pengiriman paket pengajuan atau perbaikan oleh kampus memberi notifikasi `pencairan_pengajuan` kepada admin/super-admin aktif dengan tautan langsung ke kampus. Pemicu mengikuti penambahan riwayat pengajuan dalam transaksi yang sama, bukan autosave atau permintaan PKS.
+
+Permintaan revisi mempertahankan file aktif. Perubahan identitas rekening menandai foto lama perlu diperbarui, sambil mempertahankan akses baca. Hanya scope file yang dibuka dapat mengganti/menghapusnya; hapus memakai modal konfirmasi dan pemeriksaan revisi draf pada server. Status sidebar ditempatkan di bawah label agar tidak memecah kata.
+
+Pindaian bertanda tangan harus PDF/PNG/JPG/WebP untuk dapat disusun menjadi lampiran; DOCX tetap menjadi dokumen sumber unduhan. Halaman tanda tangan admin mengenali versi generated yang sesuai revisi pada pengajuan selesai, dan menonaktifkan unggah/buat ulang setelah pembayaran. Bukti alur dari draf hingga pembayaran simulasi: [QA alur lengkap dan UX](pencairan-deb/QA-ALUR-LENGKAP-DAN-UX-2026-10-12.md).
+
 Setiap chat baru wajib membaca semua dokumentasi sebagaimana diatur AGENTS.md. Titik masuk penting:
 
 - [README](../README.md): cara menjalankan dan mode aktif.

@@ -5,7 +5,7 @@
  import type { RabOverview } from '$lib/rab';
  import { RAB_TEMPLATE_HEADERS, mergeRabRows, validRabUnit, rabSubcategory, type TemplateQuantity } from '$lib/rab-template';
  import { readExcel, readRabRows } from '$lib/pengajuan/rab-model';
- let {version,draft,busy=false,amountSen,onsave,ondirty}:{version:RabOverview['version'];draft?:RabOverview['itemDraft'];busy?:boolean;amountSen:number;onsave:(rows:unknown[][],lineIds:string[],draft:boolean)=>Promise<boolean>;ondirty:(value:boolean)=>void}=$props();
+ let {version,draft,busy=false,amountSen,ready=$bindable(false),onsave,ondirty}:{version:RabOverview['version'];draft?:RabOverview['itemDraft'];busy?:boolean;amountSen:number;ready?:boolean;onsave:(rows:unknown[][],lineIds:string[],draft:boolean)=>Promise<boolean>;ondirty:(value:boolean)=>void}=$props();
  type Row={id:string;cells:(string|number|null|undefined)[]};
  const blank=():Row=>({id:'',cells:['','','',1,'',1,'kali',undefined]});
  let rows=$state<Row[]>([]),saved=$state(''),error=$state(''),message=$state(''),reading=$state(false);
@@ -16,6 +16,11 @@
  const dirty=$derived(JSON.stringify(rows)!==saved);
  const rowTotal=(row:Row)=>Math.round(Number(row.cells[3])*Number(row.cells[5])*Number(row.cells[7])*100);
  const total=$derived(rows.reduce((sum,row)=>sum+(Number.isFinite(rowTotal(row))?rowTotal(row):0),0));
+ const validation=$derived.by(()=>{
+  try{const parsed=readRabRows([RAB_TEMPLATE_HEADERS,...rows.map(row=>row.cells)]);return parsed.length===rows.length?'':'Lengkapi setiap baris atau hapus baris kosong.';}
+  catch(e){return e instanceof Error?e.message:'Lengkapi rincian item RAB.';}
+ });
+ $effect(()=>{ready=!reading&&!validation&&total===amountSen;});
  function initial():Row[]{
   if(draft)return draft.rows.map((cells,i)=>({id:draft.lineIds[i],cells:[...cells]}));
   const lines=version?.lines||[],byId=new Map(lines.map(line=>[line.id,line]));
@@ -92,6 +97,7 @@
  </div>
  <div class="flex flex-wrap justify-between gap-3 rounded-lg bg-slate-50 p-3"><span>{rows.length} dari 500 item</span><strong>Total: {formatSen(total)} / SK {formatSen(amountSen)}</strong></div>
  {#if total!==amountSen}<p class="text-sm text-amber-900">Draf boleh disimpan. Total RAB harus sama dengan nilai SK sebelum melanjutkan pembagian dan pengajuan.</p>{/if}
+ {#if validation}<p class="text-sm text-amber-900" role="status">{validation}</p>{/if}
  {#if error}<p role="alert" class="rounded-lg bg-red-50 p-3 text-red-700">{error}</p>{/if}
  {#if message}<p role="status" class="rounded-lg bg-blue-50 p-3 text-blue-900">{message}</p>{/if}
  <div class="flex flex-wrap items-center justify-between gap-3"><p class="text-xs text-slate-500" role="status">{reading?'Membaca Excel…':saving?'Menyimpan draf…':dirty?'Perubahan belum tersimpan.':'Draf tersimpan otomatis. Belum dikirim ke PF.'}</p>{#if failed&&dirty}<button type="button" class="min-h-11 px-3 font-semibold text-[#0066B2] underline" disabled={busy||reading||saving} onclick={()=>save()}>Coba simpan lagi</button>{/if}</div>
