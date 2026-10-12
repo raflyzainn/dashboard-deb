@@ -152,6 +152,8 @@ QA browser menyesuaikan fitur yang diubah, misalnya:
 
 ## Dokumentasi dan penyelesaian pekerjaan
 
+Impor tambahan RAB menjumlahkan Qty item dengan kategori, sub kategori, dan nama yang sama. Satuan dan Volume harus sama; harga satuan mengikuti Excel terbaru. Upload ulang menambah Qty lagi, sedangkan koreksi Qty dilakukan langsung pada tabel. Aturan ini menggantikan perilaku impor lama yang menimpa Qty. Bukti: [QA penambahan Qty](pencairan-deb/QA-IMPOR-TAMBAHAN-QTY-2026-10-12.md).
+
 Pemeriksaan RAB manual memerlukan seluruh baris valid dan total persis sesuai SK. Draf belum lengkap tetap boleh disimpan; tombol utama dan navigasi langkah pemeriksaan memakai validasi yang sama. Daftar dokumen otomatis hanya tampil pada tab Dokumen, bukan Rekening Penerima atau PKS. Bukti dan batas QA: [QA UX 12 Oktober](pencairan-deb/QA-UX-RAB-DAN-DOKUMEN-2026-10-12.md).
 
 Penyimpanan nomor PKS kampus otomatis memberi tahu admin jika nomor PKS PF belum tersedia. Tidak ada tombol permintaan manual pada tab PKS. Permintaan hanya ditandai sekali dan notifikasi mengikuti transaksi penyimpanan; kampus dapat melanjutkan pengisian tanpa menunggu PF.

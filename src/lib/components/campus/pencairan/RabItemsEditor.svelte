@@ -49,7 +49,7 @@
    const existing=rows.filter(row=>!empty(row));
    const merged=mergeRabRows(existing,imported.map(item=>{const t=item.templateQuantity;return {id:'',cells:[item.group,rabSubcategory(item.activity,item.section),item.title,t?.qty??item.volume,t?.unit??item.unit,t?.volume??1,t?.volumeUnit??'kali',item.priceSen/100]};}));
    rows=merged.rows;
-   message=`${merged.added} item ditambahkan, ${merged.updated} item diperbarui. Draf disimpan otomatis.`;
+   message=`${merged.added} item baru ditambahkan, Qty ${merged.updated} item lama ditambah. Harga satuan mengikuti Excel terbaru. Draf disimpan otomatis.`;
   }catch(e){if(!disposed)error=reportError(e instanceof Error?e.message:'Excel tidak dapat dibaca.');}finally{reading=false;}
  }
  function save(automatic=true):Promise<boolean>{
@@ -76,7 +76,7 @@
 <section class="grid min-w-0 gap-3" aria-label="Tabel input RAB">
  <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
   <label class="grid gap-2 font-semibold">Tambah item dari Excel<input type="file" class="w-full min-w-0 rounded-lg border bg-white p-2 font-normal" aria-label="Tambah item dari Excel" accept=".xlsx" disabled={busy||reading} onchange={e=>{void append(e.currentTarget.files?.[0]);e.currentTarget.value='';}}/></label>
-  <p class="mt-2 text-xs text-slate-600">.xlsx · maksimal 2 MB dan total 500 item. Kategori, sub kategori, dan nama yang sama memperbarui item lama; item baru ditambahkan. Autosave.</p>
+  <p class="mt-2 text-xs text-slate-600">.xlsx · maksimal 2 MB dan total 500 item. Qty item dengan kategori, sub kategori, dan nama yang sama ditambahkan ke Qty lama. Satuan dan Volume harus sama; harga satuan mengikuti Excel terbaru. Upload ulang akan menambah Qty lagi. Koreksi jumlah langsung di tabel. Autosave.</p>
  </div>
  <div class="flex flex-wrap items-center justify-between gap-2"><h3 class="font-bold">Isi RAB langsung atau tambahkan Excel</h3><button type="button" class="min-h-11 rounded-lg border border-blue-300 px-3 font-semibold text-[#0066B2] disabled:opacity-40" disabled={busy||reading||rows.length>=500} onclick={()=>rows=[...rows,blank()]}>Tambah item</button></div>
  <p class="text-xs text-slate-600">Kolom sama dengan template. Total Harga dihitung dari Qty × Volume × Harga Satuan. Draf tersimpan otomatis meskipun belum lengkap; lengkapi setiap baris sebelum memeriksa RAB.</p>

@@ -22,7 +22,13 @@ export function mergeRabRows(existing: RabInputRow[], incoming: RabInputRow[]) {
   seen.add(identity);
   const matches = rows.map((candidate, index) => key(candidate) === identity ? index : -1).filter(index => index >= 0);
   if (matches.length > 1) throw Error(`Item "${row.cells[2]}" memiliki duplikat di tabel. Hapus duplikat sebelum upload.`);
-  if (matches.length) { rows[matches[0]].cells = [...row.cells]; updated++; }
+  if (matches.length) {
+   const previous=rows[matches[0]].cells;
+   if([4,5,6].some(column=>text(previous[column]).toLocaleLowerCase('id')!==text(row.cells[column]).toLocaleLowerCase('id')))throw Error(`Satuan atau Volume item "${row.cells[2]}" berbeda. Samakan sebelum menambahkan Qty atau gunakan nama item berbeda.`);
+   const qty=Number(previous[3])+Number(row.cells[3]);
+   if(!Number.isSafeInteger(Number(previous[3]))||Number(previous[3])<1||!Number.isSafeInteger(qty)||qty*Number(row.cells[5])>1e9)throw Error(`Periksa Qty item "${row.cells[2]}" sebelum menambahkan data.`);
+   rows[matches[0]].cells = [...row.cells];rows[matches[0]].cells[3]=qty;updated++;
+  }
   else { rows.push({ ...row, cells: [...row.cells] }); added++; }
  }
  if (rows.length > 500) throw Error('Gabungan data maksimal 500 item.');

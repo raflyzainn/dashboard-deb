@@ -31,6 +31,16 @@ test('legacy RAB item names do not truncate the import and subkegiatan stay dist
  assert.equal(mergeRabRows(incoming,incoming).added,0);
 });
 
+test('RAB imports add matching quantities and keep the latest Excel price',()=>{
+ const initial={id:'panel1',cells:['Energi','Alat','Panel QA',10,'unit',1,'kali',2000000]};
+ const update={id:'',cells:['Energi','Alat','Panel QA',5,'unit',1,'kali',3000000]};
+ const merged=mergeRabRows([initial],[update]);
+ assert.equal(merged.rows[0].cells[3],15);assert.equal(merged.rows[0].cells[7],3000000);assert.equal(merged.rows[0].id,'panel1');
+ assert.equal(initial.cells[3],10);
+ assert.equal(mergeRabRows(merged.rows,[update]).rows[0].cells[3],20);
+ for(const column of [4,5,6]){const incompatible={...update,cells:[...update.cells]};incompatible.cells[column]=column===5?2:'hari';assert.throws(()=>mergeRabRows([initial],[incompatible]),/Satuan atau Volume/);}
+});
+
 test('payout guards reject paid records, stale revisions and invalid calendar dates',()=>{
  const tx=new RestStore({disbursements:[{id:'payment00000001',term:1,paidAt:'2026-10-07'} as any]});
  assert.throws(()=>assertPayoutEditable(tx),/sudah dibayar/);
