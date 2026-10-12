@@ -152,6 +152,8 @@ QA browser menyesuaikan fitur yang diubah, misalnya:
 
 ## Dokumentasi dan penyelesaian pekerjaan
 
+Arahan terbaru 12 Oktober 2026 mempertahankan Beranda, Pencairan Dana, Panduan Aplikasi, dan Notifikasi untuk kampus. URL modul yang belum dipakai maupun halaman admin dialihkan ke Beranda kampus. API modul di luar cakupan aktif ditolak; API pendukung sesi, navigasi, notifikasi, dan audit pencairan tetap tersedia. Bukti: [QA pembatasan akses kampus](pencairan-deb/QA-AKSES-KAMPUS-PENCAIRAN-2026-10-12.md).
+
 Impor tambahan RAB menjumlahkan Qty item dengan kategori, sub kategori, dan nama yang sama. Satuan dan Volume harus sama; harga satuan mengikuti Excel terbaru. Upload ulang menambah Qty lagi, sedangkan koreksi Qty dilakukan langsung pada tabel. Aturan ini menggantikan perilaku impor lama yang menimpa Qty. Bukti: [QA penambahan Qty](pencairan-deb/QA-IMPOR-TAMBAHAN-QTY-2026-10-12.md).
 
 Pemeriksaan RAB manual memerlukan seluruh baris valid dan total persis sesuai SK. Draf belum lengkap tetap boleh disimpan; tombol utama dan navigasi langkah pemeriksaan memakai validasi yang sama. Daftar dokumen otomatis hanya tampil pada tab Dokumen, bukan Rekening Penerima atau PKS. Bukti dan batas QA: [QA UX 12 Oktober](pencairan-deb/QA-UX-RAB-DAN-DOKUMEN-2026-10-12.md).

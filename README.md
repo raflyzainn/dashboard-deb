@@ -22,6 +22,8 @@ Launcher normal hanya memulai layanan lokal; tidak melakukan seed/migrasi otomat
 
 ## Alur dan penyimpanan
 
+Akun kampus tetap dapat membuka Beranda, Pencairan Dana, Notifikasi, dan Panduan Aplikasi. URL modul yang belum dipakai atau halaman admin diarahkan ke Beranda kampus; API modul indikator, proposal, forum, profil, dan pengelolaan admin ditolak untuk kampus. Akses admin mengikuti perannya.
+
 Data formulir, RAB, pemeriksaan, revisi, audit, notifikasi dan pembayaran dibaca/disimpan melalui API PocketBase. Berkas memakai storage server yang sudah ada: folder objek pada instance lokal untuk QA dan R2 untuk lingkungan server yang dikonfigurasi. Browser tidak menyimpan database aplikasi atau mengarang pengajuan saat backend gagal.
 
 Alur baru dipilih berdasarkan `disbursements.submissionStatus`, bukan mode dummy/lokal. Pengajuan lama tanpa penanda tetap memakai layanan PocketBase lama agar data historis tidak dikonversi atau diberi alokasi otomatis. Nilai dan nomor SK mengikuti database, tanpa fallback nominal contoh.

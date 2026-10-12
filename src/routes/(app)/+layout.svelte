@@ -8,9 +8,10 @@
   import Shell from '$lib/components/layout/Shell.svelte';
   import Empty from '$lib/components/ui/Empty.svelte';
   import { startRealtime } from '$lib/realtime.svelte';
+  import { campusPageAllowed } from '$lib/campus-access';
   let { children } = $props();
   const routeRole = $derived(page.url.pathname.split('/')[1]);
-  const campusRouteAllowed = $derived(app.session?.role !== 'campus' || /^\/campus\/(dashboard|pencairan|guide|notifications)\/?$/.test(page.url.pathname));
+  const campusRouteAllowed = $derived(app.session?.role !== 'campus' || campusPageAllowed(page.url.pathname));
   const authorized = $derived(app.ready && app.session && !app.session.passwordChangeRequired && routeRole === app.session.role && campusRouteAllowed);
   const request = $derived(pageRequest(page.url));
   const requestKey = $derived(pageKey(request));
