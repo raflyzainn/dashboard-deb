@@ -4,10 +4,11 @@ import { json, type RequestEvent } from '@sveltejs/kit';
 import { PreviewError } from './preview-error';
 import type { previewContext as ContextFactory } from './local-preview';
 import { campusApiAllowed } from '../../campus-access';
+import type PocketBase from 'pocketbase';
 
 export async function previewEndpoint(event: RequestEvent, action: (context: Awaited<ReturnType<typeof ContextFactory>>) => Promise<Response>) {
-  const scope=(pb:{authStore:{record:{role?:string}|null}})=>{
-    if(pb.authStore.record?.role==='campus'&&event.url.pathname.startsWith('/api/')&&!campusApiAllowed(event.url.pathname))throw new PreviewError(403,'Modul ini belum tersedia untuk akun kampus.');
+  const scope=(pb:Pick<PocketBase,'authStore'>)=>{
+    if((pb.authStore.record as {role?:string}|null)?.role==='campus'&&event.url.pathname.startsWith('/api/')&&!campusApiAllowed(event.url.pathname))throw new PreviewError(403,'Modul ini belum tersedia untuk akun kampus.');
     return pb;
   };
   if (event.locals.pb) {
