@@ -26,7 +26,7 @@ test('dashboard and map counts follow added campus and missing location, without
   assert.equal(mapCampuses(data).length,40);
   const regions=regionSummary(data);
   assert.equal(regions.reduce((n,r)=>n+r.campuses,0),41);
-  assert.equal(regions.find(r=>r.island==='Wilayah belum diisi')?.provinces,0);
+  assert.equal(regions.find(r=>r.island==='QA')?.provinces,0);
 });
 
 test('master metadata and target changes invalidate current comparison without mutating historical snapshots',()=>{
