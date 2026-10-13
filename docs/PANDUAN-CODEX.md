@@ -1,5 +1,9 @@
 # Panduan proyek untuk Codex
 
+## Peta Persebaran PocketBase - 13 Oktober 2026
+
+Peta memakai pin `campuses.program.coordinates` yang disimpan pada Profil DEB. Record lama tanpa field koordinat profil tetap memakai lokasi master; koordinat profil yang dikosongkan atau tidak valid tidak diganti dengan pin palsu. Ringkasan, legenda dan daftar kampus tanpa pin mengikuti pencarian/wilayah/progres. Persentase tetap berasal dari `campusStats` dan periode view API, termasuk nilai nol bila indikator belum ada. Bukti lokal dan batasnya: [QA Peta Persebaran RAFLY999-8](QA-PETA-PERSEBARAN-2026-10-13.md).
+
 ## Izin revisi dokumen dan penyamaran rekening - 12 Oktober 2026
 
 Revisi `dokumen` hanya memberi akses regenerasi/kirim perbaikan; nomor PKS kampus tetap terkunci kecuali lingkup `pks` juga dibuka. Ringkasan dan riwayat pengajuan memakai penyamaran rekening yang sudah digunakan backend, hanya tiga digit terakhir terlihat. Layar Rekening dan dokumen resmi tetap tersedia untuk akun yang berhak. QA browser dan batasnya tercatat dalam [laporan perbaikan privasi](pencairan-deb/QA-PERBAIKAN-PRIVASI-2026-10-12.md).
