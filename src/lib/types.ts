@@ -45,6 +45,7 @@ export interface FaqEntry { id: string; questionId?: string; question: string; a
 export interface Activity { id: string; campusId: string; text: string; createdAt: string }
 export interface Notification { id: string; campusId: string; recipient: Role; title: string; body: string; href: string; createdAt: string; readAt: string | null; simulated?: boolean }
 export interface Snapshot {
+  campusPayouts?: Record<string, import('./payout-progress').CampusPayoutProgress>;
   payments?: import('./payments').PaymentCase[];
   proposalComments?: ProposalComment[];
   period?: Period; periods?: Period[];
