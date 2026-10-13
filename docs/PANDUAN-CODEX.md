@@ -1,5 +1,9 @@
 # Panduan proyek untuk Codex
 
+## Progres Kampus Mitra — 13 Oktober 2026
+
+Daftar Kampus Mitra, tabel ringkas Beranda admin, dan Ringkasan kampus menampilkan progres pencairan Tahap 1 berdasarkan dokumen PocketBase existing. Tahap berjalan mengikuti linimasa Pencairan; berkas tersimpan terpisah dari butir Sesuai/Tidak diperlukan. Filter tindak lanjut memakai revisi dokumen. Data indikator tetap tersedia pada tabnya. Peta Persebaran dikerjakan terpisah. Pemetaan field, checklist, bukti browser dan batasnya: [QA progres pencairan](QA-KAMPUS-PROGRES-PENCAIRAN-2026-10-13.md).
+
 ## Peta Persebaran PocketBase - 13 Oktober 2026
 
 Peta memakai pin `campuses.program.coordinates` yang disimpan pada Profil DEB. Record lama tanpa field koordinat profil tetap memakai lokasi master; koordinat profil yang dikosongkan atau tidak valid tidak diganti dengan pin palsu. Ringkasan, legenda dan daftar kampus tanpa pin mengikuti pencarian/wilayah/progres. Persentase tetap berasal dari `campusStats` dan periode view API, termasuk nilai nol bila indikator belum ada. Bukti lokal dan batasnya: [QA Peta Persebaran RAFLY999-8](QA-PETA-PERSEBARAN-2026-10-13.md).

@@ -11,6 +11,7 @@ import { checkedFileMime } from '../../upload-file';
 import { validDate } from '../../pengajuan/journey';
 import { atomic, StoreRecord } from './rest-store';
 import { payoutReads, payoutRecord, assertPayoutEditable, assertRevision } from './pencairan-store';
+import { payoutTimeline, type CampusPayoutProgress } from '../../payout-progress';
 
 /**
  * Pencairan Termin 1: one disbursement per campus and term, seven document slots, versions in storage, reviews and typed fields.
@@ -67,6 +68,7 @@ export async function ensureDisbursement(pb: PocketBase, campusId: string, term 
 /** The evidence marks of the three RAB sheets, as set from the campus file (decision 47): 'ada', 'tidak', or '' when not checked. */
 export const rabEvidence = (properties: unknown) => { const p = (properties && typeof properties === 'object' ? properties : {}) as Record<string, unknown>; const m = (k: string) => (p[k] === 'ada' ? 'ada' : p[k] === 'tidak' ? 'tidak' : ''); return { r100: m('buktiRab100'), r70: m('buktiRab70'), r30: m('buktiRab30') }; };
 export interface DirectoryRow {
+  progress: CampusPayoutProgress;
   needsPfPks?: boolean;
   campus: CampusInfo; amountSen: number; limitSen: number; stage: number; requestedSen: number; paidSen: number; paidAt: string; lampiranCount: number;
   statuses: Record<Kind, Status>; assessment: Assessment; checkedAt: string; bukti: { r100: string; r70: string; r30: string };
@@ -85,12 +87,17 @@ export async function directory(pb: PocketBase): Promise<DirectoryRow[]> {
     pb.collection('rab_versions').getFullList({ fields: 'id,campus,number,status,share,totalSen,term1Sen,term2Sen', ...opts })
   ]);
   const currentIds = documents.map(d => d.currentVersion).filter(Boolean);
-  const versions = await currentVersions(pb,currentIds,'id,document,number,originalName,mime,origin,signed,scan,fields,created,uploadedByName');
+  const versions = await currentVersions(pb,currentIds,'id,document,number,originalName,mime,origin,signed,scan,fields,generation,created,uploadedByName');
   return funded.map(({ campus, award }) => {
     const disbursement = disbursements.find(d => d.campus === campus.id);
     const own = disbursement ? documents.filter(x => x.disbursement === disbursement.id) : [];
     const statuses = Object.fromEntries(KINDS.map(k => [k, k === 'sk' ? 'perlu_konfirmasi' : 'belum_ada'])) as Record<Kind, Status>;
     for (const d of own) if (KINDS.includes(d.kind)) statuses[d.kind as Kind] = d.status as Status;
+    const latestRab = rabVersions.filter(v => v.campus === campus.id).sort((a, b) => Number(b.number) - Number(a.number))[0];
+    // Match the application card: a new RAB draft has not passed PF review.
+    if (disbursement?.submissionStatus && latestRab?.status === 'draf') for (const kind of KINDS.filter(isRabKind)) {
+      if (statuses[kind] !== 'perlu_revisi') statuses[kind] = 'belum_ada';
+    }
     const docs: DocumentInfo[] = KINDS.map(kind => {
       const d = own.find(x => x.kind === kind);
       const v = d ? versions.find(x => x.id === d.currentVersion) : null;
@@ -104,17 +111,24 @@ export async function directory(pb: PocketBase): Promise<DirectoryRow[]> {
     const rab = rabVersion ? { id: rabVersion.id, number: Number(rabVersion.number), status: rabVersion.status, totalSen: Number(rabVersion.totalSen || 0), term1Sen: Number(rabVersion.term1Sen || 0), term2Sen: Number(rabVersion.term2Sen || 0) } : null;
     const lampiranCount = disbursement ? attachments.filter(a => a.disbursement === disbursement.id).length : 0;
     const { checks: list, suratKuasaRequired } = checks(docs, summary, { campus, bankResult: String(bank?.bankResult || 'belum'), rab, sheets: sheetTotals(rabVersions.filter(v => v.campus === campus.id)) });
-    const assessment = assess(statuses, { submissionStatus:disbursement?.submissionStatus, suratKuasaRequired, redChecks: list.filter(c => c.level === 'bad').length, paidAt: String(disbursement?.paidAt || ''), originalsAll: docs.filter(d => d.generated).every(d => d.originalReceived), lampiranCount });
+    const assessment = assess(statuses, { submissionStatus:disbursement?.submissionStatus,
+      suratKuasaRequired: disbursement?.submissionStatus ? disbursement.applicationData?.fields?.jenisRekening === 'kuasa' : suratKuasaRequired,
+      redChecks: disbursement?.submissionStatus ? 0 : list.filter(c => c.level === 'bad').length,
+      paidAt: String(disbursement?.paidAt || ''), originalsAll: docs.filter(d => d.generated).every(d => d.originalReceived), lampiranCount });
     const checkedAt = own.map(d => String(d.updated || '')).sort().pop() || '';
-    return { needsPfPks:Boolean(disbursement?.submissionStatus&&!disbursement?.paidAt&&!disbursement?.applicationData?.pf?.nomorPksPf),campus, amountSen, limitSen: limitSen(amountSen), stage: Number(disbursement?.stage || 1), requestedSen, paidSen: Number(disbursement?.paidSen || 0), paidAt: String(disbursement?.paidAt || ''), lampiranCount, statuses, assessment, checkedAt, bukti: rabEvidence(disbursement?.properties) };
+    const timeline = payoutTimeline({ paidAt: disbursement?.paidAt, stage: disbursement?.stage, hasRab: rabVersions.some(v => v.campus === campus.id),
+      documents: docs, journey: disbursement?.submissionStatus ? { ...disbursement.applicationData, status: disbursement.submissionStatus } : undefined });
+    const progress = { stage: timeline.label, uploaded: docs.filter(d => d.kind !== 'sk' && d.versions.length > 0).length, assessment };
+    return { progress, needsPfPks:Boolean(disbursement?.submissionStatus&&!disbursement?.paidAt&&!disbursement?.applicationData?.pf?.nomorPksPf),campus, amountSen, limitSen: limitSen(amountSen), stage: Number(disbursement?.stage || 1), requestedSen, paidSen: Number(disbursement?.paidSen || 0), paidAt: String(disbursement?.paidAt || ''), lampiranCount, statuses, assessment, checkedAt, bukti: rabEvidence(disbursement?.properties) };
   });
 }
 const lightVersion = (v: RecordModel): VersionInfo => ({
   id: v.id, number: v.number, originalName: v.originalName || '', size: Number(v.size || 0), mime: v.mime || '', origin: v.origin || 'upload', uploadedByName: v.uploadedByName || '', created: v.created, note: '', signed: Boolean(v.signed), scan: (v.scan && typeof v.scan === 'object' ? v.scan : null) as VersionInfo['scan'],
-  fields: (v.fields && typeof v.fields === 'object' ? v.fields : {}) as Record<string, unknown>, fieldsByName: '', fieldsAt: '', fieldsCheckedByName: '', fieldsCheckedAt: '', fieldsSamePerson: false, reviews: []
+  generation: v.generation, fields: (v.fields && typeof v.fields === 'object' ? v.fields : {}) as Record<string, unknown>, fieldsByName: '', fieldsAt: '', fieldsCheckedByName: '', fieldsCheckedAt: '', fieldsSamePerson: false, reviews: []
 });
 
 export interface VersionInfo {
+  generation?: { journeyRevision?: number };
   id: string; number: number; originalName: string; size: number; mime: string; origin: string; uploadedByName: string; created: string; note: string; signed: boolean; scan: DocScan | null;
   fields: Record<string, unknown>; fieldsByName: string; fieldsAt: string; fieldsCheckedByName: string; fieldsCheckedAt: string; fieldsSamePerson: boolean;
   reviews: { id: string; decision: string; note: string; actorName: string; created: string; imported: boolean }[];

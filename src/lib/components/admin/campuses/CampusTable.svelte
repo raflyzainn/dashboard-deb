@@ -1,7 +1,8 @@
 <script lang="ts">
   import CampusLogo from '$lib/components/ui/CampusLogo.svelte';
   import { app } from '$lib/state.svelte';
-  import { campusStats, percent } from '$lib/domain';
+  import { campusStats } from '$lib/domain';
+  import { CAMPUS_STATE_LABEL, CAMPUS_STATE_TONE } from '$lib/pencairan';
   const CAMPUS_REGIONS = $derived(
     [...new Set(app.data?.campuses.map((c) => c.region) || [])].sort()
   );
@@ -16,14 +17,14 @@
   let page = $state(1);
   const rows = $derived(
     (app.data?.campuses || [])
-      .map((c) => ({ ...c, ...campusStats(app.data!, c.id) }))
+      .map((c) => ({ ...c, ...campusStats(app.data!, c.id), payout: app.data?.campusPayouts?.[c.id] }))
       .filter(
         (c) =>
           `${c.name} ${c.acronym ?? ''} ${c.city ?? ''} ${c.region}`
             .toLowerCase()
             .includes(search.toLowerCase()) &&
           (region === 'all' || c.region === region) &&
-          (filter === 'all' || (filter === 'revision' ? c.revisions > 0 : !c.proposal))
+          (filter === 'all' || (filter === 'revision' ? (c.payout?.assessment.revisi || 0) > 0 : !c.proposal))
       )
   );
   const pages = $derived(Math.max(1, Math.ceil(rows.length / 10)));
@@ -78,7 +79,7 @@
             >KAMPUS MITRA</th
           ><th
             class="text-[11px] font-[600] tracking-[0.06em] [background-image:initial] [background-color:rgb(245,_249,_255)] text-[#475569] [border-top-width:1px] [border-bottom-width:1px] [border-top-style:solid] [border-bottom-style:solid] px-[20px] py-[12px] border-[color:rgb(226,_236,_248)]"
-            >PROGRES DEB</th
+            >PROGRES PENCAIRAN TAHAP 1</th
           ><th
             class="text-[11px] font-[600] tracking-[0.06em] [background-image:initial] [background-color:rgb(245,_249,_255)] text-[#475569] [border-top-width:1px] [border-bottom-width:1px] [border-top-style:solid] [border-bottom-style:solid] px-[20px] py-[12px] border-[color:rgb(226,_236,_248)]"
             >PROPOSAL</th
@@ -111,7 +112,10 @@
               ></td
             ><td
               class="[border-bottom-width:1px] [border-bottom-style:solid] text-[14px] text-[#405e82] min-w-[135px] px-[20px] py-[15px] border-[color:rgb(232,_239,_248)] progress-cell"
-              ><Progress value={row.progress} showValue /></td
+              >{#if row.payout}<a href={`/admin/pencairan/${row.id}`} class="font-semibold text-[#075fc7] hover:underline">{row.payout.stage}</a>
+                <div class="my-2"><Progress value={row.payout.assessment.done / row.payout.assessment.total * 100} /></div>
+                <small class="block text-xs">{row.payout.uploaded} berkas tersimpan · {row.payout.assessment.done}/{row.payout.assessment.total} butir selesai</small>
+              {:else}<span>Belum ada penetapan pencairan</span>{/if}</td
             ><td
               class="[border-bottom-width:1px] [border-bottom-style:solid] text-[14px] text-[#405e82] px-[20px] py-[15px] border-[color:rgb(232,_239,_248)]"
               ><Badge tone={row.proposal ? 'green' : 'neutral'}
@@ -119,16 +123,15 @@
               ></td
             ><td
               class="[border-bottom-width:1px] [border-bottom-style:solid] text-[14px] text-[#405e82] px-[20px] py-[15px] border-[color:rgb(232,_239,_248)]"
-              >{#if row.revisions}<Badge tone="amber">Perlu tindak lanjut</Badge>{:else}<span
-                  class="text-[color:var(--muted)] text-[14px] muted"
-                  >{row.progress >= 100 ? 'Tercapai' : 'Dalam proses'}</span
-                >{/if}</td
+              >{#if row.payout}<Badge tone={CAMPUS_STATE_TONE[row.payout.assessment.state]}>{CAMPUS_STATE_LABEL[row.payout.assessment.state]}</Badge>
+                <small class="block mt-1 text-xs">{row.payout.assessment.revisi} revisi · {row.payout.assessment.adminWait} menunggu PF</small>
+              {:else}<span class="text-sm text-slate-500">Belum dimulai</span>{/if}</td
             ><td
               class="[border-bottom-width:1px] [border-bottom-style:solid] text-[14px] text-[#405e82] px-[20px] py-[15px] border-[color:rgb(232,_239,_248)]"
               ><a
                 class="[-webkit-tap-highlight-color:transparent] text-[#53739c] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] inline-flex items-center justify-center w-[34px] h-[34px] [background-image:initial] [background-color:transparent] border-[0px] border-none border-[color:currentcolor] rounded-[7px] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:text-[#075fc7] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(233,_243,_255)] icon-button"
                 href={`/admin/campuses/${row.id}`}
-                aria-label={`Lihat ${row.name}, progres ${percent(row.progress)}`}
+                aria-label={`Lihat ${row.name}, ${row.payout?.stage || 'belum ada penetapan pencairan'}`}
                 ><Icon name="chevron" size={18} /></a
               ></td
             ></tr
