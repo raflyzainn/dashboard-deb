@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { payoutTimeline } from '$lib/payout-progress';
   import { reportError } from '$lib/feedback';
   import { REVISION_SCOPES, canRevise, editRequestStatus, openRevisions, revisionSection, type EditableSection } from '$lib/pengajuan/revisions';
   import { untrack } from 'svelte';
@@ -11,7 +12,7 @@
   import { onChange } from '$lib/realtime.svelte';
   import { pollVisible } from '$lib/polling';
   import { campusUploadBlockedReason, CAMPUS_STATE_LABEL } from '$lib/pencairan';
-  import { KINDS, STAGES, KIND_LABEL, KIND_SHORT, KIND_FILE, LOOK_AT, FIELDS, DECISION_LABEL, RAIL_WORD, ITEM_STATE_LABEL, RAB_SHARE, isRabKind, formatSen, parseSen, type Kind, type ItemState } from '$lib/pencairan';
+  import { KINDS, KIND_LABEL, KIND_SHORT, KIND_FILE, LOOK_AT, FIELDS, DECISION_LABEL, RAIL_WORD, ITEM_STATE_LABEL, RAB_SHARE, isRabKind, formatSen, parseSen, type Kind, type ItemState } from '$lib/pencairan';
   import type { KartuData, Version, Check } from './kartu-types';
   import Icon from '$lib/components/ui/Icon.svelte';
   import CampusLogo from '$lib/components/ui/CampusLogo.svelte';
@@ -83,19 +84,9 @@
   const revisionLabels = $derived(campusJourney?.status==='revisi'?[...new Set(openRevisions(campusJourney).flatMap(request=>request.scopes.map(scope=>REVISION_SCOPES[scope].label)))]:perluRevisi.map(k=>KIND_SHORT[k]));
   const menungguPf = $derived(data ? KINDS.filter(k => ['menunggu_review', 'perlu_konfirmasi'].includes(data!.readiness.items[k])) : []);
   const administrationRevisionOpen=$derived(openRevisions(campusJourney).some(request=>request.scopes.some(scope=>['administrasi','penandatangan','surat','pks'].includes(REVISION_SCOPES[scope].section))));
-  const campusStages = $derived(campusJourney?['Isi pengajuan','Siapkan dokumen','Kirim pengajuan','Pemeriksaan PF','Tanda tangan','Pembayaran','Dana dibayar']:data?.disbursement.paidAt ? [...STAGES, 'Dana dibayar'] : [...STAGES]);
-  const campusStage = $derived.by(()=>{
-    if(data?.disbursement.paidAt)return campusStages.length;
-    if(!campusJourney)return Math.max(1,Math.min(STAGES.length,data?.disbursement.stage||1));
-    const docs=data!.documents.filter(d=>d.generated);
-    if(campusJourney.status==='selesai')return docs.length&&docs.every(d=>d.signedReceived)?6:5;
-    if(campusJourney.status==='menunggu')return 4;
-    if(campusJourney.status==='revisi')return 1;
-    const generated=docs.filter(d=>d.versions.some(v=>v.id===d.currentVersionId&&v.origin==='generated'&&(v.generation?.journeyRevision||(v as any).journeyRevision)===(campusJourney.documentRevisions?.[d.kind]||campusJourney.revision)));
-    if(generated.length===4)return 3;
-    if(generated.length||data?.rab&&campusJourney.files?.rekening&&campusJourney.files?.kop&&campusJourney.fields?.nomorPksKampus&&campusJourney.pf?.nomorPksPf)return 2;
-    return 1;
-  });
+  const timeline = $derived(payoutTimeline({ ...data?.disbursement, journey: campusJourney, documents: data?.documents || [], hasRab: Boolean(data?.rab) }));
+  const campusStages = $derived(timeline.stages);
+  const campusStage = $derived(timeline.stage);
   const nextCampusUpload = $derived.by(() => {
     if (!data) return null;
     if (hasJourney) {
