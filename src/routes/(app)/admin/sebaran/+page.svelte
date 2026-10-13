@@ -4,6 +4,7 @@
   import { app } from '$lib/state.svelte';
   import {
     mapCampuses,
+    campusMapData,
     layoutMapPoints,
     progressBands,
     regionSummary,
@@ -13,6 +14,8 @@
   import { INDONESIA_PATHS } from '$lib/indonesia-map';
   import Icon from '$lib/components/ui/Icon.svelte';
   import Progress from '$lib/components/ui/Progress.svelte';
+  import Empty from '$lib/components/ui/Empty.svelte';
+  import Button from '$lib/components/ui/Button.svelte';
 
   let region = $state('Semua wilayah');
   let band = $state<'all' | ProgressBand>('all');
@@ -34,30 +37,32 @@
   let wheelTarget = 1;
   let wheelIdleTimer: ReturnType<typeof setTimeout> | undefined;
   let mapStage: HTMLDivElement;
-  const allPoints = $derived(mapCampuses(app.data!));
-  const regions = $derived(['Semua wilayah', ...new Set(allPoints.map((point) => point.island))]);
-  const visible = $derived(
-    allPoints.filter(
+  const allCampuses = $derived(campusMapData(app.data!));
+  const regions = $derived(['Semua wilayah', ...new Set(allCampuses.map((point) => point.island))]);
+  const candidates = $derived(
+    allCampuses.filter(
       (point) =>
         (region === 'Semua wilayah' || point.island === region) &&
-        (band === 'all' || point.band === band) &&
         `${point.name} ${point.acronym ?? ''} ${point.province}`
           .toLowerCase()
           .includes(search.toLowerCase())
     )
   );
+  const filteredCampuses = $derived(candidates.filter(point => band === 'all' || point.band === band));
+  const filteredData = $derived({ ...app.data!, campuses: filteredCampuses });
+  const visible = $derived(mapCampuses(filteredData));
   const selected = $derived(visible.find((point) => point.id === selectedId));
   const markers = $derived(
     layoutMapPoints(visible, stageWidth * 0.94, stageWidth * 0.94 * 0.52, zoom, stageHeight)
   );
   const summaries = $derived(
-    regionSummary(app.data!).filter((row) => region === 'Semua wilayah' || row.island === region)
+    regionSummary(filteredData)
   );
-  const reached = $derived(visible.filter((point) => point.band === 'reached').length);
+  const reached = $derived(filteredCampuses.filter((point) => point.band === 'reached').length);
   const average = $derived(
-    visible.length ? visible.reduce((sum, point) => sum + point.score, 0) / visible.length : 0
+    filteredCampuses.length ? filteredCampuses.reduce((sum, point) => sum + point.score, 0) / filteredCampuses.length : 0
   );
-  const provinceCount = $derived(new Set(visible.map((point) => point.province)).size);
+  const provinceCount = $derived(new Set(filteredCampuses.map((point) => point.province).filter(Boolean)).size);
   function panLimit(nextZoom = zoom) {
     if (!mapStage || nextZoom <= 1) return { x: 0, y: 0 };
     return {
@@ -145,6 +150,15 @@
 
 <svelte:head><title>Peta Persebaran · Desa Energi Berdikari</title></svelte:head>
 
+{#if app.loading}
+  <p role="status" class="mb-4 text-sm text-[#475569]">Memuat ulang data peta…</p>
+{:else if app.stale}
+  <div role="alert" class="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-[#e2a84a] bg-[#fff8e8] p-4 text-sm text-[#17365f]">
+    <span>Data terbaru belum dapat dimuat. Peta masih menampilkan data terakhir yang berhasil dibaca.</span>
+    <Button variant="secondary" size="sm" onclick={() => app.reload()}>Coba muat ulang peta</Button>
+  </div>
+{/if}
+
 <div
   class="flex items-center justify-between gap-y-[20px] gap-x-[20px] mb-[27px] [&_p]:text-[14px] [&_p]:text-[#637796] [&_p]:mt-[8px] max-[900.01px]:[&_h1]:text-[24px] max-[700.01px]:[&&]:items-start max-[700.01px]:gap-y-[15px] max-[700.01px]:gap-x-[15px] max-[700.01px]:mb-[22px] max-[700.01px]:flex-wrap max-[700.01px]:[&_h1]:text-[23px] max-[700.01px]:[&_p]:text-[14px] max-[700.01px]:[&_p]:leading-[1.65] max-[700.01px]:[&_p]:max-w-[340px] max-[700.01px]:[&_.period]:hidden page-heading"
 >
@@ -170,9 +184,19 @@
 </div>
 
 <p role="status" class="leading-[1.6] m-[0px] map-missing">
-  {app.data!.campuses.length - allPoints.length} kampus belum dapat dipetakan karena koordinat kosong
+  {filteredCampuses.length - visible.length} dari {filteredCampuses.length} kampus pada filter aktif belum dapat dipetakan karena koordinat kosong
   atau di luar area peta.
 </p>
+{#if filteredCampuses.length > visible.length}
+  <details class="mb-5 mt-2 text-sm text-[#17365f]">
+    <summary class="cursor-pointer py-2">Lihat kampus yang belum dapat dipetakan</summary>
+    <ul class="m-0 grid gap-2 pl-5 py-2">
+      {#each filteredCampuses.filter(campus => !visible.some(point => point.id === campus.id)) as campus (campus.id)}
+        <li><a class="text-[#075fc7] underline" href={`/admin/campuses/${campus.id}`}>{campus.name}</a>{campus.province ? ` · ${campus.province}` : ''}</li>
+      {/each}
+    </ul>
+  </details>
+{/if}
 <section
   class="[&_small]:text-[#475569]! [&_p]:text-[#475569]! [&_strong]:text-[#183b68]! [&&]:grid [&&]:grid-cols-[repeat(4,_minmax(0,_1fr))] [&&]:gap-y-[15px] [&&]:gap-x-[15px] [&&]:mb-[22px] max-[1150.01px]:[&&]:grid-cols-[repeat(2,_minmax(0,_1fr))] max-[700.01px]:[&&]:gap-y-[8px] max-[700.01px]:[&&]:gap-x-[8px] map-stats"
   aria-label="Ringkasan persebaran"
@@ -219,7 +243,7 @@
       <p
         class="leading-[1.6] [&&]:text-[11px] [&&]:text-[#64748b] m-[0px] max-[700.01px]:[&&]:hidden"
       >
-        Lokasi kampus pada filter aktif
+        Wilayah kampus pada filter aktif
       </p>
     </div>
   </article>
@@ -241,7 +265,7 @@
       <p
         class="leading-[1.6] [&&]:text-[11px] [&&]:text-[#64748b] m-[0px] max-[700.01px]:[&&]:hidden"
       >
-        Perhitungan capaian indikator
+        Capaian indikator seluruh kampus pada filter aktif
       </p>
     </div>
   </article>
@@ -322,6 +346,10 @@
         >{visible.length} kampus</span
       >
     </header>
+    {#if !visible.length}
+      <Empty title={app.data!.campuses.length === 0 ? 'Belum ada kampus' : filteredCampuses.length === 0 ? 'Tidak ada kampus yang cocok' : 'Koordinat belum tersedia'}
+        description={app.data!.campuses.length === 0 ? 'Data kampus akan tampil setelah tersedia.' : filteredCampuses.length === 0 ? 'Ubah pencarian atau filter untuk melihat kampus.' : 'Kampus dengan koordinat valid akan tampil sebagai titik peta.'} />
+    {/if}
     <div
       bind:this={mapStage}
       bind:clientWidth={stageWidth}
@@ -450,6 +478,7 @@
       {#each Object.entries(progressBands) as [key, item]}<button
           class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [font-size:inherit] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#465d43] [&&]:flex [&&]:items-center [&&]:gap-y-[8px] [&&]:gap-x-[8px] [&&]:text-left [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:p-[8px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:transparent] [&&]:rounded-[8px] [&:disabled]:cursor-pointer [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:[background-image:initial] [&:hover]:[background-color:rgb(242,_246,_239)] [&:hover]:border-[color:rgb(216,_228,_209)] [&.active]:[background-image:initial] [&.active]:[background-color:rgb(242,_246,_239)] [&.active]:border-[color:rgb(216,_228,_209)]"
           class:active={band === key}
+          aria-pressed={band === key}
           onclick={() => (band = band === key ? 'all' : (key as ProgressBand))}
           ><i
             class="[&&]:w-[11px] [&&]:h-[11px] [&&]:[background-image:initial] [&&]:[background-color:var(--legend)] [&&]:shrink-0 [&&]:rounded-[50%]"
@@ -457,7 +486,7 @@
           ></i><span class="[&&]:text-[11px]"
             >{item.label}<small
               class="text-[13px] [&&]:text-[#64748b] leading-[1.55] [&&]:block [&&]:mt-[3px]"
-              >{item.short} · {allPoints.filter((point) => point.band === key).length} kampus</small
+              >{item.short} · {candidates.filter((point) => point.band === key).length} kampus</small
             ></span
           ></button
         >{/each}
@@ -497,6 +526,7 @@
       {#each summaries as row}<button
           class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [font-size:inherit] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#385038] [&&]:w-[100%] [&&]:grid [&&]:grid-cols-[35px_minmax(0,_1fr)_auto] [&&]:items-center [&&]:gap-y-[10px] [&&]:gap-x-[10px] [&&]:text-left [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:p-[12px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:transparent] [&&]:rounded-[9px] [&:disabled]:cursor-pointer [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:[background-image:initial] [&:hover]:[background-color:rgb(241,_246,_237)] [&:hover]:border-[color:rgb(217,_229,_210)] [&.active]:[background-image:initial] [&.active]:[background-color:rgb(241,_246,_237)] [&.active]:border-[color:rgb(217,_229,_210)]"
           class:active={region === row.island}
+          aria-pressed={region === row.island}
           onclick={() => (region = region === row.island ? 'Semua wilayah' : row.island)}
           ><span
             class="[&&]:w-[32px] [&&]:h-[32px] [&&]:grid [&&]:items-center [&&]:[justify-items:center] [background-image:initial]! [background-color:rgb(230,_242,_255)]! text-[#1768bd]! [&&]:rounded-[8px] region-mark"
