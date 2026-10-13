@@ -1,5 +1,9 @@
 # Panduan proyek untuk Codex
 
+## Progres pencairan pada Peta Persebaran — 13 Oktober 2026
+
+Peta, legenda, rata-rata dan ringkasan wilayah memakai `campusPayouts` yang sama dengan Kampus Mitra: butir pemeriksaan selesai dibagi total butir. Detail pin menampilkan tahap, jumlah berkas tersimpan dan butir selesai. Unggah atau submit belum berarti pemeriksaan selesai; ini bukan persentase dana dibayar. Koordinat dan pengelompokan wilayah tetap mengikuti data existing. Bukti Chrome desktop/mobile: [QA peta progres pencairan](QA-PETA-PROGRES-PENCAIRAN-2026-10-13.md). Bagian peta berbasis indikator di bawah menjadi riwayat.
+
 ## Progres Kampus Mitra — 13 Oktober 2026
 
 Daftar Kampus Mitra, tabel ringkas Beranda admin, dan Ringkasan kampus menampilkan progres pencairan Tahap 1 berdasarkan dokumen PocketBase existing. Tahap berjalan mengikuti linimasa Pencairan; berkas tersimpan terpisah dari butir Sesuai/Tidak diperlukan. Filter tindak lanjut memakai revisi dokumen. Data indikator tetap tersedia pada tabnya. Peta Persebaran dikerjakan terpisah. Pemetaan field, checklist, bukti browser dan batasnya: [QA progres pencairan](QA-KAMPUS-PROGRES-PENCAIRAN-2026-10-13.md).

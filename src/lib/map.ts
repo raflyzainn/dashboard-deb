@@ -1,5 +1,4 @@
 import type { Campus, Snapshot } from './types';
-import { campusStats } from './domain';
 import { insideIndonesia, parseCoordinates } from './location';
 
 export type ProgressBand = 'early' | 'growing' | 'near' | 'reached';
@@ -28,8 +27,9 @@ export function campusMapData(data: Snapshot) {
     const programPin = parseCoordinates(campus.program?.coordinates);
     const hasProgramPin = campus.program?.coordinates !== undefined;
     const province = typeof campus.program?.province === 'string' ? campus.program.province.trim() : '';
-    const score = campusStats(data, campus.id).progress;
-    return { ...campus, ...location, campusId: campus.id,
+    const payout = data.campusPayouts?.[campus.id];
+    const score = payout && payout.assessment.total > 0 ? payout.assessment.done / payout.assessment.total * 100 : 0;
+    return { ...campus, ...location, campusId: campus.id, payout,
       province: province || location?.province || '',
       island: location?.island || campus.region || 'Wilayah belum diisi',
       latitude: hasProgramPin ? programPin?.lat ?? null : location?.latitude ?? null,

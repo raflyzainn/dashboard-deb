@@ -5,6 +5,7 @@ import * as map from '../src/lib/map';
 const { mapCampuses, progressBands, regionSummary, layoutMapPoints } = map;
 import { CAMPUS_LOCATIONS } from '../scripts/fixtures/locations';
 import { emptyPageData } from '../src/lib/page-data';
+import { assess, KINDS, type Kind, type Status } from '../src/lib/pencairan';
 
 test('map uses the saved program pin and keeps campuses without a usable pin in regional totals', () => {
   const data = emptyPageData();
@@ -15,19 +16,25 @@ test('map uses the saved program pin and keeps campuses without a usable pin in 
   ];
   data.locations = data.campuses.map(c => ({ campusId: c.id, province: '', island: '', longitude: 110, latitude: -6, approximate: true }));
   data.campusMetrics = { valid: { progress: 75, achieved: 1, total: 1, revisions: 0 } };
+  data.campusPayouts = { valid: { stage: 'Pemeriksaan PF', uploaded: 5,
+    assessment: assess(Object.fromEntries(KINDS.map((kind, i) => [kind, i < 3 ? 'sesuai' : 'belum_ada'])) as Record<Kind, Status>,
+      { suratKuasaRequired: true, redChecks: 0, paidAt: '', originalsAll: false, lampiranCount: 0 }) } };
   const points = mapCampuses(data);
   assert.equal(points.length, 1);
   assert.equal(points[0].latitude, -6.2);
   assert.equal(points[0].longitude, 106.8);
-  assert.equal(points[0].score, 75);
+  assert.equal(points[0].score, 30);
   assert.equal(points[0].province, 'DKI Jakarta');
-  assert.deepEqual(regionSummary(data), [{ island: 'Jawa', campuses: 3, provinces: 1, average: 25 }]);
-  assert.deepEqual(regionSummary({ ...data, campuses: [data.campuses[0]] }), [{ island: 'Jawa', campuses: 1, provinces: 1, average: 75 }]);
+  assert.deepEqual(regionSummary(data), [{ island: 'Jawa', campuses: 3, provinces: 1, average: 10 }]);
+  assert.deepEqual(regionSummary({ ...data, campuses: [data.campuses[0]] }), [{ island: 'Jawa', campuses: 1, provinces: 1, average: 30 }]);
   delete data.campuses[1].program!.coordinates;
   const legacy = mapCampuses(data).find(point => point.id === 'missing')!;
   assert.equal(legacy.longitude, 110);
   assert.equal(legacy.latitude, -6);
   assert.equal(legacy.approximate, true);
+  assert.equal(legacy.score, 0);
+  data.campusPayouts.valid.assessment.total = 0;
+  assert.equal(mapCampuses(data).find(point => point.id === 'valid')!.score, 0);
 });
 
 test('map covers every campus once with valid approximate coordinates and region summaries', () => {

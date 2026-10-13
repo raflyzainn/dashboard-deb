@@ -173,7 +173,7 @@
       Peta Persebaran Kampus
     </h1>
     <p class="leading-[1.6] m-[0px]">
-      Lihat jangkauan {app.data!.campuses.length} kampus mitra dan progres program DEB di berbagai
+      Lihat jangkauan {app.data!.campuses.length} kampus mitra dan progres pencairan Tahap 1 di berbagai
       wilayah Indonesia.
     </p>
   </div>
@@ -265,7 +265,7 @@
       <p
         class="leading-[1.6] [&&]:text-[11px] [&&]:text-[#64748b] m-[0px] max-[700.01px]:[&&]:hidden"
       >
-        Capaian indikator seluruh kampus pada filter aktif
+        Butir pemeriksaan pencairan yang selesai pada filter aktif
       </p>
     </div>
   </article>
@@ -465,7 +465,14 @@
         >
           <span>{progressBands[selected.band].label}</span><b>{number(selected.score)}%</b>
         </div>
-        <Progress value={selected.score} label={`Progres ${selected.name}`} /><a
+        <Progress value={selected.score} label={`Progres pencairan ${selected.name}`} />
+        {#if selected.payout}
+          <p class="mt-3 text-sm font-semibold text-[#17365f]">{selected.payout.stage}</p>
+          <p class="mt-1 text-xs text-[#475569]">{selected.payout.uploaded} berkas tersimpan · {selected.payout.assessment.done}/{selected.payout.assessment.total} butir selesai</p>
+        {:else}
+          <p class="mt-3 text-sm text-[#475569]">Belum ada penetapan pencairan</p>
+        {/if}
+        <a
           class="[-webkit-tap-highlight-color:transparent] [&&]:text-[#176f35] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] [&&]:flex [&&]:items-center [&&]:gap-y-[6px] [&&]:gap-x-[6px] [&&]:text-[12px] [&&]:font-[600] [&&]:mt-[12px] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px]"
           href={`/admin/campuses/${selected.id}`}
           >Lihat detail kampus <Icon name="arrow" size={14} /></a
@@ -546,8 +553,9 @@
       <p
         class="[&&]:mt-[7px] mb-[0px] [&&]:leading-[1.55] [&&]:text-[11px] [&&]:text-[#475569] mx-[0px]"
       >
-        Nama dan lokasi kampus mengikuti data tersimpan. Capaian dihitung dari indikator kampus;
-        penanda yang berdekatan digeser agar mudah dipilih.
+        Nama dan lokasi kampus mengikuti data tersimpan. Progres mengikuti butir pencairan
+        yang sesuai atau tidak diperlukan, sama dengan Kampus Mitra. Berkas tersimpan
+        belum tentu selesai diperiksa. Penanda yang berdekatan digeser agar mudah dipilih.
       </p>
     </div>
   </aside>

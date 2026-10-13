@@ -14,7 +14,7 @@ export function pageEndpoint(view: PageView): RequestHandler {
     const question = event.url.searchParams.get('question') || undefined;
     for (const id of [campus, question]) if (id && !/^[a-z0-9]{15}$/.test(id)) throw new PreviewError(400, 'ID tidak valid.');
     const actor = mapSession(pb.authStore.record!);
-    const feedPb = ['dashboard', 'campuses', 'campus-detail'].includes(view) && actor.role === 'admin' ? (await serverClient()).pb : undefined;
+    const feedPb = ['dashboard', 'campuses', 'campus-detail', 'map'].includes(view) && actor.role === 'admin' ? (await serverClient()).pb : undefined;
     const data = await readPage(pb, actor, { view, campus, question, period: event.url.searchParams.has('period') ? event.url.searchParams.get('period')! : undefined, tab: event.url.searchParams.get('tab') || undefined }, feedPb);
     if (feedPb) {
       const rows = await directory(feedPb);
