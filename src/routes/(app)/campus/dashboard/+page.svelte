@@ -131,7 +131,5 @@
       {:else}<p class="mt-2 text-sm text-slate-600">Belum ada dokumen yang perlu Anda kirim. Pantau langkah yang dikelola PF di Pencairan Dana.</p>{/if}
       <a href="/campus/pencairan" class="mt-3 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#0066B2] px-5 py-3 text-sm font-semibold text-white hover:bg-[#015a9a]">Lihat progres <Icon name="arrow" size={16} /></a>
     {/if}
-    <p class="mt-4 text-sm"><a class="font-semibold text-[#0066B2] underline" href="/campus/guide">Baru pertama kali? Baca panduan pengajuan</a></p>
-    <p class="mt-3 text-xs leading-relaxed text-slate-500">Untuk keluar, buka menu akun di kanan atas.</p>
   </section>
 </div>
