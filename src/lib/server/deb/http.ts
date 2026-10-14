@@ -9,6 +9,7 @@ import type PocketBase from 'pocketbase';
 export async function previewEndpoint(event: RequestEvent, action: (context: Awaited<ReturnType<typeof ContextFactory>>) => Promise<Response>) {
   const scope=(pb:Pick<PocketBase,'authStore'>)=>{
     if((pb.authStore.record as {role?:string}|null)?.role==='campus'&&event.url.pathname.startsWith('/api/')&&!campusApiAllowed(event.url.pathname))throw new PreviewError(403,'Modul ini belum tersedia untuk akun kampus.');
+    if(pb.authStore.record?.role==='legal'&&!/^\/api\/(?:legal\/pks(?:\/[a-z0-9]{15}(?:\/pdf)?)?|session|auth\/(?:me|logout|change-password))$/.test(event.url.pathname))throw new PreviewError(403,'Akun Legal hanya dapat memeriksa PKS.');
     return pb;
   };
   if (event.locals.pb) {

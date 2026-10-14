@@ -1,5 +1,29 @@
 # Panduan proyek untuk Codex
 
+## Pelaporan kampus — 14 Oktober 2026
+
+Menu Pencairan Dana tidak tampil di dropdown akun kampus sesuai arahan terbaru; kampus membukanya lewat kartu Beranda. Pelaporan pada kartu/menu hanya tampil setelah pembayaran T1. Pada halaman review admin, berkas keluaran terbaru langsung dipratinjau: PDF/Word memakai FileViewer existing, video memakai pemutar, dan artikel teks ditampilkan langsung.
+
+Tampilan Pelaporan menampilkan Keluaran dan LPJ bersama dalam satu halaman form sesuai arahan terbaru pengguna. Tombol bagian hanya melompat ke bagian terkait, tanpa menyembunyikan form lainnya. Kartu, ringkasan dana, input/tombol, tabel dan penyelesaian memakai tampilan ringkas; tabel bukti dapat digeser pada mobile. QA perubahan visual dilakukan di 5177 sebagaimana laporan di bawah.
+
+Kampus membuka `/campus/pelaporan` setelah pembayaran T1 memiliki tanggal dan nominal positif. Keluaran laporan/infografis/video/artikel memakai collection `report_versions`, terpisah dari dokumen wajib pencairan. Simpan menghasilkan draf berversi; Kirim mengunci konten sampai admin memeriksa. Artikel mendukung teks web, DOCX atau PDF. Video MP4 maksimal 40 MB dan dua menit, dokumen maksimal 20 MB.
+
+LPJ menggunakan bukti existing, dengan revisi/riwayat dan deduplikasi retry. Semua bukti Sesuai belum otomatis selesai: admin harus menekan Selesaikan LPJ. Status selesai mengunci bukti dan menjadi prasyarat LPJ menuju T2. Buka kembali wajib alasan dan membatalkan kesiapan itu. Empat keluaran versi terkini Sesuai menandai pelaporan tahunan lengkap. Form narasi/generator infografis menunggu template, dan paket T2 penuh belum tersedia.
+
+QA fitur ini menggunakan frontend 5177 agar 5176 tetap berjalan. [Runbook schema lokal](pencairan-deb/RUNBOOK-PELAPORAN-LOKAL.md) dan [hasil QA aktual](QA-PELAPORAN-KAMPUS-2026-10-14.md) membedakan verifikasi browser, tes tertulis yang belum dijalankan dan perubahan yang belum dipublikasikan.
+
+## P1 PKS dan Legal — implementasi lokal 14 Oktober 2026
+
+Pada branch `feat/p1-t1-legal`, pengajuan baru memakai tanggal relatif, periode per pengajuan, PDF PKS yang diperiksa PF dan Legal, serta role Legal yang dapat diberikan Admin biasa. Sidebar Legal memakai Shell Admin dengan menu terbatas. Data PKS PF tampil langsung dalam grid responsif; timeline delapan tahap tetap satu baris dengan gulir mendatar pada layar kecil. Panduan alur, sumber Excel, checklist QA dan batas verifikasi ada di [P1 PKS dan Legal](pencairan-deb/P1-LEGAL-2026-10-14.md). Pengiriman hanya ke branch fitur; belum diterapkan ke production. Instruksi lama tentang tanggal PKS tetap hanya berlaku untuk pengajuan legacy.
+
+## Profil Program kampus — 14 Oktober 2026
+
+Kontak program memakai pilihan negara (default Indonesia +62) dan isian Nomor WhatsApp. Format divalidasi dengan `libphonenumber-js/max` pada formulir dan API profil; saat disimpan nomor dinormalisasi ke format internasional. Nomor lama yang ambigu tidak diberi tautan WhatsApp. Validasi format tidak membuktikan nomor aktif, kepemilikan, atau pendaftaran WhatsApp; tidak ada OTP maupun pengiriman pesan otomatis.
+
+Beranda memiliki kartu **Lengkapi Profil Program** menuju `/campus/profile`; akses juga tersedia dari menu akun dan Panduan Aplikasi. Kampus dapat mengubah kontak, lokasi, informasi/deskripsi program, kategori kelas, target kategori, Subholding, estimasi RAB, serta sembilan isian kesiapan rencana aksi. Data memakai `campuses.program` yang sama dengan Ringkasan admin. Khusus kampus, setiap bagian langsung menampilkan formulir dengan Simpan perubahan/Batalkan perubahan. Admin tetap memakai Ubah sebelum mengedit. Membatalkan mengembalikan nilai tersimpan; menyimpan satu bagian mempertahankan draf bagian lain. Tim Pendamping (`pfTeam`) tidak dibawa ke form; nilai lama dipertahankan dan API menolak perubahan field itu dari kampus.
+
+Akses tambahan hanya membuka halaman profil dan PATCH `/api/campuses/:id/program`. Server memeriksa kepemilikan kampus sebelum membaca profil. Pembacaan profil memakai data kampus sendiri dari navigasi; API dashboard/indikator/proposal/forum tetap tertutup untuk kampus. Perubahan profil tidak otomatis menimpa isian atau dokumen pada pengajuan yang sudah dibuat. Checklist dan batas verifikasi: [Profil Program kampus](QA-PROFIL-PROGRAM-KAMPUS-2026-10-14.md).
+
 ## Progres pencairan pada Peta Persebaran — 13 Oktober 2026
 
 Peta, legenda, rata-rata dan ringkasan wilayah memakai `campusPayouts` yang sama dengan Kampus Mitra: butir pemeriksaan selesai dibagi total butir. Detail pin menampilkan tahap, jumlah berkas tersimpan dan butir selesai. Unggah atau submit belum berarti pemeriksaan selesai; ini bukan persentase dana dibayar. Koordinat dan pengelompokan wilayah tetap mengikuti data existing. Bukti Chrome desktop/mobile: [QA peta progres pencairan](QA-PETA-PROGRES-PENCAIRAN-2026-10-13.md). Bagian peta berbasis indikator di bawah menjadi riwayat.

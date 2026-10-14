@@ -1,7 +1,6 @@
 <script lang="ts">
-  // A card that shows its content read only first. "Ubah" switches it to a form;
-  // "Simpan" and "Batal" return it to the read only view.
-  import type { Snippet } from 'svelte';
+  // Admin sections open on demand; campus forms reopen with saved values after save/cancel.
+  import { untrack, type Snippet } from 'svelte';
   import Icon from './Icon.svelte';
   import Button from './Button.svelte';
   let {
@@ -10,6 +9,8 @@
     icon = '',
     editing = $bindable(false),
     canEdit = true,
+    alwaysEdit = false,
+    compact = false,
     lockedReason = '',
     saving = false,
     dirty = true,
@@ -28,6 +29,8 @@
     editing?: boolean;
     /** False hides the edit button (for roles or states that may only read). */
     canEdit?: boolean;
+    alwaysEdit?: boolean;
+    compact?: boolean;
     /** Shown instead of the edit button when editing is not possible right now. */
     lockedReason?: string;
     saving?: boolean;
@@ -46,6 +49,9 @@
   } = $props();
 
   const uid = $props.id();
+  $effect(() => {
+    if (alwaysEdit && canEdit && !editing) untrack(start);
+  });
   function start() {
     onEdit?.();
     editing = true;
@@ -69,7 +75,7 @@
     editing ? 'border-[#9cc3ef] ring-4 ring-[#e9f3ff]' : 'border-[#dce7f7]'
   ]}
 >
-  <header class="flex items-start justify-between gap-3 border-b border-[#eaf1fb] px-5 py-4 max-[700px]:px-4">
+  <header class={['flex items-start justify-between gap-3 border-b border-[#eaf1fb]', compact ? 'px-4 py-3' : 'px-5 py-4 max-[700px]:px-4']}>
     <div class="flex min-w-0 flex-1 items-start gap-3">
       {#if icon}<span
           class="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#e9f3ff] text-[#075fc7]"
@@ -78,7 +84,7 @@
       <div class="min-w-0">
         <div class="flex flex-wrap items-center gap-2">
           <h3 id={`${uid}-title`} class="m-0 text-[16px] font-bold leading-snug text-[#0d234c]">{title}</h3>
-          {#if editing}<span
+          {#if editing && !alwaysEdit}<span
               class="rounded-full bg-[#fff4d6] px-2 py-0.5 text-[11px] font-semibold text-[#8a5a00]"
               >Sedang diubah</span
             >{/if}
@@ -98,14 +104,14 @@
 
   {#if editing}
     <form onsubmit={submit} novalidate>
-      <div class="px-5 py-5 max-[700px]:px-4">{@render edit()}</div>
+      <div class={compact ? 'px-4 py-3' : 'px-5 py-5 max-[700px]:px-4'}>{@render edit()}</div>
       <footer
-        class="flex flex-wrap items-center justify-end gap-2 rounded-b-xl border-t border-[#eaf1fb] bg-[#f8fbff] px-5 py-3 max-[700px]:px-4"
+        class={['flex flex-wrap items-center justify-end gap-2 rounded-b-xl border-t border-[#eaf1fb] bg-[#f8fbff]', compact ? 'px-4 py-2' : 'px-5 py-3 max-[700px]:px-4']}
       >
-        <span class="mr-auto text-[12px] text-[#64748b]"
+        <span class={['mr-auto text-[12px] text-[#64748b]', compact ? 'w-full' : '']}
           >{saving ? 'Menyimpan perubahan...' : dirty ? 'Ada perubahan yang belum disimpan.' : 'Belum ada perubahan.'}</span
         >
-        <Button variant="ghost" size="sm" onclick={cancel} disabled={saving}>Batal</Button>
+        <Button variant="ghost" size="sm" onclick={cancel} disabled={saving || (alwaysEdit && !dirty)}>{alwaysEdit && !compact ? 'Batalkan perubahan' : 'Batal'}</Button>
         <Button type="submit" size="sm" icon="save" loading={saving} disabled={!dirty}>{saveLabel}</Button>
       </footer>
     </form>

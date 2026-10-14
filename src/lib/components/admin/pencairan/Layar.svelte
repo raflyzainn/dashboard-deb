@@ -1,4 +1,6 @@
 <script lang="ts">
+ import Button from '$lib/components/ui/Button.svelte';
+ import PksLegal from './PksLegal.svelte';
   import { payoutTimeline } from '$lib/payout-progress';
   import { reportError } from '$lib/feedback';
   import { REVISION_SCOPES, canRevise, editRequestStatus, openRevisions, revisionSection, type EditableSection } from '$lib/pengajuan/revisions';
@@ -85,6 +87,7 @@
   const menungguPf = $derived(data ? KINDS.filter(k => ['menunggu_review', 'perlu_konfirmasi'].includes(data!.readiness.items[k])) : []);
   const administrationRevisionOpen=$derived(openRevisions(campusJourney).some(request=>request.scopes.some(scope=>['administrasi','penandatangan','surat','pks'].includes(REVISION_SCOPES[scope].section))));
   const timeline = $derived(payoutTimeline({ ...data?.disbursement, journey: campusJourney, documents: data?.documents || [], hasRab: Boolean(data?.rab) }));
+  const allScansUploaded=$derived(Boolean(data?.documents.filter(d=>d.generated).length)&&data!.documents.filter(d=>d.generated).every(d=>d.versions.find(v=>v.id===d.currentVersionId)?.signed));
   const campusStages = $derived(timeline.stages);
   const campusStage = $derived(timeline.stage);
   const nextCampusUpload = $derived.by(() => {
@@ -124,7 +127,7 @@
     belum_ada: 'border-slate-200 bg-slate-50 text-slate-700'
   };
 
-  const requested = $derived.by<Row>(() => { const k = page.url.searchParams.get('butir'); return k && (admin ? [...KINDS, ...(hasJourney?['program','edit_requests']:[]), 'ttd', 'lampiran', 'bayar'] : hasJourney?[...KINDS,'program','administrasi','penandatangan','surat','pks','ringkasan']:[...KINDS] as string[]).includes(k) ? (k as Row) : firstOpen(); });
+  const requested = $derived.by<Row>(() => { const k = page.url.searchParams.get('butir'); if(!admin&&hasJourney&&page.url.searchParams.has('signed')&&['pks','permohonan','invois','kuitansi'].includes(k||''))return 'ringkasan'; return k && (admin ? [...KINDS, ...(hasJourney?['program','edit_requests']:[]), 'ttd', 'lampiran', 'bayar'] : hasJourney?[...KINDS,'program','administrasi','penandatangan','surat','pks','ringkasan']:[...KINDS] as string[]).includes(k) ? (k as Row) : firstOpen(); });
   function firstOpen(): Row {
     if (!data) return 'sk';
     if(!admin&&hasJourney&&(data as any).journey)return ({sk:'sk',program:'program',rab:'rab_penuh',administrasi:'administrasi',penandatangan:'penandatangan',surat:'surat',pks:'pks',ringkasan:'ringkasan'} as Record<string,Row>)[page.url.searchParams.get('bagian')||(data as any).journey.lastSection]||'sk';
@@ -146,7 +149,8 @@
   const uploadBlocked = $derived(campusUploadBlockedReason(kind, itemState, doc, Boolean(data?.disbursement.paidAt)) || (doc?.versions.find(v => v.id === doc.currentVersionId)?.signed ? 'Berkas bertanda tangan tidak dapat diganti lewat unggah revisi.' : ''));
   const signedJourneyReady=$derived(hasJourney&&!admin&&(data as any)?.journey?.status==='selesai'&&['pks','permohonan','invois','kuitansi'].includes(kind)&&!data?.disbursement.paidAt&&!doc?.signedReceived);
   const canUpload = $derived(admin || signedJourneyReady || (Boolean(data) && !uploadBlocked));
-  const version = $derived<Version | null>(fileDoc ? fileDoc.versions.find(v => v.id === selectedVersionId) || fileDoc.versions.find(v => v.id === fileDoc.currentVersionId) || fileDoc.versions[fileDoc.versions.length - 1] || null : null);
+  const visibleVersions = $derived((fileDoc?.versions || []).filter(v => admin || kind !== 'pks' || (data as any)?.journey?.datePolicy !== 'chronology' || v.origin !== 'generated' || v.mime === 'application/pdf'));
+  const version = $derived<Version | null>(visibleVersions.find(v => v.id === selectedVersionId) || visibleVersions.find(v => v.id === fileDoc?.currentVersionId) || visibleVersions.at(-1) || null);
   const isCurrent = $derived(Boolean(version && fileDoc && version.id === fileDoc.currentVersionId));
   const fileUrl = $derived(version ? `/api/pencairan/${campusId}/documents/${fileKind}/versions/${version.id}` : '');
   const spec = $derived(FIELDS[kind]);
@@ -174,7 +178,7 @@
   const closingDone = $derived.by(() => {
     if (!data) return { ttd: false, lampiran: false, bayar: false } as Record<string, boolean>;
     const letters = data.documents.filter(d => d.generated);
-    return { ttd: letters.length > 0 && letters.every(d => d.originalReceived), lampiran: data.lampiranCount > 0, bayar: Boolean(data.disbursement.paidAt) };
+    return { ttd: letters.length > 0 && letters.every(d => d.originalReceived && d.signedReceived), lampiran: data.lampiranCount > 0, bayar: Boolean(data.disbursement.paidAt) };
   });
   const decided = $derived(itemState === 'sesuai' || itemState === 'tidak_perlu');
   /** The decision statement replaces the buttons once an item is decided, until the admin opens them again. */
@@ -366,31 +370,31 @@
         {#if revisionLabels.length}<p><strong class="text-amber-900">Perlu revisi ({revisionLabels.length}):</strong> {revisionLabels.join(', ')}.</p>{/if}
         {#if menungguPf.length}<p><strong class="text-[#015a9a]">Menunggu PF ({menungguPf.length}):</strong> {menungguPf.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
         {#if data.readiness.missing.length === 0}<p>{data.readiness.phrase}</p>{/if}
-        <p class="text-xs text-slate-500">{data.disbursement.paidAt?'Pembayaran Tahap 1 sudah tercatat. Proses pencairan Tahap 1 selesai.':hasJourney && (data as any).journey ? (data as any).journey.status==='menunggu' ? 'Pengajuan telah dikirim. Tunggu hasil pemeriksaan PF.' : (data as any).journey.status==='selesai' ? campusStage===6?'Pindaian bertanda tangan tersimpan. Menunggu penerimaan dokumen asli, lampiran, dan pembayaran oleh PF.':'Pengajuan disetujui. Unggah empat dokumen bertanda tangan.' : 'Lengkapi data program, RAB, rekening penerima, penandatangan, identitas surat dan kop, lalu PKS. Pengajuan dikirim sekali setelah semuanya siap.' : hasJourney ? !data.rab ? 'Mulai dengan satu file RAB 100%. Pembagian kedua tahap dilakukan di aplikasi.' : data.rab.status === 'menunggu' ? 'RAB telah dikirim. Tunggu keputusan PF; pembagian terkunci selama pemeriksaan.' : data.rab.status === 'disetujui' ? 'RAB telah disetujui. Pantau langkah pencairan berikutnya.' : 'Draf RAB belum diajukan. Lengkapi pembagian, periksa kedua tahap, lalu kirim seluruh RAB ke PF.' : 'Pilih dokumen untuk melihat berkas dan catatan pemeriksa. SK dan RAB hanya dapat dilihat; unggah RAB belum dibuka.'}</p>
+        <p class="text-xs text-slate-500">{data.disbursement.paidAt?'Pembayaran Tahap 1 sudah tercatat. Proses pencairan Tahap 1 selesai.':hasJourney && (data as any).journey ? (data as any).journey.status==='menunggu' ? (campusJourney?.pksReview?.state==='legal'?'PKS sedang diperiksa Legal. Tunggu keputusan Legal.':'Pengajuan telah dikirim. Tunggu hasil pemeriksaan PF.') : (data as any).journey.status==='selesai' ? timeline.label==='Pembayaran'?'Pindaian bertanda tangan tersimpan. Menunggu penerimaan dokumen asli, lampiran, dan pembayaran oleh PF.':'Pengajuan disetujui. Unggah empat dokumen bertanda tangan.' : 'Lengkapi data program, RAB, rekening penerima, penandatangan, identitas surat dan kop, lalu PKS. Pengajuan dikirim sekali setelah semuanya siap.' : hasJourney ? !data.rab ? 'Mulai dengan satu file RAB 100%. Pembagian kedua tahap dilakukan di aplikasi.' : data.rab.status === 'menunggu' ? 'RAB telah dikirim. Tunggu keputusan PF; pembagian terkunci selama pemeriksaan.' : data.rab.status === 'disetujui' ? 'RAB telah disetujui. Pantau langkah pencairan berikutnya.' : 'Draf RAB belum diajukan. Lengkapi pembagian, periksa kedua tahap, lalu kirim seluruh RAB ke PF.' : 'Pilih dokumen untuk melihat berkas dan catatan pemeriksa. SK dan RAB hanya dapat dilihat; unggah RAB belum dibuka.'}</p>
       </section>
       <section aria-labelledby="timeline-title" class="grid min-w-0 gap-3 rounded-xl border border-slate-200 bg-white p-4">
         <div>
           <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Tahap saat ini</p>
           <h2 id="timeline-title" class="mt-1 font-bold text-slate-900">{campusStages[campusStage - 1]}</h2>
         </div>
-        <details>
+        <details class="min-w-0">
           <summary class="cursor-pointer text-sm font-semibold text-[#0066B2]">Lihat seluruh proses pencairan</summary>
-          <ol class="mt-3 grid gap-0 sm:grid-cols-7" aria-label="Linimasa proses pencairan">
+          <div class="mt-3 min-w-0 max-w-full overflow-x-auto pb-2" tabindex="0" role="region" aria-label="Proses pencairan, geser mendatar untuk melihat semua tahap"><ol class="grid w-full gap-0" style={`grid-template-columns: repeat(${campusStages.length}, minmax(124px, 1fr)); min-width: ${campusStages.length * 124}px`} aria-label="Linimasa proses pencairan">
             {#each campusStages as stage, index}
               {@const completed=Boolean(data.disbursement.paidAt)||index+1<campusStage}
-              <li aria-current={index + 1 === campusStage ? 'step' : undefined} class="relative flex min-h-14 items-center gap-3 text-sm sm:min-h-24 sm:flex-col sm:items-center sm:gap-2">
-                {#if index < campusStages.length - 1}<span aria-hidden="true" class="absolute left-4 top-7 h-14 w-0.5 {index + 1 < campusStage ? 'bg-green-300' : 'bg-slate-200'} sm:bottom-auto sm:left-1/2 sm:top-4 sm:h-0.5 sm:w-full"></span>{/if}
+              <li aria-current={index + 1 === campusStage ? 'step' : undefined} class="relative flex min-h-20 flex-col items-center gap-2 text-sm">
+                {#if index < campusStages.length - 1}<span aria-hidden="true" class="absolute left-1/2 top-4 h-0.5 w-full {index + 1 < campusStage ? 'bg-green-300' : 'bg-slate-200'}"></span>{/if}
                 <span class="z-10 grid size-8 shrink-0 place-items-center rounded-full border-2 bg-white font-bold {completed?'border-green-600 text-green-700':index+1===campusStage?'border-[#0066B2] text-[#0066B2]':'border-slate-300 text-slate-500'}">{completed?'✓':index+1}</span>
-                <span class="z-10 leading-5 {completed?'font-medium text-green-800':index+1===campusStage?'font-bold text-[#015a9a]':'text-slate-600'} sm:px-1 sm:text-center sm:text-xs">{stage}</span>
+                <span class="z-10 leading-5 {completed?'font-medium text-green-800':index+1===campusStage?'font-bold text-[#015a9a]':'text-slate-600'} px-2 text-center text-xs">{stage}</span>
               </li>
             {/each}
-          </ol>
+          </ol></div>
         </details>
         <div class="grid gap-2 rounded-lg bg-slate-50 p-3 text-sm sm:grid-cols-2">
-          <p><strong class="text-slate-900">Yang bertindak:</strong> {data.disbursement.paidAt?'Selesai':hasJourney&&(data as any).journey?(data as any).journey.status==='menunggu'||(data as any).journey.status==='selesai'&&data.documents.filter(d=>d.generated).every(d=>d.signedReceived)?'Pertamina Foundation':'Kampus':nextCampusUpload ? 'Kampus' : 'Pertamina Foundation'}</p>
+          <p><strong class="text-slate-900">Yang bertindak:</strong> {data.disbursement.paidAt?'Selesai':campusJourney?.pksReview?.state==='legal'?'Legal':hasJourney&&(data as any).journey?(data as any).journey.status==='menunggu'||(data as any).journey.status==='selesai'&&allScansUploaded?'Pertamina Foundation':'Kampus':nextCampusUpload ? 'Kampus' : 'Pertamina Foundation'}</p>
           <div>
-            <p><strong class="text-slate-900">Langkah selanjutnya:</strong> {#if hasJourney&&(data as any).journey}{data.disbursement.paidAt?'Pembayaran Tahap 1 sudah tercatat. Tidak ada tindakan lagi untuk Tahap 1.':campusStage===6?'Pindaian bertanda tangan sudah tersimpan. Tunggu PF menerima dokumen asli, menyimpan lampiran, dan mencatat pembayaran.':(data as any).journey.status==='menunggu'?'Tunggu pemeriksaan PF atas pengajuan Anda.':(data as any).journey.status==='selesai'?'Unduh, tandatangani, lalu unggah pindaian PKS, permohonan, invois, dan kuitansi melalui tombol Unggah bertanda tangan di ringkasan.':(data as any).journey.status==='revisi'?'Buka bagian yang diminta PF, lalu kirim perbaikan langsung dari bagian tersebut.':'Lanjutkan draf, lalu periksa ringkasan sebelum mengajukan.'}{:else if nextCampusUpload}{hasJourney && data.rab && isRabKind(nextCampusUpload.kind) ? kind === 'rab' ? 'Periksa pembagian Tahap 1' : kind === 'rab_tahap2' ? 'Periksa Tahap 2 lalu ajukan seluruh RAB' : 'Lengkapi pembagian jumlah item' : nextCampusUpload.state === 'perlu_revisi' ? 'Kirim revisi' : 'Lengkapi dokumen'} {hasJourney && data.rab && isRabKind(nextCampusUpload.kind) ? '' : KIND_SHORT[nextCampusUpload.kind]}{:else if data.disbursement.paidAt}Tidak ada tindakan lagi untuk Tahap 1.{:else if menungguPf.length}Tunggu pemeriksaan PF untuk {menungguPf.map(k => KIND_SHORT[k]).join(', ')}.{:else if data.readiness.lengkap}PF melanjutkan penyelesaian proses.{:else}PF melanjutkan pemeriksaan dokumen.{/if}</p>
-            {#if nextCampusUpload}<a class="mt-1 inline-flex font-semibold text-[#0066B2] hover:underline" href={`/campus/pencairan?butir=${campusJourney?.status==='revisi'?REVISION_SCOPES[openRevisions(campusJourney)[0]?.scopes[0]]?.section||nextCampusUpload.kind:nextCampusUpload.kind}`}>Buka langkah ini <Icon name="arrow" size={14} /></a>{/if}
+            <p><strong class="text-slate-900">Langkah selanjutnya:</strong> {#if hasJourney&&(data as any).journey}{data.disbursement.paidAt?'Pembayaran Tahap 1 sudah tercatat. Tidak ada tindakan lagi untuk Tahap 1.':timeline.label==='Pembayaran'?'Pindaian bertanda tangan sudah tersimpan. Tunggu PF menerima dokumen asli, menyimpan lampiran, dan mencatat pembayaran.':(data as any).journey.status==='menunggu'?(campusJourney?.pksReview?.state==='legal'?'Tunggu pemeriksaan Legal atas PKS yang sudah diperiksa PF.':'Tunggu pemeriksaan PF atas pengajuan Anda.'):(data as any).journey.status==='selesai'?allScansUploaded?'Semua pindaian sudah diunggah. Tunggu PF membandingkan dengan dokumen final dan mencatat penerimaan dokumen asli.':'Unduh, tandatangani, lalu unggah pindaian PKS, permohonan, invois, dan kuitansi melalui tombol Unggah bertanda tangan di Dokumen.':(data as any).journey.status==='revisi'?'Buka bagian yang diminta PF, lalu kirim perbaikan langsung dari bagian tersebut.':timeline.stage===3?'Buka Dokumen, periksa kelengkapan, lalu tekan Ajukan untuk diperiksa. Paket akan masuk pemeriksaan Admin PF.':'Lengkapi data pengajuan dan siapkan dokumen sebelum diajukan.'}{:else if nextCampusUpload}{hasJourney && data.rab && isRabKind(nextCampusUpload.kind) ? kind === 'rab' ? 'Periksa pembagian Tahap 1' : kind === 'rab_tahap2' ? 'Periksa Tahap 2 lalu ajukan seluruh RAB' : 'Lengkapi pembagian jumlah item' : nextCampusUpload.state === 'perlu_revisi' ? 'Kirim revisi' : 'Lengkapi dokumen'} {hasJourney && data.rab && isRabKind(nextCampusUpload.kind) ? '' : KIND_SHORT[nextCampusUpload.kind]}{:else if data.disbursement.paidAt}Tidak ada tindakan lagi untuk Tahap 1.{:else if menungguPf.length}Tunggu pemeriksaan PF untuk {menungguPf.map(k => KIND_SHORT[k]).join(', ')}.{:else if data.readiness.lengkap}PF melanjutkan penyelesaian proses.{:else}PF melanjutkan pemeriksaan dokumen.{/if}</p>
+            {#if hasJourney&&timeline.stage===3&&!data.disbursement.paidAt}<a class="mt-1 inline-flex font-semibold text-[#0066B2] hover:underline" href="/campus/pencairan?butir=ringkasan">Periksa dokumen dan ajukan <Icon name="arrow" size={14} /></a>{:else if nextCampusUpload}<a class="mt-1 inline-flex font-semibold text-[#0066B2] hover:underline" href={`/campus/pencairan?butir=${campusJourney?.status==='revisi'?REVISION_SCOPES[openRevisions(campusJourney)[0]?.scopes[0]]?.section||nextCampusUpload.kind:nextCampusUpload.kind}`}>Buka langkah ini <Icon name="arrow" size={14} /></a>{/if}
           </div>
         </div>
         {#if nextRevision}<p class="rounded-lg border-l-4 border-amber-400 bg-amber-50 px-3 py-2 text-sm text-amber-950"><strong>Catatan pemeriksa · {openRevisions(campusJourney).find(request=>request.kind===nextRevision.kind)?.scopes.map(scope=>REVISION_SCOPES[scope].label).join(', ')||KIND_SHORT[nextRevision.kind]}:</strong> {nextRevision.note}</p>{/if}
@@ -400,7 +404,7 @@
       <div class="document-navigation min-w-0 border-b border-slate-200/70 bg-slate-50/80 lg:border-b-0 lg:border-r">
       <aside use:trackRail class="flex gap-1 overflow-x-auto p-2 lg:grid lg:content-start lg:gap-0.5 lg:overflow-visible lg:p-2.5" aria-label="Butir">
         <span class="hidden px-2.5 pb-1 text-[10.5px] font-bold uppercase tracking-[0.06em] text-slate-400 lg:block">Butir</span>
-        {#if !admin&&hasJourney&&(!page.url.searchParams.has('signed')||campusJourney?.status!=='selesai')}
+        {#if !admin&&hasJourney}
          {#snippet campusStep(item: {key: Row; label: string})}
           {#if data}
           {@const j=(data as any).journey}
@@ -475,11 +479,11 @@
               <a class="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-600 hover:border-slate-300" href="/templat/RAB_DEB.xlsx" download>Templat</a>
             {/if}
           {:else if isItem && doc}
-            {#each doc.versions as v}
+            {#each visibleVersions as v}
               <button type="button" class="rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold {version?.id === v.id ? 'bg-[#0066B2] text-white' : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300'}" onclick={() => (selectedVersionId = v.id)}>Versi {v.number} · {time.format(new Date(v.created))}{v.signed ? ' · ttd' : v.origin === 'generated' ? ' · sistem' : ''}</button>
             {/each}
           {/if}
-          {#if admin && isItem && kind !== 'sk' && (!isRab || rabTab === 'asli')}
+          {#if admin && isItem && kind !== 'sk' && (!isRab || rabTab === 'asli') && !(campusJourney?.datePolicy==='chronology'&&doc?.generated)}
             <label class="cursor-pointer rounded-full border border-dashed border-slate-300 bg-white px-2.5 py-0.5 text-[11.5px] font-semibold text-[#0066B2] hover:border-[#0066B2]">+ versi baru<input type="file" class="sr-only" bind:this={fileInput} accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.doc,.xlsx,.xls" onchange={(e) => upload((e.currentTarget as HTMLInputElement).files?.[0] || null)} /></label>
           {/if}
           {#if !(isRab && hasJourney)}<span class="ml-auto hidden xl:inline">Nilai SK <b class="tabular-nums text-slate-800">{formatSen(data.summary.amountSen)}</b> · Batas <b class="tabular-nums text-slate-800">{formatSen(data.summary.limitSen)}</b> · Diajukan <b class="tabular-nums text-slate-800">{data.summary.requestedSen ? formatSen(data.summary.requestedSen) : 'belum'}</b></span>{/if}
@@ -503,12 +507,28 @@
           {:else}<p class="text-sm text-slate-600">Belum ada permintaan revisi kampus.</p>{/if}
          </section>
         {:else}
-        {#if !admin&&hasJourney&&(!page.url.searchParams.has('signed')||campusJourney?.status!=='selesai')}
+        {#if !admin&&hasJourney}
          <CampusJourney {campusId} embedded={true} onloaded={()=>void load()}/>
         {:else if admin&&campusJourney&&selected==='program'}
          <section class="grid gap-4 p-4" aria-label="Pemeriksaan Data Program"><h2 class="text-lg font-bold">Data Program</h2><dl class="grid gap-3 sm:grid-cols-2">{#each [['judulProgram','Nama kegiatan / program'],['alamat','Alamat kampus'],['lokasiAlamatLengkap','Alamat lengkap lokasi program'],['desa','Desa/kelurahan'],['kecamatan','Kecamatan'],['kabupaten','Kabupaten/kota'],['lokasiProvinsi','Provinsi'],['lokasiKodePos','Kode pos'],['mentor','Nama mentor'],['koordinator','Nama koordinator']] as [key,label]}<div><dt class="text-xs text-slate-500">{label}</dt><dd class="mt-1 text-sm font-semibold">{campusJourney.fields[key]||'Belum diisi'}</dd></div>{/each}</dl><label class="grid gap-1 text-sm font-semibold">Catatan revisi Data Program<textarea class="rounded-lg border border-slate-300 p-3 font-normal" rows="3" bind:value={reviewNote}></textarea></label><p class="text-sm text-slate-600">Meminta revisi akan membuka seluruh Data Program untuk kampus. Bagian lainnya tetap terkunci.</p><button class="min-h-11 justify-self-start rounded-lg bg-amber-600 px-4 font-semibold text-white disabled:opacity-40" disabled={busy||!canRequestRevision||!reviewNote.trim()} onclick={()=>void run(()=>dataService.api.post<KartuData>(`/api/pencairan/${campusId}/documents/pks/review`,{decision:'perlu_revisi',section:'program',note:reviewNote.trim(),expectedRevision:(data as any).serverRevision}),'Revisi Data Program dikirim ke kampus.')}>Minta revisi Data Program</button></section>
         {:else}
-        {#if admin&&hasJourney&&kind==='pks'&&(data as any).journey}<details class="border-b border-slate-200 p-3 text-sm"><summary class="cursor-pointer font-semibold text-[#0066B2]">Data PKS yang diisi PF</summary><form class="mt-3 flex flex-wrap items-end gap-2" aria-label="Data PKS PF" onsubmit={event=>{event.preventDefault();const fields=new FormData(event.currentTarget);void run(()=>dataService.api.patch<KartuData>(`/api/pencairan/${campusId}/pengajuan/pf`,{nomorPksPf:fields.get('nomorPksPf'),expectedRevision:(data as any).serverRevision}),'Data PF tersimpan. Dokumen kampus perlu dibuat ulang.');}}><label class="grid flex-1 gap-1">Nomor PKS PF (diisi PF)<input class="min-h-11 rounded-lg border border-slate-300 p-2" name="nomorPksPf" value={(data as any).journey.pf?.nomorPksPf||''} required maxlength="200" disabled={busy||Boolean(data.disbursement.paidAt)}/></label><button class="min-h-11 rounded-lg bg-[#0066B2] px-4 text-white disabled:opacity-40" disabled={busy||Boolean(data.disbursement.paidAt)}>Simpan data PF</button></form><p class="mt-2 text-xs text-slate-500">Perubahan data PF mewajibkan kampus memperbarui dokumen dan mengajukan kembali. Tanggal PKS tetap 17 Juni 2026.</p><a class="mt-2 inline-block text-[#0066B2] underline" href="/admin/pencairan/pengaturan">Atur penandatangan dan masa perjanjian PF</a></details>{/if}
+        {#if admin&&hasJourney&&kind==='pks'}<PksLegal {campusId} revision={(data as any).serverRevision} onchanged={()=>{void load();}}/>{/if}{#if admin&&hasJourney&&kind==='pks'&&(data as any).journey}
+        <section class="space-y-5 border-b border-slate-200 bg-white p-5 sm:p-6" aria-labelledby="pf-pks-heading">
+          <div><h3 id="pf-pks-heading" class="font-bold text-[#17365f]">Data PKS untuk {data.campus.name}</h3><p class="mt-1 text-sm text-slate-500">Diisi Admin PF sesuai penetapan kampus ini. Data dan masa perjanjian dapat berbeda dari kampus lain.</p></div>
+          <form class="space-y-5" aria-label="Data PKS PF" onsubmit={event=>{event.preventDefault();const fields=new FormData(event.currentTarget);void run(()=>dataService.api.patch<KartuData>(`/api/pencairan/${campusId}/pengajuan/pf`,{...Object.fromEntries(fields),expectedRevision:(data as any).serverRevision}),'Data PF tersimpan. Dokumen kampus perlu dibuat ulang.');}}>
+            <div class="grid gap-x-6 gap-y-5 sm:grid-cols-2 xl:grid-cols-3">
+              <label class="grid min-w-0 content-start gap-2 text-sm font-medium text-[#17365f]"><span class="field-caption">Nomor PKS PF</span><input class="min-h-11 w-full min-w-0 rounded-lg border border-[#cfe0f5] bg-white px-3 py-2 font-normal focus:border-blue-500 focus:outline-blue-500 disabled:bg-slate-50" name="nomorPksPf" value={(data as any).journey.pf?.nomorPksPf||''} required={(data as any).journey.datePolicy!=='chronology'} maxlength="200" disabled={busy||Boolean(data.disbursement.paidAt)}/></label>
+              {#if (data as any).journey.datePolicy==='chronology'}
+                {#each [['skNumber','Nomor SK'],['skDate','Tanggal SK'],['tanggalPerjanjian','Tanggal PKS'],['agreementStart','Awal masa perjanjian'],['agreementEnd','Akhir masa perjanjian']] as [key,label]}
+                  <label class="grid min-w-0 content-start gap-2 text-sm font-medium text-[#17365f]">{label}<input class="min-h-11 w-full min-w-0 rounded-lg border border-[#cfe0f5] bg-white px-3 py-2 font-normal focus:border-blue-500 focus:outline-blue-500 disabled:bg-slate-50" name={key} type={key==='skNumber'?'text':'date'} value={key==='skNumber'?data.summary.skNumber:key==='skDate'?(data.campus as any).award?.skDate?.slice(0,10):key==='tanggalPerjanjian'?(data as any).journey.fields.tanggalPerjanjian:(data as any).journey.agreement?.[key]||''} disabled={busy||Boolean(data.disbursement.paidAt)}/></label>
+                {/each}
+              {/if}
+            </div>
+            <div class="flex flex-wrap items-center gap-4 border-t border-slate-100 pt-5"><Button type="submit" icon="save" disabled={busy||Boolean(data.disbursement.paidAt)}>Simpan data PF</Button><p class="max-w-2xl text-xs leading-relaxed text-slate-500">Perubahan data yang sudah diajukan memerlukan pembaruan dokumen dan pemeriksaan ulang.</p></div>
+          </form>
+          <div class="rounded-lg bg-slate-50 p-4 text-sm leading-relaxed text-slate-600">{#if (data as any).journey.datePolicy==='chronology'}Urutan tanggal: SK &le; PKS &lt; permohonan &le; invoice &lt; kuitansi. Masa perjanjian disimpan khusus untuk pengajuan ini; awal masa perjanjian tidak harus sama dengan tanggal PKS.{:else}Pengajuan lama tetap memakai tanggal PKS 17 Juni 2026.{/if}</div>
+          <a class="inline-flex text-sm font-medium text-[#0066B2] hover:underline" href="/admin/pencairan/pengaturan">Lihat pengaturan bersama dan nilai awal program</a>
+        </section>{/if}
         {#if isRab && hasJourney}<RabUpload {campusId} {kind} {admin} onediting={value => rabEditing = value} onloaded={() => void load()} />{/if}
         {#if !admin && isItem && !(isRab && hasJourney)}
           {#if hasJourney&&(data as any).journey&&['pks','permohonan','kuitansi','invois','surat_kuasa'].includes(kind)}<div class="p-3"><DocumentGuide {kind} disabled={busy||Boolean(data.disbursement.paidAt)||!admin&&!canRevise(campusJourney,revisionSection(kind) as EditableSection)} checklist={(data as any).journey.checklist} kuasa={(data as any).journey.fields.jenisRekening==='kuasa'} onchange={async(key,checked)=>{await dataService.api.patch(`/api/pencairan/${campusId}/pengajuan/checklist`,{key,checked,expectedRevision:(data as any).serverRevision});await load();}}/></div>{/if}
@@ -645,7 +665,7 @@
                   </div>
                 </div>
               {:else if admin}
-                {#if kind === 'rekening'}<label class="grid min-w-0 gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">Nama di bank<input class="min-h-[44px] w-full max-w-full rounded-lg border border-slate-300 px-2 text-[13px] font-medium normal-case tracking-normal text-slate-900" bind:this={bankNameInput} required maxlength="200" bind:value={bankNameSeen} placeholder="Nama yang terlihat di bank" /></label>{/if}
+                {#if kind === 'rekening'}<label class="grid min-w-0 gap-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400"><span class="field-caption">Nama di bank</span><input class="min-h-[44px] w-full max-w-full rounded-lg border border-slate-300 px-2 text-[13px] font-medium normal-case tracking-normal text-slate-900" bind:this={bankNameInput} required maxlength="200" bind:value={bankNameSeen} placeholder="Nama yang terlihat di bank" /></label>{/if}
                 <label class="grid w-full min-w-0 gap-1 text-[10.5px] font-bold uppercase tracking-[0.05em] text-slate-400">
                   <span>Catatan keputusan <span class="text-red-600">*</span><span class="font-normal normal-case"> wajib jika meminta revisi</span>{#if doc?.decidedByName}<span class="ml-2 font-medium normal-case tracking-normal text-slate-400">{itemState === 'perlu_revisi' ? DECISION_LABEL[kind].bad : decided ? DECISION_LABEL[kind].ok : ITEM_STATE_LABEL[itemState]} · {doc.decidedByName}{doc.decidedAt ? ` · ${time.format(new Date(doc.decidedAt))}` : ''}</span>{/if}</span>
                   <textarea bind:this={noteInput} rows="2" class="min-h-[64px] w-full rounded-lg border px-3 py-2 text-[14px] font-medium leading-relaxed normal-case tracking-normal text-slate-900 {itemState === 'perlu_revisi' ? 'border-amber-300 bg-amber-50/40' : 'border-slate-300'}" bind:value={reviewNote} oninput={grow} placeholder={kind === 'sk' ? 'Bila berbeda: nilai yang tercetak di SK' : 'Catatan keputusan: alasan revisi atau keterangan lolos, dikirim ke kampus'}></textarea>
@@ -686,7 +706,7 @@
         {/if}
       </div>
     </div>
-    {#if isItem}<p class="text-[11.5px] text-slate-400">{isRab && hasJourney ? 'Satu RAB 100% dengan pembagian Tahap 1 dan Tahap 2.' : KIND_FILE[kind]}{admin ? ' · Enter untuk tombol hijau, Esc kembali ke Tahap 1' : ''}</p>{/if}
+    {#if isItem}<p class="text-[11.5px] text-slate-400">{isRab && hasJourney ? 'Satu RAB 100% dengan pembagian Tahap 1 dan Tahap 2.' : kind==='pks'&&(data as any)?.journey?.datePolicy==='chronology'?'PDF PKS':KIND_FILE[kind]}{admin ? ' · Enter untuk tombol hijau, Esc kembali ke Tahap 1' : ''}</p>{/if}
   </div>
   {#if showRiwayat}<RiwayatSheet context={`kampus:${campusId}/pencairan/t1`} title="Riwayat perubahan kampus ini" onclose={() => (showRiwayat = false)} />{/if}
 {/if}
