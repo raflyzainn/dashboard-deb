@@ -16,7 +16,7 @@ export const GET: RequestHandler = event => secured(event, ANY, async ({ actor, 
  */
 export const POST: RequestHandler = event => secured(event, ADMIN, async ({ actor, pb, settings }) => {
   const campusId = recordId(event.params.campus, 'Kampus');
-  const body = (await event.request.json().catch(() => null)) as { mode?: unknown } | null;
+  const body = (await event.request.json().catch(() => null)) as { mode?: unknown; expectedRevision?:number; operationId?:string } | null;
   const mode = body?.mode === 'simpan' ? 'simpan' : body?.mode === 'preview' ? 'preview' : '';
   if (!mode) fail(400, 'Pilih pratinjau atau simpan.');
   const info = actorInfo(actor);
@@ -24,6 +24,6 @@ export const POST: RequestHandler = event => secured(event, ADMIN, async ({ acto
     const { bytes } = await previewAttachment(pb, storage(settings), settings, campusId, info.name || info.email || 'Sistem');
     return previewResponse(bytes);
   }
-  await saveAttachment(pb, storage(settings), settings, info, campusId);
+  await saveAttachment(pb, storage(settings), settings, info, campusId, {expectedRevision:body?.expectedRevision,operationId:body?.operationId});
   return ok(await readiness(pb, campusId), 201);
 });

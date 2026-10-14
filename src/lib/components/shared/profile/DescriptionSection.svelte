@@ -33,7 +33,7 @@
     {dirty}
     onEdit={() => (draft = text(value))}
     onSave={save}
-    onCancel={() => (draft = '')}
+    onCancel={() => { draft = ''; }}
   >
     {#snippet view()}
       <div class="[&_p]:m-0 [&_p]:text-sm [&_ul]:m-0 [&_ul]:text-sm [&_ul]:leading-[1.65]"><ProgramDescription {value} /></div>

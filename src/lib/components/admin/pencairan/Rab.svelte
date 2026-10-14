@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   import { untrack } from 'svelte';
   import { dataService } from '$lib/data/service';
   import { formatSen, parseSen, formatPercent, percentOf } from '$lib/pencairan';
@@ -57,7 +58,7 @@
       return { key: r.key, parentKey: r.parentKey, title: r.title.trim(), calculation: r.calculation.trim(), volume: volume ?? 0, unit: r.unit.trim(), unitPriceSen: sen(r.unitPrice, 'Harga satuan'), amountSen: sen(r.amount, 'Jumlah'), term1Sen: sen(r.term1, 'RAB 70%'), term2Sen: sen(r.term2, 'RAB 30%'), flags: r.catatan ? { catatan: r.catatan } : {} };
     });
   }
-  function fail(e: unknown, fallback: string) { error = e instanceof Error ? e.message : fallback; }
+  function fail(e: unknown, fallback: string) { error = reportError(e instanceof Error ? e.message : fallback); }
   function apply(next: RabOverview, message = '') {
     data = next; notice = message; error = ''; refresh++;
     rows = next.version ? toRows(next.version.lines) : [];
@@ -119,22 +120,22 @@
   /* Actions */
   const save = () => run(async () => {
     if (!version) throw new Error('Belum ada versi.');
-    return dataService.api.patch<RabOverview>(`/api/pencairan/${campusId}/rab/versions/${version.id}`, { lines: toInputs() });
+    return dataService.api.patch<RabOverview>(`/api/pencairan/${campusId}/rab/versions/${version.id}`, { lines: toInputs(), expectedRevision: data?.disbursement.revision });
   }, 'RAB tersimpan.');
   const submit = () => run(async () => {
     if (!version) throw new Error('Belum ada versi.');
     if (dirty) throw new Error('Simpan dulu perubahan sebelum mengajukan.');
-    return dataService.api.post<RabOverview>(`/api/pencairan/${campusId}/rab/versions/${version.id}/submit`);
+    return dataService.api.post<RabOverview>(`/api/pencairan/${campusId}/rab/versions/${version.id}/submit`, { expectedRevision: data?.disbursement.revision });
   }, 'RAB diajukan untuk persetujuan.');
   const approve = () => run(async () => {
     if (!version) throw new Error('Belum ada versi.');
-    return dataService.api.post<RabOverview>(`/api/pencairan/${campusId}/rab/versions/${version.id}/approve`);
+    return dataService.api.post<RabOverview>(`/api/pencairan/${campusId}/rab/versions/${version.id}/approve`, { expectedRevision: data?.disbursement.revision });
   }, 'RAB 70% disetujui. Totalnya menjadi nominal Tahap 1.');
   const revoke = () => run(async () => {
     if (!version) throw new Error('Belum ada versi.');
-    return dataService.api.post<RabOverview>(`/api/pencairan/${campusId}/rab/versions/${version.id}/revoke`);
+    return dataService.api.post<RabOverview>(`/api/pencairan/${campusId}/rab/versions/${version.id}/revoke`, { expectedRevision: data?.disbursement.revision });
   }, 'Versi dikembalikan ke draf.');
-  const newVersion = (from: string) => { if (!leave()) return; void run(() => dataService.api.post<RabOverview>(`/api/pencairan/${campusId}/rab/versions`, from ? { from } : {}), from ? 'Versi baru dibuat dari salinan.' : 'Versi kosong dibuat.'); };
+  const newVersion = (from: string) => { if (!leave()) return; void run(() => dataService.api.post<RabOverview>(`/api/pencairan/${campusId}/rab/versions`, { from, expectedRevision: data?.disbursement.revision }), from ? 'Versi baru dibuat dari salinan.' : 'Versi kosong dibuat.'); };
   async function download(url: string, name: string) {
     if (busy) return;
     busy = true; error = '';
@@ -170,7 +171,7 @@
   const confirmImport = () => run(async () => {
     if (!importFile) throw new Error('Pilih berkas Excel dulu.');
     if (!leave()) throw new Error('Impor dibatalkan.');
-    const body = new FormData(); body.set('file', importFile);
+    const body = new FormData(); body.set('file', importFile); body.set('expectedRevision', String(data?.disbursement.revision));
     const next = await dataService.api.post<RabOverview>(`/api/pencairan/${campusId}/rab/import`, body);
     importFile = null; preview = null; if (fileInput) fileInput.value = '';
     return next;

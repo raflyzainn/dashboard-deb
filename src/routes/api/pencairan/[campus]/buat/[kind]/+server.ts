@@ -21,7 +21,7 @@ export const GET: RequestHandler = event => secured(event, ADMIN, async ({ pb, s
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('X-Missing-Count', String(result.missing.length));
   headers.set('X-Deb-Code', result.code);
-  return new Response(result.bytes, { status: 200, headers });
+  return new Response(new Uint8Array(result.bytes).buffer, { status: 200, headers });
 });
 
 /** Saves the final document as a new version of its slot with a fresh verification code. Refused while a field is missing or the Termin 2 clause is unchecked. */

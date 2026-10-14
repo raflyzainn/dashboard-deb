@@ -1,6 +1,6 @@
 <script module lang="ts">
   // Last directory view, so the back link returns to the same search, filter and sort.
-  let directoryQuery = '';
+  let directoryQuery = $state('');
 </script>
 <script lang="ts">
   // Shared presentation for the explicit Campus/Admin routes.
@@ -385,7 +385,7 @@
           placeholder="Tuliskan keterangan singkat untuk versi ini."></textarea></label
       >
       <p class="leading-[1.6] text-[color:var(--muted)] text-[14px] m-[0px] muted">
-        Versi lama tetap tersimpan. File disimpan di browser ini dan dapat diakses akun demo kampus
+        Versi lama tetap tersimpan. File disimpan di server dan dapat diakses kampus
         pemilik serta Admin.
       </p>
       <div class="flex justify-end gap-y-[10px] gap-x-[10px] mt-[26px] dialog-actions">

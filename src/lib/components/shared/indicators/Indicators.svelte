@@ -123,7 +123,7 @@
           : 'Catat perkembangan nyata, satu indikator setiap langkah.'}
       </p>
     </div>
-    <Badge tone="green">{app.data!.definitions.length} indikator simulasi</Badge>
+    <Badge tone="green">{app.data!.definitions.length} indikator</Badge>
   </div>{/if}
 {#if !isAdmin && !embedded}<SubmissionStatus />{/if}
 {#if isAdmin}<div
@@ -265,7 +265,7 @@
     <div
       class="[border-top-width:1px] [border-top-style:solid] [border-top-color:rgb(237,_241,_232)] text-[12px] text-[#64748b] px-[22px] py-[15px] table-foot"
     >
-      {rows.length} indikator · Baseline dan target adalah referensi simulasi.
+      {rows.length} indikator · Baseline dan target mengikuti data indikator tersimpan.
     </div>{:else}<Empty
       title="Tidak ada indikator yang cocok"
       description="Ubah pencarian, bidang, atau filter status."

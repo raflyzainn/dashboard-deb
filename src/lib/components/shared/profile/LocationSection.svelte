@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   // Program location: standard region, street detail and the map pin used by the dashboards.
   import type { ProgramProfile } from '$lib/types';
   import {
@@ -85,6 +86,7 @@
   async function save() {
     if (linkError) {
       showErrors = true;
+      reportError(linkError);
       linkInput?.focus();
       return false;
     }

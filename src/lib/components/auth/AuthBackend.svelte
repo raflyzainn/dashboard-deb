@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   import { page } from '$app/state';
   import { goto, replaceState } from '$app/navigation';
   import { dev } from '$app/environment';
@@ -108,6 +109,7 @@
       go('password');
     } catch {
       go('invalid');
+      reportError('Tautan tidak dapat digunakan. Minta tautan baru atau periksa koneksi lalu coba lagi.');
     } finally {
       busy = false;
     }
@@ -137,7 +139,7 @@
         go('sent');
       }
     } catch (e) {
-      error = (e as Error).message;
+      error = reportError(e instanceof Error ? e.message : 'Tidak dapat terhubung ke server. Periksa koneksi, lalu coba lagi.');
     } finally {
       busy = false;
     }
@@ -335,7 +337,7 @@
         >
           {#if screen !== 'password'}<label
               class="[&&]:text-[14px] [&&]:text-[#335580] [&&]:mt-[7px] [.password-page_&]:m-[0px]"
-              for="real-email">Email PIC</label
+              for="real-email">Email PIC <span class="text-red-600" aria-hidden="true">*</span></label
             ><input
               class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:[background-image:initial] [&&]:[background-color:white] [&&]:text-[#24466f] max-w-[100%] [&&]:min-w-[0] [&&]:w-[100%] [&&]:min-h-[48px] [&&]:px-[14px] [&&]:py-[12px] [&&]:border-[1px] [&&]:border-solid [&&]:border-[color:rgb(205,_221,_241)] [&&]:rounded-[8px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(205,_221,_241)] [&::placeholder]:text-[#24466f]"
               id="real-email"
@@ -350,7 +352,7 @@
             >
               <label
                 class="[&&]:text-[14px] [&&]:text-[#335580] [&&]:mt-[7px] [.password-page_&]:m-[0px]"
-                for="real-password">{screen === 'password' ? 'Password baru' : 'Password'}</label
+                for="real-password">{screen === 'password' ? 'Password baru' : 'Password'} <span class="text-red-600" aria-hidden="true">*</span></label
               >{#if screen === 'login'}<button
                   class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] [&&]:text-[13px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [&&]:cursor-pointer [&&]:text-[#276bb7] [&&]:[background-image:initial] [&&]:[background-color:transparent] [&&]:border-[0px] [&&]:border-none [&&]:border-[color:currentcolor] [&:disabled]:cursor-pointer [&:disabled]:opacity-[0.5] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] inline-link"
                   type="button"
@@ -400,7 +402,7 @@
             </ul>
             <label
               class="[&&]:text-[14px] [&&]:text-[#335580] [&&]:mt-[7px] [.password-page_&]:m-[0px]"
-              for="real-confirm">Konfirmasi password</label
+              for="real-confirm">Konfirmasi password <span class="text-red-600" aria-hidden="true">*</span></label
             >
             <div class="[&&]:relative password-input">
               <input

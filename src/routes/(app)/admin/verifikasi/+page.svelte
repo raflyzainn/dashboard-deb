@@ -326,7 +326,7 @@
           >
             Kesenjangan terhadap target
           </h2>
-          <small class="[&&]:text-[13px] [&&]:text-[#61715f] leading-[1.55]">Target simulasi</small>
+          <small class="[&&]:text-[13px] [&&]:text-[#61715f] leading-[1.55]">Target pada pengajuan</small>
         </div>
         {#if gaps.length}<p
             class="[&&]:mt-[8px] [&&]:mb-[16px] [&&]:leading-[1.6] [&&]:text-[14px] [&&]:text-[#61715f] [&&]:mx-[0px]"
@@ -348,7 +348,7 @@
           </div>{:else}<p
             class="[&&]:mt-[8px] [&&]:mb-[16px] [&&]:leading-[1.6] [&&]:text-[14px] [&&]:text-[#61715f] [&&]:mx-[0px]"
           >
-            Seluruh indikator pada pengajuan ini sudah mencapai target simulasi.
+            Seluruh indikator pada pengajuan ini sudah mencapai target.
           </p>{/if}
       </section>
       {#if selected.status === 'pending'}

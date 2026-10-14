@@ -21,6 +21,15 @@ export function secured(event: RequestEvent, roles: AppRole[], action: (context:
     if (roles.length && !roles.includes(role)) throw new PreviewError(403, 'Anda tidak memiliki akses ke bagian ini.');
     const backend = await serverClient();
     const actor: Actor = { record, role, admin: role === 'admin' || role === 'super_admin', superAdmin: role === 'super_admin', campusId: String(record.campus || '') };
+    const payout=event.url.pathname.match(/^\/api\/pencairan\/([a-z0-9]{15})(?:\/(.*))?$/);
+    if(payout&&!['GET','HEAD','OPTIONS'].includes(event.request.method)){
+      if(!actor.admin&&actor.campusId!==payout[1])fail(403,'Anda tidak memiliki akses ke kampus ini.');
+      // Transfer corrections and its evidence keep their existing separate admin policy.
+      if(!/^pembayaran(?:\/bukti(?:\/.*)?)?$/.test(payout[2]||'')){
+        const rows=await backend.pb.collection('disbursements').getList(1,1,{filter:backend.pb.filter('campus = {:c} && term = 1',{c:payout[1]}),fields:'paidAt',requestKey:null});
+        if(rows.items[0]?.paidAt)fail(409,'Pengajuan yang sudah dibayar terkunci.');
+      }
+    }
     return action({ actor, pb: backend.pb, settings: backend.settings, ip: event.getClientAddress() });
   });
 }

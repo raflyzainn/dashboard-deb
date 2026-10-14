@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ErrorSnackbar from '$lib/components/ui/ErrorSnackbar.svelte';
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { app } from '$lib/state.svelte';
@@ -7,7 +8,7 @@
   import type { Snippet } from 'svelte';
   let { children }: { children: Snippet } = $props();
   let mobile = $state(false);
-  let drawer: HTMLDialogElement;
+  let drawer = $state<HTMLDialogElement>(null!);
   const campus = $derived(app.session?.role === 'campus');
   const labels = {
     guide: 'Panduan aplikasi',
@@ -60,6 +61,7 @@
     drawer.showModal();
   }
   async function logout() {
+    if (!window.dispatchEvent(new CustomEvent('beforelogout', { cancelable: true, detail: { resume: () => void logout() } }))) return;
     closeDrawer();
     accountMenu = false;
     if (await app.logout()) goto('/login');
@@ -150,14 +152,14 @@
     aria-label="Tutup navigasi"
     onclick={closeDrawer}><Icon name="close" /></button
   >{@render navigation()}
-</dialog>
+<ErrorSnackbar /></dialog>
 {/if}
 <div
   style:margin-left={campus ? '0px' : undefined}
   class="[&&]:ml-[224px] min-h-[100vh] flex flex-col max-[1200.01px]:[&&]:ml-[224px] max-[900.01px]:[&&]:ml-[196px] max-[700.01px]:[&&]:ml-[0] app-main"
 >
   <header
-    class="h-[77px] sticky top-[0] [background-image:initial] [background-color:rgba(255,_255,_255,_0.92)] [backdrop-filter:blur(12px)] [border-bottom-width:1px] [border-bottom-style:solid] flex items-center justify-between gap-y-[15px] gap-x-[15px] z-[25] [box-shadow:0_5px_20px_#24549208] px-[36px] py-[0px] border-[color:rgb(220,_232,_247)] max-[1200.01px]:px-[24px] max-[900.01px]:[&_.demo-label]:hidden max-[700.01px]:h-[65px] max-[700.01px]:[box-shadow:0_5px_18px_#1646790d] max-[700.01px]:px-[16px] max-[700.01px]:py-[0px] topbar"
+    class="h-[77px] sticky top-[0] [background-image:initial] [background-color:rgba(255,_255,_255,_0.92)] [backdrop-filter:blur(12px)] [border-bottom-width:1px] [border-bottom-style:solid] flex items-center justify-between gap-y-[15px] gap-x-[15px] z-[25] [box-shadow:0_5px_20px_#24549208] px-[36px] py-[0px] border-[color:rgb(220,_232,_247)] max-[1200.01px]:px-[24px] max-[900.01px]:[&_.connection-label]:hidden max-[700.01px]:h-[65px] max-[700.01px]:[box-shadow:0_5px_18px_#1646790d] max-[700.01px]:px-[16px] max-[700.01px]:py-[0px] topbar"
   >
     <div
       class="flex items-center gap-y-[13px] gap-x-[13px] max-[700.01px]:gap-y-[7px] max-[700.01px]:gap-x-[7px] topbar-left"
@@ -168,31 +170,39 @@
         aria-label="Buka navigasi"
         aria-expanded={mobile}
         onclick={openDrawer}><Icon name="menu" /></button
-      ><span
+      ><nav
+        aria-label="Breadcrumb"
         class="text-[13px] text-[#64748b] [&_span]:text-[#94a3b8] [&_span]:mx-[10px] [&_span]:my-[0px] [&_strong]:font-[500] [&_strong]:text-[#1e477f] max-[700.01px]:text-[12px] max-[700.01px]:[&_span]:mx-[5px] max-[700.01px]:[&_span]:my-[0px] breadcrumb"
-        >Ruang kerja <span>/</span>
-        <strong class="font-[600]">{app.session?.role === 'campus' && section === 'pencairan' ? 'Pencairan Dana' : labels[section] || 'Detail'}</strong></span
+        >Ruang kerja <span aria-hidden="true">/</span>
+        {#if campus && section !== 'dashboard'}
+          <a href="/campus/dashboard" class="rounded text-[#0066B2] hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500" onclick={() => (accountMenu = false)}>Beranda</a>
+          <span aria-hidden="true">/</span>
+        {/if}
+        <strong class="font-[600]" aria-current="page">{campus && section === 'pencairan' ? 'Pencairan Dana' : labels[section] || 'Detail'}</strong></nav
       >
     </div>
     <div
       class="flex items-center gap-y-[13px] gap-x-[13px] max-[700.01px]:gap-y-[8px] max-[700.01px]:gap-x-[8px] topbar-right"
     >
-      <a
-        class="[-webkit-tap-highlight-color:transparent] text-[#53739c] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] inline-flex items-center justify-center w-[34px] h-[34px] [background-image:initial] [background-color:transparent] [&&&]:relative border-[0px] border-none border-[color:currentcolor] rounded-[7px] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:text-[#075fc7] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(233,_243,_255)] icon-button"
-        style:display={campus ? 'none' : undefined}
-        href={`${prefix}/notifications`}
-        aria-label={`Notifikasi, ${unreadCount} belum dibaca`}
-        ><Icon name="notifications" />{#if unreadCount}<span
-            class="[&&]:absolute [&&]:top-[5px] [&&]:right-[5px] [&&]:w-[8px] [&&]:h-[8px] [&&]:[background-image:initial] [&&]:[background-color:rgb(213,_72,_62)] [&&]:border-[2px] [&&]:border-solid [&&]:border-[color:white] [&&]:rounded-[50%] notification-dot"
-            aria-hidden="true"
-          ></span>{/if}</a
-      ><span
-        class="inline-flex items-center gap-y-[7px] gap-x-[7px] text-[11px] text-[#4274ad] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [&>span]:w-[5px] [&>span]:h-[5px] [&>span]:[background-image:initial] [&>span]:[background-color:rgb(21,_130,_232)] [&>span]:rounded-[100%] demo-label"
+      <span
+        class="inline-flex items-center gap-y-[7px] gap-x-[7px] text-[11px] text-[#4274ad] [white-space-collapse:collapse] [text-wrap-mode:nowrap] [&>span]:w-[5px] [&>span]:h-[5px] [&>span]:[background-image:initial] [&>span]:[background-color:rgb(21,_130,_232)] [&>span]:rounded-[100%] connection-label"
         ><span></span>Tersambung ke server</span
       >
       <div
         class="w-[1px] h-[26px] [background-image:initial] [background-color:var(--line)] mx-[3px] my-[0px] max-[700.01px]:hidden header-divider"
       ></div>
+      <a
+        class="[-webkit-tap-highlight-color:transparent] text-[#53739c] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] inline-flex items-center justify-center w-[44px] h-[44px] shrink-0 [background-image:initial] [background-color:transparent] [&&&]:relative border-[0px] border-none border-[color:currentcolor] rounded-[7px] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:text-[#075fc7] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(233,_243,_255)] icon-button"
+        href={`${prefix}/notifications`}
+        title="Notifikasi"
+        aria-current={section === 'notifications' ? 'page' : undefined}
+        onclick={() => (accountMenu = false)}
+        aria-label={`Notifikasi, ${unreadCount} belum dibaca`}
+        ><Icon name="notifications" />{#if unreadCount}<span
+            class="[&&]:absolute [&&]:top-[5px] [&&]:right-[5px] [&&]:w-[8px] [&&]:h-[8px] [&&]:[background-image:initial] [&&]:[background-color:rgb(213,_72,_62)] [&&]:border-[2px] [&&]:border-solid [&&]:border-[color:white] [&&]:rounded-[50%] notification-dot"
+            aria-hidden="true"
+          ></span>{/if}</a
+      >
       <details class="relative z-50" bind:open={accountMenu}>
         <summary
           class="flex cursor-pointer list-none items-center gap-2 rounded-lg p-1 text-[#17365f] hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-400 [&::-webkit-details-marker]:hidden"
@@ -204,7 +214,7 @@
             {app.session?.role === 'admin' ? 'PF' : campusProfile?.initials}
           </span>
           <span class="max-[700px]:hidden">
-            <strong class="block text-[12px] leading-4">{app.session?.name}</strong>
+            <strong class="block text-[12px] leading-4">{app.session?.name?.replace(/\b(lokal|local|dummy|demo|simulasi)\b/gi, '').replace(/\s+/g, ' ').trim()}</strong>
             <small class="block text-[11px] text-[#475569]"
               >{app.session?.role === 'admin'
                 ? app.session?.superAdmin
@@ -220,7 +230,7 @@
           role="menu"
         >
           <div class="border-b border-[#edf2f8] px-5 py-4">
-            <strong class="block text-sm text-[#17365f]">{app.session?.name}</strong>
+            <strong class="block text-sm text-[#17365f]">{app.session?.name?.replace(/\b(lokal|local|dummy|demo|simulasi)\b/gi, '').replace(/\s+/g, ' ').trim()}</strong>
             <span class="mt-1 block text-xs text-[#475569]"
               >{app.session?.role === 'admin'
                 ? 'Tim DEB Pertamina Foundation'
@@ -288,6 +298,7 @@
   </header>
   <main
     id="main-content"
+    style:padding-block={campus && section === 'dashboard' ? '16px' : undefined}
     class="pt-[32px] pb-[36px] max-w-[1640px] w-[100%] grow shrink [flex-basis:0%] [background-image:initial] [background-color:transparent] px-[36px] mx-[auto] my-[0px] max-[1200.01px]:px-[24px] max-[1200.01px]:py-[27px] max-[900.01px]:px-[20px] max-[900.01px]:py-[24px] max-[700.01px]:px-[16px] max-[700.01px]:py-[25px] content"
   >
     {#if false}

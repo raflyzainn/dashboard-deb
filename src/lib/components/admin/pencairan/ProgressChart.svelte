@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   import { KINDS, KIND_SHORT, ITEM_STATE_LABEL, CAMPUS_STATES, CAMPUS_STATE_LABEL, type ItemState, type CampusState } from '$lib/pencairan';
   import type { DirectoryRow } from './kartu-types';
 
@@ -52,7 +53,7 @@
         observer = new ResizeObserver(() => { ring?.resize(); bars?.resize(); });
         observer.observe(ringEl); observer.observe(barEl);
         ready = true;
-      } catch (e) { failed = e instanceof Error ? e.message : 'Grafik belum dapat dimuat.'; }
+      } catch (e) { if (alive) failed = reportError('Grafik belum dapat dimuat. Data tetap dapat dilihat pada tabel. Coba muat ulang halaman.'); }
     })();
     return () => { alive = false; observer?.disconnect(); ring?.dispose(); bars?.dispose(); ring = null; bars = null; ready = false; };
   });

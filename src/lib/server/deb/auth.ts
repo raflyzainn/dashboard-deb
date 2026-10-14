@@ -7,6 +7,7 @@ import { serverSettings } from './server-client';
 import { requiresPasswordChange } from './password-policy';
 export const SESSION_COOKIE = 'deb_session';
 export function client() {
+  if (import.meta.env.MODE === 'pocketbase-local' && (env.PB_URL !== 'http://127.0.0.1:8097' || env.DEB_LOCAL_PREVIEW_ENABLED !== 'true')) throw new Error('Koneksi selain PocketBase lokal ditolak.');
   if (!env.PB_URL) throw new Error('PB_URL belum dikonfigurasi.');
   const pb = new PocketBase(env.PB_URL); pb.autoCancellation(false);
   return noRedirects(pb);

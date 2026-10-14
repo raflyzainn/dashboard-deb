@@ -8,6 +8,6 @@ export const POST: RequestHandler = event => secured(event, ADMIN, async ({ acto
   const campusId = recordId(event.params.campus, 'Kampus');
   const body = await readJsonBody(event.request, 4096);
   const from = body.from ? recordId(body.from, 'Versi') : '';
-  const created = await createVersion(pb, actorInfo(actor), campusId, { fromVersionId: from || undefined, source: 'manual' });
+  const created = await createVersion(pb, actorInfo(actor), campusId, { fromVersionId: from || undefined, source: 'manual', expectedRevision: body.expectedRevision as number | undefined });
   return ok(await overview(pb, campusId, created.id), 201);
 });

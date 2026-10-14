@@ -1,10 +1,9 @@
 import type { Period, PeriodState } from './periods';
 import type { ForumCategoryId } from './forum';
-export type Role = 'campus' | 'admin' | 'baru';
-export interface DemoSession { role: Role; name: string; campusId?: string; campusRole?: 'mentor' | 'sobi' }
-export interface AppSession extends DemoSession { id: string; email?: string; superAdmin?: boolean; passwordChangeRequired?: boolean }
-export interface PreviewAccount { key: string; name: string; role: Role }
-export interface DemoActivationStatus { email: string; activated: boolean }
+export type Role = 'campus' | 'admin' | 'baru' | 'finance';
+export interface SessionIdentity { role: Role; name: string; campusId?: string; campusRole?: 'mentor' | 'sobi' }
+export interface AppSession extends SessionIdentity { id: string; email?: string; superAdmin?: boolean; passwordChangeRequired?: boolean }
+export interface PreviewAccount { key: string; name: string; role: Role; disbursementStarted?: boolean }
 export interface LocationDto { campusId: string; province: string; island: string; longitude: number | null; latitude: number | null; approximate: boolean }
 export interface Bootstrap { session: AppSession; data: Snapshot; locations: LocationDto[]; capabilities: { readOnly: boolean }; loadedAt: string }
 export interface ProgramProfile {
@@ -46,6 +45,7 @@ export interface FaqEntry { id: string; questionId?: string; question: string; a
 export interface Activity { id: string; campusId: string; text: string; createdAt: string }
 export interface Notification { id: string; campusId: string; recipient: Role; title: string; body: string; href: string; createdAt: string; readAt: string | null; simulated?: boolean }
 export interface Snapshot {
+  campusPayouts?: Record<string, import('./payout-progress').CampusPayoutProgress>;
   payments?: import('./payments').PaymentCase[];
   proposalComments?: ProposalComment[];
   period?: Period; periods?: Period[];
@@ -59,10 +59,6 @@ export interface Snapshot {
 }
 export interface ProposalComment { id: string; proposalId: string; campusId: string; actorId: string; authorName: string; body: string; createdAt: string }
 export interface DataService {
-  demoActivation(): Promise<DemoActivationStatus>;
-  requestDemoActivation(email: string): Promise<void>;
-  activateDemo(email: string, password: string): Promise<void>;
-  loginDemo(email: string, password: string): Promise<PreviewAccount | null>;
   createPeriod(name: string): Promise<void>;
   openPeriod(period: string): Promise<void>;
   masters(): Promise<MasterData>;

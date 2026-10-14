@@ -68,7 +68,7 @@ export function debCollections(campusesId: string) {
       rel('campus', campusesId, { required: true }), num('term', { required: true }), num('stage'), num('requestedSen'), num('paidSen'), date('paidAt'),
       text('paidRef', 120), text('paidByName', 120), text('paidNote', 1000),
       json('properties', 20000), bool('clauseChecked'), rel('clauseCheckedBy', IDS.users), date('clauseCheckedAt'), sel('templateMode', ['standard', 'custom']),
-      rel('rabVersion', IDS.rab_versions), num('revision'), text('note', 2000)
+      rel('rabVersion', IDS.rab_versions), num('revision'), text('note', 2000), sel('submissionStatus', ['draf', 'menunggu', 'revisi', 'selesai']), json('applicationData', 100000)
     ], ['CREATE UNIQUE INDEX idx_disbursements_campus_term ON disbursements (campus, term)']),
     base('documents', IDS.documents, [
       rel('disbursement', IDS.disbursements, { required: true }), sel('kind', DOCUMENT_KINDS, { required: true }), sel('status', DOCUMENT_STATUS, { required: true }),
@@ -95,7 +95,7 @@ export function debCollections(campusesId: string) {
     ]),
     base('rab_versions', IDS.rab_versions, [
       rel('campus', campusesId, { required: true }), rel('disbursement', IDS.disbursements), num('number', { required: true }), sel('status', ['draf', 'menunggu', 'disetujui'], { required: true }),
-      num('totalSen'), num('term1Sen'), num('term2Sen'), rel('approvedBy', IDS.users), date('approvedAt'), sel('source', ['manual', 'import', 'extraction']), sel('share', ['penuh', 'tahap1', 'tahap2', 'gabungan']), text('note', 2000), text('sourceFile', 300)
+      num('totalSen'), num('term1Sen'), num('term2Sen'), rel('approvedBy', IDS.users), date('approvedAt'), sel('source', ['manual', 'import', 'extraction']), sel('share', ['penuh', 'tahap1', 'tahap2', 'gabungan']), text('note', 2000), text('sourceFile', 300), num('campusStep', { min: 0, max: 3 }), num('revision', { min: 0 })
     ], ['CREATE UNIQUE INDEX idx_rab_versions_number ON rab_versions (campus, number)']),
     base('rab_lines', IDS.rab_lines, [
       rel('version', IDS.rab_versions, { required: true }), rel('parent', IDS.rab_lines), num('level', { required: true }), num('order'), text('code', 40), text('title', 500),

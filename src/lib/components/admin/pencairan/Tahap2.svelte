@@ -66,7 +66,7 @@
               <dt class="text-slate-500">Dibayar Tahap 1</dt><dd class="m-0 text-right tabular-nums {paid ? 'font-semibold text-slate-900' : 'text-slate-500'}">{paid ? `${formatSen(r.paidSen)} · ${day(r.paidAt || '')}` : 'Belum dibayar'}</dd>
               <dt class="text-slate-500">Sisa Tahap 2</dt><dd class="m-0 text-right tabular-nums {paid ? 'font-semibold text-[#015a9a]' : 'text-slate-500'}">{paid ? formatSen(remainder(r)) : 'Setelah Tahap 1 dibayar'}</dd>
             </dl>
-            <span class="inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-semibold {paid ? 'bg-blue-50 text-[#015a9a]' : 'bg-slate-100 text-slate-600'}">{paid ? 'Dibuka setelah laporan realisasi Tahap 1 diterima' : 'Menunggu Tahap 1 dibayar'}</span>
+            <span class="inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-semibold {paid ? 'bg-blue-50 text-[#015a9a]' : 'bg-slate-100 text-slate-600'}">{import.meta.env.MODE==='pocketbase-local'?'Ringkasan · pengajuan Tahap 2 belum tersedia':paid ? 'Dibuka setelah laporan realisasi Tahap 1 diterima' : 'Menunggu Tahap 1 dibayar'}</span>
           </a>
         </li>
       {/each}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   import Modal from '$lib/components/ui/Modal.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
   let { onclose, required = false }: { onclose: () => void; required?: boolean } = $props();
@@ -42,10 +43,10 @@
       confirmation = '';
       success = true;
     } catch (e) {
-      error =
+      error = reportError(
         e instanceof Error
           ? e.message
-          : 'Koneksi terputus. Jika password sudah tersimpan, masuk kembali menggunakan password baru.';
+          : 'Koneksi terputus. Jika password sudah tersimpan, masuk kembali menggunakan password baru.');
     } finally {
       busy = false;
     }
@@ -86,7 +87,7 @@
     >
       <label
         class="[&&]:text-[14px] [&&]:text-[#234d7e] [&&]:mt-[6px] [&&]:mb-[0px] [&&]:mx-[0px]"
-        for="change-current">Password saat ini</label
+        for="change-current">Password saat ini <span class="text-red-600" aria-hidden="true">*</span></label
       >
       <div class="[&&]:relative password-input">
         <input
@@ -108,7 +109,7 @@
       </div>
       <label
         class="[&&]:text-[14px] [&&]:text-[#234d7e] [&&]:mt-[6px] [&&]:mb-[0px] [&&]:mx-[0px]"
-        for="change-new">Password baru</label
+        for="change-new">Password baru <span class="text-red-600" aria-hidden="true">*</span></label
       >
       <div class="[&&]:relative password-input">
         <input
@@ -150,7 +151,7 @@
         </p>{/if}
       <label
         class="[&&]:text-[14px] [&&]:text-[#234d7e] [&&]:mt-[6px] [&&]:mb-[0px] [&&]:mx-[0px]"
-        for="change-confirm">Konfirmasi password baru</label
+        for="change-confirm">Konfirmasi password baru <span class="text-red-600" aria-hidden="true">*</span></label
       >
       <div class="[&&]:relative password-input">
         <input

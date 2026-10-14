@@ -140,8 +140,9 @@ export function buildMergeData(input: MergeInput): MergeData {
   const tahun = year === 'kedua' ? 'Kedua' : year === 'ketiga' ? 'Ketiga' : '';
   const judul = text(input.award.programTitle) || text(program.programTitle);
   const region = [text(program.village), text(program.district) && `Kec. ${text(program.district)}`, text(program.regency), text(program.province), text(program.postalCode)].filter(Boolean).join(', ');
-  const alamat = [text(program.address), region].filter(Boolean).join(', ');
-  const lokasi = [text(program.village) && `Desa ${text(program.village)}`, text(program.district) && `Kecamatan ${text(program.district)}`, text(program.regency), text(program.province)].filter(Boolean).join(', ');
+  // Application drafts collect campus address and program location separately.
+  const alamat = Object.hasOwn(props, 'alamat') ? text(props.alamat) : [text(program.address), region].filter(Boolean).join(', ');
+  const lokasi = text(props.lokasiAlamatLengkap) || [text(program.village) && `Desa ${text(program.village)}`, text(program.district) && `Kecamatan ${text(program.district)}`, text(program.regency), text(program.province)].filter(Boolean).join(', ');
   const namaPejabat = text(props.penandatanganNama) || text(program.signatoryName);
   const jabatanPejabat = text(props.penandatanganJabatan) || text(program.signatoryTitle);
   const perjanjian = dateParts(props.tanggalPerjanjian);
@@ -294,10 +295,10 @@ export function withVerificationFooter(docx: Uint8Array, options: { png: Uint8Ar
   /** Appends the paragraph to an existing footer part and gives that part its own image relationship. */
   const appendToPart = (part: string) => {
     if (patchedParts.has(part)) return true;
-    const xml = readText(part);
+    let xml = readText(part);
     if (!xml.includes('</w:ftr>')) return false;
-    // A document stamped earlier keeps its single paragraph; the QR bytes were replaced above.
-    if (xml.includes('name="QR verifikasi MonevDEB"')) { patchedParts.add(part); return true; }
+    // Re-stamping updates the printed link as well as the image, without duplicating the footer.
+    xml=xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g,p=>p.includes('name="QR verifikasi MonevDEB"')?'':p);
     const relsPath = part.replace(/^word\//, 'word/_rels/') + '.rels';
     zip.file(relsPath, addRelationship(readText(relsPath) || EMPTY_RELS, QR_REL_ID, REL_TYPE + 'image', 'media/qr-monev.png'));
     zip.file(part, xml.replace('</w:ftr>', verificationParagraph(QR_REL_ID, drawingId++, options.issuer, options.line) + '</w:ftr>'));
@@ -305,7 +306,7 @@ export function withVerificationFooter(docx: Uint8Array, options: { png: Uint8Ar
     return true;
   };
 
-  document = document.replace(/<w:sectPr\b([^>]*?)(?:\/>|>([\s\S]*?)<\/w:sectPr>)/g, (_match, attrs: string, inner = '') => {
+  document = document.replace(/<w:sectPr\b([^>]*?)(?:\/>|>([\s\S]*?)<\/w:sectPr>)/g, (_match, attrs: string, inner: string = '') => {
     const references = inner.match(/<w:footerReference\b[^>]*\/>/g) || [];
     const added: string[] = [];
     for (const type of ['default', 'first', 'even']) {
@@ -316,7 +317,7 @@ export function withVerificationFooter(docx: Uint8Array, options: { png: Uint8Ar
       if (existing) inner = inner.replace(existing, '');
       added.push(`<w:footerReference w:type="${type}" r:id="${FOOTER_REL_ID}"/>`);
     }
-    inner = inner.replace(/(<w:pgMar\b[^>]*?\sw:footer=")(\d+)(")/, (_m, before: string, value: string, after: string) => before + String(Math.max(Number(value), MIN_FOOTER_TWIPS)) + after);
+    inner = inner.replace(/(<w:pgMar\b[^>]*?\sw:footer=")(\d+)(")/, (_m: string, before: string, value: string, after: string) => before + String(Math.max(Number(value), MIN_FOOTER_TWIPS)) + after);
     return `<w:sectPr${attrs}>${added.join('')}${inner}</w:sectPr>`;
   });
 

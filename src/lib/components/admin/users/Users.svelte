@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   import { untrack } from 'svelte';
   import { app } from '$lib/state.svelte';
   import { dataService } from '$lib/data/service';
@@ -85,7 +86,7 @@
     try {
       const result = await dataService.api.get<{ users: User[]; campuses: CampusOption[] }>('/api/users' + scope);
       users = result.users; campuses = result.campuses;
-    } catch (e) { error = e instanceof Error ? e.message : 'Daftar pengguna belum dapat dimuat.'; }
+    } catch (e) { error = reportError(e instanceof Error ? e.message : 'Daftar pengguna belum dapat dimuat.'); }
     finally { loading = false; }
   }
   $effect(() => { untrack(() => { void load(); }); });
@@ -112,7 +113,7 @@
       const result = await dataService.api.patch<{ user: User }>(`/api/users/${editing.id}${scope}`, body);
       users = users.map(u => (u.id === result.user.id ? result.user : u));
       notice = 'Perubahan akun tersimpan.'; editing = null; refresh++;
-    } catch (e) { formError = e instanceof Error ? e.message : 'Perubahan belum tersimpan.'; }
+    } catch (e) { formError = reportError(e instanceof Error ? e.message : 'Perubahan belum tersimpan.'); }
     finally { busy = false; }
   }
   function openReset(u: User, prepare = false) { resetting = u; preparingAccess = prepare; newPassword = generatePassword(); formError = ''; }
@@ -126,7 +127,7 @@
       users = users.map(u => u.id === result.user.id ? result.user : u);
       if (result.user.role === 'campus' && result.user.active) sharing = { user: result.user, password };
       notice = 'Kata sandi sementara sudah berlaku. Pemilik akun wajib menggantinya setelah masuk.'; resetting = null; newPassword = ''; refresh++;
-    } catch (e) { formError = e instanceof Error ? e.message : 'Kata sandi belum tersimpan.'; }
+    } catch (e) { formError = reportError(e instanceof Error ? e.message : 'Kata sandi belum tersimpan.'); }
     finally { busy = false; }
   }
   function openCreate() { if (busy) return; creating = true; nameChoice = 'manual'; created = { name: '', email: '', password: generatePassword(), role: 'campus', campus: campusId }; formError = ''; }
@@ -142,7 +143,7 @@
       users = [result.user, ...users];
       if (result.user.role === 'campus' && result.user.active) sharing = { user: result.user, password };
       notice = 'Akun dibuat. Pemilik akun wajib mengganti kata sandi sementara setelah masuk.'; creating = false; created.password = ''; refresh++;
-    } catch (e) { formError = e instanceof Error ? e.message : 'Akun belum dibuat.'; }
+    } catch (e) { formError = reportError(e instanceof Error ? e.message : 'Akun belum dibuat.'); }
     finally { busy = false; }
   }
 </script>

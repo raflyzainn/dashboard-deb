@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   import { dataService } from '$lib/data/service';
   let { paymentId, fileId, filename }: { paymentId: string; fileId: string; filename: string } =
     $props();
@@ -19,7 +20,7 @@
         url = objectUrl;
       })
       .catch((e) => {
-        if (!disposed) error = e.message;
+        if (!disposed) error = reportError(e.message);
       });
     return () => {
       disposed = true;
