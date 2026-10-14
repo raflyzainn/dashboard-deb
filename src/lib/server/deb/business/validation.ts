@@ -61,7 +61,7 @@ export function validateRecord(e) {
   if (name === 'notifications') {
     const recipient = e.app.findRecordById('users', r.getString('recipientUser'));
     if (recipient.getString('role') === 'campus' && recipient.getString('campus') !== r.getString('campus')) fail('Notification campus mismatch');
-    if (!/^\/(campus|admin)(\/|$)/.test(r.getString('target')) || r.getString('target').indexOf('\\') !== -1) fail('Invalid internal notification target');
+    if (!/^\/(campus|admin|legal)(\/|$)/.test(r.getString('target')) || r.getString('target').indexOf('\\') !== -1) fail('Invalid internal notification target');
     if (!r.getString('target').startsWith('/' + (recipient.getString('role') === 'super_admin' ? 'admin' : recipient.getString('role')) + '/')) fail('Notification target role mismatch');
   }
   if (name === 'activities') {

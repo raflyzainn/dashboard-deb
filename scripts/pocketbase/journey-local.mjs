@@ -24,6 +24,22 @@ if(!await healthy()){
 const creds=JSON.parse(await readFile(path.join(directory,'credentials.json'),'utf8'));
 const pb=new PocketBase(vars.PB_URL);pb.autoCancellation(false);pb.beforeSend=(url,options)=>({url,options:{...options,redirect:'error'}});
 await pb.collection('_superusers').authWithPassword(creds.superuser.email,creds.superuser.password);
+if(process.argv.includes('--legal-role')||process.argv.includes('--seed-legal')){
+ const collection=await pb.collections.getOne('users');
+ const role=collection.fields.find(field=>field.name==='role');
+ if(!role||role.type!=='select')throw Error('Users role field is not a select.');
+ if(!role.values.includes('legal')){role.values.push('legal');await pb.collections.update(collection.id,{fields:collection.fields});}
+ console.log('Local Legal role is available. No accounts changed.');
+}
+if(process.argv.includes('--seed-legal')){
+ const key='legal-1',id=createHash('sha256').update('journey-local:'+key).digest('hex').slice(0,15);
+ let credential=creds.users[key];
+ if(!credential){credential={email:'legal-dummy@qa-local.example.test',password:randomBytes(24).toString('base64url')};creds.users[key]=credential;await writeFile(path.join(directory,'credentials.json'),JSON.stringify(creds,null,2));}
+ let existing=null;try{existing=await pb.collection('users').getOne(id);}catch(error){if(error.status!==404)throw error;}
+ if(existing&&(!existing.simulated||existing.legacyId!==key||existing.role!=='legal'))throw Error('Local Legal fixture conflicts with an existing account.');
+ if(!existing)await pb.collection('users').create({id,...credential,passwordConfirm:credential.password,name:'Legal Dummy',role:'legal',active:true,verified:true,simulated:true,legacyId:key});
+ console.log('Legal Dummy is available in the local login selector.');
+}
 if(process.argv.includes('--migrate')){
  const { debCollections }=await import('./deb-schema.ts');
  const names={disbursements:['submissionStatus','applicationData'],rab_versions:['campusStep','revision']};
@@ -95,7 +111,7 @@ if(process.argv.includes('--delete-qa')){
  for(const key of keys){if(remaining.some(r=>JSON.stringify(r).includes(key)))continue;const file=path.resolve(directory,'objects',createHash('sha256').update(key).digest('hex'));if(!file.startsWith(path.resolve(directory,'objects')+path.sep))throw Error('Invalid object path');try{await unlink(file);removedFiles++;}catch(e){if(e.code!=='ENOENT')throw e;}}
  const result={campuses:targets.length,users:users.size,records:[...selected.values()].reduce((n,rows)=>n+rows.length,0),files:removedFiles};await writeFile(path.join(folder,'applied.json'),JSON.stringify(result));console.log(JSON.stringify(result));
 }
-if(!process.argv.some(a=>['--migrate','--seed','--seed-qa3','--seed-qa4','--delete-qa','--audit-unopened','--open-unopened'].includes(a))){
+if(!process.argv.some(a=>['--seed-legal','--legal-role','--migrate','--seed','--seed-qa3','--seed-qa4','--delete-qa','--audit-unopened','--open-unopened'].includes(a))){
  const env={...process.env,...vars,PB_SUPER_TOKEN:'',PB_SUPERUSER_EMAIL:'',PB_SUPERUSER_PASSWORD:'',R2_ENDPOINT:'',R2_BUCKET:'',R2_ACCESS_KEY_ID:'',R2_SECRET_ACCESS_KEY:''};
  const child=spawn(process.execPath,[path.join(root,'node_modules/vite/bin/vite.js'),'--mode','pocketbase-local','--host','127.0.0.1','--port','5176','--strictPort'],{cwd:root,env,windowsHide:true,stdio:'inherit'});
  child.on('exit',code=>process.exit(code||0));

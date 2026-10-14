@@ -64,7 +64,18 @@
     <img src="/logo-pf.png" alt="Pertamina Foundation" class="mb-4 h-10 w-auto" />
     <p class="text-xs font-bold uppercase tracking-widest text-[#3975b7]">Desa Energi Berdikari</p>
     <h1 class="mt-3 text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">{greeting}, {app.session?.name}.</h1>
-    <p class="mt-3 max-w-2xl text-base leading-7 text-slate-600">Pantau pencairan dana kampus Anda di sini.</p>
+    <p class="mt-3 max-w-2xl text-base leading-7 text-slate-600">Lengkapi profil program dan pantau pencairan dana kampus Anda di sini.</p>
+  </section>
+
+  <section aria-labelledby="profil-title" class="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+    <div class="flex items-start gap-4">
+      <span class="grid size-11 shrink-0 place-items-center rounded-xl bg-blue-50 text-[#0066B2]"><Icon name="campus" size={23} /></span>
+      <div class="min-w-0">
+        <h2 id="profil-title" class="text-lg font-bold text-slate-900">Lengkapi Profil Program</h2>
+        <p class="mt-3 text-sm leading-6 text-slate-600">Perbarui kontak, lokasi, informasi program, dan kesiapan rencana aksi. Data yang Anda simpan dapat dilihat oleh admin PF.</p>
+        <a href="/campus/profile" class="mt-4 inline-flex min-h-11 items-center rounded-lg bg-[#0066B2] px-5 py-3 text-sm font-semibold text-white hover:bg-[#015a9a]">Buka Profil Program</a>
+      </div>
+    </div>
   </section>
 
   <section aria-labelledby="pencairan-title" class="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
@@ -120,7 +131,5 @@
       {:else}<p class="mt-2 text-sm text-slate-600">Belum ada dokumen yang perlu Anda kirim. Pantau langkah yang dikelola PF di Pencairan Dana.</p>{/if}
       <a href="/campus/pencairan" class="mt-3 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#0066B2] px-5 py-3 text-sm font-semibold text-white hover:bg-[#015a9a]">Lihat progres <Icon name="arrow" size={16} /></a>
     {/if}
-    <p class="mt-4 text-sm"><a class="font-semibold text-[#0066B2] underline" href="/campus/guide">Baru pertama kali? Baca panduan pengajuan</a></p>
-    <p class="mt-3 text-xs leading-relaxed text-slate-500">Untuk keluar, buka menu akun di kanan atas.</p>
   </section>
 </div>

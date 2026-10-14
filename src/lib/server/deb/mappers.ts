@@ -6,7 +6,7 @@ import { requiresPasswordChange } from './password-policy';
 const date = (value: string) => new Date(value).toISOString();
 export interface BackendSession { id: string; name: string; role: Role; campusId?: string; email?: string; superAdmin?: boolean; passwordChangeRequired?: boolean }
 export function mapSession(r: RecordModel): BackendSession {
-  if (!r.active || !['campus', 'admin', 'baru', 'super_admin'].includes(r.role) || (r.role === 'campus' && !r.campus)) throw new Error('Inactive or invalid DEB account');
+  if (!r.active || !['campus', 'admin', 'baru', 'super_admin', 'legal'].includes(r.role) || (r.role === 'campus' && !r.campus)) throw new Error('Inactive or invalid DEB account');
   // super_admin is an admin with the extra right to grant the admin role; pages use the admin section.
   const role: Role = r.role === 'super_admin' ? 'admin' : r.role;
   return { id: r.id, name: r.name || r.email, role, email: r.email, superAdmin: r.role === 'super_admin' || Boolean(r.superAdmin), passwordChangeRequired: typeof r.passwordChangeRequired === 'boolean' ? r.passwordChangeRequired : requiresPasswordChange(r), ...(r.campus ? { campusId: r.campus } : {}) };

@@ -2,7 +2,7 @@
   import { untrack } from 'svelte';
   import Modal from '$lib/components/ui/Modal.svelte';
   import NewTabLink from '$lib/components/shared/profile/NewTabLink.svelte';
-  import { parseContacts, cleanPhone, whatsappLink } from '$lib/contacts';
+  import { parseContacts, whatsappLink } from '$lib/contacts';
 
   let { email, campusName, contacts, temporaryPassword = '', onclose }: {
     email: string; campusName: string;
@@ -14,7 +14,7 @@
   let manual = $state('');
   let message = $state(untrack(() => `Halo Bapak/Ibu, berikut akses Dashboard DEB untuk ${campusName}.\n\nLink masuk: ${window.location.origin}/login\nEmail: ${email}${temporaryPassword ? `\nKata sandi sementara: ${temporaryPassword}` : ''}\n\nWajib mengganti kata sandi setelah masuk. Jangan teruskan pesan ini kepada orang lain.`));
   const groups = [['mentor', 'Mentor'], ['coordinator', 'Koordinator PFS 12'], ['localHero', 'Local hero']] as const;
-  const validLink = (phone: string) => /^\+?[\d\s().-]+$/.test(phone.trim()) && /^\+?\d{9,15}$/.test(cleanPhone(phone)) ? whatsappLink(phone) : '';
+  const validLink = whatsappLink;
   const choices = $derived(groups.flatMap(([key, group]) => parseContacts(contacts?.[key]).map(c => ({ ...c, group, link: validLink(c.phone) }))));
   const recipients = $derived([...new Set([...selected, ...(manual.trim() && validLink(manual) ? [validLink(manual)] : [])])]);
 </script>
@@ -34,7 +34,7 @@
     <label class="grid gap-1 text-sm font-medium">Nomor lain (opsional)
       <input type="tel" class="min-h-[42px] rounded-lg border border-slate-300 px-3" placeholder="0812 3456 7890" maxlength="30" bind:value={manual} aria-invalid={!!manual.trim() && !validLink(manual)} />
     </label>
-    {#if manual.trim() && !validLink(manual)}<p class="m-0 text-sm text-red-700" role="alert">Isi nomor telepon yang valid, 9–15 angka, dengan awalan 0 atau kode negara.</p>{/if}
+    {#if manual.trim() && !validLink(manual)}<p class="m-0 text-sm text-red-700" role="alert">Periksa nomor dan kode negara. Gunakan 08… untuk Indonesia atau +kode negara untuk nomor internasional.</p>{/if}
     <label class="grid gap-1 text-sm font-medium">Template pesan
       <textarea class="min-h-52 w-full rounded-lg border border-slate-300 p-3 text-sm leading-6" rows="8" maxlength="4000" bind:value={message}></textarea>
     </label>

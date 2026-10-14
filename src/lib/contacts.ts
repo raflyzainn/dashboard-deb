@@ -2,13 +2,15 @@
 // because the source spreadsheet keeps them that way. These helpers turn that text into
 // name and phone rows for the form, and back into one canonical line per person.
 
+import { parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js/max';
+
 export interface Contact {
   name: string;
   phone: string;
 }
 
-// Indonesian numbers: +62, 62 or 0 prefix, 9 to 15 digits, written with spaces, dashes, dots or brackets.
-const PHONE = /(?:\+\s?62|62|0)(?:[\s\-.()]*\d){8,13}/g;
+// Read our saved "(number)" format first, then legacy Indonesian free-text numbers.
+const PHONE = /\((\+?\d(?:[ \t.-]*\d){6,})\)|(?:\+\s?62|62|0)(?:[\s\-.()]*\d){8,13}/g;
 const EDGE = /^[\s()\/\\&,;:|*\-\u2022\u2013\u2014]+|[\s(\/\\&,;:|*\-\u2022\u2013\u2014]+$/g;
 
 const cleanName = (value: string) => {
@@ -39,7 +41,7 @@ export function parseContacts(text: string | null | undefined): Contact[] {
   let cursor = 0;
   for (const match of source.matchAll(PHONE)) {
     const name = pushNames(source.slice(cursor, match.index));
-    contacts.push({ name, phone: cleanPhone(match[0]) });
+    contacts.push({ name, phone: cleanPhone(match[1] ?? match[0]) });
     cursor = match.index + match[0].length;
   }
   const rest = pushNames(source.slice(cursor));
@@ -56,14 +58,28 @@ export function serializeContacts(contacts: Contact[]): string {
     .join('\n');
 }
 
+/** Parse the whole input using country numbering metadata, without extracting digits from prose. */
+export function parseContactPhone(value: string, country: CountryCode = 'ID') {
+  const source = value.trim();
+  if (!source || !/^\+?[\d\s().-]+$/.test(source)) return undefined;
+  const clean = cleanPhone(source);
+  return parsePhoneNumberFromString(country === 'ID' && clean.startsWith('62') ? `+${clean}` : source, { defaultCountry: country, extract: false });
+}
+
+export function normalizedPhone(value: string): string {
+  // Legacy numbers without a country code or Indonesian prefix are ambiguous.
+  if (!/^(?:\+|0|62|8)/.test(cleanPhone(value))) return '';
+  const phone = parseContactPhone(value);
+  return phone?.isValid() && !phone.ext ? phone.number : '';
+}
+
 /** Empty string when valid, otherwise the message to show under the row. */
 export function contactError(contact: Contact): string {
   const name = contact.name.trim();
-  const digits = contact.phone.replace(/\D/g, '');
-  if (!name && !digits) return '';
+  if (!name && !contact.phone.trim()) return '';
   if (!name) return 'Isi nama.';
   if (name.length > 120) return 'Nama maksimal 120 karakter.';
-  if (digits && (digits.length < 9 || digits.length > 15)) return 'Nomor telepon berisi 9 sampai 15 angka.';
+  if (contact.phone.trim() && !normalizedPhone(contact.phone)) return 'Nomor WhatsApp tidak valid. Periksa kode negara dan nomornya.';
   return '';
 }
 
@@ -71,6 +87,7 @@ export function contactError(contact: Contact): string {
 export function formatPhone(phone: string): string {
   const clean = cleanPhone(phone);
   if (!clean) return '';
+  if (!/^(?:\+62|62|0)/.test(clean)) return clean;
   const plus = clean.startsWith('+62');
   const local = plus ? clean.slice(3) : clean.startsWith('62') ? clean.slice(2) : clean.replace(/^0/, '');
   const groups = local.match(/^(\d{3})(\d{4})(\d*)$/);
@@ -80,8 +97,6 @@ export function formatPhone(phone: string): string {
 
 /** wa.me link, or empty when the number cannot be used. */
 export function whatsappLink(phone: string): string {
-  const digits = cleanPhone(phone).replace(/^\+/, '');
-  if (digits.length < 9) return '';
-  const international = digits.startsWith('62') ? digits : digits.startsWith('0') ? `62${digits.slice(1)}` : digits;
-  return `https://wa.me/${international}`;
+  const international = normalizedPhone(phone);
+  return international ? `https://wa.me/${international.slice(1)}` : '';
 }

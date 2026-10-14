@@ -91,17 +91,17 @@
       <form class="grid gap-3 rounded-xl border border-[#0066B2]/30 bg-white p-4 shadow-[0_8px_24px_#0b254510]" onsubmit={(e) => { e.preventDefault(); void add(); }}>
         <h2 class="text-base font-bold text-slate-900">Bukti baru</h2>
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <label class="grid gap-1 text-xs font-semibold text-slate-600">Tanggal pada bukti<input type="date" class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal" bind:value={form.date} required /></label>
-          <label class="grid gap-1 text-xs font-semibold text-slate-600">Nomor bukti<input class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal" bind:value={form.reference} required placeholder="Nomor invois atau kuitansi" /></label>
-          <label class="grid gap-1 text-xs font-semibold text-slate-600">Penerima<input class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal" bind:value={form.payee} required placeholder="Toko atau penyedia" /></label>
-          <label class="grid gap-1 text-xs font-semibold text-slate-600">Jumlah pada bukti<input class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-right text-sm font-normal tabular-nums" bind:value={form.amount} required inputmode="numeric" placeholder="250.000" /></label>
+          <label class="grid gap-1 text-xs font-semibold text-slate-600"><span class="field-caption">Tanggal pada bukti</span><input type="date" class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal" bind:value={form.date} required /></label>
+          <label class="grid gap-1 text-xs font-semibold text-slate-600"><span class="field-caption">Nomor bukti</span><input class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal" bind:value={form.reference} required placeholder="Nomor invois atau kuitansi" /></label>
+          <label class="grid gap-1 text-xs font-semibold text-slate-600"><span class="field-caption">Penerima</span><input class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal" bind:value={form.payee} required placeholder="Toko atau penyedia" /></label>
+          <label class="grid gap-1 text-xs font-semibold text-slate-600"><span class="field-caption">Jumlah pada bukti</span><input class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-right text-sm font-normal tabular-nums" bind:value={form.amount} required inputmode="numeric" placeholder="250.000" /></label>
           <label class="grid gap-1 text-xs font-semibold text-slate-600">Bagian RAB
             <select class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal" bind:value={form.rabLine} disabled={!data.hasApprovedRab}>
               <option value="">{data.hasApprovedRab ? 'Pilih bagian RAB' : 'RAB belum disetujui'}</option>
               {#each data.rabNodes as n}<option value={n.id}>{' '.repeat((n.level - 1) * 2)}{n.code} {n.title}</option>{/each}
             </select>
           </label>
-          <label class="grid gap-1 text-xs font-semibold text-slate-600">Pindaian bukti<input type="file" class="text-sm font-normal" accept=".pdf,.png,.jpg,.jpeg,.webp" required onchange={(e) => (file = (e.currentTarget as HTMLInputElement).files?.[0] || null)} /></label>
+          <label class="grid gap-1 text-xs font-semibold text-slate-600"><span class="field-caption">Pindaian bukti</span><input type="file" class="text-sm font-normal" accept=".pdf,.png,.jpg,.jpeg,.webp" required onchange={(e) => (file = (e.currentTarget as HTMLInputElement).files?.[0] || null)} /></label>
           <label class="grid gap-1 text-xs font-semibold text-slate-600 sm:col-span-2 lg:col-span-3">Memo<input class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal" bind:value={form.memo} placeholder="Untuk apa, singkat" /></label>
         </div>
         <div class="flex gap-2"><Button type="submit" loading={busy}>Simpan bukti</Button><Button variant="ghost" onclick={() => (adding = false)}>Batal</Button></div>

@@ -1,5 +1,17 @@
 # Panduan proyek untuk Codex
 
+## P1 PKS dan Legal — implementasi lokal 14 Oktober 2026
+
+Pada branch `feat/p1-t1-legal`, pengajuan baru memakai tanggal relatif, periode per pengajuan, PDF PKS yang diperiksa PF dan Legal, serta role Legal yang dapat diberikan Admin biasa. Sidebar Legal memakai Shell Admin dengan menu terbatas. Data PKS PF tampil langsung dalam grid responsif; timeline delapan tahap tetap satu baris dengan gulir mendatar pada layar kecil. Panduan alur, sumber Excel, checklist QA dan batas verifikasi ada di [P1 PKS dan Legal](pencairan-deb/P1-LEGAL-2026-10-14.md). Pengiriman hanya ke branch fitur; belum diterapkan ke production. Instruksi lama tentang tanggal PKS tetap hanya berlaku untuk pengajuan legacy.
+
+## Profil Program kampus — 14 Oktober 2026
+
+Kontak program memakai pilihan negara (default Indonesia +62) dan isian Nomor WhatsApp. Format divalidasi dengan `libphonenumber-js/max` pada formulir dan API profil; saat disimpan nomor dinormalisasi ke format internasional. Nomor lama yang ambigu tidak diberi tautan WhatsApp. Validasi format tidak membuktikan nomor aktif, kepemilikan, atau pendaftaran WhatsApp; tidak ada OTP maupun pengiriman pesan otomatis.
+
+Beranda memiliki kartu **Lengkapi Profil Program** menuju `/campus/profile`; akses juga tersedia dari menu akun dan Panduan Aplikasi. Kampus dapat mengubah kontak, lokasi, informasi/deskripsi program, kategori kelas, target kategori, Subholding, estimasi RAB, serta sembilan isian kesiapan rencana aksi. Data memakai `campuses.program` yang sama dengan Ringkasan admin. Khusus kampus, setiap bagian langsung menampilkan formulir dengan Simpan perubahan/Batalkan perubahan. Admin tetap memakai Ubah sebelum mengedit. Membatalkan mengembalikan nilai tersimpan; menyimpan satu bagian mempertahankan draf bagian lain. Tim Pendamping (`pfTeam`) tidak dibawa ke form; nilai lama dipertahankan dan API menolak perubahan field itu dari kampus.
+
+Akses tambahan hanya membuka halaman profil dan PATCH `/api/campuses/:id/program`. Server memeriksa kepemilikan kampus sebelum membaca profil. Pembacaan profil memakai data kampus sendiri dari navigasi; API dashboard/indikator/proposal/forum tetap tertutup untuk kampus. Perubahan profil tidak otomatis menimpa isian atau dokumen pada pengajuan yang sudah dibuat. Checklist dan batas verifikasi: [Profil Program kampus](QA-PROFIL-PROGRAM-KAMPUS-2026-10-14.md).
+
 ## Progres pencairan pada Peta Persebaran — 13 Oktober 2026
 
 Peta, legenda, rata-rata dan ringkasan wilayah memakai `campusPayouts` yang sama dengan Kampus Mitra: butir pemeriksaan selesai dibagi total butir. Detail pin menampilkan tahap, jumlah berkas tersimpan dan butir selesai. Unggah atau submit belum berarti pemeriksaan selesai; ini bukan persentase dana dibayar. Koordinat dan pengelompokan wilayah tetap mengikuti data existing. Bukti Chrome desktop/mobile: [QA peta progres pencairan](QA-PETA-PROGRES-PENCAIRAN-2026-10-13.md). Bagian peta berbasis indikator di bawah menjadi riwayat.
