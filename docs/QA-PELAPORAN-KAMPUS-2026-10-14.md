@@ -113,3 +113,11 @@ Tautan pindaian memakai ikon file, border ringan dan batas lebar; nama panjang d
 ## Kartu dan menu sebelum pembayaran
 
 Kartu Pelaporan di Beranda disembunyikan sampai paidAt terisi dan paidSen positif; grid memakai dua kolom sebelum pembayaran dan tiga sesudahnya. Dropdown akun memakai canReport dengan syarat pembayaran yang sama. QA Playwright pada 5177 memastikan kampus QA belum dibayar tidak memiliki kartu maupun menu Pelaporan; kampus QA dibayar memiliki keduanya. URL langsung tetap menampilkan penjelasan akses terkunci dan API tetap memeriksa pembayaran.
+
+## Penyeragaman UI terbaru pada port 5178
+
+Arahan terbaru menggantikan navigasi bagian sebelumnya: Pelaporan menampilkan Keluaran Program dan LPJ sekaligus tanpa tab. Header Pelaporan dan Pencairan kampus mengikuti Profil & Monitoring: logo 64 px, identitas wilayah, nama kampus, dan deskripsi. Kartu keluaran dalam satu baris memiliki tinggi sama. Form dan aturan pembayaran tidak diubah.
+
+Bukti monitoring memakai FileViewer untuk gambar/PDF/DOCX dan tombol berbingkai Buka berkas. Pelaporan kampus sekarang menampilkan viewer berkas tersimpan, termasuk video; LPJ menampilkan viewer pindaian. Pilihan file Pelaporan dan LPJ menampilkan pratinjau lokal sebelum disimpan; object URL dilepas saat diganti/dilepas. Tombol unduh dan coba lagi di FileViewer memakai komponen Button.
+
+QA Playwright melalui Node REPL: desktop 1366 px dan mobile 390 px, dua bagian Pelaporan terlihat bersama, tidak ada tab, tautan #lpj masih membuka halaman, header Pencairan tampil. Tinggi Video Profil dan Artikel sama (756 px pada fixture yang diperiksa). Pratinjau PNG pilihan LPJ berhasil terlihat tanpa menyimpan perubahan. Tidak ada pageerror tercatat. Berkas historis akun QA dibayar sebagian tidak tersedia di storage lokal, sehingga pratinjau PDF/DOCX/video tersimpan belum bisa dinyatakan berhasil; viewer menampilkan pesan berkas tidak tersedia. Tes terminal/build tidak dijalankan. Tes Pelaporan disesuaikan dengan navigasi tanpa tab, belum dijalankan. Belum publikasi perubahan ini.

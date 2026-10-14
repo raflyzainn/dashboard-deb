@@ -1,7 +1,9 @@
 <script lang="ts">
+  import SelectedFilePreview from '$lib/components/shared/SelectedFilePreview.svelte';
   import { untrack } from 'svelte';
   import { dataService } from '$lib/data/service';
   import { formatSen, parseSen } from '$lib/pencairan';
+  import FileViewer from './FileViewer.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import Badge from '$lib/components/ui/Badge.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
@@ -109,6 +111,7 @@
           <label class="grid gap-1 text-xs font-semibold text-slate-600 sm:col-span-2 lg:col-span-3">Memo<input class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal" bind:value={form.memo} placeholder="Untuk apa, singkat" /></label>
         </div>
         </fieldset>
+        <SelectedFilePreview {file} />
         <div class="flex gap-2"><Button size="sm" type="submit" loading={busy}>Simpan bukti</Button><Button size="sm" disabled={busy} variant="ghost" onclick={() => (adding = false)}>Batal</Button></div>
       </form>
     {/if}
@@ -131,6 +134,7 @@
                 <td class="px-3 py-2.5 text-slate-600">{e.memo}</td>
                 <td class="px-3 py-2.5">
                   <a class="inline-flex max-w-48 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 font-medium text-[#0066B2] hover:border-blue-200 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500" href={`/api/pencairan/${campusId}/lpj/${e.id}`} title={e.originalName} target="_blank" rel="noopener"><span class="shrink-0"><Icon name="file" size={14} /></span><span class="truncate">{e.originalName}</span></a>
+                  <div class="mt-2 w-64"><FileViewer src={`/api/pencairan/${campusId}/lpj/${e.id}`} name={e.originalName} height={240} showDownload={false} /></div>
                   {#if e.history?.length}<details class="mt-2 max-w-48 text-slate-500"><summary class="cursor-pointer text-xs hover:text-blue-700">Riwayat bukti</summary><div class="mt-1 grid gap-1">{#each e.history as h}<a class="truncate rounded px-1 py-1 text-blue-700 hover:bg-blue-50" title={`Versi ${h.revision}: ${h.originalName}`} target="_blank" rel="noopener" href={`/api/pencairan/${campusId}/lpj/${e.id}?revision=${h.revision}`}>Versi {h.revision}: {h.originalName}</a>{/each}</div></details>{/if}
                 </td>
                 <td class="px-3 py-2.5">

@@ -1,9 +1,10 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import { secured, ok, fail, ANY, actorInfo, recordId } from '$lib/server/deb/access';
-import { writeAudit } from '$lib/server/deb/audit';
+import { auditData } from '$lib/server/deb/audit';
+import { atomic, StoreRecord } from '$lib/server/deb/rest-store';
 import { readJsonBody } from '$lib/server/deb/request-body';
 import { PROGRAM_READINESS_FIELDS } from '$lib/program-readiness';
-import { parseContacts, contactError, normalizedPhone, serializeContacts } from '$lib/contacts';
+import { parseContacts, contactError, normalizedPhone, serializeContacts, preserveHeroMetadata } from '$lib/contacts';
 
 /** Profil DEB fields an admin or the owning campus may write. Contacts use one string per group (see src/lib/contacts.ts). */
 const ALLOWED = ['mentor', 'coordinator', 'localHero', 'subholding', 'operatingUnit', 'actionPlanTemplate', 'replicationVillage', 'sourceStatus', 'pfTeam', 'description', 'budget', 'currentClass', 'targetClass',
@@ -33,11 +34,21 @@ export const PATCH: RequestHandler = event => secured(event, ANY, async ({ actor
   const before = (campus.program && typeof campus.program === 'object' ? campus.program : {}) as Record<string, unknown>;
   const changed = Object.keys(values).filter(key => (before[key] ?? '') !== values[key]);
   if (!changed.length) return ok({ ok: true });
-  const program = { ...before, ...values };
-  await pb.collection('campuses').update(id, { program, programRevision: Number(campus.programRevision || 0) + 1 }, { requestKey: null });
-  await writeAudit(pb, {
-    actor: actorInfo(actor), action: 'mengubah Profil DEB', context: `kampus:${id}/profil`, collection: 'campuses', record: id, campus: id,
-    before: Object.fromEntries(changed.map(key => [key, before[key] ?? ''])), after: Object.fromEntries(changed.map(key => [key, values[key]]))
-  });
+  await atomic(pb, store => {
+    const record = store.records.get('campuses')![0];
+    if (!record) fail(404, 'Kampus tidak ditemukan.');
+    const current = record.data.program || {};
+    if (changed.some(key => (current[key] ?? '') !== (before[key] ?? ''))) fail(409, 'Bagian profil ini berubah di tab lain. Muat ulang sebelum menyimpan.');
+    const program = { ...current, ...values };
+    if ('localHero' in values && Array.isArray(current.localHeroes)) {
+      try { program.localHeroes = preserveHeroMetadata(current.localHeroes, parseContacts(values.localHero)); }
+      catch (error) { fail(409, (error as Error).message); }
+    }
+    record.set('program', program); record.set('programRevision', record.getInt('programRevision') + 1); store.save(record);
+    const entry = new StoreRecord('audit');
+    Object.assign(entry.data, auditData({ actor: actorInfo(actor), action: 'mengubah Profil DEB', context: `kampus:${id}/profil`, collection: 'campuses', record: id, campus: id,
+      before: Object.fromEntries(changed.map(key => [key, before[key] ?? ''])), after: Object.fromEntries(changed.map(key => [key, values[key]])) }));
+    store.save(entry);
+  }, { campuses: { filter: pb.filter('id = {:id}', { id }) }, audit: null });
   return ok({ ok: true });
 });

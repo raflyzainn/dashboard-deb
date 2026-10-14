@@ -56,6 +56,11 @@ export function debCollections(campusesId: string) {
     fields: [ID_FIELD, ...fields, created(), updated()], indexes
   });
   return [
+    base('monitoring_programs', 'pbc_deb_monprog', [rel('campus', campusesId), text('period', 120), num('revision'), json('payload')], ['CREATE UNIQUE INDEX idx_monitoring_program ON monitoring_programs (campus, period)']),
+    base('monitoring_months', 'pbc_deb_monmonth', [rel('campus', campusesId), text('period', 120), text('month', 7), num('revision'), json('payload'), text('status', 30), text('operationId', 36)], ['CREATE UNIQUE INDEX idx_monitoring_month ON monitoring_months (campus, period, month)']),
+    base('monitoring_versions', 'pbc_deb_monvers', [rel('campus', campusesId), text('period', 120), text('month', 7), num('version'), text('status', 30), json('snapshot', 500000), text('operationId', 36), text('author', 15), text('reviewerName', 120), date('reviewedAt'), text('note', 2000)], ['CREATE UNIQUE INDEX idx_monitoring_version ON monitoring_versions (campus, period, month, version)', 'CREATE UNIQUE INDEX idx_monitoring_submit ON monitoring_versions (operationId)']),
+    base('monitoring_files', 'pbc_deb_monfiles', [rel('campus', campusesId), text('period', 120), text('kind', 30), text('r2Key', 400), text('originalName', 300), text('mime', 120), num('size'), text('hash', 64), text('operationId', 36), text('author', 15)], ['CREATE UNIQUE INDEX idx_monitoring_upload ON monitoring_files (operationId)']),
+    base('monitoring_settings', 'pbc_deb_monset', [text('period', 120), num('revision'), json('formula')], ['CREATE UNIQUE INDEX idx_monitoring_settings ON monitoring_settings (period)']),
     base('sk_awards', IDS.sk_awards, [
       rel('campus', campusesId, { required: true }), text('skNumber', 80, { required: true }), date('skDate'), num('wave'), num('amountSen', { required: true }),
       text('programTitle', 500), sel('programYear', ['kedua', 'ketiga']), bool('locked'), text('note', 1000),

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { reportError } from '$lib/feedback';
   // One contact group (mentor, koordinator or local hero): a read only list first, name and phone rows on "Ubah".
-  import { tick } from 'svelte';
+  import { tick, untrack } from 'svelte';
   import {
     contactError,
     formatPhone,
@@ -44,9 +44,15 @@
   let showErrors = $state(false);
   let draft = $state<Contact[]>([]);
   let form = $state<HTMLElement>();
-  const dirty = $derived(serializeContacts(draft) !== stored);
+  let baseline = $state('');
+  const dirty = $derived(serializeContacts(draft) !== baseline);
+  $effect(() => {
+    const latest = stored;
+    untrack(() => { if (editing && !dirty && latest !== baseline) start(); });
+  });
 
   function start() {
+    baseline = stored;
     draft = people.map((person) => ({ ...person }));
     showErrors = false;
   }

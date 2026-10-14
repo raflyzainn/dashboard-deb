@@ -17,6 +17,7 @@
   import { KINDS, KIND_LABEL, KIND_SHORT, KIND_FILE, LOOK_AT, FIELDS, DECISION_LABEL, RAIL_WORD, ITEM_STATE_LABEL, RAB_SHARE, isRabKind, formatSen, parseSen, type Kind, type ItemState } from '$lib/pencairan';
   import type { KartuData, Version, Check } from './kartu-types';
   import Icon from '$lib/components/ui/Icon.svelte';
+  import { app } from '$lib/state.svelte';
   import CampusLogo from '$lib/components/ui/CampusLogo.svelte';
   import FileViewer from './FileViewer.svelte';
   import RabTable from './RabTable.svelte';
@@ -351,11 +352,21 @@
 {:else if !data}
   <p class="text-sm text-slate-500">Memuat…</p>
 {:else}
-  <div class="grid gap-2 [&>*]:min-w-0">
+  <div class="grid gap-2 [&>*]:min-w-0 {admin ? '' : 'mx-auto w-full max-w-[1200px]'}">
+    {#if !admin}
+      <header class="mb-5 flex items-center gap-5 max-[700px]:gap-3">
+        <CampusLogo code={data.campus.code} initials={data.campus.initials} size={64} rounded="rounded-[14px]" />
+        <div class="min-w-0">
+          <span class="mb-[9px] block text-xs font-bold tracking-[0.06em] text-[#3975b7] max-[700px]:text-[10px]">KAMPUS MITRA{#if app.navigation.campus?.region} &middot; {app.navigation.campus.region.toUpperCase()}{/if}</span>
+          <h1 class="m-0 text-[29px] font-bold leading-[1.3] tracking-[-0.01em] text-[var(--navy)] max-[700px]:text-[21px]">{data.campus.name}</h1>
+          <p class="mb-0 mt-2 text-sm leading-[1.6] text-[#637796]">Pencairan dana dan kelengkapan dokumen program &middot; Tahun {data.summary.programYear === 'kedua' ? 'Kedua' : 'Ketiga'}.</p>
+        </div>
+      </header>
+    {/if}
     <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
       {#if admin}<a href="/admin/pencairan/tahap-1" class="inline-flex items-center gap-1 text-sm font-semibold text-[#0066B2] hover:underline"><Icon name="back" size={14} />Tahap 1</a>{/if}
-      <CampusLogo code={data.campus.code} initials={data.campus.initials} size={36} /><h1 class="text-xl font-bold text-slate-900">{data.campus.name}</h1>
-      <span class="text-xs text-slate-500">Tahun {data.summary.programYear === 'kedua' ? 'Kedua' : 'Ketiga'}</span>
+      {#if admin}<CampusLogo code={data.campus.code} initials={data.campus.initials} size={36} /><h1 class="text-xl font-bold text-slate-900">{data.campus.name}</h1>
+      <span class="text-xs text-slate-500">Tahun {data.summary.programYear === 'kedua' ? 'Kedua' : 'Ketiga'}</span>{/if}
       {#if admin && data.readiness.revisi > 0}<a href={`/admin/pencairan/${campusId}/revisi`} class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-900 hover:bg-amber-200">Ringkasan revisi · {data.readiness.revisi}</a>{/if}
       {#if notice}<span class="rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-semibold text-green-800" role="status">{notice}</span>{/if}
       {#if error}<span class="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-800" role="alert">{error}</span>{/if}

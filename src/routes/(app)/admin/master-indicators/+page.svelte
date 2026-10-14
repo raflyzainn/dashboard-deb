@@ -232,7 +232,7 @@
       {pending} pengajuan pending. Aktivasi dan perubahan indikator aktif dikunci sampai review selesai.
       <a
         class="[-webkit-tap-highlight-color:transparent] text-[#0668ce] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] inline-flex items-center gap-y-[7px] gap-x-[7px] text-[14px] font-[600] [background-image:none] [background-color:initial] [white-space-collapse:collapse] [text-wrap-mode:nowrap] p-[0px] border-[0px] border-none border-[color:currentcolor] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover]:text-[#0a3eaa] text-link"
-        href="/admin/verifikasi">Buka Review Kampus →</a
+        href="/admin/verifikasi?tab=indikator">Buka Riwayat Indikator →</a
       >
     </p>{/if}
 </section>
