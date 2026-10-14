@@ -379,8 +379,7 @@
           <form class="grid gap-3" onsubmit={(e) => { e.preventDefault(); void saveProps(); }}>
             <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {#each PROPERTY_FIELDS as f (f.key)}
-                <label class="grid gap-1 text-xs font-semibold text-slate-600">{f.label}
-                  {#if f.type === 'date'}<input type="date" class={input} aria-required="true" bind:value={propsDraft[f.key]} />{:else}<input class={input} aria-required="true" bind:value={propsDraft[f.key]} />{/if}
+                <label class="grid gap-1 text-xs font-semibold text-slate-600"><span class="field-caption">{f.label}</span>{#if f.type === 'date'}<input type="date" class={input} aria-required="true" bind:value={propsDraft[f.key]} />{:else}<input class={input} aria-required="true" bind:value={propsDraft[f.key]} />{/if}
                 </label>
               {/each}
               <div class="grid gap-1 text-xs font-semibold text-slate-600">Terbilang Termin 1<span class="text-sm font-normal text-slate-700">{info?.data.termin1Terbilang || 'Ditetapkan saat RAB disetujui'}</span></div>

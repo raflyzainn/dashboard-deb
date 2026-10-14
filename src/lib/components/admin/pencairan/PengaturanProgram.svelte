@@ -73,8 +73,7 @@
         {#snippet edit()}
           <div class="grid gap-3 sm:grid-cols-2">
             {#each FIELDS as f (f.key)}
-              <label class="grid gap-1 text-xs font-semibold text-slate-600">{f.label}
-                {#if f.type === 'date'}
+              <label class="grid gap-1 text-xs font-semibold text-slate-600"><span class="field-caption">{f.label}</span>{#if f.type === 'date'}
                   <input type="date" class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal text-slate-900" aria-required="true" bind:value={draft[row.programYear][f.key]} />
                 {:else}
                   <input class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal text-slate-900" aria-required="true" bind:value={draft[row.programYear][f.key]} maxlength="120" />
