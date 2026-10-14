@@ -318,13 +318,17 @@
     </div>
 
     {#if modal.type === 'preview'}
+      {#if current.kind === 'pks' && (data as any).journey?.datePolicy === 'chronology'}
+        <FileViewer src={base + '/pengajuan/pks-pdf'} mime="application/pdf" name="PKS.pdf" height={680} />
+      {:else}
       <div bind:this={previewScroller} class="relative h-[min(78dvh,900px)] overflow-auto bg-slate-100">
         <div bind:this={previewHost} class="docx-host p-2" style={`zoom:${zoom}`}></div>
         {#if previewLoading}<div class="absolute inset-0 flex items-center justify-center bg-white/70 text-sm text-slate-600">Menggambar dokumen…</div>{/if}
         {#if previewError}<div class="absolute inset-x-0 top-0 m-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{previewError}</div>{/if}
       </div>
+      {/if}
       <div class="flex flex-wrap items-center gap-2 border-t border-slate-100 px-5 py-3">
-        <span class="text-xs text-slate-500">Biru: nilai terisi. Merah: belum diisi.</span>
+        <span class="text-xs text-slate-500">{current.kind === 'pks' && (data as any).journey?.datePolicy === 'chronology' ? 'PDF yang telah disetujui PF dan Legal.' : 'Biru: nilai terisi. Merah: belum diisi.'}</span>
         <span class="ml-auto flex items-center gap-2">
           {#if current.blocked}<span class="text-xs font-medium text-amber-900" title={current.blockedFull}>{current.blocked}</span>{/if}
           <Button size="sm" icon="download" onclick={() => { const row = current; close(); if (row) void saveFinal(row); }} disabled={Boolean(current.blocked) || Boolean(busy) || Boolean(data.disbursement.paidAt)}>{current.final ? 'Buat ulang dan unduh' : 'Unduh dokumen final'}</Button>

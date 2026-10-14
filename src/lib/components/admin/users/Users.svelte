@@ -14,7 +14,7 @@
 
   let { campusId = '' }: { campusId?: string } = $props();
   const scope = $derived(campusId ? `?campus=${encodeURIComponent(campusId)}` : '');
-  interface User { id: string; name: string; email: string; role: 'baru' | 'campus' | 'admin' | 'super_admin'; active: boolean; campusId: string; created: string; lastLoginAt: string; passwordChangeRequired: boolean }
+  interface User { id: string; name: string; email: string; role: 'baru' | 'campus' | 'admin' | 'super_admin' | 'legal'; active: boolean; campusId: string; created: string; lastLoginAt: string; passwordChangeRequired: boolean }
   interface CampusOption { id: string; name: string; initials: string; contacts?: { mentor: string; coordinator: string; localHero: string } }
 
   let users = $state<User[]>([]);
@@ -23,7 +23,7 @@
   let error = $state('');
   let notice = $state('');
   let query = $state('');
-  let filter = $state<'semua' | 'baru' | 'admin' | 'campus' | 'nonaktif'>('semua');
+  let filter = $state<'semua' | 'baru' | 'admin' | 'campus' | 'legal' | 'nonaktif'>('semua');
   let page = $state(1);
   const pageSize = 10;
   let refresh = $state(0);
@@ -41,8 +41,8 @@
   let sharing = $state<{ user: User; password: string } | null>(null);
 
   const superAdmin = $derived(Boolean(app.session?.superAdmin));
-  const roleOptions = $derived(campusId ? ['campus'] : superAdmin ? ['baru', 'campus', 'admin'] : ['baru', 'campus']);
-  const roleLabel: Record<string, string> = { baru: 'Baru', campus: 'Kampus', admin: 'Admin', super_admin: 'Super admin' };
+  const roleOptions = $derived(campusId ? ['campus'] : superAdmin ? ['baru', 'campus', 'admin', 'legal'] : ['baru', 'campus', 'legal']);
+  const roleLabel: Record<string, string> = { baru: 'Baru', campus: 'Kampus', admin: 'Admin', super_admin: 'Super admin', legal: 'Legal' };
   const time = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' });
   const campusName = (id: string) => campuses.find(c => c.id === id)?.name || '';
   const selectedCampus = $derived(campuses.find(c => c.id === created.campus));
@@ -170,7 +170,7 @@
       <input class="min-h-[42px] w-full rounded-xl border border-slate-300 pl-9 pr-3 text-sm outline-none focus:border-[#0066B2] focus:ring-2 focus:ring-blue-100" type="search" placeholder="Cari nama, email, atau kampus" bind:value={query} oninput={() => (page = 1)} />
     </label>
     {#if !campusId}<div class="flex flex-wrap gap-1.5" role="group" aria-label="Saring menurut peran">
-      {#each [['semua', 'Semua'], ['baru', 'Menunggu peran'], ['admin', 'Admin'], ['campus', 'Kampus'], ['nonaktif', 'Nonaktif']] as [key, label]}
+      {#each [['semua', 'Semua'], ['baru', 'Menunggu peran'], ['admin', 'Admin'], ['legal', 'Legal'], ['campus', 'Kampus'], ['nonaktif', 'Nonaktif']] as [key, label]}
         <button type="button" class="rounded-full border px-3 py-1.5 text-xs font-semibold transition {filter === key ? 'border-[#0066B2] bg-[#0066B2] text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}" aria-pressed={filter === key} onclick={() => { filter = key as typeof filter; page = 1; }}>{label}</button>
       {/each}
     </div>{/if}

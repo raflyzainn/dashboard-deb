@@ -14,12 +14,13 @@
   let busy = $state(false);
   let previewAccount = $state('');
   let error = $state(page.url.searchParams.get('error') || '');
-  const localAccounts = $derived(app.accounts.filter((account) => account.role === 'campus' || account.role === 'admin'));
+  const localAccounts = $derived(app.accounts.filter((account) => account.role === 'campus' || account.role === 'admin' || account.role === 'legal'));
   const accountGroups = $derived([
     { label: 'Sudah ada data pencairan', accounts: localAccounts.filter(a => a.role === 'campus' && a.disbursementStarted === true) },
     { label: 'Pengajuan masih kosong', accounts: localAccounts.filter(a => a.role === 'campus' && a.disbursementStarted === false) },
     { label: 'Akun kampus', accounts: localAccounts.filter(a => a.role === 'campus' && a.disbursementStarted === undefined) },
-    { label: 'Admin', accounts: localAccounts.filter(a => a.role === 'admin') }
+    { label: 'Admin', accounts: localAccounts.filter(a => a.role === 'admin') },
+    { label: 'Legal', accounts: localAccounts.filter(a => a.role === 'legal') }
   ].filter(group => group.accounts.length));
   const showLocalAccounts = dev;
 

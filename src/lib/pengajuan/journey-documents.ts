@@ -1,3 +1,4 @@
+import { grantors } from './grantors';
 import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
 import { buildMergeData, renderDocx, MERGE_KINDS, TEMPLATE_FILE, DOCX_MIME, numberWords, dateWords, type MergeKind } from '../merge';
@@ -20,20 +21,23 @@ const escape=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 export function journeyDocx(kind:MergeKind|'surat_kuasa',c:any,r:any,settings:any,templates:Record<MergeKind,Uint8Array>,kop?:{bytes:Uint8Array;width:number;height:number;mime:string},draft=true) {
  const input=mergeInput(c,r,settings),percent=Math.round(input.disbursement.requestedSen/input.award.amountSen*10000)/100;
  const zip=new PizZip(templates[kind==='surat_kuasa'?'permohonan':kind]);
+ const giverData:Record<string,string>={};
  if(kind==='surat_kuasa'){
   const paragraph=(text:string,align='left',bold=false,after=140)=>`<w:p><w:pPr><w:jc w:val="${align}"/><w:spacing w:after="${after}" w:line="276" w:lineRule="auto"/><w:tabs><w:tab w:val="left" w:pos="2400"/><w:tab w:val="left" w:pos="5000"/></w:tabs></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="24"/>${bold?'<w:b/>':''}<w:color w:val="000000"/></w:rPr>${text.split('\t').map((part,i)=>(i?'<w:tab/>':'')+`<w:t xml:space="preserve">${escape(part)}</w:t>`).join('')}</w:r></w:p>`;
   const table=(rows:string[][],widths:number[])=>`<w:tbl><w:tblPr><w:tblW w:w="9072" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders>${['top','left','bottom','right','insideH','insideV'].map(side=>`<w:${side} w:val="nil"/>`).join('')}</w:tblBorders></w:tblPr><w:tblGrid>${widths.map(width=>`<w:gridCol w:w="${width}"/>`).join('')}</w:tblGrid>${rows.map(row=>'<w:tr>'+row.map((text,i)=>`<w:tc><w:tcPr><w:tcW w:w="${widths[i]}" w:type="dxa"/></w:tcPr>${paragraph(text,i===0?'left':widths.length===2?'center':'left',false,120)}</w:tc>`).join('')+'</w:tr>').join('')}</w:tbl>`;
   const identity=(rows:string[][])=>table(rows.map(([label,value])=>[label,':',value]),[2100,240,6732]);
+  const givers=r.journey.datePolicy==='chronology'?grantors(r.journey.fields):[{name:r.journey.fields.pemberiKuasa,title:r.journey.fields.penandatanganJabatan}];
+  givers.forEach((giver,index)=>{giverData['pemberiNama'+index]=giver.name;giverData['pemberiJabatan'+index]=giver.title;});
   const content=paragraph('SURAT KUASA PENERIMAAN DANA','center',true,320)
    +paragraph('Yang bertanda tangan di bawah ini:')
-   +identity([['Nama','{pemberiKuasa}'],['Jabatan','{jabatanPenandatangan}'],['Perguruan tinggi','{namaPerguruanTinggi}']])
+   +givers.map((giver,index)=>identity([['Pemberi kuasa '+(index+1),''],['Nama','{pemberiNama'+index+'}'],['Jabatan','{pemberiJabatan'+index+'}'],['Perguruan tinggi','{namaPerguruanTinggi}']])).join('')
    +paragraph('Dalam hal ini mewakili perguruan tinggi tersebut, memberikan kuasa kepada:', 'both',false,200)
    +identity([['Nama','{penerimaKuasa}']])
    +paragraph('Untuk menerima dana bantuan program {judulProgram} dari Pertamina Foundation melalui rekening berikut:', 'both',false,200)
    +identity([['Nama bank','{namaBank}'],['Nomor rekening','{nomorRekening}'],['Atas nama','{namaPemilikRekening}']])
    +paragraph('Demikian surat kuasa ini dibuat untuk digunakan sebagai kelengkapan pengajuan pencairan dana program tersebut.', 'both',false,280)
    +paragraph('{tempatSurat}, {tanggalKuasa}','right',false,200)
-   +table([['Penerima kuasa','Pemberi kuasa'],['','Meterai Rp10.000'],['',''],['',''],['{penerimaKuasa}','{pemberiKuasa}']],[4536,4536]);
+   +table([['Penerima kuasa',''],['',''],['',''],['{penerimaKuasa}','']],[4536,4536])+givers.map((giver,index)=>table([['Pemberi kuasa '+(index+1),''],['Meterai Rp10.000',''],['',''],['',''],['{pemberiNama'+index+'}','{pemberiJabatan'+index+'}']],[4536,4536])).join('');
   const xml=zip.file('word/document.xml')!.asText();
   // A4, 2.5 cm margins. Do not inherit the sample letterhead/header from permohonan.
   const section='<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1417" w:right="1417" w:bottom="1417" w:left="1417" w:header="708" w:footer="708"/></w:sectPr>';
@@ -43,9 +47,27 @@ export function journeyDocx(kind:MergeKind|'surat_kuasa',c:any,r:any,settings:an
  // The standard templates contain fixed 70/30 clauses. Update whole paragraphs so split Word runs remain valid.
  const xml=str2xml(zip.file('word/document.xml')!.asText());
  const ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+ if(r.journey.datePolicy==='chronology'&&kind!=='pks'&&kind!=='surat_kuasa'){
+  for(const cell of Array.from(xml.getElementsByTagNameNS(ns,'tc'))){
+   const paragraphs=Array.from(cell.getElementsByTagNameNS(ns,'p'));
+   if(paragraphs.some(p=>Array.from(p.getElementsByTagNameNS(ns,'t')).map(n=>n.textContent||'').join('').trim()==='Koordinator')){
+    paragraphs.forEach(p=>p.parentNode?.removeChild(p));
+    cell.appendChild(xml.createElementNS(ns,'w:p'));
+   }
+  }
+ }
  for(const p of Array.from(xml.getElementsByTagNameNS(ns,'p'))){
   const nodes=Array.from(p.getElementsByTagNameNS(ns,'t')),text=nodes.map(n=>n.textContent||'').join('');
   let next=text;
+  if(r.journey.datePolicy==='chronology'&&kind==='permohonan'&&/Copy\s*Surat\s+Kuasa\s+dan/i.test(text)){next='Copy PKS yang sudah ditandatangani oleh para pihak.';if(r.journey.fields.jenisRekening==='kuasa'){const extra=p.cloneNode(true) as Element;const texts=Array.from(extra.getElementsByTagNameNS(ns,'t'));texts.forEach((node,i)=>node.textContent=i===0?'Copy surat kuasa yang ditandatangani seluruh pemberi dan penerima kuasa.':'');p.parentNode?.insertBefore(extra,p.nextSibling);}}
+  if(r.journey.datePolicy==='chronology'&&kind==='permohonan'){
+   if(/^Surat Permohonan/i.test(text.trim())&&!text.includes('{')){p.parentNode?.removeChild(p);continue;}
+   if(/^Lampiran\s*:/i.test(text.trim()))next='Lampiran: '+(r.journey.fields.jenisRekening==='kuasa'?'6 (enam)':'5 (lima)')+' berkas';
+  }
+  if(r.journey.datePolicy==='chronology'&&kind!=='pks'&&kind!=='surat_kuasa'&&/^Koordinator$/i.test(text.trim())){p.parentNode?.removeChild(p);continue;}
+  if(r.journey.datePolicy==='chronology'&&kind!=='pks'&&kind!=='surat_kuasa'&&/^\{namaKoordinator\}$/.test(text.trim())){p.parentNode?.removeChild(p);continue;}
+  if(r.journey.datePolicy==='chronology'&&kind!=='pks'&&kind!=='surat_kuasa'&&/^Mentor(?: DEB)?$/i.test(text.trim()))next='{jabatanPenandatangan}';
+  if(r.journey.datePolicy==='chronology'&&kind!=='pks'&&kind!=='surat_kuasa')next=next.replace(/\{nama(?:Mentor|Koordinator)(Kapital|Kecil)?\}/g,(_m,suffix)=>'{namaPenandatangan'+(suffix||'')+'}').replace(/\{jabatan(?:Mentor|Koordinator)\}/g,'{jabatanPenandatangan}');
   if(r.journey.fields.jenisRekening==='kampus'&&/surat\s+kuasa/i.test(text)){
    if(kind==='pks'&&/^Surat\s+Kuasa\s*\(copy\);?$/i.test(text.trim())){p.parentNode?.removeChild(p);continue;}
    if(kind==='permohonan')next=next.replace(/Copy\s+Surat\s+Kuasa\s+dan\s+/i,'Copy ');
@@ -64,7 +86,7 @@ export function journeyDocx(kind:MergeKind|'surat_kuasa',c:any,r:any,settings:an
   for(const text of Array.from(header.getElementsByTagNameNS(ns,'t')))if(text.textContent?.trim()==='DRAFT')text.textContent='';
   zip.file(name,xml2str(header));
  }
- const output=new PizZip(renderDocx(zip.generate({type:'arraybuffer'}),{...buildMergeData(input),pemberiKuasa:r.journey.fields.pemberiKuasa,penerimaKuasa:r.journey.fields.penerimaKuasa,tanggalKuasa:dateWords(r.journey.fields.tanggalKuasa)}));
+ const output=new PizZip(renderDocx(zip.generate({type:'arraybuffer'}),{...buildMergeData(input),...giverData,...(kind==='pks'&&r.journey.datePolicy==='chronology'?{nomorPksPf:r.journey.pf?.nomorPksPf||'Menunggu nomor',nomorPksKampus:r.journey.fields.nomorPksKampus||'Menunggu nomor'}:{}),pemberiKuasa:r.journey.fields.pemberiKuasa,penerimaKuasa:r.journey.fields.penerimaKuasa,tanggalKuasa:dateWords(r.journey.fields.tanggalKuasa)}));
  let body=output.file('word/document.xml')!.asText();
  let heading=draft?'<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="B45309"/></w:rPr><w:t>DRAF</w:t></w:r></w:p>':'';
  if(kind!=='pks'&&kop){
