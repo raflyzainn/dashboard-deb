@@ -3,7 +3,7 @@ import { LOCATION_FIELDS } from './location';
 export const REVISION_SCOPES = {
  program: { label: 'Data Program', section: 'program', fields: ['judulProgram','alamat','mentor','koordinator',...Object.values(LOCATION_FIELDS),'lokasiAlamatLengkap'], files: [] },
  rab: { label: 'RAB', section: 'rab', fields: [], files: [] },
- administrasi: { label: 'Rekening Penerima', section: 'administrasi', fields: ['jenisRekening','namaBank','nomorRekening','namaPemilik','pemberiKuasa','penerimaKuasa','tanggalKuasa'], files: ['rekening','kuasa'] },
+ administrasi: { label: 'Rekening Penerima', section: 'administrasi', fields: ['jenisRekening','namaBank','nomorRekening','namaPemilik','pemberiKuasa','penerimaKuasa','pemberiKuasaList','tanggalKuasa'], files: ['rekening','kuasa'] },
  penandatangan: { label: 'Penandatangan Kampus', section: 'penandatangan', fields: ['penandatanganNama','penandatanganJabatan','tempatTandaTangan'], files: ['kuasa'] },
  surat: { label: 'Identitas Surat dan Kop', section: 'surat', fields: ['nomorSuratPermohonan','tanggalSuratPermohonan','nomorInvois','tanggalInvois','nomorKuitansi','tanggalKuitansi'], files: ['kop'] },
  pks: { label: 'PKS', section: 'pks', fields: ['nomorPksKampus'], files: [] },

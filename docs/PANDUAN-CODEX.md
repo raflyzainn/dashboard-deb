@@ -1,5 +1,9 @@
 # Panduan proyek untuk Codex
 
+## P1 PKS dan Legal — implementasi lokal 14 Oktober 2026
+
+Pada branch `feat/p1-t1-legal`, pengajuan baru memakai tanggal relatif, periode per pengajuan, PDF PKS yang diperiksa PF dan Legal, serta role Legal yang dapat diberikan Admin biasa. Sidebar Legal memakai Shell Admin dengan menu terbatas. Data PKS PF tampil langsung dalam grid responsif; timeline delapan tahap tetap satu baris dengan gulir mendatar pada layar kecil. Panduan alur, sumber Excel, checklist QA dan batas verifikasi ada di [P1 PKS dan Legal](pencairan-deb/P1-LEGAL-2026-10-14.md). Pengiriman hanya ke branch fitur; belum diterapkan ke production. Instruksi lama tentang tanggal PKS tetap hanya berlaku untuk pengajuan legacy.
+
 ## Profil Program kampus — 14 Oktober 2026
 
 Kontak program memakai pilihan negara (default Indonesia +62) dan isian Nomor WhatsApp. Format divalidasi dengan `libphonenumber-js/max` pada formulir dan API profil; saat disimpan nomor dinormalisasi ke format internasional. Nomor lama yang ambigu tidak diberi tautan WhatsApp. Validasi format tidak membuktikan nomor aktif, kepemilikan, atau pendaftaran WhatsApp; tidak ada OTP maupun pengiriman pesan otomatis.

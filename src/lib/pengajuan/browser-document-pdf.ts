@@ -111,7 +111,8 @@ async function renderPdf(bytes: ArrayBuffer): Promise<Blob> {
   }
   if (!pages.length) throw new Error('Halaman dokumen belum dapat dibuat.');
   const pdf = await PDFDocument.create();
-  for (const page of pages) {
+  for (const [index,page] of pages.entries()) {
+   for(const number of page.querySelectorAll('.deb-pdf_pagenumber, .deb-pdf_footerpagenumber'))number.textContent=String(index+1);
    page.style.margin = '0'; page.style.boxShadow = 'none';
    const bounds = page.getBoundingClientRect();
    const canvas = await pdfWait(html2canvas(page, {

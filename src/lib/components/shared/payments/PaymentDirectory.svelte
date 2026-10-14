@@ -644,8 +644,7 @@
         </select>
       </label>
       <label class={LABEL}
-        >Nominal (Rp)
-        <input
+        ><span class="field-caption">Nominal (Rp)</span><input
           aria-label="Nominal pengajuan baru"
           type="number"
           min="1"

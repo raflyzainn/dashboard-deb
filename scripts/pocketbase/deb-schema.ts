@@ -43,7 +43,7 @@ export const DOCUMENT_STATUS = ['belum_ada', 'menunggu_review', 'perlu_konfirmas
 
 /** Fields added to the existing users and campuses collections. */
 export const USER_EXTRA: Field[] = [date('lastLoginAt')];
-export const USER_ROLES = ['baru', 'campus', 'admin', 'super_admin'];
+export const USER_ROLES = ['baru', 'campus', 'admin', 'super_admin', 'legal'];
 export const CAMPUS_EXTRA: Field[] = [
   text('code', 20), num('fundedWave'), sel('fillMode', ['admin', 'campus']), sel('programYear', ['kedua', 'ketiga']), text('theme', 120),
   json('program', 500000), num('programRevision'), text('letterheadKey', 300)
