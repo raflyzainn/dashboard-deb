@@ -5,8 +5,10 @@ import { limitSen, formatSen, parseSen } from '../../pencairan';
 import { arrange, totalsOf, rabChecks, stripEnumerator, parseVolume, MAX_LEVEL, type Arranged, type LineInput, type RabLine, type RabStatus, type RabSource, type RabVersionShare, type RabVersionInfo, type RabOverview, type RabCheck } from '../../rab';
 import { PreviewError } from './preview-error';
 import { gridHeader, isGridSheet, parseGridSheet, mergeGridSheets, type GridResult } from './rab-grid';
-import { writeAudit, type AuditActor } from './audit';
-import { campusWithAward, ensureDisbursement, updateDisbursement, context, type CampusInfo } from './pencairan';
+import { auditData, type AuditActor, type AuditInput } from './audit';
+import { atomic, StoreRecord, type RestStore } from './rest-store';
+import { payoutReads, assertPayoutEditable, assertRevision } from './pencairan-store';
+import { campusWithAward, ensureDisbursement, context } from './pencairan';
 
 /**
  * Managed RAB: versions per campus, four level lines, checks against Batas Tahap 1, approval that turns the RAB 70% total into the nominal of Tahap 1.
@@ -23,11 +25,6 @@ export const CODE_ALIASES: Record<string, string> = { SIAK: 'STAI SIAK' };
 const normCode = (code: unknown) => String(code || '').trim().toUpperCase().replace(/\s+/g, ' ');
 const sameCode = (a: unknown, b: unknown) => { const x = normCode(a), y = normCode(b); return x === y || (CODE_ALIASES[x] || x) === (CODE_ALIASES[y] || y); };
 
-async function getVersion(pb: PocketBase, campusId: string, versionId: string) {
-  const version = await pb.collection('rab_versions').getOne(versionId, opts).catch(() => null);
-  if (!version || version.campus !== campusId) throw new PreviewError(404, 'Versi RAB tidak ditemukan.');
-  return version;
-}
 function mapVersion(v: RecordModel, active: string, nameOf: Map<string, string>): RabVersionInfo {
   return {
     id: v.id, number: Number(v.number), status: v.status as RabStatus, totalSen: Number(v.totalSen || 0), term1Sen: Number(v.term1Sen || 0), term2Sen: Number(v.term2Sen || 0), source: (v.source || 'manual') as RabSource, share: (v.share || '') as RabVersionShare | '',
@@ -80,7 +77,7 @@ export async function overview(pb: PocketBase, campusId: string, versionId = '')
   return {
     campus: { id: campus.id, name: campus.name, code: campus.code, programYear: award.programYear || campus.programYear },
     summary: { skNumber: award.skNumber, amountSen, limitSen: limitSen(amountSen) },
-    disbursement: { id: disbursement.id, stage: Number(disbursement.stage || 1), requestedSen: Number(disbursement.requestedSen || 0), rabVersionId: disbursement.rabVersion || '', clauseChecked: Boolean(disbursement.clauseChecked) },
+    disbursement: { id: disbursement.id, stage: Number(disbursement.stage || 1), requestedSen: Number(disbursement.requestedSen || 0), rabVersionId: disbursement.rabVersion || '', clauseChecked: Boolean(disbursement.clauseChecked), revision: Number(disbursement.revision || 1) },
     versions, version: chosen ? { ...chosen, lines } : null,
     checks: chosen ? checksFor(lines, amountSen) : []
   };
@@ -105,180 +102,153 @@ export function validateLines(input: unknown): LineInput[] {
   });
 }
 
-type Op = { type: 'create'; collection: string; data: Record<string, unknown> } | { type: 'delete'; collection: string; id: string };
-/** Runs writes through the batch API when the server allows it, otherwise one by one. */
-async function runOps(pb: PocketBase, ops: Op[]) {
-  const CHUNK = 50;
-  let useBatch = true;
-  for (let i = 0; i < ops.length; i += CHUNK) {
-    const chunk = ops.slice(i, i + CHUNK);
-    if (useBatch) {
-      try {
-        const batch = pb.createBatch();
-        for (const op of chunk) { if (op.type === 'create') batch.collection(op.collection).create(op.data); else batch.collection(op.collection).delete(op.id); }
-        await batch.send(opts);
-        continue;
-      } catch { useBatch = false; }
-    }
-    for (const op of chunk) { if (op.type === 'create') await pb.collection(op.collection).create(op.data, opts); else await pb.collection(op.collection).delete(op.id, opts); }
-  }
+function audit(tx: RestStore, input: AuditInput) {
+  const row = new StoreRecord('audit'); Object.assign(row.data, auditData(input)); tx.save(row);
+}
+function versionRecord(tx: RestStore, campusId: string, id: string) {
+  const row = tx.findRecordById('rab_versions', id);
+  if (row.data.campus !== campusId) throw new PreviewError(404, 'Versi RAB tidak ditemukan.');
+  return row;
+}
+function storedLines(tx: RestStore, id: string) {
+  return tx.findRecordsByFilter('rab_lines', 'version = {:v}', 'level,order', 0, 0, {v:id}).map(r => mapLine(r.data as RecordModel));
+}
+function awardAmount(tx: RestStore, campusId: string) {
+  tx.findRecordById('campuses', campusId);
+  const award = tx.records.get('sk_awards')!.find(r => Number(r.data.wave) === 1);
+  if (!award) throw new PreviewError(404, 'Kampus ini tidak termasuk penerima gelombang pertama.');
+  return Number(award.data.amountSen);
+}
+async function mutateRab<T>(pb: PocketBase, campusId: string, expectedRevision: number | undefined, action: (tx: RestStore, payment: StoreRecord) => T) {
+  const { disbursement } = await ensureDisbursement(pb, campusId);
+  const revision = expectedRevision ?? Number(disbursement.revision || 1);
+  return atomic(pb, tx => {
+    const payment = assertPayoutEditable(tx); assertRevision(payment.data.revision, revision);
+    const result = action(tx, payment);
+    payment.set('revision', revision + 1); tx.save(payment);
+    return result;
+  }, payoutReads(pb, campusId));
+}
+function setAmount(payment: StoreRecord, amount: number) {
+  if (Number(payment.data.requestedSen || 0) !== amount) Object.assign(payment.data, { clauseChecked: false, clauseCheckedBy: '', clauseCheckedAt: '' });
+  payment.set('requestedSen', amount);
 }
 
 /** Replaces all lines of a version with the arranged input. Returns the totals. Internal: the callers write the audit row. */
-async function writeLines(pb: PocketBase, versionId: string, input: LineInput[]) {
+function writeLines(tx: RestStore, versionId: string, input: LineInput[]) {
   let nodes: Arranged[];
   try { nodes = arrange(input); } catch (e) { throw new PreviewError(400, e instanceof Error ? e.message : 'Struktur baris tidak valid.'); }
   const ids = new Map(nodes.map(n => [n.key, newId()]));
-  const existing = await pb.collection('rab_lines').getFullList({ filter: pb.filter('version = {:v}', { v: versionId }), fields: 'id', ...opts });
-  const ops: Op[] = existing.map(l => ({ type: 'delete', collection: 'rab_lines', id: l.id }));
+  for (const row of tx.findRecordsByFilter('rab_lines', 'version = {:v}', 'id', 0, 0, {v:versionId})) tx.delete(row);
   for (const n of nodes) {
-    ops.push({ type: 'create', collection: 'rab_lines', data: {
+    const row = new StoreRecord('rab_lines'); Object.assign(row.data, {
       id: ids.get(n.key), version: versionId, parent: n.parentKey ? ids.get(n.parentKey) : '', level: n.level, order: n.order, code: n.code, title: n.title, calculation: n.calculation,
       volume: n.level === MAX_LEVEL ? n.volume : 0, unit: n.level === MAX_LEVEL ? n.unit : '', unitPriceSen: n.level === MAX_LEVEL ? n.unitPriceSen : 0,
       amountSen: n.sumSen, term1Sen: n.sumTerm1Sen, term2Sen: n.sumTerm2Sen, flags: n.flags && Object.keys(n.flags).length ? n.flags : null
-    } });
+    }); row.id = String(row.data.id); tx.save(row);
   }
-  await runOps(pb, ops);
   const totals = totalsOf(nodes);
-  await pb.collection('rab_versions').update(versionId, totals, opts);
+  const version = tx.findRecordById('rab_versions', versionId); Object.assign(version.data, totals); tx.save(version);
   return { ...totals, count: nodes.length, items: nodes.filter(n => n.level === MAX_LEVEL).length };
 }
 
-/** Saves the whole tree of a draft. Approved and submitted versions are frozen. */
-export async function saveLines(pb: PocketBase, actor: AuditActor, campusId: string, versionId: string, input: LineInput[]) {
-  const version = await getVersion(pb, campusId, versionId);
-  if (version.status !== 'draf') throw new PreviewError(400, 'Versi ini sudah diajukan dan tidak bisa diubah. Buat versi baru untuk mengubahnya.');
-  const before = { total: formatSen(Number(version.totalSen || 0)), termin1: formatSen(Number(version.term1Sen || 0)) };
-  const result = await writeLines(pb, versionId, input);
-  await writeAudit(pb, { actor, action: `menyimpan baris RAB versi ${version.number}`, context: context(campusId), collection: 'rab_versions', record: versionId, campus: campusId, before, after: { total: formatSen(result.totalSen), termin1: formatSen(result.term1Sen), baris: result.items } });
-  return result;
+/** All legacy changes, their audit and the payout revision commit in one fenced batch. */
+export async function saveLines(pb: PocketBase, actor: AuditActor, campusId: string, versionId: string, input: LineInput[], expectedRevision?: number) {
+  return mutateRab(pb, campusId, expectedRevision, tx => {
+    const version = versionRecord(tx, campusId, versionId).data;
+    if (version.status !== 'draf') throw new PreviewError(400, 'Versi ini sudah diajukan dan tidak bisa diubah. Buat versi baru untuk mengubahnya.');
+    const before = {total:formatSen(Number(version.totalSen || 0)), termin1:formatSen(Number(version.term1Sen || 0))};
+    const result = writeLines(tx, versionId, input);
+    audit(tx, {actor, action:`menyimpan baris RAB versi ${version.number}`, context:context(campusId), collection:'rab_versions', record:versionId, campus:campusId, before, after:{total:formatSen(result.totalSen), termin1:formatSen(result.term1Sen), baris:result.items}});
+    return result;
+  });
 }
-
-export interface NewVersionOptions { fromVersionId?: string; lines?: LineInput[]; source?: RabSource; sourceFile?: string; note?: string; share?: RabVersionShare }
-/** A new draft: empty, copied from another version, or filled from an import. */
+export interface NewVersionOptions { fromVersionId?: string; lines?: LineInput[]; source?: RabSource; sourceFile?: string; note?: string; share?: RabVersionShare; expectedRevision?: number }
 export async function createVersion(pb: PocketBase, actor: AuditActor, campusId: string, options: NewVersionOptions = {}) {
-  await campusWithAward(pb, campusId);
-  const { disbursement } = await ensureDisbursement(pb, campusId);
-  const last = await pb.collection('rab_versions').getList(1, 1, { filter: pb.filter('campus = {:c}', { c: campusId }), sort: '-number', fields: 'number', ...opts });
-  const number = Number(last.items[0]?.number || 0) + 1;
-  let lines = options.lines || [];
-  let from: RecordModel | null = null;
-  if (options.fromVersionId) { from = await getVersion(pb, campusId, options.fromVersionId); lines = toInput(await versionLines(pb, from.id)); }
-  const version = await pb.collection('rab_versions').create({
-    campus: campusId, disbursement: disbursement.id, number, status: 'draf', totalSen: 0, term1Sen: 0, term2Sen: 0, source: options.source || 'manual', share: options.share || (from ? from.share || '' : ''), sourceFile: (options.sourceFile || '').slice(0, 300),
-    note: (options.note || (from ? `Salinan dari versi ${from.number}.` : '')).slice(0, 2000)
-  }, opts);
-  const totals = lines.length ? await writeLines(pb, version.id, lines) : { totalSen: 0, term1Sen: 0, term2Sen: 0, count: 0, items: 0 };
-  await writeAudit(pb, { actor, action: `membuat RAB versi ${number}`, context: context(campusId), collection: 'rab_versions', record: version.id, campus: campusId, after: { sumber: options.source || 'manual', dariVersi: from ? from.number : null, baris: totals.items, total: formatSen(totals.totalSen), termin1: formatSen(totals.term1Sen) } });
-  return { id: version.id, number, ...totals };
+  return mutateRab(pb, campusId, options.expectedRevision, (tx, payment) => {
+    awardAmount(tx, campusId);
+    const last = tx.findRecordsByFilter('rab_versions', '', '-number', 1)[0];
+    const number = Number(last?.data.number || 0) + 1;
+    const from = options.fromVersionId ? versionRecord(tx, campusId, options.fromVersionId) : null;
+    const lines = from ? toInput(storedLines(tx, from.id)) : options.lines || [];
+    const version = new StoreRecord('rab_versions');
+    Object.assign(version.data, {campus:campusId, disbursement:payment.id, number, status:'draf', totalSen:0, term1Sen:0, term2Sen:0, source:options.source || 'manual', share:options.share || from?.data.share || '', sourceFile:(options.sourceFile || '').slice(0,300), note:(options.note || (from ? `Salinan dari versi ${from.data.number}.` : '')).slice(0,2000)}); tx.save(version);
+    const totals = lines.length ? writeLines(tx, version.id, lines) : {totalSen:0, term1Sen:0, term2Sen:0, count:0, items:0};
+    audit(tx, {actor, action:`membuat RAB versi ${number}`, context:context(campusId), collection:'rab_versions', record:version.id, campus:campusId, after:{sumber:options.source || 'manual', dariVersi:from?.data.number ?? null, baris:totals.items, total:formatSen(totals.totalSen), termin1:formatSen(totals.term1Sen)}});
+    return {id:version.id, number, ...totals};
+  });
 }
-
-/** Draft to waiting for approval. */
-export async function submitVersion(pb: PocketBase, actor: AuditActor, campusId: string, versionId: string) {
-  const version = await getVersion(pb, campusId, versionId);
-  if (version.status !== 'draf') throw new PreviewError(400, 'Hanya draf yang bisa diajukan.');
-  const count = await pb.collection('rab_lines').getList(1, 1, { filter: pb.filter('version = {:v} && level = 4', { v: versionId }), fields: 'id', ...opts });
-  if (!count.totalItems) throw new PreviewError(400, 'RAB masih kosong. Isi barisnya dulu sebelum diajukan.');
-  await pb.collection('rab_versions').update(versionId, { status: 'menunggu' }, opts);
-  await writeAudit(pb, { actor, action: `mengajukan RAB versi ${version.number}`, context: context(campusId), collection: 'rab_versions', record: versionId, campus: campusId, before: { status: 'draf' }, after: { status: 'menunggu' } });
+function submit(tx: RestStore, actor: AuditActor, campusId: string, row: StoreRecord) {
+  if (row.data.status !== 'draf') throw new PreviewError(400, 'Hanya draf yang bisa diajukan.');
+  if (!storedLines(tx,row.id).some(l => l.level === MAX_LEVEL)) throw new PreviewError(400, 'RAB masih kosong. Isi barisnya dulu sebelum diajukan.');
+  row.set('status','menunggu'); tx.save(row);
+  audit(tx,{actor, action:`mengajukan RAB versi ${row.data.number}`, context:context(campusId), collection:'rab_versions', record:row.id, campus:campusId, before:{status:'draf'}, after:{status:'menunggu'}});
 }
-
-/**
- * Approval of the RAB 70%: its total must be above zero and at or under Batas Tahap 1 (exact 70% of the SK). That total becomes the
- * nominal of Tahap 1 (disbursement.requestedSen); when it is below the limit the difference is the remainder of Tahap 2.
- * The full RAB is only compared with the SK, never a block. Moves the disbursement to stage 4.
- */
-export async function approveVersion(pb: PocketBase, actor: AuditActor & { id: string }, campusId: string, versionId: string) {
-  const { award } = await campusWithAward(pb, campusId);
-  const version = await getVersion(pb, campusId, versionId);
-  if (version.status !== 'menunggu') throw new PreviewError(400, 'Ajukan versi ini dulu sebelum disetujui.');
-  const lines = await versionLines(pb, versionId);
-  const nodes = arrange(toInput(lines));
-  const { totalSen, term1Sen, term2Sen } = totalsOf(nodes);
-  const amountSen = Number(award.amountSen), limit = limitSen(amountSen);
+export async function submitVersion(pb: PocketBase, actor: AuditActor, campusId: string, versionId: string, expectedRevision?: number) {
+  return mutateRab(pb,campusId,expectedRevision,tx => submit(tx,actor,campusId,versionRecord(tx,campusId,versionId)));
+}
+function approve(tx: RestStore, actor: AuditActor & {id:string}, campusId: string, row: StoreRecord, payment: StoreRecord) {
+  if (row.data.status !== 'menunggu') throw new PreviewError(400, 'Ajukan versi ini dulu sebelum disetujui.');
+  const {totalSen,term1Sen,term2Sen} = totalsOf(arrange(toInput(storedLines(tx,row.id))));
+  const limit = limitSen(awardAmount(tx,campusId));
   if (!term1Sen) throw new PreviewError(400, 'RAB 70% belum diisi. Isi lembar RAB 70% dulu.');
-  if (term1Sen > limit) throw new PreviewError(400, `RAB 70% ${formatSen(term1Sen)} melebihi Batas Tahap 1 ${formatSen(limit)}. Kurangi ${formatSen(term1Sen - limit)}.`);
-  const now = new Date().toISOString();
-  await pb.collection('rab_versions').update(versionId, { status: 'disetujui', totalSen, term1Sen, term2Sen, approvedBy: actor.id, approvedAt: now }, opts);
-  const { disbursement } = await ensureDisbursement(pb, campusId);
-  const patch: Parameters<typeof updateDisbursement>[3] = { requestedSen: term1Sen };
-  if (Number(disbursement.stage || 1) < 4) patch.stage = 4;
-  await updateDisbursement(pb, actor, campusId, patch);
-  await pb.collection('disbursements').update(disbursement.id, { rabVersion: versionId }, opts);
-  const after: Record<string, unknown> = { status: 'disetujui', nominalTahap1: formatSen(term1Sen), batasTahap1: formatSen(limit), rab100: formatSen(totalSen), rab30: formatSen(term2Sen) };
-  if (term1Sen < limit) after.sisaTahap2 = formatSen(limit - term1Sen);
-  await writeAudit(pb, { actor, action: `menyetujui RAB 70% versi ${version.number}`, context: context(campusId), collection: 'rab_versions', record: versionId, campus: campusId, before: { status: 'menunggu' }, after });
+  if (term1Sen > limit) throw new PreviewError(400, `RAB 70% ${formatSen(term1Sen)} melebihi Batas Tahap 1 ${formatSen(limit)}. Kurangi ${formatSen(term1Sen-limit)}.`);
+  Object.assign(row.data,{status:'disetujui',totalSen,term1Sen,term2Sen,approvedBy:actor.id,approvedAt:new Date().toISOString()}); tx.save(row);
+  setAmount(payment,term1Sen); payment.set('stage',Math.max(4,Number(payment.data.stage || 1))); payment.set('rabVersion',row.id);
+  const after: Record<string,unknown> = {status:'disetujui',nominalTahap1:formatSen(term1Sen),batasTahap1:formatSen(limit),rab100:formatSen(totalSen),rab30:formatSen(term2Sen)};
+  if (term1Sen < limit) after.sisaTahap2 = formatSen(limit-term1Sen);
+  audit(tx,{actor, action:`menyetujui RAB 70% versi ${row.data.number}`, context:context(campusId),collection:'rab_versions',record:row.id,campus:campusId,before:{status:'menunggu'},after});
 }
-
-/** Back to draft. Withdrawing an approval also unlocks the nominal of Tahap 1 on the disbursement; the lines themselves stay as they were. */
-export async function revokeVersion(pb: PocketBase, actor: AuditActor & { id: string }, campusId: string, versionId: string) {
-  const version = await getVersion(pb, campusId, versionId);
-  if (version.status === 'draf') throw new PreviewError(400, 'Versi ini masih draf.');
-  const was = version.status as RabStatus;
-  await pb.collection('rab_versions').update(versionId, { status: 'draf', approvedBy: '', approvedAt: '' }, opts);
-  if (was === 'disetujui') {
-    const { disbursement } = await ensureDisbursement(pb, campusId);
-    if (disbursement.rabVersion === versionId) {
-      await pb.collection('disbursements').update(disbursement.id, { rabVersion: '' }, opts);
-      const patch: Parameters<typeof updateDisbursement>[3] = {};
-      if (Number(disbursement.requestedSen || 0) === Number(version.term1Sen || 0)) patch.requestedSen = 0;
-      if (Number(disbursement.stage || 1) === 4) patch.stage = 3;
-      if (Object.keys(patch).length) await updateDisbursement(pb, actor, campusId, patch);
+export async function approveVersion(pb: PocketBase, actor: AuditActor & {id:string}, campusId: string, versionId: string, expectedRevision?: number) {
+  return mutateRab(pb,campusId,expectedRevision,(tx,payment) => approve(tx,actor,campusId,versionRecord(tx,campusId,versionId),payment));
+}
+function revoke(tx: RestStore, actor: AuditActor, campusId: string, row: StoreRecord, payment: StoreRecord) {
+  const was = row.data.status;
+  if (was === 'draf') throw new PreviewError(400, 'Versi ini masih draf.');
+  Object.assign(row.data,{status:'draf',approvedBy:'',approvedAt:''}); tx.save(row);
+  if (was === 'disetujui' && payment.data.rabVersion === row.id) {
+    payment.set('rabVersion','');
+    if (Number(payment.data.requestedSen || 0) === Number(row.data.term1Sen || 0)) setAmount(payment,0);
+    if (Number(payment.data.stage || 1) === 4) payment.set('stage',3);
+  }
+  audit(tx,{actor,action:was === 'disetujui' ? `mencabut persetujuan RAB versi ${row.data.number}` : `mengembalikan RAB versi ${row.data.number} ke draf`,context:context(campusId),collection:'rab_versions',record:row.id,campus:campusId,before:{status:was},after:{status:'draf'}});
+}
+export async function revokeVersion(pb: PocketBase, actor: AuditActor & {id:string}, campusId: string, versionId: string, expectedRevision?: number) {
+  return mutateRab(pb,campusId,expectedRevision,(tx,payment) => revoke(tx,actor,campusId,versionRecord(tx,campusId,versionId),payment));
+}
+/** The managed version, typed amount and document decision are one operation. */
+export async function decideVersion(pb: PocketBase, actor: AuditActor & {id:string}, campusId: string, decision: 'sesuai' | 'perlu_revisi' | 'batal', note: string, expectedRevision?: number) {
+  return mutateRab(pb,campusId,expectedRevision,(tx,payment) => {
+    const limit = limitSen(awardAmount(tx,campusId));
+    const version = tx.findRecordsByFilter('rab_versions','','-number',1)[0];
+    const doc = tx.records.get('documents')!.find(r => r.data.disbursement === payment.id && r.data.kind === 'rab');
+    if (!doc) throw new PreviewError(404,'Dokumen RAB tidak ditemukan.');
+    if (decision === 'perlu_revisi' && !note.trim()) throw new PreviewError(400,'Tulis catatan revisi.');
+    if (decision !== 'sesuai') {
+      if (version?.data.status === 'disetujui') revoke(tx,actor,campusId,version,payment);
+      else if (decision === 'batal') setAmount(payment,0);
+    } else {
+      const file = tx.records.get('document_versions')!.find(r => r.id === doc.data.currentVersion);
+      const typed = typeof file?.data.fields?.termin1Sen === 'number' ? file.data.fields.termin1Sen as number : null;
+      const managed = version ? totalsOf(arrange(toInput(storedLines(tx,version.id)))).term1Sen : 0;
+      if (managed) {
+        if (typed !== null && typed !== managed) throw new PreviewError(400,`Total di berkas ${formatSen(typed)} berbeda dari RAB terkelola ${formatSen(managed)}. Samakan dulu.`);
+        if (managed > limit) throw new PreviewError(400,`RAB Tahap 1 melebihi batas ${formatSen(limit)}. Sesuaikan barisnya dulu.`);
+        if (version.data.status === 'draf') submit(tx,actor,campusId,version);
+        if (version.data.status !== 'disetujui') approve(tx,actor,campusId,version,payment);
+      } else {
+        if (typed === null) throw new PreviewError(400,'Ketik total RAB Tahap 1 dari berkas, atau impor Excel dengan kolom RAB Tahap 1.');
+        if (!typed) throw new PreviewError(400,'Total RAB Tahap 1 masih nol.');
+        if (typed < 0 || !Number.isSafeInteger(typed) || typed > limit) throw new PreviewError(400,`Total di berkas tidak valid atau melebihi batas ${formatSen(limit)}.`);
+        setAmount(payment,typed); payment.set('stage',4);
+      }
     }
-  }
-  await writeAudit(pb, { actor, action: was === 'disetujui' ? `mencabut persetujuan RAB versi ${version.number}` : `mengembalikan RAB versi ${version.number} ke draf`, context: context(campusId), collection: 'rab_versions', record: versionId, campus: campusId, before: { status: was }, after: { status: 'draf' } });
-}
-
-/**
- * The decision on the RAB item of the check card, taken on the latest managed version.
- * Sesuai: the RAB 70% total must exist and stay within Batas Tahap 1; a draft is submitted and approved in one go, a waiting version is approved,
- * an approved one is left as it is. Perlu revisi: an approved version loses its approval so the lines can change. The document status itself is
- * written by the caller through reviewDocument; the audit rows of the version changes come from the functions above.
- */
-export async function decideVersion(pb: PocketBase, actor: AuditActor & { id: string }, campusId: string, decision: 'sesuai' | 'perlu_revisi' | 'batal', note: string) {
-  const { award } = await campusWithAward(pb, campusId);
-  const latest = await pb.collection('rab_versions').getList(1, 1, { filter: pb.filter('campus = {:c}', { c: campusId }), sort: '-number', ...opts });
-  const version = latest.items[0] || null;
-  // Taking the decision back: an approved managed RAB returns to draft, a typed Tahap 1 amount is cleared.
-  if (decision === 'batal') {
-    if (version && version.status === 'disetujui') await revokeVersion(pb, actor, campusId, version.id);
-    else await updateDisbursement(pb, actor, campusId, { requestedSen: 0 });
-    return;
-  }
-  if (decision === 'perlu_revisi') {
-    if (!note.trim()) throw new PreviewError(400, 'Tulis catatan revisi.');
-    if (version && version.status === 'disetujui') await revokeVersion(pb, actor, campusId, version.id);
-    return;
-  }
-  const limit = limitSen(Number(award.amountSen));
-  // The reviewer's own reading of the campus file: typed on the RAB item, kept on the uploaded file's version.
-  const typed = await typedTerm1(pb, campusId);
-  const lines = version ? await versionLines(pb, version.id) : [];
-  const managed = version && lines.some(l => l.level === MAX_LEVEL) ? totalsOf(arrange(toInput(lines))).term1Sen : 0;
-  if (managed) {
-    if (typed !== null && typed !== managed) throw new PreviewError(400, `Total di berkas ${formatSen(typed)} berbeda dari RAB terkelola ${formatSen(managed)}. Samakan dulu.`);
-    if (managed > limit) throw new PreviewError(400, `RAB Tahap 1 melebihi batas ${formatSen(limit)}. Sesuaikan barisnya dulu.`);
-    if (version!.status === 'draf') await submitVersion(pb, actor, campusId, version!.id);
-    if (version!.status !== 'disetujui') await approveVersion(pb, actor, campusId, version!.id);
-    return;
-  }
-  // No Tahap 1 column in the managed RAB yet: the typed total becomes the Tahap 1 amount until an import replaces it.
-  if (typed === null) throw new PreviewError(400, 'Ketik total RAB Tahap 1 dari berkas, atau impor Excel dengan kolom RAB Tahap 1.');
-  if (!typed) throw new PreviewError(400, 'Total RAB Tahap 1 masih nol.');
-  if (typed > limit) throw new PreviewError(400, `Total di berkas ${formatSen(typed)} melebihi batas ${formatSen(limit)}.`);
-  await updateDisbursement(pb, actor, campusId, { requestedSen: typed, stage: 4 });
-}
-
-/** The Tahap 1 total the reviewer typed from the uploaded RAB file, or null when nothing is typed. */
-async function typedTerm1(pb: PocketBase, campusId: string): Promise<number | null> {
-  const d = await pb.collection('disbursements').getList(1, 1, { filter: pb.filter('campus = {:c} && term = 1', { c: campusId }), fields: 'id', ...opts });
-  if (!d.items[0]) return null;
-  const doc = await pb.collection('documents').getList(1, 1, { filter: pb.filter('disbursement = {:d} && kind = "rab"', { d: d.items[0].id }), fields: 'id,currentVersion', ...opts });
-  const current = doc.items[0]?.currentVersion;
-  if (!current) return null;
-  const v = await pb.collection('document_versions').getOne(current, { fields: 'fields', ...opts }).catch(() => null);
-  const value = (v?.fields as Record<string, unknown> | undefined)?.termin1Sen;
-  return typeof value === 'number' ? value : null;
+    const status = decision === 'batal' ? 'perlu_konfirmasi' : decision;
+    const review = new StoreRecord('reviews'); Object.assign(review.data,{version:doc.data.currentVersion || '',document:doc.id,decision:status,note:decision === 'batal' ? '' : note,actor:actor.id,actorName:actor.name || 'Sistem',imported:false}); tx.save(review);
+    audit(tx,{actor,action:`menandai RAB ${status === 'sesuai' ? 'Sesuai' : status === 'perlu_revisi' ? 'Perlu revisi' : 'Perlu konfirmasi'}`,context:context(campusId),collection:'documents',record:doc.id,campus:campusId,before:{status:doc.data.status},after:{status},note:review.data.note});
+    doc.set('status',status); doc.set('revision',Number(doc.data.revision || 1)+1); tx.save(doc);
+    payment.set('stage',Math.max(3,Number(payment.data.stage || 1)));
+  });
 }
 
 /* Excel import and export */

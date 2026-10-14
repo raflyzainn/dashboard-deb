@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   import { goto } from '$app/navigation';
   import { dev } from '$app/environment';
   import { page } from '$app/state';
@@ -14,11 +15,18 @@
   let previewAccount = $state('');
   let error = $state(page.url.searchParams.get('error') || '');
   const localAccounts = $derived(app.accounts.filter((account) => account.role === 'campus' || account.role === 'admin'));
+  const accountGroups = $derived([
+    { label: 'Sudah ada data pencairan', accounts: localAccounts.filter(a => a.role === 'campus' && a.disbursementStarted === true) },
+    { label: 'Pengajuan masih kosong', accounts: localAccounts.filter(a => a.role === 'campus' && a.disbursementStarted === false) },
+    { label: 'Akun kampus', accounts: localAccounts.filter(a => a.role === 'campus' && a.disbursementStarted === undefined) },
+    { label: 'Admin', accounts: localAccounts.filter(a => a.role === 'admin') }
+  ].filter(group => group.accounts.length));
+  const showLocalAccounts = dev;
 
   $effect(() => {
     untrack(() => {
       void app.init();
-      if (dev) void app.loadAccounts();
+      if (showLocalAccounts) void app.loadAccounts();
     });
   });
   $effect(() => {
@@ -29,14 +37,14 @@
     event.preventDefault();
     if (busy) return;
     error = '';
-    if (!email.trim() || !password) { error = 'Isi email dan kata sandi.'; return; }
+    if (!email.trim() || !password) { error = reportError('Isi email dan kata sandi.'); return; }
     busy = true;
     try {
       await app.loginWithPassword(email.trim(), password);
       if (app.session) goto(app.home());
-      else error = app.error || 'Email atau kata sandi tidak sesuai.';
+      else error = reportError(app.error || 'Email atau kata sandi tidak sesuai.');
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Email atau kata sandi tidak sesuai.';
+      error = reportError(e instanceof Error ? e.message : 'Email atau kata sandi tidak sesuai.');
     } finally { busy = false; }
   }
 
@@ -45,7 +53,7 @@
     busy = true;
     error = '';
     if (await app.login(previewAccount)) await goto(app.home());
-    else error = app.error || 'Akun lokal tidak dapat dibuka.';
+    else error = reportError(app.error || 'Akun lokal tidak dapat dibuka.');
     busy = false;
   }
 </script>
@@ -65,8 +73,8 @@
     <p class="relative text-xs text-blue-100">Pertamina Foundation</p>
   </section>
 
-  <section class="flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50/40 px-4 py-10">
-    <div class="w-full max-w-md">
+  <section class="flex min-w-0 items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50/40 px-4 py-10">
+    <div class="min-w-0 w-full max-w-md">
       <img src="/logo-pf.png" alt="Pertamina Foundation" class="mb-8 h-10 w-auto lg:hidden" />
       <h2 class="text-2xl font-bold text-slate-900">Masuk</h2>
       <p class="mt-1 text-sm text-slate-600">Gunakan akun Microsoft Pertamina Foundation, atau email dan kata sandi yang diberikan admin.</p>
@@ -92,11 +100,11 @@
 
       <form class="grid gap-4" onsubmit={submit} novalidate>
         <label class="grid gap-1.5 text-sm font-medium text-slate-700">
-          Email
+          <span class="field-caption">Email</span>
           <input class="min-h-[44px] rounded-xl border border-slate-300 px-3 text-[15px] text-slate-900 outline-none focus:border-[#0066B2] focus:ring-2 focus:ring-blue-100" type="email" name="email" autocomplete="username" bind:value={email} required />
         </label>
         <label class="grid gap-1.5 text-sm font-medium text-slate-700">
-          Kata sandi
+          <span class="field-caption">Kata sandi</span>
           <span class="relative flex">
             <input class="min-h-[44px] w-full rounded-xl border border-slate-300 px-3 pr-11 text-[15px] text-slate-900 outline-none focus:border-[#0066B2] focus:ring-2 focus:ring-blue-100" type={showPassword ? 'text' : 'password'} name="password" autocomplete="current-password" bind:value={password} required />
             <button type="button" class="absolute right-1 top-1 flex size-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100" onclick={() => (showPassword = !showPassword)} aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}><Icon name="eye" size={16} /></button>
@@ -105,13 +113,17 @@
         <Button type="submit" full loading={busy}>Masuk</Button>
       </form>
 
-      {#if dev && localAccounts.length}
-        <div class="mt-6 grid gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
-          <label class="grid gap-1.5 text-sm font-medium text-slate-700">
-            Masuk sebagai akun lokal
-            <select class="min-h-[44px] rounded-xl border border-slate-300 bg-white px-3 text-[15px] text-slate-900" bind:value={previewAccount}>
+      {#if showLocalAccounts && localAccounts.length}
+        <div class="mt-6 grid min-w-0 grid-cols-1 gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
+          <label class="grid min-w-0 grid-cols-1 gap-1.5 text-sm font-medium text-slate-700">
+            Pilih akun
+            <select class="min-h-[44px] min-w-0 w-full max-w-full truncate rounded-lg border border-slate-300 bg-white px-3 text-[15px] text-slate-900 outline-none focus:border-[#0066B2] focus:ring-2 focus:ring-blue-100" bind:value={previewAccount}>
               <option value="">Pilih akun kampus atau admin</option>
-              {#each localAccounts as account}<option value={account.key}>{account.name}</option>{/each}
+              {#each accountGroups as group}
+                <optgroup label={group.label}>
+                  {#each group.accounts as account}<option value={account.key}>{account.name}</option>{/each}
+                </optgroup>
+              {/each}
             </select>
           </label>
           <Button type="button" full loading={busy} disabled={!previewAccount} onclick={impersonate}>Masuk ke ruang kerja</Button>

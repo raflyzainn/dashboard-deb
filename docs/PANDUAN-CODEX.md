@@ -1,5 +1,82 @@
 # Panduan proyek untuk Codex
 
+## Progres pencairan pada Peta Persebaran — 13 Oktober 2026
+
+Peta, legenda, rata-rata dan ringkasan wilayah memakai `campusPayouts` yang sama dengan Kampus Mitra: butir pemeriksaan selesai dibagi total butir. Detail pin menampilkan tahap, jumlah berkas tersimpan dan butir selesai. Unggah atau submit belum berarti pemeriksaan selesai; ini bukan persentase dana dibayar. Koordinat dan pengelompokan wilayah tetap mengikuti data existing. Bukti Chrome desktop/mobile: [QA peta progres pencairan](QA-PETA-PROGRES-PENCAIRAN-2026-10-13.md). Bagian peta berbasis indikator di bawah menjadi riwayat.
+
+## Progres Kampus Mitra — 13 Oktober 2026
+
+Daftar Kampus Mitra, tabel ringkas Beranda admin, dan Ringkasan kampus menampilkan progres pencairan Tahap 1 berdasarkan dokumen PocketBase existing. Tahap berjalan mengikuti linimasa Pencairan; berkas tersimpan terpisah dari butir Sesuai/Tidak diperlukan. Filter tindak lanjut memakai revisi dokumen. Data indikator tetap tersedia pada tabnya. Peta Persebaran dikerjakan terpisah. Pemetaan field, checklist, bukti browser dan batasnya: [QA progres pencairan](QA-KAMPUS-PROGRES-PENCAIRAN-2026-10-13.md).
+
+## Peta Persebaran PocketBase - 13 Oktober 2026
+
+Peta memakai pin `campuses.program.coordinates` yang disimpan pada Profil DEB. Record lama tanpa field koordinat profil tetap memakai lokasi master; koordinat profil yang dikosongkan atau tidak valid tidak diganti dengan pin palsu. Ringkasan, legenda dan daftar kampus tanpa pin mengikuti pencarian/wilayah/progres. Persentase tetap berasal dari `campusStats` dan periode view API, termasuk nilai nol bila indikator belum ada. Bukti lokal dan batasnya: [QA Peta Persebaran RAFLY999-8](QA-PETA-PERSEBARAN-2026-10-13.md).
+
+## Izin revisi dokumen dan penyamaran rekening - 12 Oktober 2026
+
+Revisi `dokumen` hanya memberi akses regenerasi/kirim perbaikan; nomor PKS kampus tetap terkunci kecuali lingkup `pks` juga dibuka. Ringkasan dan riwayat pengajuan memakai penyamaran rekening yang sudah digunakan backend, hanya tiga digit terakhir terlihat. Layar Rekening dan dokumen resmi tetap tersedia untuk akun yang berhak. QA browser dan batasnya tercatat dalam [laporan perbaikan privasi](pencairan-deb/QA-PERBAIKAN-PRIVASI-2026-10-12.md).
+
+## Label RAB - 12 Oktober 2026
+
+Menu, pemeriksaan, tabel pembagian, dan tombol unduh memakai **RAB 70%** dan **RAB 30%** sesuai arahan pengguna. Nilai sebenarnya tetap mengikuti alokasi: Tahap 1 maksimal 70% nilai SK dan Tahap 2 merupakan sisanya. QA Playwright memeriksa label admin/kampus dan layar 390 px tanpa overflow halaman. Perubahan ini hanya menyelaraskan teks; aturan alokasi dan data tersimpan tetap sama.
+
+## Pemeriksaan kesiapan rilis - 8 Oktober 2026
+
+RAB lama kini menyimpan mutasi, audit, dan pemeriksaan lock pembayaran dalam satu transaksi. Notifikasi permintaan/nomor PKS PF dan permintaan akses revisi ikut transaksi pengajuan. Tombol kirim perbaikan menunggu perubahan pada lingkup yang dibuka; revisi khusus dokumen tetap dapat dibuat ulang otomatis. Hasil dan temuan terbuka: [QA kesiapan production](pencairan-deb/QA-KESIAPAN-PRODUCTION-2026-10-08.md). Kelulusan lokal bukan persetujuan deploy.
+
+## QA pengguna baru - 8 Oktober 2026
+
+Ringkasan Dokumen menampilkan seluruh isian yang belum lengkap beserta navigasi ke bagiannya. Kampus dapat melihat tanggal, nominal dan referensi pembayaran di panel progres. Admin tidak ditawari perubahan keputusan setelah dibayar. Petunjuk nomor PKS PF mengikuti alur yang memperbolehkan pengajuan sambil menunggu PF. Bukti browser dan batas pengujian: [QA pengguna baru](pencairan-deb/QA-PENGGUNA-BARU-2026-10-08.md).
+
+## Acuan aktif — PocketBase tanpa dummy, 7 Oktober 2026
+
+Arahan terbaru pengguna menghapus mode dummy. `npm run dev` dan `npm run dev:local` sama-sama menjalankan PocketBase lokal 8097 dan frontend 5176. Build memakai adapter Cloudflare dengan API server, bukan situs SPA statis. Folder `mockups` dan `src/lib/data/demo` dihapus; komponen aktif dipindahkan ke `src/lib/components/campus/pencairan`. Alur baru memakai data PocketBase dan penanda submissionStatus pada semua mode server. Pengajuan lama tetap memakai backend PocketBase lama; jangan mengubah data historis otomatis.
+
+Bagian dokumentasi lama yang menyebut development sebagai dummy adalah riwayat, bukan perintah untuk mengembalikan mode itu. Detail perubahan dan bukti QA: [PocketBase tanpa dummy](pencairan-deb/POCKETBASE-TANPA-DUMMY-2026-10-07.md). Production, database remote dan hosting tidak diubah oleh pekerjaan lokal ini.
+
+Label Email dan Kata sandi pada login memakai `.field-caption`, sehingga tanda
+wajib `*` mengikuti teks label di kiri. QA tool Playwright pada 7 Oktober 2026
+memastikan penanda tidak lagi berada di ujung kanan, atribut `required` tetap
+aktif, dan tidak ada overflow horizontal pada lebar 1366 serta 390 px.
+Build sebelum push berhasil (exit 0, mode mockup, adapter-static), dengan warning
+ukuran chunk lebih dari 500 kB. Test suite, check, dan lint tidak dijalankan.
+
+## Beranda dan breadcrumb kampus, 7 Oktober 2026
+
+Beranda memakai dua kartu dengan jarak lebih ringkas agar alur pengajuan baru
+muat pada satu layar desktop. Konten tetap boleh menggulir pada layar sempit
+atau bila daftar tugas lebih panjang; jangan memotongnya dengan overflow hidden.
+Halaman kampus selain Beranda menampilkan breadcrumb **Ruang kerja / Beranda /
+nama halaman**. Tautan Beranda menuju `/campus/dashboard`; halaman aktif ditandai
+`aria-current="page"`. Menu akun tetap tersedia.
+Hasil pemeriksaan: [QA Beranda dan breadcrumb](pencairan-deb/QA-BERANDA-BREADCRUMB-2026-10-07.md).
+
+## Build wajib sebelum push atau PR/MR — 5 Oktober 2026
+
+Setiap permintaan pengguna untuk push atau membuat PR/MR sekaligus mengizinkan
+dan mewajibkan `npm run build` melalui terminal. Jalankan build pada kode yang
+akan dikirim, termasuk ketika perubahan lokal lain perlu dipisahkan. Hanya
+lanjutkan push dan pembuatan PR/MR setelah build berhasil dengan exit 0.
+Jika gagal, perbaiki masalahnya dan ulangi build; jangan publikasi sebelum berhasil.
+Catat hasil build dan warning yang relevan dalam deskripsi PR/MR. Aturan ini
+tidak memberi izin otomatis menjalankan test suite, check, lint, merge, atau deploy.
+
+## Batas development dan production — 5 Oktober 2026
+
+Sesuai arahan pengguna, `development` dipakai untuk dummy dan koneksi layanan aktif berada pada branch `production`. Default `npm run dev` dan `npm run build` pada branch pengajuan ini memakai mode `mockup`; PocketBase lokal tetap terpisah melalui `npm run dev:local`.
+
+**Jangan mengubah branch `production`, melakukan push/merge ke sana, atau mengubah deployment, konfigurasi, database, maupun layanan production sebelum pengguna menyuruh secara eksplisit.** Permintaan membuat PR, memperbaiki kode, atau melakukan QA pada `development` tidak memberi izin menyentuh production. Gunakan dummy atau instance lokal bertanda untuk QA. Keterangan deployment production dalam dokumentasi demo lama bersifat historis; jangan menerapkannya sebagai instruksi perubahan production.
+
+Hasil verifikasi branch sumber, simulasi merge, perbaikan tanggal dummy, dan QA Playwright tercatat di [laporan QA PR development](QA-PR-DEVELOPMENT-2026-10-05.md).
+
+## Pembaruan feedback dan panduan pengguna - 1 Oktober 2026
+
+Gunakan [laporan snackbar dan field wajib](pencairan-deb/QA-SNACKBAR-FIELD-WAJIB-2026-10-01.md) untuk pola penanganan error bersama, field wajib, perubahan Beranda/Panduan kampus, dan batas QA browser terakhir. Pengajuan baru PocketBase mengikuti petunjuk terbaru ini; panduan demo dan unggah manual historis di bawah tidak menggantikannya.
+
+## Pembaruan pengajuan lokal - 30 September 2026
+
+Untuk pekerjaan migrasi pada branch `feat/rab-dummy-all-campuses`, acuan terbaru adalah [MIGRASI-POCKETBASE-LOKAL.md](pencairan-deb/MIGRASI-POCKETBASE-LOKAL.md), beserta arsitektur, runbook, dan laporan QA yang ditautkan di sana. Mode `pocketbase-local` memakai instance 8097 dan aplikasi 5176; dummy tetap terpisah. Mesin pengajuan digunakan bersama, penyimpanan lokal memakai collection relasional yang sudah ada dengan empat field tambahan. Hanya pengajuan berpenanda `submissionStatus` memakai alur baru; record lama tidak dikonversi massal. Panduan login mitra dan demo berikut merupakan konteks historis, bukan pengganti kontrak alur baru. Build/check/test terminal migrasi belum dijalankan.
+
 Diperbarui: 18 September 2026. Baca bersama [AGENTS.md](../AGENTS.md). Aturan kerja di AGENTS.md berlaku juga jika dokumen atau skill lain menyarankan tes terminal, push, atau PR otomatis.
 
 ## Pembaruan login mitra — 21 September 2026
@@ -87,6 +164,20 @@ QA browser menyesuaikan fitur yang diubah, misalnya:
 
 ## Dokumentasi dan penyelesaian pekerjaan
 
+Arahan terbaru 12 Oktober 2026 mempertahankan Beranda, Pencairan Dana, Panduan Aplikasi, dan Notifikasi untuk kampus. URL modul yang belum dipakai maupun halaman admin dialihkan ke Beranda kampus. API modul di luar cakupan aktif ditolak; API pendukung sesi, navigasi, notifikasi, dan audit pencairan tetap tersedia. Bukti: [QA pembatasan akses kampus](pencairan-deb/QA-AKSES-KAMPUS-PENCAIRAN-2026-10-12.md).
+
+Impor tambahan RAB menjumlahkan Qty item dengan kategori, sub kategori, dan nama yang sama. Satuan dan Volume harus sama; harga satuan mengikuti Excel terbaru. Upload ulang menambah Qty lagi, sedangkan koreksi Qty dilakukan langsung pada tabel. Aturan ini menggantikan perilaku impor lama yang menimpa Qty. Bukti: [QA penambahan Qty](pencairan-deb/QA-IMPOR-TAMBAHAN-QTY-2026-10-12.md).
+
+Pemeriksaan RAB manual memerlukan seluruh baris valid dan total persis sesuai SK. Draf belum lengkap tetap boleh disimpan; tombol utama dan navigasi langkah pemeriksaan memakai validasi yang sama. Daftar dokumen otomatis hanya tampil pada tab Dokumen, bukan Rekening Penerima atau PKS. Bukti dan batas QA: [QA UX 12 Oktober](pencairan-deb/QA-UX-RAB-DAN-DOKUMEN-2026-10-12.md).
+
+Penyimpanan nomor PKS kampus otomatis memberi tahu admin jika nomor PKS PF belum tersedia. Tidak ada tombol permintaan manual pada tab PKS. Permintaan hanya ditandai sekali dan notifikasi mengikuti transaksi penyimpanan; kampus dapat melanjutkan pengisian tanpa menunggu PF.
+
+Pengiriman paket pengajuan atau perbaikan oleh kampus memberi notifikasi `pencairan_pengajuan` kepada admin/super-admin aktif dengan tautan langsung ke kampus. Pemicu mengikuti penambahan riwayat pengajuan dalam transaksi yang sama, bukan autosave atau permintaan PKS.
+
+Permintaan revisi mempertahankan file aktif. Perubahan identitas rekening menandai foto lama perlu diperbarui, sambil mempertahankan akses baca. Hanya scope file yang dibuka dapat mengganti/menghapusnya; hapus memakai modal konfirmasi dan pemeriksaan revisi draf pada server. Status sidebar ditempatkan di bawah label agar tidak memecah kata.
+
+Pindaian bertanda tangan harus PDF/PNG/JPG/WebP untuk dapat disusun menjadi lampiran; DOCX tetap menjadi dokumen sumber unduhan. Halaman tanda tangan admin mengenali versi generated yang sesuai revisi pada pengajuan selesai, dan menonaktifkan unggah/buat ulang setelah pembayaran. Bukti alur dari draf hingga pembayaran simulasi: [QA alur lengkap dan UX](pencairan-deb/QA-ALUR-LENGKAP-DAN-UX-2026-10-12.md).
+
 Setiap chat baru wajib membaca semua dokumentasi sebagaimana diatur AGENTS.md. Titik masuk penting:
 
 - [README](../README.md): cara menjalankan dan mode aktif.
@@ -97,3 +188,10 @@ Setiap chat baru wajib membaca semua dokumentasi sebagaimana diatur AGENTS.md. T
 Jika kode dan dokumen berbeda, periksa kode yang benar-benar dipakai dan instruksi pengguna terbaru, lalu perbarui dokumen terkait. Jangan menyatakan seluruh fitur selesai hanya berdasarkan checklist lama.
 
 Selesaikan perubahan lokal, QA browser yang relevan, lalu laporkan singkat apa yang berubah, hasil QA, dan bagian yang belum diverifikasi. **Jangan commit, push, membuat PR/MR, merge, atau deploy otomatis.** Tunggu instruksi pengguna untuk tindakan tersebut.
+## Penguatan pencairan — 7 Oktober 2026
+
+Pembayaran dan penyimpanan lampiran mengirim `expectedRevision` dari workspace. Lampiran juga mengirim `operationId` 15 karakter alfanumerik yang dipertahankan ketika retry; retry identik mengembalikan arsip yang sama. Pembayaran identik boleh diulang dengan revisi lama, sedangkan perubahan berbeda harus memakai revisi terbaru. Pengajuan berbayar terkunci; koreksi pembayaran dan bukti transfer admin mengikuti izin tersendiri.
+
+Rute kampus yang diizinkan mencakup Beranda, Pencairan Dana, Panduan dan Notifikasi. Ikon notifikasi harus membuka `/campus/notifications`, bukan dialihkan kembali ke Beranda.
+
+Unggahan memeriksa isi berkas, menormalkan MIME, memakai key objek unik, dan membatasi dekompresi Office. Pindaian harus mengikuti sumber generated terbaru; versi baru membatalkan penerimaan asli. Lampiran dan pembayaran memeriksa versi sumber aktif. Rincian implementasi, hasil browser, dan batas konkurensi jalur lama tercatat di [laporan QA 7 Oktober](pencairan-deb/QA-EDGE-CASES-DAN-14-REVISI-2026-10-07.md). Jangan menyamakan QA lokal dengan bukti production atau test suite terminal.

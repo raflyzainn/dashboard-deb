@@ -56,11 +56,15 @@ export async function previewContext(request: PreviewRequest, config: PreviewCon
         const campuses = await pb.collection('campuses').getFullList({ sort: 'name' });
         const root = new PocketBase(url.origin);
         await root.collection('_superusers').authWithPassword(credentials.superuser.email, credentials.superuser.password);
-        const users = await root.collection('users').getFullList({ filter: 'simulated = true && active = true', fields: 'legacyId,campus,role' });
+        const users = await root.collection('users').getFullList({ filter: 'simulated = true && active = true', fields: 'legacyId,campus,role,name' });
         const eligible = new Set<string>(users.map(u => u.legacyId));
+        // Local provisioning marks the campuses that started empty with this SK prefix.
+        // Keep their original login group even after uploading RAB or completing the application.
+        const awards=await root.collection('sk_awards').getFullList({filter:'wave = 1',fields:'campus,skNumber'});
+        const started=new Set(awards.filter(a=>!String(a.skNumber||'').startsWith('SK-DUMMY-LOKAL/2026/')).map(a=>a.campus));
         // Each account is also checked on entry; migrated campus credentials are never reset by preview.
-        const rows: PreviewAccount[] = campuses.flatMap(c => users.filter(u => u.role === 'campus' && u.campus === c.id && keys.includes(u.legacyId)).map(u => ({ key: u.legacyId, name: c.name, role: 'campus' as const })));
-        return [...rows, ...keys.filter(k => k.startsWith('admin-') && eligible.has(k)).sort().map(key => ({ key, name: `Admin PF lokal ${key.slice(-1)}`, role: 'admin' as const }))];
+        const rows: PreviewAccount[] = campuses.flatMap(c => users.filter(u => u.role === 'campus' && u.campus === c.id && keys.includes(u.legacyId)).map(u => ({ key: u.legacyId, name: c.name+' - '+u.name, role: 'campus' as const, disbursementStarted: started.has(c.id) })));
+        return [...rows, ...keys.filter(k => k.startsWith('admin-') && eligible.has(k)).sort().map(key => ({ key, name: `Admin PF ${key.slice(-1)}`, role: 'admin' as const }))];
       }
     };
   } catch (error) {

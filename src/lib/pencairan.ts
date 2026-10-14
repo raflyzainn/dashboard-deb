@@ -3,6 +3,7 @@
 /** The SK first, then the check columns of the review sheet in the sheet's order, one checklist item each. The sheet's "Format laporan" column was a placeholder and is not an item (decision 39); its old document rows stay in the database unused. */
 export const KINDS = ['sk', 'pks', 'rab_penuh', 'rab', 'rab_tahap2', 'permohonan', 'kuitansi', 'invois', 'rekening', 'surat_kuasa'] as const;
 export type Kind = (typeof KINDS)[number];
+export const maskAccountNumber = (number: string) => (number.length > 3 ? '•••• •••• ' + number.slice(-3) : number ? '•••' : '');
 /** The three RAB items are pages of one managed RAB: `rab` (70%) carries the original workbook, the typed total and the approval; the two others are checks on the same lines. */
 export const RAB_SHARE = { rab_penuh: 'penuh', rab: 'tahap1', rab_tahap2: 'tahap2' } as const;
 export type RabKind = keyof typeof RAB_SHARE;
@@ -19,7 +20,7 @@ export const KIND_FILE: Record<Kind, string> = {
 };
 /** The two buttons of each item: the green one is the right answer, the grey one the wrong one (asks for a note). */
 export const DECISION_LABEL: Record<Kind, { ok: string; bad: string; none?: string }> = {
-  sk: { ok: 'Nilai sesuai dengan SK', bad: 'Nilai berbeda' }, pks: { ok: 'Sesuai', bad: 'Perlu revisi' }, rab_penuh: { ok: 'Sesuai dengan Nilai SK', bad: 'Perlu revisi' }, rab_penuh: { ok: 'Sesuai dengan Nilai SK', bad: 'Perlu revisi' }, rab: { ok: 'Sesuai: jadikan nominal Tahap 1', bad: 'Perlu revisi' }, rab_tahap2: { ok: 'Sesuai', bad: 'Perlu revisi' }, rab_tahap2: { ok: 'Sesuai', bad: 'Perlu revisi' },
+  sk: { ok: 'Nilai sesuai dengan SK', bad: 'Nilai berbeda' }, pks: { ok: 'Sesuai', bad: 'Perlu revisi' }, rab_penuh: { ok: 'Sesuai dengan Nilai SK', bad: 'Perlu revisi' }, rab: { ok: 'Sesuai: jadikan nominal Tahap 1', bad: 'Perlu revisi' }, rab_tahap2: { ok: 'Sesuai', bad: 'Perlu revisi' },
   permohonan: { ok: 'Sesuai', bad: 'Perlu revisi' }, kuitansi: { ok: 'Sesuai', bad: 'Perlu revisi' }, invois: { ok: 'Sesuai', bad: 'Perlu revisi' },
   rekening: { ok: 'Nama sesuai di bank', bad: 'Nama berbeda di bank' }, surat_kuasa: { ok: 'Nama cocok', bad: 'Nama berbeda', none: 'Tanpa surat kuasa' }
 };
@@ -78,7 +79,7 @@ export interface Assessment {
 /** Joins names the Indonesian way: "a, b, dan c". */
 export const joinNames = (names: string[]) => names.length <= 1 ? names.join('') : names.length === 2 ? `${names[0]} dan ${names[1]}` : `${names.slice(0, -1).join(', ')}, dan ${names[names.length - 1]}`;
 /** The same reading of a campus everywhere: dashboard rows, the card, the campus view. Pure, so the browser can recompute it after an edit. */
-export function assess(statuses: Record<Kind, Status>, input: { suratKuasaRequired: boolean | null; redChecks: number; paidAt: string; originalsAll: boolean; lampiranCount: number }): Assessment {
+export function assess(statuses: Record<Kind, Status>, input: { suratKuasaRequired: boolean | null; redChecks: number; paidAt: string; originalsAll: boolean; lampiranCount: number; submissionStatus?: string }): Assessment {
   const items = Object.fromEntries(KINDS.map(k => [k, statuses[k] || (k === 'sk' ? 'perlu_konfirmasi' : 'belum_ada')])) as Record<Kind, ItemState>;
   if (input.suratKuasaRequired === false && items.surat_kuasa !== 'sesuai') items.surat_kuasa = 'tidak_perlu';
   const active = KINDS.filter(k => items[k] !== 'tidak_perlu');
@@ -89,19 +90,22 @@ export function assess(statuses: Record<Kind, Status>, input: { suratKuasaRequir
   const belum = active.filter(k => items[k] === 'belum_ada').length;
   const campusWait = revisi + belum;
   const allDone = missing.length === 0;
-  const lengkap = allDone && input.redChecks === 0;
+  const pendingSubmission=Boolean(input.submissionStatus&&input.submissionStatus!=='selesai');
+  const lengkap = allDone && input.redChecks === 0 && !pendingSubmission;
   let state: CampusState;
   if (input.paidAt) state = 'dibayar';
+  else if (pendingSubmission) state = input.submissionStatus==='menunggu'?'menunggu_admin':'menunggu_kampus';
   else if (lengkap && input.originalsAll && input.lampiranCount > 0) state = 'siap_dibayar';
   else if (lengkap) state = 'lengkap';
   else if (belum === active.length) state = 'belum_ada';
   else if (adminWait || allDone) state = 'menunggu_admin';
   else state = 'menunggu_kampus';
-  const waiting = state === 'dibayar' ? 'Selesai' : state === 'siap_dibayar' ? 'Pembayaran' : state === 'lengkap' ? 'Tanda tangan dan lampiran'
+  const waiting = state === 'dibayar' ? 'Selesai' : pendingSubmission ? input.submissionStatus==='menunggu'?'Admin, pemeriksaan pengajuan':'Kampus, perbaikan pengajuan' : state === 'siap_dibayar' ? 'Pembayaran' : state === 'lengkap' ? 'Tanda tangan dan lampiran'
     : allDone ? 'Admin, pemeriksaan otomatis' : adminWait ? `Admin, ${adminWait === 1 ? ITEM_NAME[active.find(k => items[k] === 'menunggu_review' || items[k] === 'perlu_konfirmasi')!] : adminWait + ' butir'}`
     : belum === active.length ? 'Kampus, belum kirim' : revisi && belum ? `Kampus, ${revisi} revisi, ${belum} belum kirim` : revisi ? `Kampus, ${revisi} revisi` : `Kampus, ${belum} belum kirim`;
   let phrase: string;
   if (state === 'dibayar') phrase = `Dana Tahap 1 sudah ditransfer pada ${input.paidAt.slice(0, 10)}.`;
+  else if (pendingSubmission) phrase = input.submissionStatus==='menunggu'?'Pengajuan menunggu pemeriksaan PF.':'Selesaikan perbaikan dan kirim pengajuan sebelum melanjutkan pencairan.';
   else if (state === 'siap_dibayar') phrase = 'Semua beres, tinggal dibayar.';
   else if (state === 'lengkap') phrase = 'Semua butir sesuai. Tinggal tanda tangan basah, lampiran, dan pembayaran.';
   else if (allDone) phrase = 'Semua butir sesuai, tetapi pemeriksaan otomatis masih merah. Periksa ulang butir yang ditandai.';
@@ -124,9 +128,7 @@ export const FIELDS: Record<Kind, { key: string; label: string; type: 'text' | '
     { key: 'tanggalPerjanjian', label: 'Tanggal perjanjian', type: 'date' }, { key: 'penandatangan', label: 'Pejabat penandatangan dan jabatan', type: 'text' }, { key: 'nilaiBantuanSen', label: 'Nilai bantuan', type: 'money' }
   ],
   rab_penuh: [],
-  rab_penuh: [],
   rab: [{ key: 'termin1Sen', label: 'Total RAB 70% di berkas', type: 'money' }],
-  rab_tahap2: [],
   rab_tahap2: [],
   permohonan: [{ key: 'nomorSurat', label: 'Nomor surat', type: 'text' }, { key: 'tanggalSurat', label: 'Tanggal surat', type: 'date' }, { key: 'nominalSen', label: 'Nominal Termin 1', type: 'money' }, { key: 'penandatangan', label: 'Penandatangan', type: 'text' }],
   invois: [{ key: 'nomorInvois', label: 'Nomor invois', type: 'text' }, { key: 'tanggal', label: 'Tanggal', type: 'date' }, { key: 'nominalSen', label: 'Nominal', type: 'money' }, { key: 'namaBank', label: 'Nama bank di invois', type: 'text' }, { key: 'rekeningTujuan', label: 'Nomor rekening di invois', type: 'text' }, { key: 'namaPemilik', label: 'Nama pemilik rekening di invois', type: 'names' }],
@@ -199,3 +201,12 @@ export function namesMatch(a: string[], b: string[]) {
   return left.every(name => found(name, right));
 }
 export const splitNames = (value: string | string[] | null | undefined): string[] => (Array.isArray(value) ? value : String(value || '').split(/[;\n]|\s+dan\s+|,/)).map(s => s.trim()).filter(Boolean);
+
+/** Shared receipt metadata for the legacy backend and the local application transaction. */
+export function documentReceiptFlags(flags: { signedReceived?: boolean; originalReceived?: boolean }, who: string, now = new Date().toISOString()) {
+  const patch: Record<string, boolean | string> = {};
+  for (const key of ['signedReceived', 'originalReceived'] as const) if (typeof flags[key] === 'boolean') {
+    patch[key] = flags[key]!; patch[key + 'At'] = flags[key] ? now : ''; patch[key + 'ByName'] = flags[key] ? who : '';
+  }
+  return patch;
+}

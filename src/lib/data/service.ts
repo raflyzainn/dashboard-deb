@@ -1,5 +1,6 @@
-import { createDemoService } from './demo/service';
-import type { DataService, PreviewAccount } from '../types';
+import { reportError } from '../feedback';
+import type { DataService, PreviewAccount, ProgramProfile } from '../types';
+import type { DocumentKind, KpiEvidence, PaymentAction } from '../payments';
 import type { PageRequest, PageResponse, SessionResponse, NavigationData } from '../page-data';
 
 export const READ_ONLY_MESSAGE = 'Penyimpanan tidak tersedia pada sesi ini.';
@@ -7,6 +8,7 @@ export class DataReadError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }
 export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...args)) {
+  const revisions=new Map<string,number>();
   let key = '';
   let generation = 0;
   const pending = new Set<AbortController>();
@@ -14,7 +16,7 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
   function selectAccount(next: string) {
     generation++;
     pending.forEach(controller => controller.abort());
-    pending.clear(); retries.clear();
+    pending.clear(); retries.clear(); revisions.clear();
     key = next;
   }
   async function request<T>(url: string, parse: (response: Response) => Promise<T>, options: RequestInit = {}): Promise<T> {
@@ -27,14 +29,20 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
       if (started !== generation) throw new DataReadError(409, 'Pilihan akun sudah berubah.');
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
-        throw new DataReadError(response.status, body.message || 'Pembacaan PocketBase gagal.');
+        const fallback = response.status === 401 ? 'Sesi berakhir. Silakan masuk kembali.' : response.status === 403 ? 'Akun Anda tidak memiliki izin untuk tindakan ini.' : response.status === 409 ? 'Data sudah berubah. Muat ulang data sebelum mencoba kembali.' : response.status >= 500 ? 'Server belum dapat memproses permintaan. Coba lagi beberapa saat lagi.' : 'Permintaan belum berhasil. Periksa isian dan coba lagi.';
+        throw new DataReadError(response.status, typeof body?.message === 'string' && body.message && body.message !== 'Something went wrong while processing your request.' ? body.message : fallback);
       }
       const result = await parse(response);
       if (started !== generation) throw new DataReadError(409, 'Pilihan akun sudah berubah.');
+      const campus=url.match(/^\/api\/pencairan\/([^/?]+)/)?.[1];
+      if(campus&&Number.isInteger((result as any)?.serverRevision))revisions.set(campus,Math.max(revisions.get(campus)||0,(result as any).serverRevision));
+      if (options.method && options.method !== 'GET') reportError('');
       return result;
     } catch (error) {
-      if (error instanceof DataReadError) throw error;
-      throw new DataReadError(503, 'PocketBase tidak dapat dimuat. Periksa koneksi dan coba muat ulang.');
+      const failure = started !== generation ? new DataReadError(409, 'Pilihan akun sudah berubah.') : error instanceof DataReadError ? error : new DataReadError(503, controller.signal.aborted ? 'Permintaan terlalu lama. Periksa koneksi, lalu coba lagi.' : error instanceof SyntaxError ? 'Respons server tidak dapat dibaca. Coba muat ulang data atau ulangi tindakan Anda.' : 'Tidak dapat terhubung ke server. Periksa koneksi, lalu coba lagi.');
+      // Account changes cancel obsolete requests; an anonymous session probe is expected.
+      if (started === generation && !(url === '/api/session' && failure.status === 401)) reportError(failure.message);
+      throw failure;
     } finally { clearTimeout(timer); pending.delete(controller); }
   }
   const session = (): Promise<SessionResponse> => request('/api/session', response => response.json());
@@ -73,10 +81,6 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
   const done = async (value: Promise<unknown>): Promise<void> => { await value; };
   const idPath = (id: string) => encodeURIComponent(id);
   const service: DataService = {
-    demoActivation: () => Promise.reject(new DataReadError(404, 'Aktivasi demo hanya tersedia pada demo mandiri.')),
-    requestDemoActivation: () => Promise.reject(new DataReadError(404, 'Aktivasi demo hanya tersedia pada demo mandiri.')),
-    activateDemo: () => Promise.reject(new DataReadError(404, 'Aktivasi demo hanya tersedia pada demo mandiri.')),
-    loginDemo: () => Promise.reject(new DataReadError(404, 'Aktivasi demo hanya tersedia pada demo mandiri.')),
     createPeriod: name => done(write('/api/admin/periods', 'POST', { name })),
     openPeriod: period => done(write('/api/admin/periods/open', 'POST', { period })),
     masters: () => request('/api/admin/masters', response => response.json()),
@@ -113,10 +117,13 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
     }
   };
   // Plain JSON helpers for the modules built on the real backend (users, pencairan, audit).
-  const send = <T,>(url: string, method: string, body?: object | FormData): Promise<T> => request<T>(url, response => response.json(), {
+  const send = <T,>(url: string, method: string, body?: object | FormData): Promise<T> => {
+    const revision=revisions.get(url.match(/^\/api\/pencairan\/([^/?]+)/)?.[1]||'');
+    if(revision!==undefined){if(body instanceof FormData){if(!body.has('expectedRevision'))body.set('expectedRevision',String(revision));}else body={expectedRevision:revision,...body};}
+    return request<T>(url, response => response.json(), {
     method, body: body instanceof FormData ? body : body === undefined ? undefined : JSON.stringify(body),
     headers: body instanceof FormData || body === undefined ? {} : { 'Content-Type': 'application/json' }
-  });
+  });};
   const api = {
     get: <T,>(url: string) => request<T>(url, response => response.json()),
     post: <T,>(url: string, body?: object | FormData) => send<T>(url, 'POST', body),
@@ -125,12 +132,22 @@ export function createHttpService(fetcher: typeof fetch = (...args) => fetch(...
     blob: (url: string) => request(url, response => response.blob())
   };
   const unavailable = () => Promise.reject(new DataReadError(404, 'Fitur ini belum tersedia pada sistem produksi.'));
-  const legacy = { updateReadiness: unavailable, updateIndicatorTarget: unavailable, commentProposal: unavailable, createPayment: unavailable, paymentAction: unavailable,
-    uploadPaymentDocument: unavailable, reviewPaymentDocument: unavailable, addPaymentFeedback: unavailable, savePaymentKpi: unavailable, exportPayment: unavailable,
+  const legacy = {
+    updateReadiness: (_id: string, _values: Partial<ProgramProfile>): Promise<void> => unavailable(),
+    updateIndicatorTarget: (_id: string, _target: number): Promise<void> => unavailable(),
+    commentProposal: (_id: string, _comment: string): Promise<void> => unavailable(),
+    createPayment: (_id: string, _amount: number): Promise<void> => unavailable(),
+    paymentAction: (_id: string, _revision: number, _kind: PaymentAction, _note: string): Promise<void> => unavailable(),
+    uploadPaymentDocument: (_id: string, _revision: number, _kind: DocumentKind, _file: File): Promise<void> => unavailable(),
+    reviewPaymentDocument: (_id: string, _revision: number, _kind: DocumentKind, _approved: boolean, _note: string): Promise<void> => unavailable(),
+    addPaymentFeedback: (_id: string, _revision: number, _feedback: string): Promise<void> => unavailable(),
+    savePaymentKpi: (_id: string, _revision: number, _amount: number, _kpis: KpiEvidence[]): Promise<void> => unavailable(),
+    exportPayment: (_id: string, _revision: number): Promise<{ blob: Blob; filename: string }> => unavailable(),
+    paymentFile: (_id: string, _fileId: string): Promise<Blob> => unavailable(),
+    accountsAdmin: (path: string, body?: { changes?: { id: string; name: string; email: string; revision: number }[] }) => body ? api.post(path, body) : api.get(path),
     updateProgram: (campusId: string, values: Record<string, unknown>) => done(write('/api/campuses/' + idPath(campusId) + '/program', 'PATCH', values)) };
   return { ...service, ...legacy, api, selectAccount, session, navigation, page, async accounts(): Promise<PreviewAccount[]> {
     return request('/api/dev/accounts', async response => (await response.json()).accounts);
   } };
 }
 export const dataService = createHttpService();
-export { createDemoService };

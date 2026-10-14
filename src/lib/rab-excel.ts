@@ -99,7 +99,7 @@ function rabSheet(wb: ExcelJS.Workbook, name: string, rows: RabRow[], input: Rab
   let hasSub = false;
   const styleRow = (row: number, bold = false, fillArgb?: string) => {
     for (let k = COL.no; k <= COL.amount; k++) { const c = cell(row, k); c.border = border; if (bold) c.font = { bold: true }; if (fillArgb) c.fill = fill(fillArgb); }
-    cell(row, COL.volume).numFmt = MONEY; cell(row, COL.price).numFmt = MONEY; cell(row, COL.amount).numFmt = MONEY;
+    cell(row, COL.volume).numFmt = '#,##0.####'; cell(row, COL.price).numFmt = MONEY; cell(row, COL.amount).numFmt = MONEY;
   };
   const sumFormula = (cells: number[]) => (cells.length ? { formula: cells.length > 1 && cells.every((v, i) => i === 0 || v === cells[i - 1] + 1) ? `SUM(R${cells[0]}:R${cells[cells.length - 1]})` : cells.map(v => `R${v}`).join('+') } : 0);
   const closeSub = () => { if (!itemRows.length) return; cell(r, COL.uraian).value = 'Sub total'; cell(r, COL.uraian).alignment = { horizontal: 'right' }; cell(r, COL.amount).value = sumFormula(itemRows); styleRow(r, true); subTotalRows.push(r); itemRows.length = 0; r++; };
@@ -204,21 +204,27 @@ export function buildRabWorkbook(Excel: typeof ExcelJS, input: RabWorkbookInput)
  * Managed RAB lines (as the overview API returns them) into the rows of one sheet: headings with a name, items with that share's
  * amount in rupiah and their calculation. RAB 100% carries every line; RAB 70% and RAB 30% carry the lines that have a part there.
  */
-export function linesToRows(lines: { level: number; code: string; title: string; calculation?: string; unit: string; volume: number; unitPriceSen: number; amountSen: number; term1Sen: number; term2Sen?: number }[], share: 'penuh' | 'tahap1' | 'tahap2' = 'tahap1', maxLevel = 4): RabRow[] {
+export function linesToRows(lines: { level: number; code: string; title: string; calculation?: string; unit: string; volume: number; unitPriceSen: number; amountSen: number; term1Sen: number; term2Sen?: number; flags?: Record<string, unknown> }[], share: 'penuh' | 'tahap1' | 'tahap2' = 'tahap1', maxLevel = 4): RabRow[] {
   const out: RabRow[] = [];
   const sen = (line: (typeof lines)[number]) => (share === 'penuh' ? line.amountSen : share === 'tahap1' ? line.term1Sen : line.term2Sen || 0);
   for (const line of lines) {
     if (share !== 'penuh' && !sen(line)) continue;
     if (line.level < maxLevel) { out.push({ no: line.code, uraian: line.title }); continue; }
-    out.push({ no: line.code, uraian: line.title, calculation: line.calculation || '', satuan: line.unit, volume: line.volume, hargaSatuan: Math.round(line.unitPriceSen) / 100, jumlah: Math.round(sen(line)) / 100 });
+    const allocated = share === 'penuh' ? undefined : line.flags?.[share === 'tahap1' ? 'term1Volume' : 'term2Volume'];
+    const volume = typeof allocated === 'number' ? allocated : line.volume;
+    out.push({ no: line.code, uraian: line.title, calculation: typeof allocated === 'number' ? `${volume} ${line.unit}` : line.calculation || '', satuan: line.unit, volume, hargaSatuan: Math.round(line.unitPriceSen) / 100, jumlah: Math.round(sen(line)) / 100 });
   }
   return out;
 }
 
 /** Browser: builds the workbook for one campus and hands it to the download. */
-export async function downloadRabWorkbook(fileName: string, input: RabWorkbookInput) {
+export async function downloadRabWorkbook(fileName: string, input: RabWorkbookInput, share?: 'penuh' | 'tahap1' | 'tahap2') {
   const Excel = (await import('exceljs')).default;
   const wb = buildRabWorkbook(Excel, input);
+  if (share) {
+    const selected = { penuh: SHEET_FULL, tahap1: SHEET_T1, tahap2: SHEET_T2 }[share];
+    for (const sheet of [...wb.worksheets]) if (sheet.name !== selected) wb.removeWorksheet(sheet.id);
+  }
   const buffer = await wb.xlsx.writeBuffer();
   const url = URL.createObjectURL(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
   const a = document.createElement('a');

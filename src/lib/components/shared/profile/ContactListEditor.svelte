@@ -76,7 +76,7 @@
         </div>
         <div class="grid gap-3 @[440px]:grid-cols-2">
           <div class="min-w-0">
-            <label class={LABEL} for={`${uid}-name-${index}`}>Nama</label>
+            <label class={LABEL} for={`${uid}-name-${index}`}>Nama{#if contact.phone.trim()} <span class="text-red-600" aria-hidden="true">*</span>{/if}</label>
             <input
               id={`${uid}-name-${index}`}
               class={[INPUT, error && !phoneError ? INPUT_BAD : INPUT_OK]}
@@ -86,7 +86,7 @@
               placeholder="Nama lengkap"
               aria-invalid={error && !phoneError ? 'true' : undefined}
               aria-describedby={error ? `${uid}-error-${index}` : undefined}
-              bind:value={contact.name}
+              required={Boolean(contact.phone.trim())} bind:value={contact.name}
               {disabled}
             />
           </div>

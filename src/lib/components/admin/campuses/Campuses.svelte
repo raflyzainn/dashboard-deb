@@ -1,7 +1,8 @@
 <script lang="ts">
   // Shared presentation for the explicit Campus/Admin routes.
   import { app } from '$lib/state.svelte';
-  import { campusStats, percent, date, feedbackLabel } from '$lib/domain';
+  import { campusStats, date, feedbackLabel } from '$lib/domain';
+  import { KINDS, KIND_SHORT, STATUS_LABEL, CAMPUS_STATE_LABEL, CAMPUS_STATE_TONE } from '$lib/pencairan';
   import Icon from '$lib/components/ui/Icon.svelte';
   import CampusLogo from '$lib/components/ui/CampusLogo.svelte';
   import Badge from '$lib/components/ui/Badge.svelte';
@@ -25,6 +26,7 @@
   }
   const campus = $derived(app.data!.campuses.find((c) => c.id === id));
   const stats = $derived(campusStats(app.data!, id));
+  const payout = $derived(app.data?.campusPayouts?.[id]);
   const feedback = $derived(app.data!.feedback.filter((f) => f.campusId === id));
   const rupiah = (value: number | string | null | undefined) =>
     typeof value === 'number'
@@ -52,7 +54,7 @@
         {app.data!.campuses.length} kampus, beragam perjalanan, satu komitmen untuk dampak berkelanjutan.
       </p>
     </div>
-    <Badge tone="green">{app.data!.campuses.length} kampus · Capaian simulasi</Badge>
+    <Badge tone="green">{app.data!.campuses.length} kampus · Pencairan Tahap 1</Badge>
   </div>
   <div class="flex justify-end mt-[0px] mb-[16px] mx-[0px] master-toolbar"><CampusMaster /></div>
   <section
@@ -87,11 +89,11 @@
           >
             {campus.name}
           </h1>
-          <p class="leading-[1.6] m-[0px]">Perkembangan dan dokumentasi program DEB Putih.</p>
+          <p class="leading-[1.6] m-[0px]">Perkembangan program dan dokumen pencairan Tahap 1.</p>
         </div>
       </div>
-      <Badge tone={stats.revisions ? 'amber' : 'green'}
-        >{stats.revisions ? 'Perlu tindak lanjut' : 'Dalam pendampingan'}</Badge
+      <Badge tone={payout ? CAMPUS_STATE_TONE[payout.assessment.state] : 'neutral'}
+        >{payout ? CAMPUS_STATE_LABEL[payout.assessment.state] : 'Belum ada penetapan pencairan'}</Badge
       >
     </div>
     <div class="flex justify-end mt-[0px] mb-[16px] mx-[0px] master-toolbar">
@@ -114,14 +116,14 @@
         class="grid grid-cols-[repeat(4,_minmax(0,_1fr))] gap-y-[16px] gap-x-[16px] mb-[24px] max-[1200.01px]:gap-y-[12px] max-[1200.01px]:gap-x-[12px] max-[900.01px]:grid-cols-[repeat(2,_1fr)] max-[700.01px]:gap-y-[10px] max-[700.01px]:gap-x-[10px] max-[700.01px]:mb-[20px] stats-grid"
       >
         <Stat
-          label="Progres DEB"
-          value={percent(stats.progress)}
-          note="Rata-rata seluruh indikator"
+          label="Tahap pencairan"
+          value={payout?.stage || 'Belum dimulai'}
+          note="Mengikuti dokumen dan status pengajuan"
           icon="target"
         /><Stat
-          label="Indikator tercapai"
-          value={`${stats.achieved} / ${stats.total}`}
-          note="Sudah memenuhi target"
+          label="Pemeriksaan PF"
+          value={payout ? `${payout.assessment.done} / ${payout.assessment.total}` : '0'}
+          note={payout ? `${payout.uploaded} berkas tersimpan; butir sesuai atau tidak diperlukan` : 'Belum ada penetapan pencairan'}
           icon="check"
         /><Stat
           label="Proposal"
@@ -130,12 +132,18 @@
           icon="proposal"
         /><Stat
           label="Perlu tindak lanjut"
-          value={String(stats.revisions)}
-          note="Indikator dengan revisi aktif"
+          value={String(payout?.assessment.revisi || 0)}
+          note="Dokumen yang perlu diperbaiki"
           icon="alert"
           tone="amber"
         />
       </div>
+      {#if payout}<section class="mb-6 rounded-xl border border-slate-200 bg-white p-5" aria-label="Progres dokumen pencairan">
+        <h2 class="text-lg font-semibold text-slate-900">Dokumen pencairan Tahap 1</h2>
+        <p class="mt-2 text-sm text-slate-600">{payout.assessment.phrase}</p>
+        <div class="my-4 flex flex-wrap gap-2">{#each KINDS as kind}<a href={`/admin/pencairan/${id}?butir=${kind}`} class="rounded-lg border border-slate-200 px-3 py-2 text-sm text-[#075fc7] hover:underline">{KIND_SHORT[kind]}: {STATUS_LABEL[payout.assessment.items[kind]]}</a>{/each}</div>
+        <a class="font-semibold text-[#075fc7] hover:underline" href={`/admin/pencairan/${id}`}>Buka proses pencairan</a>
+      </section>{/if}
       <section
         class="[background-image:initial] [background-color:white] min-w-[0] mb-[24px] p-[28px] border-[1px] border-solid border-[color:rgb(220,_231,_247)] rounded-[11px] panel"
       >

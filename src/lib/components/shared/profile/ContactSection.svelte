@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   // One contact group (mentor, koordinator or local hero): a read only list first, name and phone rows on "Ubah".
   import { tick } from 'svelte';
   import {
@@ -50,6 +51,7 @@
   async function save() {
     if (draft.some((contact) => contactError(contact))) {
       showErrors = true;
+      reportError(`${title}: ${draft.map(contactError).find(Boolean)}`);
       await tick();
       form?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
       return false;
@@ -64,7 +66,7 @@
 </script>
 
 <div role="group" aria-label={title}>
-  <EditableSection {title} {icon} bind:editing {canEdit} {saving} {dirty} onEdit={start} onSave={save} onCancel={() => (draft = [])}>
+  <EditableSection {title} {icon} bind:editing {canEdit} {saving} {dirty} onEdit={start} onSave={save} onCancel={() => { draft = []; }}>
     {#snippet badge()}
       {#if !editing && people.length}
         <span

@@ -1,3 +1,4 @@
+import { readJsonBody } from '$lib/server/deb/request-body';
 import type { RequestHandler } from '@sveltejs/kit';
 import { secured, ok, ADMIN, actorInfo, recordId } from '$lib/server/deb/access';
 import { approveVersion, overview } from '$lib/server/deb/rab';
@@ -6,6 +7,7 @@ import { approveVersion, overview } from '$lib/server/deb/rab';
 export const POST: RequestHandler = event => secured(event, ADMIN, async ({ actor, pb }) => {
   const campusId = recordId(event.params.campus, 'Kampus');
   const versionId = recordId(event.params.version, 'Versi');
-  await approveVersion(pb, actorInfo(actor), campusId, versionId);
+  const body = event.request.headers.get('content-type')?.includes('application/json') ? await readJsonBody(event.request, 4096) : {};
+  await approveVersion(pb, actorInfo(actor), campusId, versionId, body.expectedRevision as number | undefined);
   return ok(await overview(pb, campusId, versionId));
 });

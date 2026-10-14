@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   import { untrack } from 'svelte';
   import { dataService } from '$lib/data/service';
   import { onChange } from '$lib/realtime.svelte';
@@ -39,7 +40,7 @@
   const notesOf = (doc: Doc | null) => (doc ? [...doc.notes].sort((a, b) => a.created.localeCompare(b.created)) : []);
   /** Who to call about the revisions: the campus contacts from Profil DEB, in the order people usually ring them. */
   const GROUPS = [['coordinator', 'Koordinator PFS 12'], ['mentor', 'Mentor'], ['localHero', 'Local hero']] as const;
-  const contacts = $derived(data ? GROUPS.map(([key, label]) => ({ key, label, people: parseContacts(data.campus.contacts[key]) })) : []);
+  const contacts = $derived(data ? GROUPS.map(([key, label]) => ({ key, label, people: parseContacts(data!.campus.contacts[key]) })) : []);
   const anyContact = $derived(contacts.some(g => g.people.length));
   /** The checklist: the campus has been contacted about these revisions (when, by whom, and how it went). */
   const prop = (key: string) => (data && typeof data.disbursement.properties[key] === 'string' ? (data.disbursement.properties[key] as string) : '');
@@ -51,7 +52,7 @@
   async function saveContact(values: Record<string, string>) {
     savingContact = true;
     try { data = await dataService.api.patch<KartuData>(`/api/pencairan/${campusId}`, { properties: values }); error = ''; }
-    catch (e) { error = e instanceof Error ? e.message : 'Belum tersimpan.'; }
+    catch (e) { error = reportError(e instanceof Error ? e.message : 'Belum tersimpan.'); }
     finally { savingContact = false; }
   }
   const toggleContacted = () => saveContact({ kampusDihubungiPada: contactedAt ? '' : new Date().toISOString() });
@@ -68,12 +69,12 @@
 
   async function load() {
     try { data = await dataService.api.get<KartuData>(`/api/pencairan/${campusId}`); error = ''; }
-    catch (e) { error = e instanceof Error ? e.message : 'Halaman belum dapat dimuat.'; }
+    catch (e) { error = reportError(e instanceof Error ? e.message : 'Halaman belum dapat dimuat.'); }
   }
   $effect(() => { untrack(() => { void load(); }); });
   $effect(() => onChange(() => void load(), { campus: campusId }));
   async function copy() {
-    try { await navigator.clipboard.writeText(summary); copied = true; setTimeout(() => (copied = false), 3000); } catch { error = 'Salin tidak berhasil. Pilih teks lalu salin.'; }
+    try { await navigator.clipboard.writeText(summary); copied = true; setTimeout(() => (copied = false), 3000); } catch { error = reportError('Salin tidak berhasil. Pilih teks lalu salin.'); }
   }
 </script>
 

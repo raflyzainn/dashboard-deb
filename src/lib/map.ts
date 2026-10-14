@@ -1,5 +1,5 @@
 import type { Campus, Snapshot } from './types';
-import { campusStats } from './domain';
+import { insideIndonesia, parseCoordinates } from './location';
 
 export type ProgressBand = 'early' | 'growing' | 'near' | 'reached';
 export interface CampusLocation {
@@ -21,15 +21,30 @@ export function progressBand(value: number): ProgressBand {
   return 'early';
 }
 
-export function mapCampuses(data: Snapshot) {
-  return data.campuses.flatMap((campus: Campus) => {
+export function campusMapData(data: Snapshot) {
+  return data.campuses.map((campus: Campus) => {
     const location = data.locations?.find(point => point.campusId === campus.id);
-    if (!location || typeof location.latitude !== 'number' || typeof location.longitude !== 'number' ||
+    const programPin = parseCoordinates(campus.program?.coordinates);
+    const hasProgramPin = campus.program?.coordinates !== undefined;
+    const province = typeof campus.program?.province === 'string' ? campus.program.province.trim() : '';
+    const payout = data.campusPayouts?.[campus.id];
+    const score = payout && payout.assessment.total > 0 ? payout.assessment.done / payout.assessment.total * 100 : 0;
+    return { ...campus, ...location, campusId: campus.id, payout,
+      province: province || location?.province || '',
+      island: location?.island || campus.region || 'Wilayah belum diisi',
+      latitude: hasProgramPin ? programPin?.lat ?? null : location?.latitude ?? null,
+      longitude: hasProgramPin ? programPin?.lng ?? null : location?.longitude ?? null,
+      approximate: hasProgramPin ? false : Boolean(location?.approximate), score, band: progressBand(score) };
+  });
+}
+
+export function mapCampuses(data: Snapshot) {
+  return campusMapData(data).flatMap(location => {
+    if (typeof location.latitude !== 'number' || typeof location.longitude !== 'number' ||
       !Number.isFinite(location.latitude) || !Number.isFinite(location.longitude) ||
-      location.longitude < 94.5 || location.longitude > 141.5 || location.latitude < -11.5 || location.latitude > 6.5) return [];
-    const score = campusStats(data, campus.id).progress;
-    return [{ ...campus, ...location, x: (location.longitude - 94.5) / 47 * 100,
-      y: (6.5 - location.latitude) / 18 * 100, score, band: progressBand(score) }];
+      !insideIndonesia({ lat: location.latitude, lng: location.longitude })) return [];
+    return [{ ...location, x: (location.longitude - 94.5) / 47 * 100,
+      y: (6.5 - location.latitude) / 18 * 100 }];
   });
 }
 
@@ -60,10 +75,7 @@ export function layoutMapPoints<T extends { id: string; x: number; y: number }>(
 }
 
 export function regionSummary(data: Snapshot) {
-  const points = data.campuses.map(c => {
-    const location = data.locations?.find(l => l.campusId === c.id);
-    return { island: location?.island || 'Wilayah belum diisi', province: location?.province || '', score: campusStats(data, c.id).progress };
-  });
+  const points = campusMapData(data);
   return [...new Set(points.map(point => point.island))].map(island => {
     const rows = points.filter(point => point.island === island);
     return {

@@ -4,4 +4,4 @@
 </script>
 
 <svelte:head><title>RAB 70% (Tahap 1) · Desa Energi Berdikari</title></svelte:head>
-{#key page.params.id}<Rab campusId={page.params.id} />{/key}
+{#key page.params.id}<Rab campusId={page.params.id!} />{/key}

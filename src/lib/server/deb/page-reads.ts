@@ -29,7 +29,7 @@ const fields: Record<Resource, string> = {
 const stats: Resource[] = ['campuses', 'definitions', 'indicators', 'feedback', 'proposals'];
 const dependencies: Record<PageRequest['view'], Resource[]> = {
   payments: [], // Standalone demo only; no production payment endpoint is enabled.
-  guide: [],
+  guide: [], static: [],
   dashboard: [...stats, 'activities', 'questions', 'likes'], campuses: stats,
   'campus-detail': [...stats, 'submissions'], accounts: ['campuses'], map: stats,
   indicators: ['campuses', 'definitions', 'indicators', 'feedback', 'submissions'], proposals: ['campuses', 'proposals'],

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   import { untrack, onDestroy } from 'svelte';
   import { dataService } from '$lib/data/service';
   import type { KartuData } from './kartu-types';
@@ -24,6 +25,7 @@
   let busy = $state<'' | 'preview' | 'simpan'>('');
   let previewUrl = $state('');
   let copied = $state(false);
+  let operationId='';
   let copyTimer: ReturnType<typeof setTimeout> | undefined;
 
   const ENTRY_SHORT = ['Permohonan', 'Invois', 'Kuitansi', 'RAB 70%', 'Rekening', 'Surat kuasa, PKS'];
@@ -45,7 +47,7 @@
   const holdLine = $derived(!view || view.ready ? '' : notReady.length ? `Belum siap: ${notReady.map(s => s.label).join(', ')}.` : 'Semua butir harus Sesuai dulu.');
   const latest = $derived(view?.attachments[0] || null);
 
-  function fail(e: unknown, fallback: string) { error = e instanceof Error ? e.message : fallback; }
+  function fail(e: unknown, fallback: string) { error = reportError(e instanceof Error ? e.message : fallback); }
   async function load() {
     try { view = await dataService.api.get<View>(`${base}/lampiran`); error = ''; }
     catch (e) { fail(e, 'Lampiran belum dapat dimuat.'); }
@@ -70,7 +72,9 @@
     if (busy || !view?.ready) return;
     busy = 'simpan'; error = '';
     try {
-      const next = await dataService.api.post<View>(`${base}/lampiran`, { mode: 'simpan' });
+      operationId ||= crypto.randomUUID().replaceAll('-','').slice(0,15);
+      const next = await dataService.api.post<View>(`${base}/lampiran`, { mode: 'simpan', operationId, expectedRevision:data.disbursement.revision });
+      operationId='';
       view = next;
       if (previewUrl) { URL.revokeObjectURL(previewUrl); previewUrl = ''; }
       onchange(await dataService.api.get<KartuData>(base), `Lampiran ${next.attachments[0]?.number || ''} tersimpan.`);
@@ -79,12 +83,12 @@
   }
   async function copy(value: string) {
     try { await navigator.clipboard.writeText(value); copied = true; if (copyTimer) clearTimeout(copyTimer); copyTimer = setTimeout(() => (copied = false), 2000); }
-    catch { error = 'Salin otomatis tidak tersedia. Pilih teksnya lalu salin.'; }
+    catch { error = reportError('Salin otomatis tidak tersedia. Pilih teksnya lalu salin.'); }
   }
 </script>
 
 <div class="flex h-full min-h-0 flex-1 flex-col">
-  <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-auto bg-[#e5e9f0] p-4">
+  <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-auto bg-white p-4">
     <div class="flex flex-wrap items-center gap-1.5">
       {#each sources as s (s.entry)}
         <span class={s.ready ? chipOk : chipWarn} title={s.title}>{s.ready ? '✓' : '!'} {s.label}</span>

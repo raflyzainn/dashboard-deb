@@ -1,4 +1,5 @@
 ﻿<script lang="ts">
+  import { reportError } from '$lib/feedback';
   import { app } from '$lib/state.svelte';
   import { dataService } from '$lib/data/service';
   import type { ProposalVersion } from '$lib/types';
@@ -25,7 +26,7 @@
           url = objectUrl;
         })
         .catch((e) => {
-          if (!cancelled) error = e instanceof Error ? e.message : 'PDF tidak dapat dimuat.';
+          if (!cancelled) error = reportError(e instanceof Error ? e.message : 'PDF tidak dapat dimuat.');
         })
         .finally(() => {
           if (!cancelled) loading = false;

@@ -3,12 +3,18 @@ import { env } from '$env/dynamic/private';
 import { json, type RequestEvent } from '@sveltejs/kit';
 import { PreviewError } from './preview-error';
 import type { previewContext as ContextFactory } from './local-preview';
+import { campusApiAllowed } from '../../campus-access';
+import type PocketBase from 'pocketbase';
 
 export async function previewEndpoint(event: RequestEvent, action: (context: Awaited<ReturnType<typeof ContextFactory>>) => Promise<Response>) {
+  const scope=(pb:Pick<PocketBase,'authStore'>)=>{
+    if((pb.authStore.record as {role?:string}|null)?.role==='campus'&&event.url.pathname.startsWith('/api/')&&!campusApiAllowed(event.url.pathname))throw new PreviewError(403,'Modul ini belum tersedia untuk akun kampus.');
+    return pb;
+  };
   if (event.locals.pb) {
     try {
       const pb = event.locals.pb;
-      return await action({ account: async () => pb, accounts: async () => [] });
+      return await action({ account: async () => {scope(pb);return pb;}, accounts: async () => [] });
     } catch (error) {
       const e = error as { status?: number; message?: string; response?: { message?: string } };
       const status = e.status && [400,401,403,404,409,413,429,503].includes(e.status) ? e.status : 503;
@@ -25,7 +31,7 @@ export async function previewEndpoint(event: RequestEvent, action: (context: Awa
     if (event.cookies.get('deb_local_preview')) headers.set('x-deb-preview', '1');
     const context = await previewContext({ dev, address: event.getClientAddress(), url: event.url, headers },
       { enabled: env.DEB_LOCAL_PREVIEW_ENABLED, url: env.PB_URL, directory: env.DEB_LOCAL_INSTANCE_DIR, root: process.cwd() });
-    const response = await action({ ...context, account: key => context.account(key || selected) });
+    const response = await action({ ...context, account: async key => {const pb=await context.account(key || selected);scope(pb);return pb;} });
     if (response.ok && selected && event.url.pathname === '/api/session') {
       event.cookies.set('deb_local_preview', selected, { path: '/', httpOnly: true, sameSite: 'strict', secure: event.url.protocol === 'https:', maxAge: 28800 });
     }

@@ -1,10 +1,11 @@
 <script lang="ts">
+  import { reportError } from '$lib/feedback';
   import { page } from '$app/state';
   import { untrack } from 'svelte';
   import { formatSen } from '$lib/pencairan';
 
   /** Public verification page opened from the QR on a document. No sign in, no shell: campus, document, date, amount and hash. */
-  interface Result { valid: boolean; unavailable?: boolean; message?: string; code?: string; kindLabel?: string; campusName?: string; term?: number; issuedAt?: string; amountSen?: number; sha256?: string; label?: string }
+  interface Result { valid: boolean; unavailable?: boolean; message?: string; code?: string; kindLabel?: string; campusName?: string; term?: number; issuedAt?: string; amountSen?: number; sha256?: string; label?: string; local?: boolean; status?: string }
   let result = $state<Result | null>(null);
   let loading = $state(true);
   let copied = $state(false);
@@ -16,13 +17,15 @@
     try {
       const response = await fetch(`/api/verifikasi/${encodeURIComponent(code)}`, { cache: 'no-store' });
       result = (await response.json().catch(() => null)) || { valid: false, unavailable: true };
-    } catch { result = { valid: false, unavailable: true }; }
+      if (!response.ok || result?.unavailable) reportError(result?.message || 'Verifikasi dokumen belum berhasil. Periksa kode dan koneksi, lalu coba lagi.');
+      else if (!result?.valid) reportError(result?.message || 'Kode dokumen tidak ditemukan atau sudah tidak berlaku. Periksa kode pada dokumen Anda.');
+    } catch { result = { valid: false, unavailable: true }; reportError('Verifikasi dokumen belum dapat dimuat. Periksa koneksi, lalu coba lagi.'); }
     finally { loading = false; }
   }
-  $effect(() => { untrack(() => { void load(); }); });
+  $effect(() => { code; untrack(() => { void load(); }); });
   async function copy() {
     if (!result?.sha256) return;
-    try { await navigator.clipboard.writeText(result.sha256); copied = true; setTimeout(() => (copied = false), 3000); } catch { copied = false; }
+    try { await navigator.clipboard.writeText(result.sha256); copied = true; setTimeout(() => (copied = false), 3000); } catch { copied = false; reportError('Kode pemeriksaan belum dapat disalin. Pilih teksnya lalu salin secara manual.'); }
   }
 </script>
 
@@ -45,9 +48,10 @@
           <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-green-100 text-lg font-bold text-green-700" aria-hidden="true">✓</span>
           <div class="min-w-0">
             <h1 class="text-lg font-bold leading-snug text-slate-900 sm:text-xl">Dokumen ini diterbitkan oleh sistem MonevDEB</h1>
-            {#if result.label}<p class="mt-1 text-sm text-slate-600">{result.label}</p>{/if}
+            {#if result.label}<p class="mt-1 text-sm text-slate-600">{result.label.replace(/^Pengajuan lokal/, 'Pengajuan pencairan')}</p>{/if}
           </div>
         </div>
+        {#if result.status}<p class="mt-3 text-sm font-semibold text-slate-800">Status: {result.status}</p>{/if}
         <dl class="mt-6 grid gap-4 border-t border-slate-100 pt-5 sm:grid-cols-2">
           <div><dt class="text-[12px] font-semibold uppercase tracking-[0.06em] text-slate-500">Kampus</dt><dd class="mt-1 text-sm font-semibold text-slate-900">{result.campusName || 'Tidak tercatat'}</dd></div>
           <div><dt class="text-[12px] font-semibold uppercase tracking-[0.06em] text-slate-500">Dokumen</dt><dd class="mt-1 text-sm font-semibold text-slate-900">{result.kindLabel}</dd></div>
@@ -56,7 +60,7 @@
           <div><dt class="text-[12px] font-semibold uppercase tracking-[0.06em] text-slate-500">Nominal</dt><dd class="mt-1 text-sm font-semibold tabular-nums text-slate-900">{result.amountSen ? formatSen(result.amountSen) : 'Tidak tercatat'}</dd></div>
           <div><dt class="text-[12px] font-semibold uppercase tracking-[0.06em] text-slate-500">Kode</dt><dd class="mt-1 font-mono text-sm font-semibold text-slate-900">{result.code}</dd></div>
           <div class="sm:col-span-2">
-            <dt class="text-[12px] font-semibold uppercase tracking-[0.06em] text-slate-500">SHA-256 berkas</dt>
+            <dt class="text-[12px] font-semibold uppercase tracking-[0.06em] text-slate-500">SHA-256 berkas sumber</dt>
             <dd class="mt-1 flex flex-wrap items-start gap-2">
               <code class="min-w-0 flex-1 rounded-lg bg-slate-100 px-3 py-2 font-mono text-[13px] leading-6 text-slate-800 [overflow-wrap:anywhere]">{result.sha256 || 'Tidak tercatat'}</code>
               {#if result.sha256}
@@ -65,7 +69,7 @@
             </dd>
           </div>
         </dl>
-        <p class="mt-5 text-sm leading-6 text-slate-600">Bandingkan SHA-256 di atas dengan berkas yang Anda pegang.</p>
+        <p class="mt-5 text-sm leading-6 text-slate-600">QR mencatat asal penerbitan dokumen. Bandingkan SHA-256 di atas dengan berkas yang Anda pegang untuk memastikan isinya sama. Tanda tangan dan persetujuan mengikuti status dokumen.</p>
       </article>
     {:else if result?.unavailable}
       <article class="rounded-2xl border border-amber-200 bg-white/95 p-5 shadow-[0_18px_45px_#0b254514] sm:p-7" role="alert">

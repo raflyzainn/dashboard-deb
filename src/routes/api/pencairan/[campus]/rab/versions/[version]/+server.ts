@@ -8,6 +8,6 @@ export const PATCH: RequestHandler = event => secured(event, ADMIN, async ({ act
   const campusId = recordId(event.params.campus, 'Kampus');
   const versionId = recordId(event.params.version, 'Versi');
   const body = await readJsonBody(event.request, 4 * 1024 * 1024);
-  await saveLines(pb, actorInfo(actor), campusId, versionId, validateLines(body.lines));
+  await saveLines(pb, actorInfo(actor), campusId, versionId, validateLines(body.lines), body.expectedRevision as number | undefined);
   return ok(await overview(pb, campusId, versionId));
 });
