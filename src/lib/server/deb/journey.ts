@@ -1,3 +1,4 @@
+import { payoutTimeline } from '../../payout-progress';
 import { mintCode, verificationUrl } from './verifikasi';
 import { qrPng } from '../../qr';
 /** Relational persistence for the shared application workflow. Loads all workflow data and files from PocketBase and server storage. */
@@ -74,6 +75,8 @@ export function journeyRequest(event:RequestEvent,legal=false):Promise<Response>
     }
     const state:any={data:{campuses:[c]},accounts:[],files,workflow:{campuses:{[campusId]:r},users:[],settings:settingsRows,audit:[]}};
     const originalFiles=new Set(Object.keys(files)),historyCount=history.length;
+    const timeline=()=>payoutTimeline({journey:r.journey,paidAt:r.payment.paidAt,hasRab:r.versions.length>0,documents:r.documents});
+    const stageBefore=timeline().label;
     const legalBefore=clean(r.journey.pksReview),requestedBefore=r.journey.pfRequestedAt,pfBefore=r.journey.pf?.nomorPksPf;
     let result=action(state);
     const pksDownload=route==='pengajuan/pks-pdf'||/^documents\/pks\/versions\//.test(route);
@@ -123,6 +126,8 @@ export function journeyRequest(event:RequestEvent,legal=false):Promise<Response>
       put('notifications',{id:uid(),recipientUser:user.id,campus:campusId,eventType,eventKey:`${eventType}:${payment.id}:${payment.revision}:${user.id}`,sourceId:campusId,title,body,target,simulated:false});
      }
     };
+    const stageAfter=timeline().label;
+    if(stageAfter!==stageBefore)notify('campus','pencairan_tahap',`Pencairan: ${stageAfter}`,`Proses pencairan berpindah dari ${stageBefore} ke ${stageAfter}. Buka pencairan untuk melihat langkah berikutnya.`, '/campus/pencairan?bagian=ringkasan&butir=ringkasan');
     if(legalBefore!==clean(r.journey.pksReview)&&route==='pengajuan/legal')notify(actor.role==='legal'?'admin':'legal','pencairan_pks_legal','Pemeriksaan Legal PKS',actor.role==='legal'?'Keputusan Legal tersedia untuk diperiksa PF.':'PKS telah diperiksa PF dan menunggu Legal.',actor.role==='legal'?`/admin/pencairan/${campusId}?butir=pks`:'/legal/dashboard');
     if(!actor.admin&&nextHistory.length>historyCount){
      const submission=nextHistory.at(-1),revised=historyCount>0;

@@ -200,9 +200,9 @@
         onclick={() => (accountMenu = false)}
         aria-label={`Notifikasi, ${unreadCount} belum dibaca`}
         ><Icon name="notifications" />{#if unreadCount}<span
-            class="[&&]:absolute [&&]:top-[5px] [&&]:right-[5px] [&&]:w-[8px] [&&]:h-[8px] [&&]:[background-image:initial] [&&]:[background-color:rgb(213,_72,_62)] [&&]:border-[2px] [&&]:border-solid [&&]:border-[color:white] [&&]:rounded-[50%] notification-dot"
+            class="absolute -top-0.5 -right-0.5 flex min-h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-red-600 px-1 text-[10px] font-bold leading-none text-white"
             aria-hidden="true"
-          ></span>{/if}</a
+          >{unreadCount > 99 ? '99+' : unreadCount}</span>{/if}</a
       >
       {/if}<details class="relative z-50" bind:open={accountMenu}>
         <summary

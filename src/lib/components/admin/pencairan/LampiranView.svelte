@@ -100,6 +100,7 @@
         {/each}
       {/if}
     </div>
+    {#if view && view.blockers.length}<section class="space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" aria-label="Syarat lampiran yang belum terpenuhi"><h3 class="font-semibold">Selesaikan pemeriksaan sumber lampiran</h3><ul class="list-disc space-y-2 pl-5">{#each view.blockers as blocker}<li>{blocker}</li>{/each}</ul><Button size="sm" variant="secondary" href={`/admin/pencairan/${campusId}?butir=ttd`}>Buka pemeriksaan tanda tangan</Button></section>{/if}
     {#if latest?.sha256}
       <div class="flex min-w-0 flex-wrap items-center gap-2 text-xs text-slate-700">
         <span class="font-semibold">Lampiran {latest.number}</span>

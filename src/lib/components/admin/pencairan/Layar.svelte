@@ -178,7 +178,7 @@
   const closingDone = $derived.by(() => {
     if (!data) return { ttd: false, lampiran: false, bayar: false } as Record<string, boolean>;
     const letters = data.documents.filter(d => d.generated);
-    return { ttd: letters.length > 0 && letters.every(d => d.originalReceived), lampiran: data.lampiranCount > 0, bayar: Boolean(data.disbursement.paidAt) };
+    return { ttd: letters.length > 0 && letters.every(d => d.originalReceived && d.signedReceived), lampiran: data.lampiranCount > 0, bayar: Boolean(data.disbursement.paidAt) };
   });
   const decided = $derived(itemState === 'sesuai' || itemState === 'tidak_perlu');
   /** The decision statement replaces the buttons once an item is decided, until the admin opens them again. */

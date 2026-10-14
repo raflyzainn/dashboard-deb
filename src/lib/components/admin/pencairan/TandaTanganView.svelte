@@ -85,6 +85,7 @@
   const shortList = (labels: string[]) => `Belum diisi: ${labels.slice(0, 3).join(', ')}${labels.length > 3 ? ` dan ${labels.length - 3} lainnya` : ''}.`;
   const current = $derived(rows.find(r => r.kind === modal?.kind) || null);
   const received = $derived(rows.filter(r => r.doc.originalReceived).length);
+  const checkedScans = $derived(rows.filter(r => r.signed && r.doc.signedReceived).length);
   /** One line for the bar: what still blocks a final document, named once across the four letters. */
   const missingLine = $derived.by(() => {
     if (!info) return '';
@@ -236,6 +237,7 @@
       <a class={chipBtn} href={`${base}/documents/${row.kind}/versions/${row.signed.id}`} target="_blank" rel="noopener noreferrer" title={row.signed.originalName}>v{row.signed.number} · {when(row.signed.created)}</a>
       <button type="button" class={row.doc.signedReceived ? chipOk : chipBtn} onclick={() => open('compare', row.kind)}>{#if row.doc.signedReceived}✓ {/if}Bandingkan</button>
     {/if}
+    {#if row.signed && !row.doc.signedReceived}<button type="button" class={chipMain} aria-label={`Tandai pindaian ${row.label} sesuai`} disabled={Boolean(busy) || Boolean(data.disbursement.paidAt)} onclick={() => setFlag(row, 'signedReceived', true)}>Sesuai</button>{/if}
     {#if (data as any).journey?.datePolicy!=='chronology'}
     <label class="{chipBtn} focus-within:outline focus-within:outline-2 focus-within:outline-[#55a9f2] {row.final && !busy && !data.disbursement.paidAt ? '' : 'cursor-not-allowed opacity-50 hover:bg-white'}" title={row.final ? 'Pilih berkas PDF atau gambar' : 'Unduh dokumen final dulu.'}>
       <Icon name="upload" size={14} />{busy === `scan:${row.kind}` ? 'Mengunggah…' : row.signed ? 'Unggah ulang' : 'Unggah pindaian'}
@@ -243,6 +245,7 @@
     </label>
     {:else if !row.signed}<span class="text-xs text-slate-500">Menunggu pindaian dari kampus.</span>{/if}
   </div>
+  {#if row.signed}<p class="mt-2 text-xs {row.doc.signedReceived?'text-green-700':'text-amber-800'}">{row.doc.signedReceived?'Pindaian sesuai dengan dokumen final':'Menunggu pemeriksaan PF'}</p>{/if}
 {/snippet}
 
 {#snippet cellAsli(row: Row)}
@@ -297,7 +300,9 @@
   </div>
 
   <div class="flex flex-wrap items-center gap-2 border-t border-slate-200 bg-white px-4 py-2.5">
+    <span class={checkedScans === 4 ? chipOk : chipInfo}>{checkedScans} dari 4 pindaian sesuai</span>
     <span class={received === 4 ? chipOk : chipInfo}>{received} dari 4 asli diterima</span>
+    {#if checkedScans<4}<p class="w-full text-xs text-slate-600">Klik Bandingkan pada setiap pindaian, lalu centang Sesuai dengan dokumen final setelah diperiksa. Penerimaan asli dicatat terpisah.</p>{/if}
     {#if missingLine}<span class="text-xs font-medium text-amber-900">{missingLine}</span>{/if}
     {#if error}<span class="text-xs font-medium text-red-700" role="alert">{error}</span>{/if}
     <span class="ml-auto flex items-center gap-2">
