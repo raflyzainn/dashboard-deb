@@ -44,6 +44,26 @@ test('Admin biasa boleh memberi Legal tetapi bukan Admin',()=>{
  assert.ok(roles.includes('legal'));assert.ok(!roles.includes('admin'));
  assert.ok(grantable({superAdmin:true} as any).includes('legal'));
 });
+
+test('pindaian alur baru diunggah kampus dan menunggu pemeriksaan PF',async()=>{
+ const campus={id:'campus',name:'Kampus QA',programYear:'kedua',award:{amountSen:2000000000}};
+ const doc={kind:'permohonan',generated:true,status:'sesuai',currentVersionId:'final',signedReceived:false,originalReceived:false,notes:[],reviews:[],versions:[{id:'final',number:1,origin:'generated',journeyRevision:1}]};
+ const journey:any={datePolicy:'chronology',status:'selesai',revision:1,fields:{},files:{},history:[],documentRevisions:{permohonan:1},checklist:{}};
+ const state:any={data:{campuses:[campus]},files:{},workflow:{campuses:{campus:{journey,documents:[doc],payment:{paidAt:''},versions:[],attachments:[]}},settings:[{programYear:'kedua'}]}};
+ let role='admin',sequence=0;
+ const engine=createEngine(async()=>({id:'qa',name:'QA',role,campusId:'campus'} as any),{transaction:async action=>action(state),origin:'http://localhost',amountSen:2000000000,id:()=>String(++sequence)});
+ const body=()=>{const form=new FormData();form.set('file',new File([Uint8Array.from(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aE0cAAAAASUVORK5CYII=','base64'))],'pindaian.png',{type:'image/png'}));form.set('signed','true');form.set('note','Catatan QA');return form;};
+ await assert.rejects(engine.post('/api/pencairan/campus/documents/permohonan/versions',body()),/diunggah oleh kampus/);
+ assert.equal(doc.versions.length,1);
+ role='campus';
+ const uploaded:any=await engine.post('/api/pencairan/campus/documents/permohonan/versions',body());
+ assert.equal(uploaded.documents[0].versions.at(-1).signed,true);
+ assert.equal(uploaded.documents[0].signedReceived,false);
+ assert.equal(uploaded.documents[0].versions.at(-1).note,'Catatan QA');
+ role='admin';
+ const checked:any=await engine.patch('/api/pencairan/campus/documents/permohonan',{signedReceived:true});
+ assert.equal(checked.documents[0].signedReceived,true);
+});
 test('Legal menyetujui versi lengkap yang sama dengan pemeriksaan PF',()=>{
  const journey={documentRevisions:{pks:7},pksReview:{versionId:'pdf1',hash:'hash',sourceRevision:7,complete:true,state:'approved',pfBy:'pf',legalBy:'legal'}};
  assert.equal(pksApproved(journey),true);

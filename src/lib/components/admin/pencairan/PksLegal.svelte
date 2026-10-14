@@ -25,7 +25,7 @@
 {#if data?.journey.datePolicy==='chronology'}<section class="space-y-3 border-b border-blue-100 bg-blue-50/50 p-5 sm:p-6" aria-label="PDF dan pemeriksaan Legal">
  <h3 class="font-bold">PDF PKS dan pemeriksaan Legal</h3><p class="text-sm text-slate-600">Siapkan PDF agar kampus dapat memeriksa draf dan mengisi nomor PKS. Setelah kedua nomor lengkap, siapkan ulang PDF sebelum kampus mengajukan paket. Setujui pemeriksaan PF, lalu kirim versi yang sama ke Legal.</p>
  {#if error}<p role="alert" class="text-sm text-red-700">{error}</p>{/if}
- {#if data.journey.pksReview}<p class="text-sm">{labels[data.journey.pksReview.state]}</p>{#if data.journey.pksReview.note}<p class="rounded-lg bg-amber-50 p-3 text-sm">Catatan Legal: {data.journey.pksReview.note}. Gunakan pemeriksaan PF untuk membuka bagian revisi kampus yang diperlukan.</p>{/if}<a class="inline-block min-h-11 py-2 text-blue-700 underline" href={base+'/pks-pdf'} target="_blank" rel="noreferrer">Lihat PDF PKS</a>{/if}
+ {#if data.journey.pksReview}<p class="text-sm">{labels[data.journey.pksReview.state]}</p>{#if data.journey.pksReview.note}<p class="rounded-lg bg-amber-50 p-3 text-sm">Catatan Legal: {data.journey.pksReview.note}. Gunakan pemeriksaan PF untuk membuka bagian revisi kampus yang diperlukan.</p>{/if}{/if}
  <div class="flex flex-wrap gap-3 pt-2">
   <Button icon="file" loading={busy} disabled={busy||data.paid||data.journey.status==='selesai'} onclick={prepare}>Siapkan PDF PKS</Button>
   <Button icon="arrow" disabled={busy||!!sendBlocker} onclick={send}>Kirim ke Legal</Button>

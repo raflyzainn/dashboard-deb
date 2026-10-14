@@ -365,12 +365,15 @@ function refreshPksSettings(c:any,r:any,settings:any,user:AppSession){
     }else if(parts[5]==='catatan'){if(!body.body?.trim())throw Error('Isi catatan.');d.notes.push({id:id(),body:body.body,internal:user.role==='admin'&&!!body.internal,authorName:user.name,authorRole:user.role,created:now()});}
     else if(parts[5]==='versions'&&method==='POST'&&file){
      const signed=['true','1'].includes(String(body.get('signed')));
+     if(user.role==='admin'&&r.journey?.datePolicy==='chronology'&&d.generated)throw Error('Pindaian bertanda tangan diunggah oleh kampus. PF memeriksa pindaian dan penerimaan asli.');
      if(signed&&!['application/pdf','image/png','image/jpeg','image/webp'].includes(file.type))throw Error('Dokumen bertanda tangan harus PDF, PNG, JPG, atau WebP agar dapat disusun menjadi lampiran.');
      if(signed&&r.journey&&(r.journey.status!=='selesai'||!d.generated))throw Error('Pindaian bertanda tangan hanya untuk surat pengajuan yang sudah disetujui.');
      if(user.role!=='admin'&&r.journey&&(!signed||r.journey.status!=='selesai'||!d.generated||d.signedReceived||r.payment.paidAt))throw Error('Gunakan formulir pengajuan untuk memperbarui dokumen sebelum pemeriksaan selesai.');
-     const v:any=documentVersion(kind,file.name,d.versions.length+1);v.mime=file.type;v.size=file.size;v.signed=signed;
+     const note=String(body.get('note')||'').trim();if(note.length>2000)throw Error('Catatan unggahan maksimal 2.000 karakter.');
+     const v:any=documentVersion(kind,file.name,d.versions.length+1);v.mime=file.type;v.size=file.size;v.signed=signed;v.note=note;
      if(signed){const source=d.versions.filter((v:any)=>v.origin==='generated').at(-1);if(r.journey&&(!source||source.journeyRevision!==r.journey.documentRevisions[kind]))throw Error('Dokumen sumber berubah. Buat ulang dan periksa dokumen sebelum mengunggah tanda tangan.');v.generation={sourceVersionId:source?.id||'',journeyRevision:source?.journeyRevision};}
-     Object.assign(d,{signedReceived:signed,signedReceivedAt:signed?now():'',signedReceivedByName:signed?user.name:'',originalReceived:false,originalReceivedAt:'',originalReceivedByName:''});
+     const received=signed&&r.journey?.datePolicy!=='chronology';
+     Object.assign(d,{signedReceived:received,signedReceivedAt:received?now():'',signedReceivedByName:received?user.name:'',originalReceived:false,originalReceivedAt:'',originalReceivedByName:''});
      d.versions.push(v);d.currentVersionId=v.id;d.status=signed?'sesuai':'menunggu_review';s.files[v.id]=file;}
     else if(method==='PATCH'){admin();if(r.journey&&parts[6])throw Error('Data dokumen mengikuti pengajuan kampus. Koreksi data sumber agar dokumen tetap konsisten.');if(parts[6])Object.assign(d.versions.find((v:any)=>v.id===parts[6]).fields,body.fields);else Object.assign(d,documentReceiptFlags(body,user.name));}
     return card(c,r,user);

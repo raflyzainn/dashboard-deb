@@ -431,7 +431,7 @@ export async function recordPayment(pb: PocketBase, actor: AuditActor & { id: st
     const audit=new StoreRecord('audit');Object.assign(audit.data,auditData({actor,action:`mencatat pembayaran Tahap ${term}`,context:context(campusId,term),collection:'disbursements',record:payment.id,campus:campusId,before,after}));tx.save(audit);
     for(const user of tx.records.get('users')||[]){const notice=new StoreRecord('notifications');Object.assign(notice.data,{recipientUser:user.id,campus:campusId,eventType:'pencairan_bayar',eventKey:`pencairan_bayar:${payment.id}:${current.revision}:${user.id}`,sourceId:payment.id,title:`Dana Tahap ${term} sudah ditransfer`,body:`${formatSen(input.paidSen)} untuk ${campus.name} ditransfer pada ${input.paidAt}.`,target:'/campus/pencairan',simulated:false});tx.save(notice);}
     return current as RecordModel;
-  },{...payoutReads(pb,campusId),program_settings:null});
+  },{...payoutReads(pb,campusId),program_settings:{filter:pb.filter('programYear = {:year}',{year:campus.programYear})}});
 }
 
 export async function reviewDocument(pb: PocketBase, actor: AuditActor, campusId: string, kind: Kind, decision: 'sesuai' | 'perlu_revisi' | 'perlu_konfirmasi' | 'tidak_perlu', note: string, options: { imported?: boolean } = {}) {

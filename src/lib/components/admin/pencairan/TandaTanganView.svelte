@@ -236,10 +236,12 @@
       <a class={chipBtn} href={`${base}/documents/${row.kind}/versions/${row.signed.id}`} target="_blank" rel="noopener noreferrer" title={row.signed.originalName}>v{row.signed.number} · {when(row.signed.created)}</a>
       <button type="button" class={row.doc.signedReceived ? chipOk : chipBtn} onclick={() => open('compare', row.kind)}>{#if row.doc.signedReceived}✓ {/if}Bandingkan</button>
     {/if}
+    {#if (data as any).journey?.datePolicy!=='chronology'}
     <label class="{chipBtn} focus-within:outline focus-within:outline-2 focus-within:outline-[#55a9f2] {row.final && !busy && !data.disbursement.paidAt ? '' : 'cursor-not-allowed opacity-50 hover:bg-white'}" title={row.final ? 'Pilih berkas PDF atau gambar' : 'Unduh dokumen final dulu.'}>
       <Icon name="upload" size={14} />{busy === `scan:${row.kind}` ? 'Mengunggah…' : row.signed ? 'Unggah ulang' : 'Unggah pindaian'}
       <input type="file" class="sr-only" accept=".pdf,.png,.jpg,.jpeg,.webp" disabled={!row.final || Boolean(busy) || Boolean(data.disbursement.paidAt)} onchange={(e) => pickScan(row, e)} />
     </label>
+    {:else if !row.signed}<span class="text-xs text-slate-500">Menunggu pindaian dari kampus.</span>{/if}
   </div>
 {/snippet}
 
