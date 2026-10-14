@@ -3,6 +3,7 @@
   import { tick } from 'svelte';
   import { contactError, type Contact } from '$lib/contacts';
   import Button from '$lib/components/ui/Button.svelte';
+  import ContactPhoneInput from './ContactPhoneInput.svelte';
 
   const MAX_ROWS = 20;
   const INPUT =
@@ -14,10 +15,12 @@
   let {
     contacts = $bindable<Contact[]>(),
     disabled = false,
+    compact = false,
     showErrors = false
   }: {
     contacts: Contact[];
     disabled?: boolean;
+    compact?: boolean;
     /** Reveals the errors of every row, for a save attempt. */
     showErrors?: boolean;
   } = $props();
@@ -62,8 +65,8 @@
     {#each contacts as contact, index}
       {@const error = touched[index] || showErrors ? contactError(contact) : ''}
       {@const phoneError = error.startsWith('Nomor')}
-      <li class="rounded-lg border border-[#eaf1fb] bg-[#f8fbff] px-3 pt-3 pb-1.5" onfocusout={(event) => leaveRow(event, index)}>
-        <div class="mb-2 flex items-center justify-between gap-2">
+      <li class={compact ? 'border-b border-[#eaf1fb] pb-1 last:border-0' : 'rounded-lg border border-[#eaf1fb] bg-[#f8fbff] px-3 pt-3 pb-1.5'} onfocusout={(event) => leaveRow(event, index)}>
+        <div class={['flex items-center justify-between gap-2', compact ? 'mb-1' : 'mb-2']}>
           <span class="text-[12px] font-semibold tracking-[0.06em] text-[#64748b] uppercase">Kontak {index + 1}</span>
           <Button
             variant="danger"
@@ -74,12 +77,12 @@
             onclick={() => remove(index)}
           />
         </div>
-        <div class="grid gap-3 @[440px]:grid-cols-2">
+        <div class={['grid gap-3', compact ? '@[280px]:grid-cols-2' : '@[440px]:grid-cols-2']}>
           <div class="min-w-0">
             <label class={LABEL} for={`${uid}-name-${index}`}>Nama{#if contact.phone.trim()} <span class="text-red-600" aria-hidden="true">*</span>{/if}</label>
             <input
               id={`${uid}-name-${index}`}
-              class={[INPUT, error && !phoneError ? INPUT_BAD : INPUT_OK]}
+              class={[INPUT, compact ? '!py-2' : '', error && !phoneError ? INPUT_BAD : INPUT_OK]}
               type="text"
               autocomplete="off"
               maxlength="120"
@@ -91,17 +94,11 @@
             />
           </div>
           <div class="min-w-0">
-            <label class={LABEL} for={`${uid}-phone-${index}`}>Nomor telepon</label>
-            <input
+            <label class={LABEL} for={`${uid}-phone-${index}`}>Nomor WhatsApp</label>
+            <ContactPhoneInput
               id={`${uid}-phone-${index}`}
-              class={[INPUT, phoneError ? INPUT_BAD : INPUT_OK]}
-              type="tel"
-              inputmode="tel"
-              autocomplete="off"
-              maxlength="24"
-              placeholder="0812 3456 7890"
-              aria-invalid={phoneError ? 'true' : undefined}
-              aria-describedby={error ? `${uid}-error-${index}` : undefined}
+              invalid={phoneError}
+              describedBy={error ? `${uid}-error-${index}` : undefined}
               bind:value={contact.phone}
               {disabled}
             />
@@ -114,8 +111,9 @@
       </li>
     {/each}
   </ol>
-  <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+  <div class={['flex flex-wrap items-center gap-x-3 gap-y-1', compact ? 'mt-1' : 'mt-3']}>
     <Button variant="secondary" size="sm" icon="plus" disabled={disabled || full} onclick={add}>Tambah kontak</Button>
     {#if full}<span class="text-[12px] text-[#64748b]">Maksimal {MAX_ROWS} kontak.</span>{/if}
   </div>
+  <p class="m-0 mt-2 text-[11px] leading-4 text-[#64748b]">Gunakan nomor WhatsApp aktif. Format diperiksa; akun WhatsApp belum diverifikasi.</p>
 </div>

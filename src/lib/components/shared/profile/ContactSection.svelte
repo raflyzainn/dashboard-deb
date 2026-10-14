@@ -7,6 +7,7 @@
     formatPhone,
     parseContacts,
     serializeContacts,
+    normalizedPhone,
     whatsappLink,
     type Contact
   } from '$lib/contacts';
@@ -22,7 +23,8 @@
     value = '',
     icon = '',
     campusId,
-    canEdit = true
+    canEdit = true,
+    alwaysEdit = false
   }: {
     title: string;
     field: 'mentor' | 'coordinator' | 'localHero';
@@ -31,6 +33,7 @@
     icon?: string;
     campusId: string;
     canEdit?: boolean;
+    alwaysEdit?: boolean;
   } = $props();
 
   const people = $derived(parseContacts(value));
@@ -58,7 +61,7 @@
     }
     saving = true;
     const values: ProgramValues = {};
-    values[field] = serializeContacts(draft);
+    values[field] = serializeContacts(draft.map(contact => ({ ...contact, phone: normalizedPhone(contact.phone) })));
     const saved = await saveProgram(campusId, values);
     saving = false;
     return saved;
@@ -66,7 +69,7 @@
 </script>
 
 <div role="group" aria-label={title}>
-  <EditableSection {title} {icon} bind:editing {canEdit} {saving} {dirty} onEdit={start} onSave={save} onCancel={() => { draft = []; }}>
+  <EditableSection {title} {icon} bind:editing {alwaysEdit} compact={alwaysEdit} saveLabel={alwaysEdit ? 'Simpan' : 'Simpan perubahan'} {canEdit} {saving} {dirty} onEdit={start} onSave={save} onCancel={() => { draft = []; }}>
     {#snippet badge()}
       {#if !editing && people.length}
         <span
@@ -109,7 +112,7 @@
     {/snippet}
     {#snippet edit()}
       <div bind:this={form}>
-        <ContactListEditor bind:contacts={draft} disabled={saving} {showErrors} />
+        <ContactListEditor bind:contacts={draft} disabled={saving} {showErrors} compact={alwaysEdit} />
       </div>
     {/snippet}
   </EditableSection>
