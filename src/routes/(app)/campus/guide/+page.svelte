@@ -137,3 +137,5 @@
     </div>
   </aside>
 </div>
+
+<section class="mt-5 rounded-2xl border border-blue-100 bg-white p-5"><h2 class="font-bold">Pelaporan setelah dana Tahap 1 diterima</h2><p class="mt-2">Catat satu bukti untuk setiap invois/pindaian. Lengkapi laporan pelaksanaan, infografis PDF, video MP4 maksimal 2 menit, dan artikel (teks web, Word atau PDF). Simpan draf lalu kirim setiap keluaran untuk diperiksa. Perbaiki versi yang diminta admin; riwayat tetap tersedia.</p><p class="mt-2">LPJ selesai setelah semua bukti Sesuai dan admin menekan Selesaikan LPJ. Empat keluaran Sesuai menandai pelaporan tahunan lengkap.</p><a class="mt-3 inline-block text-blue-700 underline" href="/campus/pelaporan">Buka Pelaporan</a></section>

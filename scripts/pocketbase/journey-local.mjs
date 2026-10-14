@@ -97,6 +97,6 @@ if(process.argv.includes('--delete-qa')){
 }
 if(!process.argv.some(a=>['--migrate','--seed','--seed-qa3','--seed-qa4','--delete-qa','--audit-unopened','--open-unopened'].includes(a))){
  const env={...process.env,...vars,PB_SUPER_TOKEN:'',PB_SUPERUSER_EMAIL:'',PB_SUPERUSER_PASSWORD:'',R2_ENDPOINT:'',R2_BUCKET:'',R2_ACCESS_KEY_ID:'',R2_SECRET_ACCESS_KEY:''};
- const child=spawn(process.execPath,[path.join(root,'node_modules/vite/bin/vite.js'),'--mode','pocketbase-local','--host','127.0.0.1','--port','5176','--strictPort'],{cwd:root,env,windowsHide:true,stdio:'inherit'});
+ const child=spawn(process.execPath,[path.join(root,'node_modules/vite/bin/vite.js'),'--mode','pocketbase-local','--host','127.0.0.1','--port',vars.DEB_DEV_PORT||'5176','--strictPort'],{cwd:root,env,windowsHide:true,stdio:'inherit'});
  child.on('exit',code=>process.exit(code||0));
 }else console.log('Local maintenance complete; no remote database accessed.');

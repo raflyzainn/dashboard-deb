@@ -1,5 +1,17 @@
 # Panduan proyek untuk Codex
 
+## Pelaporan kampus — 14 Oktober 2026
+
+Menu Pencairan Dana tidak tampil di dropdown akun kampus sesuai arahan terbaru; kampus membukanya lewat kartu Beranda. Pelaporan pada kartu/menu hanya tampil setelah pembayaran T1. Pada halaman review admin, berkas keluaran terbaru langsung dipratinjau: PDF/Word memakai FileViewer existing, video memakai pemutar, dan artikel teks ditampilkan langsung.
+
+Tampilan Pelaporan menampilkan Keluaran dan LPJ bersama dalam satu halaman form sesuai arahan terbaru pengguna. Tombol bagian hanya melompat ke bagian terkait, tanpa menyembunyikan form lainnya. Kartu, ringkasan dana, input/tombol, tabel dan penyelesaian memakai tampilan ringkas; tabel bukti dapat digeser pada mobile. QA perubahan visual dilakukan di 5177 sebagaimana laporan di bawah.
+
+Kampus membuka `/campus/pelaporan` setelah pembayaran T1 memiliki tanggal dan nominal positif. Keluaran laporan/infografis/video/artikel memakai collection `report_versions`, terpisah dari dokumen wajib pencairan. Simpan menghasilkan draf berversi; Kirim mengunci konten sampai admin memeriksa. Artikel mendukung teks web, DOCX atau PDF. Video MP4 maksimal 40 MB dan dua menit, dokumen maksimal 20 MB.
+
+LPJ menggunakan bukti existing, dengan revisi/riwayat dan deduplikasi retry. Semua bukti Sesuai belum otomatis selesai: admin harus menekan Selesaikan LPJ. Status selesai mengunci bukti dan menjadi prasyarat LPJ menuju T2. Buka kembali wajib alasan dan membatalkan kesiapan itu. Empat keluaran versi terkini Sesuai menandai pelaporan tahunan lengkap. Form narasi/generator infografis menunggu template, dan paket T2 penuh belum tersedia.
+
+QA fitur ini menggunakan frontend 5177 agar 5176 tetap berjalan. [Runbook schema lokal](pencairan-deb/RUNBOOK-PELAPORAN-LOKAL.md) dan [hasil QA aktual](QA-PELAPORAN-KAMPUS-2026-10-14.md) membedakan verifikasi browser, tes tertulis yang belum dijalankan dan perubahan yang belum dipublikasikan.
+
 ## Profil Program kampus — 14 Oktober 2026
 
 Kontak program memakai pilihan negara (default Indonesia +62) dan isian Nomor WhatsApp. Format divalidasi dengan `libphonenumber-js/max` pada formulir dan API profil; saat disimpan nomor dinormalisasi ke format internasional. Nomor lama yang ambigu tidak diberi tautan WhatsApp. Validasi format tidak membuktikan nomor aktif, kepemilikan, atau pendaftaran WhatsApp; tidak ada OTP maupun pengiriman pesan otomatis.
