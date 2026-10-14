@@ -26,6 +26,7 @@
  */
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
+import { materializeNumbering } from './pengajuan/document-numbering';
 import { formatSen, terbilang } from './pencairan';
 import { parseContacts } from './contacts';
 
@@ -217,6 +218,7 @@ export function renderDocx(template: ArrayBuffer | Uint8Array, data: MergeData, 
     }
   }
   doc.render(values);
+  materializeNumbering(doc.getZip());
   return doc.getZip().generate({ type: 'uint8array', compression: 'DEFLATE' }) as Uint8Array;
 }
 

@@ -18,13 +18,29 @@ export function journeyTemplates() {
  })).then(entries=>Object.fromEntries(entries) as Record<MergeKind,Uint8Array>).catch(error=>{cached=undefined;throw error;});
 }
 const escape=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]!));
+// Replace only the matching characters: moving a whole paragraph into its first run makes it all bold.
+function replaceRuns(nodes:Element[],pattern:RegExp,replacement:(...args:any[])=>string) {
+ const text=nodes.map(n=>n.textContent||'').join('');
+ for(const match of Array.from(text.matchAll(pattern)).reverse()){
+  const start=match.index!,end=start+match[0].length,value=replacement(...match);
+  let offset=0,inserted=false;
+  for(const node of nodes){
+   const original=node.textContent||'',last=offset+original.length;
+   if(last>start&&offset<end){
+    node.textContent=original.slice(0,Math.max(0,start-offset))+(!inserted?value:'')+original.slice(Math.min(original.length,Math.max(0,end-offset)));
+    inserted=true;
+   }
+   offset=last;
+  }
+ }
+}
 export function journeyDocx(kind:MergeKind|'surat_kuasa',c:any,r:any,settings:any,templates:Record<MergeKind,Uint8Array>,kop?:{bytes:Uint8Array;width:number;height:number;mime:string},draft=true) {
  const input=mergeInput(c,r,settings),percent=Math.round(input.disbursement.requestedSen/input.award.amountSen*10000)/100;
  const zip=new PizZip(templates[kind==='surat_kuasa'?'permohonan':kind]);
  const giverData:Record<string,string>={};
  if(kind==='surat_kuasa'){
-  const paragraph=(text:string,align='left',bold=false,after=140)=>`<w:p><w:pPr><w:jc w:val="${align}"/><w:spacing w:after="${after}" w:line="276" w:lineRule="auto"/><w:tabs><w:tab w:val="left" w:pos="2400"/><w:tab w:val="left" w:pos="5000"/></w:tabs></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="24"/>${bold?'<w:b/>':''}<w:color w:val="000000"/></w:rPr>${text.split('\t').map((part,i)=>(i?'<w:tab/>':'')+`<w:t xml:space="preserve">${escape(part)}</w:t>`).join('')}</w:r></w:p>`;
-  const table=(rows:string[][],widths:number[])=>`<w:tbl><w:tblPr><w:tblW w:w="9072" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders>${['top','left','bottom','right','insideH','insideV'].map(side=>`<w:${side} w:val="nil"/>`).join('')}</w:tblBorders></w:tblPr><w:tblGrid>${widths.map(width=>`<w:gridCol w:w="${width}"/>`).join('')}</w:tblGrid>${rows.map(row=>'<w:tr>'+row.map((text,i)=>`<w:tc><w:tcPr><w:tcW w:w="${widths[i]}" w:type="dxa"/></w:tcPr>${paragraph(text,i===0?'left':widths.length===2?'center':'left',false,120)}</w:tc>`).join('')+'</w:tr>').join('')}</w:tbl>`;
+  const paragraph=(text:string,align='left',bold=false,after=140)=>`<w:p><w:pPr><w:jc w:val="${align}"/><w:spacing w:after="${after}" w:line="276" w:lineRule="auto"/><w:tabs><w:tab w:val="left" w:pos="2400"/><w:tab w:val="left" w:pos="5000"/></w:tabs><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:sz w:val="22"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:sz w:val="22"/>${bold?'<w:b/>':''}<w:color w:val="000000"/></w:rPr>${text.split('\t').map((part,i)=>(i?'<w:tab/>':'')+`<w:t xml:space="preserve">${escape(part)}</w:t>`).join('')}</w:r></w:p>`;
+  const table=(rows:string[][],widths:number[])=>`<w:tbl><w:tblPr><w:tblW w:w="9072" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders>${['top','left','bottom','right','insideH','insideV'].map(side=>`<w:${side} w:val="nil"/>`).join('')}</w:tblBorders></w:tblPr><w:tblGrid>${widths.map(width=>`<w:gridCol w:w="${width}"/>`).join('')}</w:tblGrid>${rows.map(row=>'<w:tr><w:trPr><w:cantSplit/>'+ (row.every(text=>!text)?'<w:trHeight w:val="900" w:hRule="atLeast"/>':'')+'</w:trPr>'+row.map((text,i)=>`<w:tc><w:tcPr><w:tcW w:w="${widths[i]}" w:type="dxa"/></w:tcPr>${paragraph(text,i===0?'left':widths.length===2?'center':'left',false,120)}</w:tc>`).join('')+'</w:tr>').join('')}</w:tbl>`;
   const identity=(rows:string[][])=>table(rows.map(([label,value])=>[label,':',value]),[2100,240,6732]);
   const givers=r.journey.datePolicy==='chronology'?grantors(r.journey.fields):[{name:r.journey.fields.pemberiKuasa,title:r.journey.fields.penandatanganJabatan}];
   givers.forEach((giver,index)=>{giverData['pemberiNama'+index]=giver.name;giverData['pemberiJabatan'+index]=giver.title;});
@@ -37,7 +53,7 @@ export function journeyDocx(kind:MergeKind|'surat_kuasa',c:any,r:any,settings:an
    +identity([['Nama bank','{namaBank}'],['Nomor rekening','{nomorRekening}'],['Atas nama','{namaPemilikRekening}']])
    +paragraph('Demikian surat kuasa ini dibuat untuk digunakan sebagai kelengkapan pengajuan pencairan dana program tersebut.', 'both',false,280)
    +paragraph('{tempatSurat}, {tanggalKuasa}','right',false,200)
-   +table([['Penerima kuasa',''],['',''],['',''],['{penerimaKuasa}','']],[4536,4536])+givers.map((giver,index)=>table([['Pemberi kuasa '+(index+1),''],['Meterai Rp10.000',''],['',''],['',''],['{pemberiNama'+index+'}','{pemberiJabatan'+index+'}']],[4536,4536])).join('');
+   +table([['Pemberi kuasa','Penerima kuasa'],['Meterai Rp10.000',''],['',''],[givers.length?'{pemberiNama0}':'','{penerimaKuasa}'],[givers.length?'{pemberiJabatan0}':'',''],...givers.slice(1).flatMap((giver,index)=>[['Pemberi kuasa '+(index+2),''],['',''],['{pemberiNama'+(index+1)+'}',''],['{pemberiJabatan'+(index+1)+'}','']])],[4536,4536]);
   const xml=zip.file('word/document.xml')!.asText();
   // A4, 2.5 cm margins. Do not inherit the sample letterhead/header from permohonan.
   const section='<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1417" w:right="1417" w:bottom="1417" w:left="1417" w:header="708" w:footer="708"/></w:sectPr>';
@@ -72,13 +88,13 @@ export function journeyDocx(kind:MergeKind|'surat_kuasa',c:any,r:any,settings:an
    if(kind==='pks'&&/^Surat\s+Kuasa\s*\(copy\);?$/i.test(text.trim())){p.parentNode?.removeChild(p);continue;}
    if(kind==='permohonan')next=next.replace(/Copy\s+Surat\s+Kuasa\s+dan\s+/i,'Copy ');
   }
-  next=next.replace(/\b(70|30)%(\s*\((?:tujuh puluh|tiga puluh) persen\))?/gi,(_match,original,withWords)=>{
+  if(next!==text&&nodes.length){nodes[0].textContent=next;nodes.slice(1).forEach(n=>n.textContent='');}
+  replaceRuns(nodes,/\b(70|30)%(\s*\((?:tujuh puluh|tiga puluh) persen\))?/gi,(_match,original,withWords)=>{
    const value=original==='70'?percent:Math.round((100-percent)*100)/100;
    const display=String(value).replace('.',','),words=Number.isInteger(value)?numberWords(value).toLowerCase():display;
    return `${display}%${withWords?` (${words} persen)`:''}`;
   });
-  next=next.replace(/2025\/2026|\b202[45]\b/g,input.award.skDate.slice(0,4));
-  if(next!==text&&nodes.length){nodes[0].textContent=next;nodes.slice(1).forEach(n=>n.textContent='');}
+  replaceRuns(nodes,/2025\/2026|\b202[45]\b/g,()=>input.award.skDate.slice(0,4));
  }
  zip.file('word/document.xml',xml2str(xml));
  if(!draft)for(const name of Object.keys(zip.files).filter(name=>/^word\/header\d+\.xml$/.test(name))){
