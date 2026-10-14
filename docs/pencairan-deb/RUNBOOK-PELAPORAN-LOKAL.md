@@ -1,5 +1,7 @@
 # Pelaporan: schema dan QA lokal
 
+Pembaruan 14 Oktober 2026: schema aditif telah diterapkan pada production atas instruksi pengguna, dengan verifikasi ulang dan snapshot lokal. Lihat [laporan migrasi production](../PRODUCTION-SCHEMA-PELAPORAN-2026-10-14.md). Pernyataan belum dimigrasikan di bagian pelaksanaan awal berikut merupakan riwayat sebelum instruksi tersebut. Kode aplikasi tidak di-merge/deploy oleh migrasi ini.
+
 Branch pelaporan berasal dari GitLab production `fa84daee78dbb0317a33b10e30820ed236663261`. Rancangan disetujui pengguna 14 Oktober 2026.
 
 ## Menjalankan
