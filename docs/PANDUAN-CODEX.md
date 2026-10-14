@@ -1,5 +1,13 @@
 # Panduan proyek untuk Codex
 
+## Profil Program kampus — 14 Oktober 2026
+
+Kontak program memakai pilihan negara (default Indonesia +62) dan isian Nomor WhatsApp. Format divalidasi dengan `libphonenumber-js/max` pada formulir dan API profil; saat disimpan nomor dinormalisasi ke format internasional. Nomor lama yang ambigu tidak diberi tautan WhatsApp. Validasi format tidak membuktikan nomor aktif, kepemilikan, atau pendaftaran WhatsApp; tidak ada OTP maupun pengiriman pesan otomatis.
+
+Beranda memiliki kartu **Lengkapi Profil Program** menuju `/campus/profile`; akses juga tersedia dari menu akun dan Panduan Aplikasi. Kampus dapat mengubah kontak, lokasi, informasi/deskripsi program, kategori kelas, target kategori, Subholding, estimasi RAB, serta sembilan isian kesiapan rencana aksi. Data memakai `campuses.program` yang sama dengan Ringkasan admin. Khusus kampus, setiap bagian langsung menampilkan formulir dengan Simpan perubahan/Batalkan perubahan. Admin tetap memakai Ubah sebelum mengedit. Membatalkan mengembalikan nilai tersimpan; menyimpan satu bagian mempertahankan draf bagian lain. Tim Pendamping (`pfTeam`) tidak dibawa ke form; nilai lama dipertahankan dan API menolak perubahan field itu dari kampus.
+
+Akses tambahan hanya membuka halaman profil dan PATCH `/api/campuses/:id/program`. Server memeriksa kepemilikan kampus sebelum membaca profil. Pembacaan profil memakai data kampus sendiri dari navigasi; API dashboard/indikator/proposal/forum tetap tertutup untuk kampus. Perubahan profil tidak otomatis menimpa isian atau dokumen pada pengajuan yang sudah dibuat. Checklist dan batas verifikasi: [Profil Program kampus](QA-PROFIL-PROGRAM-KAMPUS-2026-10-14.md).
+
 ## Progres pencairan pada Peta Persebaran — 13 Oktober 2026
 
 Peta, legenda, rata-rata dan ringkasan wilayah memakai `campusPayouts` yang sama dengan Kampus Mitra: butir pemeriksaan selesai dibagi total butir. Detail pin menampilkan tahap, jumlah berkas tersimpan dan butir selesai. Unggah atau submit belum berarti pemeriksaan selesai; ini bukan persentase dana dibayar. Koordinat dan pengelompokan wilayah tetap mengikuti data existing. Bukti Chrome desktop/mobile: [QA peta progres pencairan](QA-PETA-PROGRES-PENCAIRAN-2026-10-13.md). Bagian peta berbasis indikator di bawah menjadi riwayat.

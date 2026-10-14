@@ -22,7 +22,7 @@ Launcher normal hanya memulai layanan lokal; tidak melakukan seed/migrasi otomat
 
 ## Alur dan penyimpanan
 
-Akun kampus tetap dapat membuka Beranda, Pencairan Dana, Notifikasi, dan Panduan Aplikasi. URL modul yang belum dipakai atau halaman admin diarahkan ke Beranda kampus; API modul indikator, proposal, forum, profil, dan pengelolaan admin ditolak untuk kampus. Akses admin mengikuti perannya.
+Akun kampus dapat membuka Beranda, Profil Program, Pencairan Dana, Notifikasi, dan Panduan Aplikasi. Profil Program memakai data kampus yang sama dengan Ringkasan admin: kontak, lokasi, informasi/deskripsi program, dan sembilan indikator kesiapan rencana aksi. Kampus hanya dapat mengubah profilnya sendiri; Tim Pendamping tidak ditampilkan pada form dan tidak dapat diubah kampus. URL modul yang belum dipakai atau halaman admin diarahkan ke Beranda kampus; API modul indikator, proposal, forum, dan pengelolaan admin tetap ditolak untuk kampus. Akses admin mengikuti perannya.
 
 Data formulir, RAB, pemeriksaan, revisi, audit, notifikasi dan pembayaran dibaca/disimpan melalui API PocketBase. Berkas memakai storage server yang sudah ada: folder objek pada instance lokal untuk QA dan R2 untuk lingkungan server yang dikonfigurasi. Browser tidak menyimpan database aplikasi atau mengarang pengajuan saat backend gagal.
 

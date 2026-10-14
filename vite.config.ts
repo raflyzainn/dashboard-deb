@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [tailwindcss(), sveltekit()],
   server: {
     port: 5176, strictPort: true,
+    watch: { ignored: ['**/.worktrees/**'] },
     // Preserve Vite's default deny patterns and also block local runtime secrets/fixtures.
     fs: { deny: ['.env', '.env.*', '*.{crt,pem}', '**/.git/**', '**/.local/**', '**/scripts/fixtures/**'] }
   },
