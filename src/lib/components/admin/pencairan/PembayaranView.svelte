@@ -61,9 +61,9 @@
 
   {#if !paid}
     <form class="flex flex-wrap items-end gap-2 border-t border-slate-200 bg-white px-4 py-2.5" onsubmit={(e) => { e.preventDefault(); void save(); }}>
-      <label class={field}>Tanggal bayar<input type="date" class={input} bind:value={paidAt} disabled={Boolean(reason) || busy} required /></label>
+      <label class={field}><span class="field-caption">Tanggal bayar</span><input type="date" class={input} bind:value={paidAt} disabled={Boolean(reason) || busy} required /></label>
       <div class={field}>Jumlah<span class="flex min-h-[34px] items-center rounded-lg border border-slate-200 bg-slate-50 px-2 text-[13px] font-medium normal-case tracking-normal text-slate-900 tabular-nums">{requested ? formatSen(requested) : 'Belum ditetapkan'}</span></div>
-      <label class="{field} min-w-[200px] flex-1">Referensi transfer<input type="text" class={input} bind:value={paidRef} maxlength="120" disabled={Boolean(reason) || busy} required /></label>
+      <label class="{field} min-w-[200px] flex-1"><span class="field-caption">Referensi transfer</span><input type="text" class={input} bind:value={paidRef} maxlength="120" disabled={Boolean(reason) || busy} required /></label>
       <span class="ml-auto flex flex-wrap items-center gap-2">
         {#if error}<span class="text-xs font-medium text-red-700" role="alert">{error}</span>{:else if reason}<span class="text-xs font-medium text-amber-900">{reason}</span>{/if}
         <button type="submit" class={btnGreen} title={hint} disabled={!ready || busy}>

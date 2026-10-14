@@ -11,6 +11,7 @@ build/
 !.env.example
 test-results/
 playwright-report/
+output/
 *.log
 
 .playwright-mcp/

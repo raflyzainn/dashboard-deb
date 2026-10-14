@@ -9,16 +9,18 @@
   let { children }: { children: Snippet } = $props();
   let mobile = $state(false);
   let drawer = $state<HTMLDialogElement>(null!);
+  const legal = $derived(app.session?.role === 'legal');
   const campus = $derived(app.session?.role === 'campus');
-  const labels = {
+  const labels = $derived({
     guide: 'Panduan aplikasi',
-    profile: 'Profil Program',
+    profile: 'Profil & Monitoring Program',
+    pelaporan: 'Pelaporan',
     settings: 'Pengaturan',
     'master-indicators': 'Master indikator',
-    dashboard: 'Beranda',
+    dashboard: legal ? 'Pemeriksaan PKS' : 'Beranda',
     campuses: 'Kampus mitra',
     sebaran: 'Peta Persebaran',
-    verifikasi: 'Review Kampus',
+    verifikasi: 'Monitoring Kampus',
     indicators: 'Indikator DEB',
     proposal: 'Proposal',
     payments: 'Pencairan',
@@ -28,15 +30,14 @@
     questions: 'Forum Q&A',
     faq: 'Pusat bantuan',
     notifications: 'Notifikasi'
-  };
+  });
   const menus = $derived(
-    app.session?.role === 'admin'
+    legal ? ['dashboard'] : app.session?.role === 'admin'
       ? [
           'dashboard',
           'pencairan',
           'verifikasi',
           'campuses',
-          'master-indicators',
           'sebaran',
           'proposal',
           'users',
@@ -79,7 +80,7 @@
     ><span
       >DEB<span
         class="block text-[10px] tracking-[0.06em] font-[600] mt-[8px] text-[#475569] max-[900.01px]:text-[10px] brand-sub"
-        >{app.session?.role === 'admin' ? 'ADMIN PROGRAM' : 'KAMPUS MITRA'}</span
+        >{app.session?.role === 'admin' ? 'ADMIN PROGRAM' : legal ? 'LEGAL' : 'KAMPUS MITRA'}</span
       ></span
     ></a
   >
@@ -191,7 +192,7 @@
       <div
         class="w-[1px] h-[26px] [background-image:initial] [background-color:var(--line)] mx-[3px] my-[0px] max-[700.01px]:hidden header-divider"
       ></div>
-      <a
+      {#if !legal}<a
         class="[-webkit-tap-highlight-color:transparent] text-[#53739c] [text-decoration-line:none] [text-decoration-thickness:initial] [text-decoration-style:initial] [text-decoration-color:initial] inline-flex items-center justify-center w-[44px] h-[44px] shrink-0 [background-image:initial] [background-color:transparent] [&&&]:relative border-[0px] border-none border-[color:currentcolor] rounded-[7px] [&:focus-visible]:[outline-color:#55a9f2] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[4px] [&:hover:not(:disabled)]:text-[#075fc7] [&:hover:not(:disabled)]:[background-image:initial] [&:hover:not(:disabled)]:[background-color:rgb(233,_243,_255)] icon-button"
         href={`${prefix}/notifications`}
         title="Notifikasi"
@@ -199,11 +200,11 @@
         onclick={() => (accountMenu = false)}
         aria-label={`Notifikasi, ${unreadCount} belum dibaca`}
         ><Icon name="notifications" />{#if unreadCount}<span
-            class="[&&]:absolute [&&]:top-[5px] [&&]:right-[5px] [&&]:w-[8px] [&&]:h-[8px] [&&]:[background-image:initial] [&&]:[background-color:rgb(213,_72,_62)] [&&]:border-[2px] [&&]:border-solid [&&]:border-[color:white] [&&]:rounded-[50%] notification-dot"
+            class="absolute -top-0.5 -right-0.5 flex min-h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-red-600 px-1 text-[10px] font-bold leading-none text-white"
             aria-hidden="true"
-          ></span>{/if}</a
+          >{unreadCount > 99 ? '99+' : unreadCount}</span>{/if}</a
       >
-      <details class="relative z-50" bind:open={accountMenu}>
+      {/if}<details class="relative z-50" bind:open={accountMenu}>
         <summary
           class="flex cursor-pointer list-none items-center gap-2 rounded-lg p-1 text-[#17365f] hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-400 [&::-webkit-details-marker]:hidden"
           aria-label="Buka menu akun"
@@ -211,7 +212,7 @@
           <span
             class="flex size-[38px] items-center justify-center rounded-full border-2 border-white bg-[#e6f1ff] text-[11px] font-bold text-[#075fc7] shadow-[0_0_0_1px_#c6ddf5]"
           >
-            {app.session?.role === 'admin' ? 'PF' : campusProfile?.initials}
+            {app.session?.role === 'admin' ? 'PF' : legal ? 'LG' : campusProfile?.initials}
           </span>
           <span class="max-[700px]:hidden">
             <strong class="block text-[12px] leading-4">{app.session?.name?.replace(/\b(lokal|local|dummy|demo|simulasi)\b/gi, '').replace(/\s+/g, ' ').trim()}</strong>
@@ -220,7 +221,7 @@
                 ? app.session?.superAdmin
                   ? 'Super admin'
                   : 'Administrator'
-                : 'Akun kampus'}</small
+                : legal ? 'Legal' : 'Akun kampus'}</small
             >
           </span>
           <Icon name={accountMenu ? 'up' : 'down'} size={14} />
@@ -234,17 +235,17 @@
             <span class="mt-1 block text-xs text-[#475569]"
               >{app.session?.role === 'admin'
                 ? 'Tim DEB Pertamina Foundation'
-                : campusProfile?.name}</span
+                : legal ? 'Tim Legal' : campusProfile?.name}</span
             >
           </div>
           <nav class="p-2" aria-label="Menu akun">
             {#if campus}
-              {#each [{ key: 'dashboard', label: 'Beranda', icon: 'dashboard' }, { key: 'pencairan', label: 'Pencairan Dana', icon: 'payments' }, { key: 'guide', label: 'Panduan Aplikasi', icon: 'faq' }] as item}
+              {#each [{ key: 'dashboard', label: 'Beranda', icon: 'dashboard' }, { key: 'profile', label: 'Profil & Monitoring Program', icon: 'campus' }, ...(app.navigation.canReport ? [{ key: 'pelaporan', label: 'Pelaporan', icon: 'file' }] : []), { key: 'guide', label: 'Panduan Aplikasi', icon: 'faq' }] as item}
                 <a class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm hover:bg-blue-50" href={`/campus/${item.key}`} onclick={() => (accountMenu = false)} role="menuitem" aria-current={section === item.key ? 'page' : undefined}>
                   <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600"><Icon name={item.icon} size={18} /></span>{item.label}
                 </a>
               {/each}
-            {:else}
+            {:else if !legal}
             {#if app.session?.role === 'admin'}
               <a
                 class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm hover:bg-blue-50"

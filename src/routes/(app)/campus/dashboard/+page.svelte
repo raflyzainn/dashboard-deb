@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportingPaid } from '$lib/pelaporan';
   import { app } from '$lib/state.svelte';
   import { dataService } from '$lib/data/service';
   import { onChange } from '$lib/realtime.svelte';
@@ -59,19 +60,31 @@
 
 <svelte:head><title>Beranda · Desa Energi Berdikari</title></svelte:head>
 
-<div class="mx-auto grid w-full max-w-4xl gap-4">
-  <section class="rounded-2xl border border-blue-100 bg-gradient-to-br from-white to-blue-50/70 p-5 sm:p-6">
-    <img src="/logo-pf.png" alt="Pertamina Foundation" class="mb-4 h-10 w-auto" />
+<div class="mx-auto grid w-full max-w-6xl gap-4">
+  <section class="rounded-2xl border border-blue-100 bg-gradient-to-br from-white to-blue-50/70 p-4 sm:p-5">
+    <img src="/logo-pf.png" alt="Pertamina Foundation" class="mb-3 h-8 w-auto" />
     <p class="text-xs font-bold uppercase tracking-widest text-[#3975b7]">Desa Energi Berdikari</p>
-    <h1 class="mt-3 text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">{greeting}, {app.session?.name}.</h1>
-    <p class="mt-3 max-w-2xl text-base leading-7 text-slate-600">Pantau pencairan dana kampus Anda di sini.</p>
+    <h1 class="mt-2 text-2xl font-bold leading-tight text-slate-900 sm:text-2xl">{greeting}, {app.session?.name}.</h1>
+    <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Lengkapi profil program dan pantau pencairan dana kampus Anda di sini.</p>
   </section>
 
-  <section aria-labelledby="pencairan-title" class="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-    <div class="flex items-start gap-4">
-      <span class="grid size-11 shrink-0 place-items-center rounded-xl bg-blue-50 text-[#0066B2]"><Icon name="payments" size={23} /></span>
-      <div>
-        <h2 id="pencairan-title" class="text-lg font-bold text-slate-900">Saat ini: proses pencairan dana</h2>
+  <div class="grid items-stretch gap-3 [&>*]:min-w-0 {reportingPaid(data?.disbursement) ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}">
+  <section aria-labelledby="profil-title" class="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+    <div class="flex items-start gap-3">
+      <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-blue-50 text-[#0066B2]"><Icon name="campus" size={19} /></span>
+      <div class="min-w-0">
+        <h2 id="profil-title" class="text-base font-bold text-slate-900">Profil &amp; Monitoring Program</h2>
+        <p class="mt-2 text-sm leading-6 text-slate-600">Perbarui profil, catat pendapatan dan produksi energi bulanan, serta lengkapi bukti monitoring untuk diperiksa admin PF.</p>
+        <a href="/campus/profile" class="mt-3 inline-flex min-h-[38px] items-center rounded-lg bg-[#0066B2] px-4 py-2 text-sm font-semibold text-white hover:bg-[#015a9a]">Buka Profil & Monitoring</a>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="pencairan-title" class="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+    <div class="flex items-start gap-3">
+      <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-blue-50 text-[#0066B2]"><Icon name="payments" size={19} /></span>
+      <div class="min-w-0">
+        <h2 id="pencairan-title" class="text-base font-bold text-slate-900">Saat ini: proses pencairan dana</h2>
         {#if !app.session?.campusId}
           <p class="mt-2 text-sm leading-6 text-slate-600">Akun ini belum terhubung ke kampus. Hubungi admin program.</p>
         {:else if error}
@@ -79,8 +92,8 @@
         {:else if !data}
           <p class="mt-2 text-sm leading-6 text-slate-600" role="status">Memuat progres pencairan…</p>
         {:else if journey}
-          <p class="mt-3 text-sm leading-6 text-slate-600">{journeyMessage}</p>
-          <a href={journeyLink} class="mt-4 inline-flex min-h-11 items-center rounded-lg bg-[#0066B2] px-5 py-3 text-sm font-semibold text-white">{journeyAction}</a>
+          <p class="mt-2 text-sm leading-6 text-slate-600">{journeyMessage}</p>
+          <a href={journeyLink} class="mt-3 inline-flex min-h-[38px] items-center rounded-lg bg-[#0066B2] px-4 py-2 text-sm font-semibold text-white">{journeyAction}</a>
         {:else if uploadActions.length}
           <p class="mt-2 text-sm leading-6 text-slate-600">Selesaikan revisi lebih dulu, lalu lengkapi dokumen yang belum diunggah.</p>
         {:else if data.readiness.state === 'dibayar'}
@@ -118,9 +131,20 @@
       {:else if waitingPf.length}<p class="mt-2 text-sm text-slate-600">Menunggu pemeriksaan PF untuk {waitingPf.map(k => KIND_SHORT[k]).join(', ')}. Tidak perlu mengunggah ulang.</p>
       {:else if data?.readiness.lengkap}<p class="mt-2 text-sm text-slate-600">Dokumen Tahap 1 sudah lengkap. PF melanjutkan prosesnya.</p>
       {:else}<p class="mt-2 text-sm text-slate-600">Belum ada dokumen yang perlu Anda kirim. Pantau langkah yang dikelola PF di Pencairan Dana.</p>{/if}
-      <a href="/campus/pencairan" class="mt-3 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#0066B2] px-5 py-3 text-sm font-semibold text-white hover:bg-[#015a9a]">Lihat progres <Icon name="arrow" size={16} /></a>
+      <a href="/campus/pencairan" class="mt-3 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#0066B2] px-4 py-2 text-sm font-semibold text-white hover:bg-[#015a9a]">Lihat progres <Icon name="arrow" size={16} /></a>
     {/if}
-    <p class="mt-4 text-sm"><a class="font-semibold text-[#0066B2] underline" href="/campus/guide">Baru pertama kali? Baca panduan pengajuan</a></p>
-    <p class="mt-3 text-xs leading-relaxed text-slate-500">Untuk keluar, buka menu akun di kanan atas.</p>
   </section>
+  {#if reportingPaid(data?.disbursement)}
+  <section aria-labelledby="pelaporan-title" class="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+    <div class="flex items-start gap-3">
+      <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-blue-50 text-[#0066B2]"><Icon name="file" size={19} /></span>
+      <div class="min-w-0">
+        <h2 id="pelaporan-title" class="text-base font-bold text-slate-900">Pelaporan Program</h2>
+          <p class="mt-2 text-sm leading-6 text-slate-600">Catat bukti penggunaan dana Tahap 1, lalu lengkapi laporan, infografis, video profil dan artikel.</p>
+          <a class="mt-3 inline-flex min-h-[38px] items-center rounded-lg bg-[#0066B2] px-4 py-2 text-sm font-semibold text-white hover:bg-[#015a9a]" href="/campus/pelaporan">Buka Pelaporan</a>
+      </div>
+    </div>
+  </section>
+  {/if}
+  </div>
 </div>

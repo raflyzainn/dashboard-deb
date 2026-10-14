@@ -1,5 +1,5 @@
 <script lang="ts">
-  // Program profile: every part is shown read only first and switches to a form through its own "Ubah" button.
+  // Campus profile opens forms directly; admin sections remain read only until edited.
   import type { ProgramProfile } from '$lib/types';
   import { app } from '$lib/state.svelte';
   import ContactSection from './profile/ContactSection.svelte';
@@ -10,11 +10,13 @@
   let {
     program,
     campusId,
-    readOnly = false
+    readOnly = false,
+    alwaysEdit = false
   }: {
     program?: ProgramProfile;
     campusId: string;
     readOnly?: boolean;
+    alwaysEdit?: boolean;
   } = $props();
 
   const GROUPS = [
@@ -34,12 +36,12 @@
       <!-- Three columns once every card is wide enough to keep its title and button on one row. -->
       <div class="mt-3 grid items-start gap-4 @[940px]:grid-cols-3">
         {#each GROUPS as [field, title]}
-          <ContactSection {field} {title} value={program?.[field]} {campusId} {canEdit} />
+          <ContactSection {field} {title} value={program?.[field]} {campusId} {canEdit} {alwaysEdit} />
         {/each}
       </div>
     </section>
-    <LocationSection {program} {campusId} {canEdit} />
-    <ProgramInfoSection {program} {campusId} {canEdit} />
-    <DescriptionSection value={program?.description} {campusId} {canEdit} />
+    <LocationSection {program} {campusId} {canEdit} {alwaysEdit} />
+    <ProgramInfoSection {program} {campusId} {canEdit} {alwaysEdit} />
+    <DescriptionSection value={program?.description} {campusId} {canEdit} {alwaysEdit} />
   </div>
 {/key}

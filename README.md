@@ -1,5 +1,12 @@
 # Digitalisasi DEB - PocketBase
 
+## Profil & Monitoring Program - 14 Oktober 2026
+
+Kartu Profil Program kini menjadi **Profil & Monitoring Program**, tetap di `/campus/profile`. Kampus mengisi pendapatan/energi bulanan, bukti program, cerita/foto Local Hero dan melihat rumus estimasi. Admin memeriksa per bulan lewat Review Kampus > Monitoring bulanan. Akses monitoring tidak menunggu pembayaran T1. Modul indikator legacy tetap terpisah.
+
+Implementasi ini lokal di branch fitur; QA browser terblokir dan belum ada publikasi. Baca [catatan implementasi dan batas QA](docs/QA-MONITORING-2026-10-14.md) untuk rumus, migrasi lokal, checklist dan skenario yang belum diuji.
+
+
 Aplikasi memakai API server dan PocketBase sebagai sumber data. Mode dummy, adapter IndexedDB, folder `mockups`, pemalsuan fetch/login dan build SPA statis dihapus. Komponen pengajuan aktif berada di `src/lib/components/campus/pencairan/`; aturan RAB di `src/lib/pengajuan/rab-model.ts`.
 
 ## Menjalankan dan QA lokal
@@ -22,7 +29,9 @@ Launcher normal hanya memulai layanan lokal; tidak melakukan seed/migrasi otomat
 
 ## Alur dan penyimpanan
 
-Akun kampus tetap dapat membuka Beranda, Pencairan Dana, Notifikasi, dan Panduan Aplikasi. URL modul yang belum dipakai atau halaman admin diarahkan ke Beranda kampus; API modul indikator, proposal, forum, profil, dan pengelolaan admin ditolak untuk kampus. Akses admin mengikuti perannya.
+Pelaporan kampus tersedia setelah pembayaran Tahap 1 tercatat: LPJ penggunaan dana serta laporan pelaksanaan, infografis, video profil dan artikel. Admin memeriksa keluaran dan menyatakan LPJ selesai setelah seluruh bukti Sesuai. Rincian schema lokal dan batas tahap ini ada pada [runbook pelaporan](docs/pencairan-deb/RUNBOOK-PELAPORAN-LOKAL.md) dan [hasil QA](docs/QA-PELAPORAN-KAMPUS-2026-10-14.md). Port frontend dapat dipisahkan dengan `DEB_DEV_PORT` di `.env.local`; worktree pelaporan memakai 5177.
+
+Akun kampus dapat membuka Beranda, Profil Program, Pencairan Dana, Notifikasi, dan Panduan Aplikasi. Profil Program memakai data kampus yang sama dengan Ringkasan admin: kontak, lokasi, informasi/deskripsi program, dan sembilan indikator kesiapan rencana aksi. Kampus hanya dapat mengubah profilnya sendiri; Tim Pendamping tidak ditampilkan pada form dan tidak dapat diubah kampus. URL modul yang belum dipakai atau halaman admin diarahkan ke Beranda kampus; API modul indikator, proposal, forum, dan pengelolaan admin tetap ditolak untuk kampus. Akses admin mengikuti perannya.
 
 Data formulir, RAB, pemeriksaan, revisi, audit, notifikasi dan pembayaran dibaca/disimpan melalui API PocketBase. Berkas memakai storage server yang sudah ada: folder objek pada instance lokal untuk QA dan R2 untuk lingkungan server yang dikonfigurasi. Browser tidak menyimpan database aplikasi atau mengarang pengajuan saat backend gagal.
 

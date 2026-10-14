@@ -7,7 +7,6 @@
 
   const TITLE = 'Informasi program';
   const FIELDS = [
-    ['pfTeam', 'Tim pendamping'],
     ['subholding', 'Subholding'],
     ['operatingUnit', 'Unit operasi Pertamina terdekat'],
     ['currentClass', 'Kategori kelas saat ini'],
@@ -23,7 +22,7 @@
     'w-full rounded-lg border border-[#cfe0f5] bg-white px-3 py-2.5 text-sm text-[#17365f] focus:border-[#075fc7] focus:outline-none focus:ring-2 focus:ring-[#075fc7]/20 disabled:bg-[#f5f9ff] disabled:text-[#64748b]';
   const LABEL = 'mb-1.5 block text-[13px] font-semibold text-[#17365f]';
 
-  let { program, campusId, canEdit = true }: { program?: ProgramProfile; campusId: string; canEdit?: boolean } = $props();
+  let { program, campusId, canEdit = true, alwaysEdit = false }: { program?: ProgramProfile; campusId: string; canEdit?: boolean; alwaysEdit?: boolean } = $props();
 
   const uid = $props.id();
   // Budget is kept as plain digits while editing and stored as "Rp 75.000.000".
@@ -73,6 +72,7 @@
     description="Data rencana aksi program."
     icon="campus"
     bind:editing
+    {alwaysEdit}
     {canEdit}
     {saving}
     {dirty}

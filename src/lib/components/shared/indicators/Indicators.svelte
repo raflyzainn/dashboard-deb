@@ -307,7 +307,7 @@
         }}
       >
         <label
-          >Nilai aktual<input
+          ><span class="field-caption">Nilai aktual</span><input
             class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#17365f] max-w-[100%] px-[12px] py-[11px] border-[1px] border-solid border-[color:rgb(212,_225,_241)] rounded-[7px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(39,_144,_232)] [&::placeholder]:text-[#64748b]"
             readonly={archived || app.readOnly || locked || app.busy}
             type="number"
@@ -350,7 +350,7 @@
           event.preventDefault();
           saveTarget();
         }}
-      ><label>Target kampus<input class="text-[14px] text-[#17365f] px-[12px] py-[11px] border border-[#b9d6f3] rounded-[7px] focus:outline-[#7fc1ff]" type="number" min="0.000000001" step="any" required bind:value={target} /></label><button class="mt-[14px] text-[14px] font-[600] text-white [background-color:#0877d8] px-[16px] py-[10px] rounded-[8px] disabled:opacity-50" disabled={archived || app.readOnly || app.loading || app.busy}>Simpan target kampus</button></form>{/if}
+      ><label><span class="field-caption">Target kampus</span><input class="text-[14px] text-[#17365f] px-[12px] py-[11px] border border-[#b9d6f3] rounded-[7px] focus:outline-[#7fc1ff]" type="number" min="0.000000001" step="any" required bind:value={target} /></label><button class="mt-[14px] text-[14px] font-[600] text-white [background-color:#0877d8] px-[16px] py-[10px] rounded-[8px] disabled:opacity-50" disabled={archived || app.readOnly || app.loading || app.busy}>Simpan target kampus</button></form>{/if}
     <div
       class="h-[1px] [background-image:initial] [background-color:var(--line)] mx-[0px] my-[24px] section-divider"
     ></div>
@@ -397,7 +397,7 @@
         }}
       >
         <label
-          >Feedback baru<textarea
+          ><span class="field-caption">Feedback baru</span><textarea
             class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#17365f] max-w-[100%] [resize:vertical] min-h-[85px] px-[12px] py-[11px] border-[1px] border-solid border-[color:rgb(212,_225,_241)] rounded-[7px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(39,_144,_232)] [&::placeholder]:text-[#64748b]"
             readonly={archived || app.readOnly}
             rows="3"

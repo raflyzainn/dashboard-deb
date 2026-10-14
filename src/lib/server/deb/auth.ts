@@ -23,7 +23,7 @@ export async function sessionClient(event: RequestEvent) {
     pb.authStore.save(token);
     // Refresh verifies the signature/tokenKey and fetches the current account. Keep the original expiry.
     const result = await pb.collection('users').authRefresh();
-    if (!result.record.active || !result.record.verified || result.record.simulated || !['admin', 'campus', 'baru', 'super_admin'].includes(result.record.role)) throw new Error('Invalid session');
+    if (!result.record.active || !result.record.verified || result.record.simulated || !['admin', 'campus', 'baru', 'super_admin', 'legal'].includes(result.record.role)) throw new Error('Invalid session');
     if ((result.record.sessionVersion || '') !== claims.version) throw new Error('Revoked session');
     // The existing modules check the literal role admin; a super admin is an admin with a flag.
     const record: RecordModel = result.record.role === 'super_admin' ? { ...result.record, role: 'admin', superAdmin: true } : result.record;
