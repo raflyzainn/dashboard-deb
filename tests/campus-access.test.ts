@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { campusPageAllowed, campusApiAllowed } from '../src/lib/campus-access';
 
 test('campus keeps home, payout, guide and notifications while blocking inactive modules',()=>{
- for(const path of ['/campus/dashboard','/campus/profile','/campus/profile/','/campus/guide','/campus/notifications','/campus/pencairan','/campus/pencairan/'])assert.equal(campusPageAllowed(path),true);
- for(const path of ['/campus/profile/other','/campus/settings','/campus/indicators','/campus/proposal','/campus/questions','/campus/questions/id','/campus/faq','/campus/lpj','/campus/pencairan/other','/admin/pencairan'])assert.equal(campusPageAllowed(path),false,path);
+ for(const path of ['/campus/pelaporan','/campus/lpj','/campus/dashboard','/campus/profile','/campus/profile/','/campus/guide','/campus/notifications','/campus/pencairan','/campus/pencairan/'])assert.equal(campusPageAllowed(path),true);
+ for(const path of ['/campus/profile/other','/campus/settings','/campus/indicators','/campus/proposal','/campus/questions','/campus/questions/id','/campus/faq','/campus/pencairan/other','/admin/pencairan'])assert.equal(campusPageAllowed(path),false,path);
 });
 
 test('profile access only opens the existing program endpoint with a valid record id', () => {

@@ -30,6 +30,7 @@ export const IDS = {
   attachments: 'pbc_deb_attachm',
   audit: 'pbc_deb_auditlg',
   lpj_entries: 'pbc_deb_lpjentr',
+  report_versions: 'pbc_deb_reportv',
   verifications: 'pbc_deb_verific',
   notes: 'pbc_deb_notes00'
 };
@@ -119,9 +120,18 @@ export function debCollections(campusesId: string) {
       rel('actor', IDS.users), text('actorName', 200), text('actorEmail', 254), text('action', 500, { required: true }), text('context', 160, { required: true }),
       text('collection', 80), text('record', 40), rel('campus', campusesId), json('before', 100000), json('after', 100000), text('note', 2000)
     ], ['CREATE INDEX idx_audit_context ON audit (context, created)', 'CREATE INDEX idx_audit_campus ON audit (campus, created)'], { listRule: AUDIT_READ_RULE, viewRule: AUDIT_READ_RULE }),
+    base('report_versions', IDS.report_versions, [
+      rel('campus', campusesId, { required: true }), rel('award', IDS.sk_awards, { required: true }), rel('disbursement', IDS.disbursements, { required: true }),
+      sel('kind', ['laporan', 'infografis', 'video', 'artikel'], { required: true }), num('version', { required: true, min: 1 }),
+      sel('format', ['text', 'file'], { required: true }), text('title', 200), text('body', 50000), text('r2Key', 400), text('originalName', 300),
+      text('mime', 120), num('size'), text('hash', 64), num('durationSeconds', { onlyInt: false }), text('operationId', 36, { required: true }),
+      sel('status', ['draf', 'menunggu_review', 'perlu_revisi', 'sesuai'], { required: true }), rel('author', IDS.users), text('authorName', 200),
+      rel('reviewer', IDS.users), text('reviewerName', 200), date('reviewedAt'), text('note', 2000)
+    ], ['CREATE UNIQUE INDEX idx_report_version ON report_versions (award, kind, version)', 'CREATE UNIQUE INDEX idx_report_operation ON report_versions (operationId)']),
     base('lpj_entries', IDS.lpj_entries, [
       rel('disbursement', IDS.disbursements, { required: true }), rel('rabLine', IDS.rab_lines), date('date'), text('reference', 120), text('payee', 200), num('amountSen'),
-      text('memo', 1000), text('r2Key', 400), text('originalName', 300), sel('status', ['menunggu_review', 'perlu_revisi', 'sesuai']), rel('createdBy', IDS.users)
-    ])
+      text('memo', 1000), text('r2Key', 400), text('originalName', 300), sel('status', ['menunggu_review', 'perlu_revisi', 'sesuai']), rel('createdBy', IDS.users),
+      text('note', 2000), num('revision'), json('history', 200000), text('operationId', 36), text('inputHash', 64)
+    ], ["CREATE UNIQUE INDEX idx_lpj_operation ON lpj_entries (operationId) WHERE operationId != ''"])
   ];
 }

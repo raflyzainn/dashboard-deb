@@ -3,7 +3,7 @@ import type { Snapshot, Campus, AppSession } from './types';
 export type PageView = 'dashboard' | 'campuses' | 'campus-detail' | 'accounts' | 'map' | 'indicators' | 'proposals' | 'payments' | 'questions' | 'question-detail' | 'faq' | 'notifications' | 'review' | 'masters' | 'guide' | 'static';
 export interface PageRequest { view: PageView; period?: string; campus?: string; question?: string; tab?: string }
 export interface PageResponse { data: Partial<Snapshot>; loadedAt: string }
-export interface NavigationData { pendingCount: number; revisionCount: number; unreadCount: number; campus?: Campus }
+export interface NavigationData { pendingCount: number; revisionCount: number; unreadCount: number; campus?: Campus; canReport?: boolean }
 export interface SessionResponse { session: AppSession; capabilities: { readOnly: boolean }; navigation: NavigationData }
 
 /** Empty slots adapt existing presentation components, never fetched or cached as a global dataset. */
@@ -17,7 +17,7 @@ export function pageRequest(url: URL): PageRequest {
   return request;
 }
 function routeRequest(url: URL): PageRequest {
-  if (/^\/campus\/(dashboard|profile)\/?$/.test(url.pathname)) return { view: 'static' };
+  if (/^\/campus\/(dashboard|profile|pelaporan|lpj)\/?$/.test(url.pathname)) return { view: 'static' };
   const [, , section, id] = url.pathname.split('/');
   switch (section) {
     case 'profile': case 'settings': return { view: 'dashboard' };

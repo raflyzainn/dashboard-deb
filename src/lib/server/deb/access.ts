@@ -25,7 +25,7 @@ export function secured(event: RequestEvent, roles: AppRole[], action: (context:
     if(payout&&!['GET','HEAD','OPTIONS'].includes(event.request.method)){
       if(!actor.admin&&actor.campusId!==payout[1])fail(403,'Anda tidak memiliki akses ke kampus ini.');
       // Transfer corrections and its evidence keep their existing separate admin policy.
-      if(!/^pembayaran(?:\/bukti(?:\/.*)?)?$/.test(payout[2]||'')){
+      if(!/^(?:pembayaran(?:\/bukti(?:\/.*)?)?|(?:lpj|pelaporan)(?:\/.*)?)$/.test(payout[2]||'')){
         const rows=await backend.pb.collection('disbursements').getList(1,1,{filter:backend.pb.filter('campus = {:c} && term = 1',{c:payout[1]}),fields:'paidAt',requestKey:null});
         if(rows.items[0]?.paidAt)fail(409,'Pengajuan yang sudah dibayar terkunci.');
       }

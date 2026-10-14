@@ -1,5 +1,17 @@
 # Panduan proyek untuk Codex
 
+## Pelaporan kampus — 14 Oktober 2026
+
+Menu Pencairan Dana tidak tampil di dropdown akun kampus sesuai arahan terbaru; kampus membukanya lewat kartu Beranda. Pelaporan pada kartu/menu hanya tampil setelah pembayaran T1. Pada halaman review admin, berkas keluaran terbaru langsung dipratinjau: PDF/Word memakai FileViewer existing, video memakai pemutar, dan artikel teks ditampilkan langsung.
+
+Tampilan Pelaporan menampilkan Keluaran dan LPJ bersama dalam satu halaman form sesuai arahan terbaru pengguna. Tombol bagian hanya melompat ke bagian terkait, tanpa menyembunyikan form lainnya. Kartu, ringkasan dana, input/tombol, tabel dan penyelesaian memakai tampilan ringkas; tabel bukti dapat digeser pada mobile. QA perubahan visual dilakukan di 5177 sebagaimana laporan di bawah.
+
+Kampus membuka `/campus/pelaporan` setelah pembayaran T1 memiliki tanggal dan nominal positif. Keluaran laporan/infografis/video/artikel memakai collection `report_versions`, terpisah dari dokumen wajib pencairan. Simpan menghasilkan draf berversi; Kirim mengunci konten sampai admin memeriksa. Artikel mendukung teks web, DOCX atau PDF. Video MP4 maksimal 40 MB dan dua menit, dokumen maksimal 20 MB.
+
+LPJ menggunakan bukti existing, dengan revisi/riwayat dan deduplikasi retry. Semua bukti Sesuai belum otomatis selesai: admin harus menekan Selesaikan LPJ. Status selesai mengunci bukti dan menjadi prasyarat LPJ menuju T2. Buka kembali wajib alasan dan membatalkan kesiapan itu. Empat keluaran versi terkini Sesuai menandai pelaporan tahunan lengkap. Form narasi/generator infografis menunggu template, dan paket T2 penuh belum tersedia.
+
+QA fitur ini menggunakan frontend 5177 agar 5176 tetap berjalan. [Runbook schema lokal](pencairan-deb/RUNBOOK-PELAPORAN-LOKAL.md) dan [hasil QA aktual](QA-PELAPORAN-KAMPUS-2026-10-14.md) membedakan verifikasi browser, tes tertulis yang belum dijalankan dan perubahan yang belum dipublikasikan.
+
 ## P1 PKS dan Legal — implementasi lokal 14 Oktober 2026
 
 Pada branch `feat/p1-t1-legal`, pengajuan baru memakai tanggal relatif, periode per pengajuan, PDF PKS yang diperiksa PF dan Legal, serta role Legal yang dapat diberikan Admin biasa. Sidebar Legal memakai Shell Admin dengan menu terbatas. Data PKS PF tampil langsung dalam grid responsif; timeline delapan tahap tetap satu baris dengan gulir mendatar pada layar kecil. Panduan alur, sumber Excel, checklist QA dan batas verifikasi ada di [P1 PKS dan Legal](pencairan-deb/P1-LEGAL-2026-10-14.md). Pengiriman hanya ke branch fitur; belum diterapkan ke production. Instruksi lama tentang tanggal PKS tetap hanya berlaku untuk pengajuan legacy.
