@@ -60,3 +60,6 @@ Tambahan bukti akhir: halaman Notifikasi kampus menampilkan Monitoring perlu rev
 Atas permintaan pengguna, `npm run build` berhasil exit 0 dengan adapter Cloudflare pada 14 Oktober 2026. Warning teramati: Node punycode deprecation dan a11y_no_noninteractive_tabindex pada linimasa Layar.svelte. Test suite/check/lint terminal tidak dijalankan. Lima poin QA/konfirmasi yang belum lengkap tetap tercatat; build bukan bukti QA menyeluruh.
 
 Target PR/MR adalah production, tanpa merge/deploy. Saat fetch, GitLab production sama dengan basis 980f79d; GitHub production tertinggal 17 commit dari basis tersebut sehingga PR GitHub juga menyertakan sinkronisasi perubahan production GitLab sebelumnya. Monitoring membutuhkan lima collection baru; migrasi production belum dijalankan. Jangan mengaktifkan fitur production sebelum schema siap.
+
+## Pembaruan migrasi production
+Instruksi pengguna berikutnya mengizinkan migrasi PocketBase production. Lima collection monitoring sudah dibuat dan diverifikasi; schema lama tetap identik, semua collection baru kosong. Lihat PRODUCTION-SCHEMA-MONITORING-2026-10-14.md. Build final setelah perapian whitespace berhasil exit 0; percobaan sandbox sebelumnya gagal spawn EPERM lalu berhasil dengan izin proses yang sesuai. Tidak ada merge/deploy.
