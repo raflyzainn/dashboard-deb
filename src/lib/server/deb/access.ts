@@ -5,7 +5,7 @@ import { previewEndpoint } from './http';
 import { serverClient } from './server-client';
 import { PreviewError } from './preview-error';
 
-export type AppRole = 'baru' | 'campus' | 'admin' | 'super_admin';
+export type AppRole = 'baru' | 'campus' | 'admin' | 'super_admin' | 'legal';
 export interface Actor { record: RecordModel; role: AppRole; admin: boolean; superAdmin: boolean; campusId: string }
 
 /**

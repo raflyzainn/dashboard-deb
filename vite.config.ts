@@ -5,6 +5,9 @@ import path from 'node:path';
 
 export default defineConfig({
   plugins: [tailwindcss(), sveltekit()],
+  // Worktrees must not share optimized modules with the parent checkout.
+  cacheDir: path.resolve('node_modules/.vite'),
+  optimizeDeps: { include: ['xlsx'] },
   server: {
     port: 5176, strictPort: true,
     watch: { ignored: [path.resolve('.worktrees').replaceAll('\\', '/') + '/**'] },

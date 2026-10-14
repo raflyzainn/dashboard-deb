@@ -1,5 +1,11 @@
 # QA Pelaporan kampus — 14 Oktober 2026
 
+## Penyelesaian konflik production
+
+Production GitLab bergerak ke `0c24511` (penggabungan PKS/Legal), sehingga MR pelaporan berkonflik pada panduan Codex, input pindaian LPJ dan konfigurasi Vite. Production terbaru digabung ke branch fitur; kedua bagian panduan dipertahankan, input LPJ memakai desain ringkas dengan `.field-caption` dari production, dan konfigurasi Vite mempertahankan perubahan cache/optimisasi dari production serta watcher worktree. Duplikasi import path hasil merge dihapus.
+
+Build ulang `npm run build` berhasil exit 0 (Cloudflare). QA tool Playwright di 5177 membuka Beranda/Pelaporan kampus, form tambah bukti beserta penanda field, dan dua pratinjau PDF admin. Fixture bukti QA sudah dinilai Sesuai selama pemeriksaan, sehingga tidak mencoba aksi Perbaiki pada bukti yang tidak lagi perlu revisi. Test suite/check/lint terminal tetap belum dijalankan. Penyelesaian ini memperbarui branch fitur, bukan merge ke production.
+
 ## Pemeriksaan sebelum PR/MR
 
 Atas permintaan publikasi pengguna, `npm run build` dijalankan pada worktree pelaporan dan berhasil exit 0 menggunakan adapter Cloudflare. Warning yang teramati: deprecation `punycode` pada Node lokal 25.5.0 (proyek menetapkan Node 22.x). `git diff --check` tidak melaporkan masalah whitespace. Test suite, check dan lint terminal belum dijalankan. Schema production belum diubah; migrasi aditif tetap diperlukan sebelum aktivasi fitur.

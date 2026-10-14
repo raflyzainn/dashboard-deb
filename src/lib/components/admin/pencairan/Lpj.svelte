@@ -95,17 +95,17 @@
         <h2 class="text-base font-bold text-slate-900">{replacing ? 'Perbaiki bukti' : 'Bukti baru'}</h2>
         <fieldset disabled={busy} class="contents">
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <label class="grid gap-1 text-xs font-semibold text-slate-600">Tanggal pada bukti<input type="date" class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal" bind:value={form.date} required /></label>
-          <label class="grid gap-1 text-xs font-semibold text-slate-600">Nomor bukti<input class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal" bind:value={form.reference} required placeholder="Nomor invois atau kuitansi" /></label>
-          <label class="grid gap-1 text-xs font-semibold text-slate-600">Penerima<input class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal" bind:value={form.payee} required placeholder="Toko atau penyedia" /></label>
-          <label class="grid gap-1 text-xs font-semibold text-slate-600">Jumlah pada bukti<input class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-right text-sm font-normal tabular-nums" bind:value={form.amount} required inputmode="numeric" placeholder="250.000" /></label>
+          <label class="grid gap-1 text-xs font-semibold text-slate-600"><span class="field-caption">Tanggal pada bukti</span><input type="date" class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal" bind:value={form.date} required /></label>
+          <label class="grid gap-1 text-xs font-semibold text-slate-600"><span class="field-caption">Nomor bukti</span><input class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal" bind:value={form.reference} required placeholder="Nomor invois atau kuitansi" /></label>
+          <label class="grid gap-1 text-xs font-semibold text-slate-600"><span class="field-caption">Penerima</span><input class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal" bind:value={form.payee} required placeholder="Toko atau penyedia" /></label>
+          <label class="grid gap-1 text-xs font-semibold text-slate-600"><span class="field-caption">Jumlah pada bukti</span><input class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-right text-sm font-normal tabular-nums" bind:value={form.amount} required inputmode="numeric" placeholder="250.000" /></label>
           <label class="grid gap-1 text-xs font-semibold text-slate-600">Bagian RAB
             <select class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal" bind:value={form.rabLine} disabled={!data.hasApprovedRab}>
               <option value="">{data.hasApprovedRab ? 'Pilih bagian RAB' : 'RAB belum disetujui'}</option>
               {#each data.rabNodes as n}<option value={n.id}>{' '.repeat((n.level - 1) * 2)}{n.code} {n.title}</option>{/each}
             </select>
           </label>
-          <label class="grid gap-1 text-xs font-semibold text-slate-600">Pindaian bukti<input type="file" class="w-full min-w-0 rounded-lg border border-slate-200 text-xs font-normal file:mr-2 file:min-h-[38px] file:border-0 file:border-r file:border-slate-200 file:bg-slate-50 file:px-3 file:font-semibold file:text-slate-700" accept=".pdf,.png,.jpg,.jpeg,.webp" required onchange={(e) => (file = (e.currentTarget as HTMLInputElement).files?.[0] || null)} /></label>
+          <label class="grid gap-1 text-xs font-semibold text-slate-600"><span class="field-caption">Pindaian bukti</span><input type="file" class="w-full min-w-0 rounded-lg border border-slate-200 text-xs font-normal file:mr-2 file:min-h-[38px] file:border-0 file:border-r file:border-slate-200 file:bg-slate-50 file:px-3 file:font-semibold file:text-slate-700" accept=".pdf,.png,.jpg,.jpeg,.webp" required onchange={(e) => (file = (e.currentTarget as HTMLInputElement).files?.[0] || null)} /></label>
           <label class="grid gap-1 text-xs font-semibold text-slate-600 sm:col-span-2 lg:col-span-3">Memo<input class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal" bind:value={form.memo} placeholder="Untuk apa, singkat" /></label>
         </div>
         </fieldset>

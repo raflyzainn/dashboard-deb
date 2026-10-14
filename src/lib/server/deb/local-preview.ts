@@ -35,7 +35,7 @@ export async function previewContext(request: PreviewRequest, config: PreviewCon
     const health = assertNoRedirect(await fetch(url.origin + '/api/health', { redirect: 'manual', signal: AbortSignal.timeout(5000) }));
     if (!health.ok) throw new Error('PocketBase unavailable');
     const credentials: Credentials = JSON.parse(await readFile(path.join(directory, 'credentials.json'), 'utf8'));
-    const keys = Object.keys(credentials.users).filter(key => /^(campus-\d{3}|admin-[12])$/.test(key));
+    const keys = Object.keys(credentials.users).filter(key => /^(campus-\d{3}|admin-[12]|legal-1)$/.test(key));
     async function account(key: string | null) {
       if (!key || !keys.includes(key)) throw new PreviewError(403, 'Pilih akun seed lokal yang tersedia.');
       const secret = credentials.users[key];
@@ -45,7 +45,7 @@ export async function previewContext(request: PreviewRequest, config: PreviewCon
       try {
         const result = await pb.collection('users').authWithPassword(secret.email, secret.password);
         const record = result.record;
-        if (!record.active || !record.simulated || record.legacyId !== key || record.role !== (key.startsWith('campus-') ? 'campus' : 'admin')) throw new Error('Invalid QA account');
+        if (!record.active || !record.simulated || record.legacyId !== key || record.role !== (key.startsWith('campus-') ? 'campus' : key==='legal-1'?'legal':'admin')) throw new Error('Invalid QA account');
         return pb;
       } catch { throw new PreviewError(403, 'Akun preview tidak aktif atau kredensial lokal tidak cocok. Periksa provisioning PocketBase.'); }
     }
@@ -64,7 +64,7 @@ export async function previewContext(request: PreviewRequest, config: PreviewCon
         const started=new Set(awards.filter(a=>!String(a.skNumber||'').startsWith('SK-DUMMY-LOKAL/2026/')).map(a=>a.campus));
         // Each account is also checked on entry; migrated campus credentials are never reset by preview.
         const rows: PreviewAccount[] = campuses.flatMap(c => users.filter(u => u.role === 'campus' && u.campus === c.id && keys.includes(u.legacyId)).map(u => ({ key: u.legacyId, name: c.name+' - '+u.name, role: 'campus' as const, disbursementStarted: started.has(c.id) })));
-        return [...rows, ...keys.filter(k => k.startsWith('admin-') && eligible.has(k)).sort().map(key => ({ key, name: `Admin PF ${key.slice(-1)}`, role: 'admin' as const }))];
+        return [...rows, ...keys.filter(k=>k==='legal-1'&&eligible.has(k)).map(key=>({key,name:'Legal Dummy',role:'legal' as const})), ...keys.filter(k => k.startsWith('admin-') && eligible.has(k)).sort().map(key => ({ key, name: `Admin PF ${key.slice(-1)}`, role: 'admin' as const }))];
       }
     };
   } catch (error) {
