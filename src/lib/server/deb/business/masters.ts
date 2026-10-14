@@ -24,7 +24,7 @@ function expected(r, payload) {
   if (!Number.isInteger(payload.revision) || payload.revision !== r.getInt('revision')) fail('Master sudah berubah. Muat ulang data sebelum menyimpan kembali.', 409);
 }
 function noPending(app) {
-  if (list(app, 'deb_submissions', 'status = "pending"').length) fail('Masih ada pengajuan pending. Selesaikan Review Kampus sebelum mengubah indikator bersama.', 409);
+  if (list(app, 'deb_submissions', 'status = "pending"').length) fail('Masih ada pengajuan pending. Selesaikan Riwayat indikator di Monitoring Kampus sebelum mengubah indikator bersama.', 409);
 }
 export const runMaster = ({ app, actor, op, payload, event }) => {
   if (actor.getString('role') !== 'admin') fail('Hanya Admin dapat mengelola master.', 403);

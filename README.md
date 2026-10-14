@@ -1,5 +1,12 @@
 # Digitalisasi DEB - PocketBase
 
+## Profil & Monitoring Program - 14 Oktober 2026
+
+Kartu Profil Program kini menjadi **Profil & Monitoring Program**, tetap di `/campus/profile`. Kampus mengisi pendapatan/energi bulanan, bukti program, cerita/foto Local Hero dan melihat rumus estimasi. Admin memeriksa per bulan lewat Review Kampus > Monitoring bulanan. Akses monitoring tidak menunggu pembayaran T1. Modul indikator legacy tetap terpisah.
+
+Implementasi ini lokal di branch fitur; QA browser terblokir dan belum ada publikasi. Baca [catatan implementasi dan batas QA](docs/QA-MONITORING-2026-10-14.md) untuk rumus, migrasi lokal, checklist dan skenario yang belum diuji.
+
+
 Aplikasi memakai API server dan PocketBase sebagai sumber data. Mode dummy, adapter IndexedDB, folder `mockups`, pemalsuan fetch/login dan build SPA statis dihapus. Komponen pengajuan aktif berada di `src/lib/components/campus/pencairan/`; aturan RAB di `src/lib/pengajuan/rab-model.ts`.
 
 ## Menjalankan dan QA lokal

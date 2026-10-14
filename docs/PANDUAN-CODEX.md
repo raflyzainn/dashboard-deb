@@ -1,5 +1,12 @@
 # Panduan proyek untuk Codex
 
+## Profil & Monitoring Program - 14 Oktober 2026
+
+Kartu Profil Program kini menjadi **Profil & Monitoring Program**, tetap di `/campus/profile`. Kampus mengisi pendapatan/energi bulanan, bukti program, cerita/foto Local Hero dan melihat rumus estimasi. Admin memeriksa per bulan lewat Review Kampus > Monitoring bulanan. Akses monitoring tidak menunggu pembayaran T1. Modul indikator legacy tetap terpisah.
+
+Implementasi ini lokal di branch fitur; QA browser terblokir dan belum ada publikasi. Baca [catatan implementasi dan batas QA](QA-MONITORING-2026-10-14.md) untuk rumus, migrasi lokal, checklist dan skenario yang belum diuji.
+
+
 ## Pelaporan kampus — 14 Oktober 2026
 
 Menu Pencairan Dana tidak tampil di dropdown akun kampus sesuai arahan terbaru; kampus membukanya lewat kartu Beranda. Pelaporan pada kartu/menu hanya tampil setelah pembayaran T1. Pada halaman review admin, berkas keluaran terbaru langsung dipratinjau: PDF/Word memakai FileViewer existing, video memakai pemutar, dan artikel teks ditampilkan langsung.
@@ -219,3 +226,14 @@ Pembayaran dan penyimpanan lampiran mengirim `expectedRevision` dari workspace. 
 Rute kampus yang diizinkan mencakup Beranda, Pencairan Dana, Panduan dan Notifikasi. Ikon notifikasi harus membuka `/campus/notifications`, bukan dialihkan kembali ke Beranda.
 
 Unggahan memeriksa isi berkas, menormalkan MIME, memakai key objek unik, dan membatasi dekompresi Office. Pindaian harus mengikuti sumber generated terbaru; versi baru membatalkan penerimaan asli. Lampiran dan pembayaran memeriksa versi sumber aktif. Rincian implementasi, hasil browser, dan batas konkurensi jalur lama tercatat di [laporan QA 7 Oktober](pencairan-deb/QA-EDGE-CASES-DAN-14-REVISI-2026-10-07.md). Jangan menyamakan QA lokal dengan bukti production atau test suite terminal.
+
+### Penyesuaian tab Profil dan Monitoring (14 Oktober 2026)
+Halaman `/campus/profile` memakai header dan tab bergaris bawah mengikuti detail kampus admin. Hanya tab aktif terlihat; perpindahan tab mempertahankan draf. Local Hero tetap berada dalam kontak Profil Program dan juga bisa ditambah di Monitoring Bulanan. Data yang sudah disimpan disinkronkan, sedangkan draf yang belum disimpan dipertahankan. Cerita/foto dilengkapi melalui Monitoring Bulanan.
+
+### Pelaporan satu halaman dan pratinjau berkas
+Pelaporan menampilkan Keluaran Program dan LPJ bersamaan tanpa tab sesuai arahan terakhir pengguna. Header Pelaporan dan Pencairan kampus mengikuti Profil & Monitoring. Kartu keluaran sejajar dalam tiap baris. Gunakan FileViewer existing untuk pratinjau dokumen, pemutar untuk video, dan Button berbingkai untuk aksi berkas. Pilihan berkas Pelaporan/LPJ dapat dipratinjau sebelum disimpan; jangan menganggap file sudah tersimpan hanya karena pratinjau lokal muncul.
+
+### Monitoring Kampus admin
+Menu Review Kampus diganti menjadi Monitoring Kampus. `/admin/verifikasi` langsung membuka monitoring bulanan; `?tab=monitoring` tetap kompatibel. Indikator terdahulu diakses melalui Riwayat indikator (`?tab=indikator`). Admin memilih kampus/periode untuk melihat tabel data bulanan tersimpan termasuk draf. Pemeriksaan Sesuai/Perlu revisi tetap hanya untuk versi yang sudah dikirim. Kartu ringkasan menghitung versi kiriman sesuai kampus, periode, dan bulan. Perubahan ini belum di-QA karena pengguna meminta QA ditahan sampai halaman admin diubah.
+
+Monitoring Kampus admin memakai lebar konten penuh dan rata kiri mengikuti shell admin. Filter dikelompokkan dalam panel; keadaan kosong selebar konten. Editor parameter rumus dihapus dari halaman ini. Admin melihat hasil perhitungan, data dan bukti; rincian rumus tetap tersedia pada sisi kampus. QA tetap ditahan sesuai arahan pengguna.

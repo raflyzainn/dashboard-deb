@@ -1,4 +1,5 @@
 <script lang="ts">
+  import SelectedFilePreview from '$lib/components/shared/SelectedFilePreview.svelte';
   import { dataService } from '$lib/data/service';
   import { reportLabels, reportStatusLabels, type ReportKind, type ReportVersion } from '$lib/pelaporan';
   import Button from '$lib/components/ui/Button.svelte';
@@ -41,13 +42,13 @@
   {#if latest}
     <div class="mt-3 border-t border-slate-100 pt-2 text-xs">
       <p class="font-medium text-slate-500">Versi {latest.version}{latest.title ? ` — ${latest.title}` : ''}</p>
-      {#if latest.format === 'file'}<a class="mt-1 block break-all text-blue-700 underline" target="_blank" rel="noopener" href={`/api/pencairan/${campusId}/pelaporan/${latest.id}`}>{latest.originalName}</a>
+      {#if latest.format === 'file'}<div class="mt-2"><Button size="sm" variant="secondary" icon="file" target="_blank" href={`/api/pencairan/${campusId}/pelaporan/${latest.id}`}>Buka berkas</Button></div>
       {:else if mode === 'admin'}<p class="mt-2 max-h-80 overflow-auto whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">{latest.body}</p>
       {:else}<details class="mt-2"><summary>Baca artikel</summary><p class="mt-2 whitespace-pre-wrap break-words">{latest.body}</p></details>{/if}
       {#if latest.note}<p class="mt-2 whitespace-pre-wrap text-amber-900">Catatan admin: {latest.note}</p>{/if}
     </div>
   {/if}
-  {#if mode === 'admin' && latest?.format === 'file'}
+  {#if latest?.format === 'file'}
     <div class="mt-3 min-w-0">
       {#if kind === 'video'}
         <!-- svelte-ignore a11y_media_has_caption: video yang diunggah kampus belum memiliki berkas subtitle terpisah. -->
@@ -69,6 +70,7 @@
       {/if}
       {#if kind === 'artikel' && format === 'text'}<label class="grid gap-1 text-xs font-semibold text-slate-600">Isi artikel<textarea class="min-h-28 rounded-lg border border-slate-300 px-2.5 py-2 text-sm font-normal leading-6 text-slate-900" bind:value={body} maxlength="50000" required disabled={busy}></textarea><span class="text-xs font-normal text-slate-500">{body.length.toLocaleString('id-ID')} / 50.000 karakter</span></label>
       {:else}{#key format}<label class="grid gap-1 text-xs font-semibold text-slate-600">{latest ? 'Berkas versi baru' : 'Pilih berkas'}<input type="file" class="w-full min-w-0 rounded-lg border border-slate-200 text-xs font-normal text-slate-600 file:mr-2 file:min-h-9 file:border-0 file:border-r file:border-slate-200 file:bg-slate-50 file:px-3 file:font-semibold file:text-slate-700 hover:file:bg-blue-50" {accept} required disabled={busy} onchange={e => { file = e.currentTarget.files?.[0] || null; operationId = ''; }} /></label>{/key}{/if}
+      <SelectedFilePreview {file} />
       {#if latest?.status === 'draf' && unsaved}<p class="text-xs text-amber-800">Simpan perubahan sebelum mengirim.</p>{/if}
       <div class="flex flex-wrap gap-2 pt-1"><Button size="sm" variant="secondary" type="submit" loading={busy}>{latest ? 'Simpan versi baru' : 'Simpan draf'}</Button>{#if latest?.status === 'draf'}<Button size="sm" disabled={busy || unsaved} onclick={() => change('submit')}>Kirim untuk diperiksa</Button>{/if}</div>
     </form>
@@ -76,5 +78,5 @@
   {#if mode === 'admin' && latest?.status === 'menunggu_review'}
     <div class="mt-3 grid gap-2.5"><label class="grid gap-1 text-xs font-semibold text-slate-600">Catatan pemeriksaan<textarea class="min-h-16 rounded-lg border border-slate-300 px-2.5 py-2 text-sm font-normal" bind:value={note} maxlength="2000" disabled={busy}></textarea></label><div class="flex flex-wrap gap-2"><Button size="sm" disabled={busy} onclick={() => change('sesuai')}>Sesuai</Button><Button size="sm" variant="secondary" disabled={busy || !note.trim()} onclick={() => change('perlu_revisi')}>Perlu revisi</Button></div></div>
   {/if}
-  {#if history.length > 1}<details class="mt-3 border-t border-slate-100 pt-2 text-xs"><summary>Riwayat versi ({history.length - 1})</summary><ul class="mt-2 grid gap-2">{#each history.filter(v => v.id !== latest?.id) as version}<li class="min-w-0"><strong>Versi {version.version} · {reportStatusLabels[version.status]}</strong>{#if version.format === 'file'}<a class="block break-all text-blue-700 underline" target="_blank" rel="noopener" href={`/api/pencairan/${campusId}/pelaporan/${version.id}`}>{version.originalName}</a>{:else}<details><summary>{version.title}</summary><p class="whitespace-pre-wrap break-words">{version.body}</p></details>{/if}{#if version.note}<p class="whitespace-pre-wrap">{version.note}</p>{/if}</li>{/each}</ul></details>{/if}
+  {#if history.length > 1}<details class="mt-3 border-t border-slate-100 pt-2 text-xs"><summary>Riwayat versi ({history.length - 1})</summary><ul class="mt-2 grid gap-2">{#each history.filter(v => v.id !== latest?.id) as version}<li class="min-w-0"><strong>Versi {version.version} · {reportStatusLabels[version.status]}</strong>{#if version.format === 'file'}<Button size="sm" variant="secondary" icon="file" target="_blank" href={`/api/pencairan/${campusId}/pelaporan/${version.id}`}>Buka versi {version.version}</Button>{:else}<details><summary>{version.title}</summary><p class="whitespace-pre-wrap break-words">{version.body}</p></details>{/if}{#if version.note}<p class="whitespace-pre-wrap">{version.note}</p>{/if}</li>{/each}</ul></details>{/if}
 </section>

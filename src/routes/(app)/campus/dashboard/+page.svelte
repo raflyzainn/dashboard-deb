@@ -73,9 +73,9 @@
     <div class="flex items-start gap-3">
       <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-blue-50 text-[#0066B2]"><Icon name="campus" size={19} /></span>
       <div class="min-w-0">
-        <h2 id="profil-title" class="text-base font-bold text-slate-900">Lengkapi Profil Program</h2>
-        <p class="mt-2 text-sm leading-6 text-slate-600">Perbarui kontak, lokasi, informasi program, dan kesiapan rencana aksi. Data yang Anda simpan dapat dilihat oleh admin PF.</p>
-        <a href="/campus/profile" class="mt-3 inline-flex min-h-[38px] items-center rounded-lg bg-[#0066B2] px-4 py-2 text-sm font-semibold text-white hover:bg-[#015a9a]">Buka Profil Program</a>
+        <h2 id="profil-title" class="text-base font-bold text-slate-900">Profil &amp; Monitoring Program</h2>
+        <p class="mt-2 text-sm leading-6 text-slate-600">Perbarui profil, catat pendapatan dan produksi energi bulanan, serta lengkapi bukti monitoring untuk diperiksa admin PF.</p>
+        <a href="/campus/profile" class="mt-3 inline-flex min-h-[38px] items-center rounded-lg bg-[#0066B2] px-4 py-2 text-sm font-semibold text-white hover:bg-[#015a9a]">Buka Profil & Monitoring</a>
       </div>
     </div>
   </section>

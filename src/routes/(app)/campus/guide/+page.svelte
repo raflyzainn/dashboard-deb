@@ -10,10 +10,10 @@
     },
     {
       icon: 'campus',
-      title: 'Profil Program',
+      title: 'Profil & Monitoring Program',
       description: 'Lengkapi kontak, lokasi, informasi program, dan indikator kesiapan rencana aksi. Isi langsung pada bagian yang diperlukan, lalu pilih Simpan perubahan. Admin PF melihat data yang sama.',
       href: 'profile',
-      action: 'Buka Profil Program'
+      action: 'Buka Profil & Monitoring'
     },
     {
       icon: 'payments',
@@ -54,7 +54,7 @@
     <p
       class="[&&]:mt-[0px] [&&]:mb-[24px] [&&]:leading-[1.6] [&&]:max-w-[620px] [&&]:text-[15px] [&&]:text-[#e0eeff] [&&]:mx-[0px] max-[600.01px]:[&&]:text-[14px]"
     >
-      Gunakan Beranda untuk melihat langkah berikutnya, Profil Program untuk melengkapi data kampus, dan Pencairan Dana untuk memantau serta melengkapi dokumen.
+      Gunakan Beranda untuk melihat langkah berikutnya, Profil & Monitoring Program untuk melengkapi data kampus, dan Pencairan Dana untuk memantau serta melengkapi dokumen.
     </p>
     <a
       class="[-webkit-tap-highlight-color:transparent] [&&]:text-[#1256b6] [&&]:[text-decoration-line:none] [&&]:[text-decoration-thickness:initial] [&&]:[text-decoration-style:initial] [&&]:[text-decoration-color:initial] [&&]:inline-flex [&&]:items-center [&&]:gap-y-[16px] [&&]:gap-x-[16px] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_255,_255)] [&&]:text-[14px] [&&]:font-[700] [&&]:px-[18px] [&&]:py-[13px] [&&]:rounded-[9px] [&:focus-visible]:[outline-color:rgb(244,_190,_64)] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[5px] guide-start"

@@ -27,7 +27,7 @@ test('kampus tidak dapat memberi keputusan review admin', async ({ playwright })
   await request.dispose();
 });
 
-test('Keluaran dan LPJ tampil bersama dan tautan bagian mempertahankan draf', async ({ browser }) => {
+test('Keluaran dan LPJ tampil bersama tanpa tab dan mempertahankan draf', async ({ browser }) => {
   const context = await browser.newContext({ baseURL, extraHTTPHeaders: { 'X-DEB-Preview': '1', 'X-DEB-Preview-Account': 'campus-951' } });
   const page = await context.newPage();
   await page.goto('/campus/pelaporan');
@@ -36,11 +36,11 @@ test('Keluaran dan LPJ tampil bersama dan tautan bagian mempertahankan draf', as
   test.skip(await article.getByRole('combobox').count() === 0, 'Fixture artikel sedang diperiksa.');
   await article.getByRole('combobox').selectOption('text');
   await article.locator('textarea').fill('Draf tidak hilang ketika berpindah bagian.');
-  const nav = page.getByRole('navigation', { name: 'Bagian pelaporan' });
-  await nav.getByRole('link', { name: 'LPJ penggunaan dana', exact: true }).click();
+  await expect(page.getByRole('tablist')).toHaveCount(0);
+  await page.locator('#lpj').scrollIntoViewIfNeeded();
   await expect(page.locator('#lpj')).toBeVisible();
   await expect(article).toBeVisible();
-  await nav.getByRole('link', { name: 'Keluaran program', exact: true }).click();
+  await article.scrollIntoViewIfNeeded();
   await expect(article.locator('textarea')).toHaveValue('Draf tidak hilang ketika berpindah bagian.');
   await expect(page.locator('#lpj')).toBeVisible();
   await context.close();

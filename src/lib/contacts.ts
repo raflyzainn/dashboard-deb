@@ -9,6 +9,18 @@ export interface Contact {
   phone: string;
 }
 
+/** Legacy editors do not carry IDs, so they cannot safely rename a hero with saved evidence. */
+export function preserveHeroMetadata(existing: { id: string; name: string; phone: string; story: string; photo: string }[], contacts: Contact[]) {
+  const used = new Set<string>();
+  const merged = contacts.map(person => {
+    const previous = existing.find(hero => !used.has(hero.id) && hero.name === person.name && hero.phone === person.phone);
+    const id = previous?.id || crypto.randomUUID(); used.add(id);
+    return { id, ...person, story: previous?.story || '', photo: previous?.photo || '' };
+  });
+  if (existing.some(hero => (hero.story || hero.photo) && !used.has(hero.id))) throw Error('Local Hero memiliki cerita/foto monitoring. Minta kampus memperbarui melalui Profil & Monitoring Program agar identitas dan bukti tetap terjaga.');
+  return merged;
+}
+
 // Read our saved "(number)" format first, then legacy Indonesian free-text numbers.
 const PHONE = /\((\+?\d(?:[ \t.-]*\d){6,})\)|(?:\+\s?62|62|0)(?:[\s\-.()]*\d){8,13}/g;
 const EDGE = /^[\s()\/\\&,;:|*\-\u2022\u2013\u2014]+|[\s(\/\\&,;:|*\-\u2022\u2013\u2014]+$/g;
