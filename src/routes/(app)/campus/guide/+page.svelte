@@ -24,6 +24,56 @@
       action: 'Lihat pencairan'
     },
   ];
+  const submissionSteps = [
+  {
+    "title": "Periksa SK dan Data Program",
+    "actor": "Kampus",
+    "summary": "Periksa SK dan lengkapi data program. Tunggu hingga draf tersimpan.",
+    "detail": "Lengkapi isian bertanda *. Data Program disimpan otomatis setelah berhenti mengetik; tunggu pemberitahuan tersimpan."
+  },
+  {
+    "title": "Unggah satu RAB 100%",
+    "actor": "Kampus",
+    "summary": "Samakan RAB dengan nilai SK, lalu bagi Tahap 1 maksimal 70% dan sisanya untuk Tahap 2.",
+    "detail": "Gunakan Excel contoh dan samakan total dengan nilai SK. Klik Lanjut untuk memeriksa RAB penuh, mengatur jumlah Termin 1 (maksimal 70% nilai SK), lalu memeriksa sisa Termin 2. Ketiga RAB dapat diunduh."
+  },
+  {
+    "title": "Lengkapi administrasi dan nomor PKS kampus",
+    "actor": "Kampus \u2192 PF",
+    "summary": "Isi rekening, penandatangan, surat, kop dan nomor PKS kampus. Permintaan nomor PF dibuat otomatis.",
+    "detail": "Buka menu Administrasi untuk mengisi Rekening Penerima, Penandatangan Kampus, Identitas Surat dan Kop, lalu PKS. Unggah Foto Buku Rekening serta kop. Rekening pihak yang diberi kuasa memerlukan surat kuasa bertanda tangan. Nomor PKS kampus diisi kampus; nomor PKS PF diisi Admin PF. Saat nomor PKS kampus tersimpan dan nomor PF belum tersedia, permintaan kepada PF dibuat otomatis, tanpa tombol permintaan. Anda tetap dapat melengkapi draf sambil menunggu PF."
+  },
+  {
+    "title": "Periksa tanggal dan PDF PKS dari PF",
+    "actor": "Admin PF",
+    "summary": "PF menetapkan tanggal dan masa perjanjian kampus, lalu menyiapkan PDF PKS.",
+    "detail": "Untuk pengajuan baru dengan alur Legal, Admin PF menetapkan nomor/tanggal SK, tanggal PKS dan masa perjanjian per kampus, lalu menyiapkan PDF PKS. Urutan tanggal: SK ≤ PKS < permohonan ≤ invoice < kuitansi. Tanggal surat kuasa harus setelah PKS; awal masa perjanjian tidak boleh setelah akhirnya. Mengubah satu tanggal tidak otomatis mengubah tanggal lainnya. Contoh: SK 1 Juni 2026, PKS 14 Oktober 2026, permohonan dan invoice 15 Oktober 2026, kuitansi 16 Oktober 2026."
+  },
+  {
+    "title": "Siapkan dokumen dan kirim pengajuan",
+    "actor": "Kampus",
+    "summary": "Lengkapi kedua nomor PKS dan dokumen terbaru, lalu tekan Ajukan untuk diperiksa.",
+    "detail": "Buka Dokumen untuk menyiapkan permohonan, invoice dan kuitansi. PKS disiapkan oleh PF; kampus dapat membaca PDF-nya. Kedua nomor PKS harus lengkap dan PDF PKS harus sesuai data terbaru sebelum pengajuan dikirim. Jika sumber PKS berubah, tunggu PF menyiapkan ulang PDF, lalu pilih Perbarui status dokumen. Draf tersimpan belum berarti terkirim: tekan Ajukan untuk diperiksa setelah seluruh syarat lengkap."
+  },
+  {
+    "title": "Tunggu pemeriksaan PF → Legal",
+    "actor": "PF \u2192 Legal",
+    "summary": "Tunggu pemeriksaan PF dan persetujuan PKS oleh Legal. Tindak lanjuti jika diminta revisi.",
+    "detail": "PF memeriksa pengajuan dan mengirim PKS ke Legal. Legal menyetujui PKS atau mengembalikannya kepada PF dengan catatan. Jika diminta revisi, perbaiki bagian yang dibuka PF lalu kirim perbaikan; PDF PKS yang berubah harus disiapkan ulang oleh PF dan diperiksa kembali. Dokumen masih berupa draf sampai pemeriksaan PF dan persetujuan Legal selesai."
+  },
+  {
+    "title": "Tandatangani dan unggah pindaian",
+    "actor": "Kampus \u2192 PF",
+    "summary": "Unduh dokumen final, tandatangani, lalu unggah pindaian untuk diperiksa PF.",
+    "detail": "Setelah seluruh pemeriksaan selesai dan PKS disetujui Legal, unduh dokumen final. Ikuti checklist tanda tangan, meterai dan dua rangkap PKS. Pilih Unggah bertanda tangan pada kartu dokumen di Dokumen, lalu Kirim pindaian. Gunakan PDF, PNG, JPG atau WebP yang jelas dan lengkap agar dapat digabungkan menjadi lampiran; DOCX adalah dokumen sumber, bukan pindaian. PF membandingkan pindaian dengan dokumen final sebelum menerimanya."
+  },
+  {
+    "title": "Pantau lampiran dan pembayaran",
+    "actor": "Admin PF",
+    "summary": "PF menyimpan lampiran dan mencatat pembayaran. Kampus memantau hasilnya.",
+    "detail": "PF menyusun dan menyimpan lampiran gabungan dari berkas yang sudah diperiksa, lalu mencatat pembayaran. Kampus tidak perlu menyusun atau mengunggah paket lampiran gabungan sendiri; saat ini tombol membuka paket tersebut belum tersedia di tampilan kampus. Setelah Dana dibayar, lihat tanggal, nominal, referensi dan bukti transfer jika PF melampirkannya. Pencatatan pembayaran di aplikasi tidak melakukan transfer bank."
+  }
+];
 </script>
 
 <svelte:head><title>Panduan Aplikasi · Desa Energi Berdikari</title></svelte:head>
@@ -108,15 +158,24 @@
 
   <section class="rounded-xl border border-slate-200 bg-white p-6" aria-labelledby="journey-guide-title">
     <h2 id="journey-guide-title" class="text-xl font-bold text-slate-900">Urutan pengajuan baru</h2>
-    <ol class="mt-4 list-decimal space-y-3 pl-5 text-sm leading-6 text-slate-700">
-      <li><strong>Periksa SK dan Data Program.</strong> Lengkapi isian bertanda <span class="font-bold text-red-600">*</span>. Data Program disimpan otomatis setelah berhenti mengetik; tunggu pemberitahuan tersimpan.</li>
-      <li><strong>Unggah satu RAB 100%.</strong> Gunakan Excel contoh dan samakan total dengan nilai SK. Klik Lanjut untuk memeriksa RAB penuh, mengatur jumlah Termin 1 (maksimal 70% nilai SK), lalu memeriksa sisa Termin 2. Ketiga RAB dapat diunduh.</li>
-      <li><strong>Lengkapi administrasi dan nomor PKS kampus.</strong> Buka menu Administrasi untuk mengisi Rekening Penerima, Penandatangan Kampus, Identitas Surat dan Kop, lalu PKS. Unggah Foto Buku Rekening serta kop. Rekening pihak yang diberi kuasa memerlukan surat kuasa bertanda tangan. Nomor PKS kampus diisi kampus; nomor PKS PF diisi Admin PF. Saat nomor PKS kampus tersimpan dan nomor PF belum tersedia, permintaan kepada PF dibuat otomatis, tanpa tombol permintaan. Anda tetap dapat melengkapi draf sambil menunggu PF.</li>
-      <li><strong>Periksa tanggal dan PDF PKS dari PF.</strong> Untuk pengajuan baru dengan alur Legal, Admin PF menetapkan nomor/tanggal SK, tanggal PKS dan masa perjanjian per kampus, lalu menyiapkan PDF PKS. Urutan tanggal: SK ≤ PKS &lt; permohonan ≤ invoice &lt; kuitansi. Tanggal surat kuasa harus setelah PKS; awal masa perjanjian tidak boleh setelah akhirnya. Mengubah satu tanggal tidak otomatis mengubah tanggal lainnya. Contoh: SK 1 Juni 2026, PKS 14 Oktober 2026, permohonan dan invoice 15 Oktober 2026, kuitansi 16 Oktober 2026.</li>
-      <li><strong>Siapkan dokumen dan kirim pengajuan.</strong> Buka Dokumen untuk menyiapkan permohonan, invoice dan kuitansi. PKS disiapkan oleh PF; kampus dapat membaca PDF-nya. Kedua nomor PKS harus lengkap dan PDF PKS harus sesuai data terbaru sebelum pengajuan dikirim. Jika sumber PKS berubah, tunggu PF menyiapkan ulang PDF, lalu pilih Perbarui status dokumen. Draf tersimpan belum berarti terkirim: tekan Ajukan untuk diperiksa setelah seluruh syarat lengkap.</li>
-      <li><strong>Tunggu pemeriksaan PF → Legal.</strong> PF memeriksa pengajuan dan mengirim PKS ke Legal. Legal menyetujui PKS atau mengembalikannya kepada PF dengan catatan. Jika diminta revisi, perbaiki bagian yang dibuka PF lalu kirim perbaikan; PDF PKS yang berubah harus disiapkan ulang oleh PF dan diperiksa kembali. Dokumen masih berupa draf sampai pemeriksaan PF dan persetujuan Legal selesai.</li>
-      <li><strong>Tandatangani dan unggah pindaian.</strong> Setelah seluruh pemeriksaan selesai dan PKS disetujui Legal, unduh dokumen final. Ikuti checklist tanda tangan, meterai dan dua rangkap PKS. Pilih Unggah bertanda tangan pada kartu dokumen di Dokumen, lalu Kirim pindaian. Gunakan PDF, PNG, JPG atau WebP yang jelas dan lengkap agar dapat digabungkan menjadi lampiran; DOCX adalah dokumen sumber, bukan pindaian. PF membandingkan pindaian dengan dokumen final sebelum menerimanya.</li>
-      <li><strong>Pantau lampiran dan pembayaran.</strong> PF menyusun dan menyimpan lampiran gabungan dari berkas yang sudah diperiksa, lalu mencatat pembayaran. Kampus tidak perlu menyusun atau mengunggah paket lampiran gabungan sendiri; saat ini tombol membuka paket tersebut belum tersedia di tampilan kampus. Setelah Dana dibayar, lihat tanggal, nominal, referensi dan bukti transfer jika PF melampirkannya. Pencatatan pembayaran di aplikasi tidak melakukan transfer bank.</li>
+    <p class="mt-2 text-sm leading-6 text-slate-600">Ikuti delapan tahap berikut. Buka rincian pada tahap yang sedang Anda kerjakan.</p>
+    <ol class="mt-5 grid gap-3 sm:grid-cols-2">
+      {#each submissionSteps as step, i}
+        <li class="min-w-0 rounded-xl border border-slate-200 p-4 sm:p-5">
+          <div class="flex items-start gap-3">
+            <span class="grid size-8 shrink-0 place-items-center rounded-full bg-blue-50 text-sm font-bold text-[#0066B2]">{i + 1}</span>
+            <div class="min-w-0">
+              <p class="text-xs font-semibold text-[#0066B2]">{step.actor}</p>
+              <h3 class="mt-1 text-sm font-bold leading-6 text-slate-900">{step.title}</h3>
+            </div>
+          </div>
+          <p class="mt-3 text-sm leading-6 text-slate-600">{step.summary}</p>
+          <details class="mt-3 border-t border-slate-100 pt-3">
+            <summary class="cursor-pointer text-sm font-semibold text-[#0066B2]">Rincian tahap {i + 1}</summary>
+            <p class="mt-3 text-sm leading-6 text-slate-600">{step.detail}</p>
+          </details>
+        </li>
+      {/each}
     </ol>
   </section>
 
@@ -137,6 +196,41 @@
       </p>
     </div>
   </aside>
+  <section class="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6" aria-labelledby="report-guide-title">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wide text-[#0066B2]">Setelah dana Tahap 1 diterima</p>
+        <h2 id="report-guide-title" class="mt-2 text-xl font-bold text-slate-900">Siapkan laporan kampus</h2>
+        <p class="mt-2 text-sm leading-6 text-slate-600">Lengkapi bukti penggunaan dana dan empat keluaran program.</p>
+      </div>
+      <a class="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#0066B2] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#005493] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0066B2]" href="/campus/pelaporan">Buka Pelaporan <Icon name="arrow" size={16} /></a>
+    </div>
+    <div class="mt-5 rounded-xl bg-slate-50 p-4">
+      <h3 class="text-sm font-bold text-slate-900">LPJ penggunaan dana</h3>
+      <p class="mt-1 text-sm leading-6 text-slate-600">Catat satu bukti untuk setiap invois atau pindaian.</p>
+    </div>
+    <h3 class="mt-5 text-sm font-bold text-slate-900">Empat keluaran program</h3>
+    <ul class="mt-3 grid gap-3 sm:grid-cols-2">
+      {#each [
+        ['Laporan pelaksanaan', 'Laporan kegiatan program'],
+        ['Infografis', 'Berkas PDF'],
+        ['Video profil', 'MP4 · maksimal 2 menit'],
+        ['Artikel', 'Teks web, Word atau PDF']
+      ] as [title, description], i}
+        <li class="flex items-start gap-3 rounded-xl border border-slate-200 p-4">
+          <span class="grid size-7 shrink-0 place-items-center rounded-full bg-blue-50 text-xs font-bold text-[#0066B2]">{i + 1}</span>
+          <div><p class="text-sm font-semibold text-slate-900">{title}</p><p class="mt-1 text-sm text-slate-600">{description}</p></div>
+        </li>
+      {/each}
+    </ul>
+    <details class="mt-5 border-t border-slate-200 pt-4">
+      <summary class="cursor-pointer text-sm font-semibold text-[#0066B2]">Cara mengirim dan kapan laporan selesai</summary>
+      <ul class="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-600">
+        <li>Simpan draf, lalu kirim setiap keluaran untuk diperiksa admin.</li>
+        <li>Jika diminta revisi, perbaiki dan kirim versi baru. Riwayat tetap tersedia.</li>
+        <li>LPJ selesai setelah semua bukti Sesuai dan admin memilih Selesaikan LPJ.</li>
+        <li>Pelaporan tahunan lengkap setelah keempat keluaran berstatus Sesuai.</li>
+      </ul>
+    </details>
+  </section>
 </div>
-
-<section class="mt-5 rounded-2xl border border-blue-100 bg-white p-5"><h2 class="font-bold">Pelaporan setelah dana Tahap 1 diterima</h2><p class="mt-2">Catat satu bukti untuk setiap invois/pindaian. Lengkapi laporan pelaksanaan, infografis PDF, video MP4 maksimal 2 menit, dan artikel (teks web, Word atau PDF). Simpan draf lalu kirim setiap keluaran untuk diperiksa. Perbaiki versi yang diminta admin; riwayat tetap tersedia.</p><p class="mt-2">LPJ selesai setelah semua bukti Sesuai dan admin menekan Selesaikan LPJ. Empat keluaran Sesuai menandai pelaporan tahunan lengkap.</p><a class="mt-3 inline-block text-blue-700 underline" href="/campus/pelaporan">Buka Pelaporan</a></section>
