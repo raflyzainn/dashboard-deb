@@ -9,6 +9,7 @@ export const GET: RequestHandler = event => previewEndpoint(event, async context
   const pb = await context.account(selected);
   const session = mapSession(pb.authStore.record!);
   const readOnly = Boolean(session.passwordChangeRequired);
+  if(session.role==='legal')return json({session,capabilities:{readOnly},navigation:{pendingCount:0,revisionCount:0,unreadCount:0}});
   const navigation = readOnly ? { pendingCount: 0, revisionCount: 0, unreadCount: 0 } : await readNavigation(pb, session);
   if (!event.locals.pb && selected && event.cookies.get('deb_local_preview') !== selected && session.role === 'campus') {
     const { pb: backend } = await serverClient();

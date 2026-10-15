@@ -18,7 +18,7 @@ test('map uses the saved program pin and keeps campuses without a usable pin in 
   data.campusMetrics = { valid: { progress: 75, achieved: 1, total: 1, revisions: 0 } };
   data.campusPayouts = { valid: { stage: 'Pemeriksaan PF', uploaded: 5,
     assessment: assess(Object.fromEntries(KINDS.map((kind, i) => [kind, i < 3 ? 'sesuai' : 'belum_ada'])) as Record<Kind, Status>,
-      { suratKuasaRequired: true, redChecks: 0, paidAt: '', originalsAll: false, lampiranCount: 0 }) } };
+      { suratKuasaRequired: true, redChecks: 0, paidAt: '', signedAll: false, lampiranCount: 0 }) } };
   const points = mapCampuses(data);
   assert.equal(points.length, 1);
   assert.equal(points[0].latitude, -6.2);

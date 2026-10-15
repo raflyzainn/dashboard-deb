@@ -85,6 +85,7 @@
   const shortList = (labels: string[]) => `Belum diisi: ${labels.slice(0, 3).join(', ')}${labels.length > 3 ? ` dan ${labels.length - 3} lainnya` : ''}.`;
   const current = $derived(rows.find(r => r.kind === modal?.kind) || null);
   const received = $derived(rows.filter(r => r.doc.originalReceived).length);
+  const checkedScans = $derived(rows.filter(r => r.signed && r.doc.signedReceived).length);
   /** One line for the bar: what still blocks a final document, named once across the four letters. */
   const missingLine = $derived.by(() => {
     if (!info) return '';
@@ -236,11 +237,15 @@
       <a class={chipBtn} href={`${base}/documents/${row.kind}/versions/${row.signed.id}`} target="_blank" rel="noopener noreferrer" title={row.signed.originalName}>v{row.signed.number} · {when(row.signed.created)}</a>
       <button type="button" class={row.doc.signedReceived ? chipOk : chipBtn} onclick={() => open('compare', row.kind)}>{#if row.doc.signedReceived}✓ {/if}Bandingkan</button>
     {/if}
+    {#if row.signed && !row.doc.signedReceived}<button type="button" class={chipMain} aria-label={`Tandai pindaian ${row.label} sesuai`} disabled={Boolean(busy) || Boolean(data.disbursement.paidAt)} onclick={() => setFlag(row, 'signedReceived', true)}>Sesuai</button>{/if}
+    {#if (data as any).journey?.datePolicy!=='chronology'}
     <label class="{chipBtn} focus-within:outline focus-within:outline-2 focus-within:outline-[#55a9f2] {row.final && !busy && !data.disbursement.paidAt ? '' : 'cursor-not-allowed opacity-50 hover:bg-white'}" title={row.final ? 'Pilih berkas PDF atau gambar' : 'Unduh dokumen final dulu.'}>
       <Icon name="upload" size={14} />{busy === `scan:${row.kind}` ? 'Mengunggah…' : row.signed ? 'Unggah ulang' : 'Unggah pindaian'}
       <input type="file" class="sr-only" accept=".pdf,.png,.jpg,.jpeg,.webp" disabled={!row.final || Boolean(busy) || Boolean(data.disbursement.paidAt)} onchange={(e) => pickScan(row, e)} />
     </label>
+    {:else if !row.signed}<span class="text-xs text-slate-500">Menunggu pindaian dari kampus.</span>{/if}
   </div>
+  {#if row.signed}<p class="mt-2 text-xs {row.doc.signedReceived?'text-green-700':'text-amber-800'}">{row.doc.signedReceived?'Pindaian sesuai dengan dokumen final':'Menunggu pemeriksaan PF'}</p>{/if}
 {/snippet}
 
 {#snippet cellAsli(row: Row)}
@@ -268,7 +273,7 @@
     <div class="hidden overflow-hidden rounded-lg border border-slate-200 bg-white md:block">
       <table class="w-full border-collapse text-sm">
         <thead class="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">
-          <tr><th class="px-3 py-2.5">Dokumen</th><th class="px-3 py-2.5">Dokumen final</th><th class="px-3 py-2.5">Pindaian bertanda tangan</th><th class="px-3 py-2.5">Asli</th></tr>
+          <tr><th class="px-3 py-2.5">Dokumen</th><th class="px-3 py-2.5">Dokumen final</th><th class="px-3 py-2.5">Pindaian bertanda tangan</th><th class="px-3 py-2.5">Asli (opsional)</th></tr>
         </thead>
         <tbody>
           {#each rows as row (row.kind)}
@@ -288,14 +293,17 @@
           <div class="flex items-baseline justify-between gap-2"><span class="font-semibold text-slate-900">{row.label}</span>{#if row.hint}<span class="text-[11px] text-slate-500">{row.hint}</span>{/if}</div>
           <div><span class="block text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">Dokumen final</span><div class="mt-1">{@render cellFinal(row)}</div></div>
           <div><span class="block text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">Pindaian bertanda tangan</span><div class="mt-1">{@render cellScan(row)}</div></div>
-          <div><span class="block text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">Asli</span><div class="mt-1">{@render cellAsli(row)}</div></div>
+          <div><span class="block text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">Asli (opsional)</span><div class="mt-1">{@render cellAsli(row)}</div></div>
         </article>
       {/each}
     </div>
   </div>
 
   <div class="flex flex-wrap items-center gap-2 border-t border-slate-200 bg-white px-4 py-2.5">
+    <span class={checkedScans === 4 ? chipOk : chipInfo}>{checkedScans} dari 4 pindaian sesuai</span>
     <span class={received === 4 ? chipOk : chipInfo}>{received} dari 4 asli diterima</span>
+    <p class="w-full text-xs text-slate-600">Penerimaan dokumen asli bersifat opsional dan tidak menghambat pembayaran. Pindaian bertanda tangan tetap harus diperiksa PF.</p>
+    {#if checkedScans<4}<p class="w-full text-xs text-slate-600">Klik Bandingkan pada setiap pindaian, lalu centang Sesuai dengan dokumen final setelah diperiksa. Penerimaan asli dicatat terpisah.</p>{/if}
     {#if missingLine}<span class="text-xs font-medium text-amber-900">{missingLine}</span>{/if}
     {#if error}<span class="text-xs font-medium text-red-700" role="alert">{error}</span>{/if}
     <span class="ml-auto flex items-center gap-2">
@@ -318,13 +326,17 @@
     </div>
 
     {#if modal.type === 'preview'}
+      {#if current.kind === 'pks' && (data as any).journey?.datePolicy === 'chronology'}
+        <FileViewer src={base + '/pengajuan/pks-pdf'} mime="application/pdf" name="PKS.pdf" height={680} />
+      {:else}
       <div bind:this={previewScroller} class="relative h-[min(78dvh,900px)] overflow-auto bg-slate-100">
         <div bind:this={previewHost} class="docx-host p-2" style={`zoom:${zoom}`}></div>
         {#if previewLoading}<div class="absolute inset-0 flex items-center justify-center bg-white/70 text-sm text-slate-600">Menggambar dokumen…</div>{/if}
         {#if previewError}<div class="absolute inset-x-0 top-0 m-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{previewError}</div>{/if}
       </div>
+      {/if}
       <div class="flex flex-wrap items-center gap-2 border-t border-slate-100 px-5 py-3">
-        <span class="text-xs text-slate-500">Biru: nilai terisi. Merah: belum diisi.</span>
+        <span class="text-xs text-slate-500">{current.kind === 'pks' && (data as any).journey?.datePolicy === 'chronology' ? 'PDF yang telah disetujui PF dan Legal.' : 'Biru: nilai terisi. Merah: belum diisi.'}</span>
         <span class="ml-auto flex items-center gap-2">
           {#if current.blocked}<span class="text-xs font-medium text-amber-900" title={current.blockedFull}>{current.blocked}</span>{/if}
           <Button size="sm" icon="download" onclick={() => { const row = current; close(); if (row) void saveFinal(row); }} disabled={Boolean(current.blocked) || Boolean(busy) || Boolean(data.disbursement.paidAt)}>{current.final ? 'Buat ulang dan unduh' : 'Unduh dokumen final'}</Button>
@@ -368,8 +380,7 @@
           <form class="grid gap-3" onsubmit={(e) => { e.preventDefault(); void saveProps(); }}>
             <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {#each PROPERTY_FIELDS as f (f.key)}
-                <label class="grid gap-1 text-xs font-semibold text-slate-600">{f.label}
-                  {#if f.type === 'date'}<input type="date" class={input} aria-required="true" bind:value={propsDraft[f.key]} />{:else}<input class={input} aria-required="true" bind:value={propsDraft[f.key]} />{/if}
+                <label class="grid gap-1 text-xs font-semibold text-slate-600"><span class="field-caption">{f.label}</span>{#if f.type === 'date'}<input type="date" class={input} aria-required="true" bind:value={propsDraft[f.key]} />{:else}<input class={input} aria-required="true" bind:value={propsDraft[f.key]} />{/if}
                 </label>
               {/each}
               <div class="grid gap-1 text-xs font-semibold text-slate-600">Terbilang Termin 1<span class="text-sm font-normal text-slate-700">{info?.data.termin1Terbilang || 'Ditetapkan saat RAB disetujui'}</span></div>

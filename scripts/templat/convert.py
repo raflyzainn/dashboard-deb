@@ -53,6 +53,8 @@ import os
 import re
 import sys
 import zipfile
+from pathlib import Path
+from normalize import normalize
 
 from lxml import etree
 
@@ -561,6 +563,7 @@ def convert(spec, source_dir, out_dir):
     with zipfile.ZipFile(target, 'w', zipfile.ZIP_DEFLATED) as out:
         for name in order:
             out.writestr(name, parts[name])
+    normalize(Path(target))
     print('  wrote %s with %d placeholders: %s' % (spec['out'], len(tags), ' '.join(tags)))
     return tags
 

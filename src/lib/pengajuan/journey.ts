@@ -1,5 +1,9 @@
+import type { PksReview } from './pks-review';
+import { validGrantors } from './grantors';
 import { validQuantity } from './rab-model';
-import { buildMergeData, missingFor, templateTags, MERGE_KINDS, type MergeKind } from '../merge';
+import { chronologyErrors, validDate } from './dates';
+export { validDate } from './dates';
+import { buildMergeData, missingFor, templateTags, MERGE_KINDS, MERGE_LABEL, type MergeKind } from '../merge';
 import { LOCATION_FIELDS, programLocationErrors } from './location';
 import { canRevise, openRevisions, revisionPending, type RevisionRequest, type EditRequest } from './revisions';
 
@@ -18,16 +22,18 @@ export const PKS_DATE = '2026-06-17';
 export const PF_PKS_PENDING = 'masih menunggu surat dari PF';
 export const LETTER_MIN_DATE = '2026-06-18';
 export const documentGuides: Record<string, string[]> = {
- pks:['Siapkan dua rangkap PKS dengan isi yang sama.','Gunakan satu perwakilan kampus yang berwenang; nama dan jabatan harus konsisten.','Lengkapi tanda tangan para pihak dan meterai pada tempat yang ditentukan template.','Pastikan tanggal PKS 17 Juni 2026 dan lampiran sesuai jenis rekening.'],
- permohonan:['Periksa kop, nomor surat, identitas kampus, dan nominal Termin 1.','Tanggal surat harus setelah 17 Juni 2026.','Lengkapi tanda tangan serta lampiran RAB, invoice, kuitansi, rekening, dan PKS.'],
- invois:['Periksa nomor invoice, nominal Termin 1, serta nama bank, rekening, dan pemilik.','Tanggal invoice harus setelah 17 Juni 2026.','Lengkapi tanda tangan dan meterai pada tempat yang ditentukan template.'],
- kuitansi:['Periksa nomor kuitansi, nominal dan terbilang yang mengikuti Termin 1.','Tanggal kuitansi harus setelah 17 Juni 2026.','Lengkapi tanda tangan dan meterai pada tempat yang ditentukan template.'],
- surat_kuasa:['Unduh template, periksa pemberi kuasa dan penerima yang sama dengan pemilik rekening.','Lengkapi tanggal setelah 17 Juni 2026, tanda tangan, dan meterai pada tempat yang tersedia.','Unggah seluruh halaman hasil tanda tangan yang jelas dan terbaca.']
+ pks:['Siapkan dua rangkap PKS dengan isi yang sama.','Gunakan satu perwakilan kampus yang berwenang; nama dan jabatan harus konsisten.','Lengkapi tanda tangan para pihak dan meterai pada tempat yang ditentukan template.','Periksa tanggal PKS yang ditetapkan PF dan lampiran sesuai jenis rekening.'],
+ permohonan:['Periksa kop, nomor surat, identitas kampus, dan nominal Termin 1.','Tanggal permohonan harus setelah PKS.','Lengkapi tanda tangan serta lampiran RAB, invoice, kuitansi, rekening, dan PKS.'],
+ invois:['Periksa nomor invoice, nominal Termin 1, serta nama bank, rekening, dan pemilik.','Tanggal invoice pada atau setelah permohonan.','Lengkapi tanda tangan dan meterai pada tempat yang ditentukan template.'],
+ kuitansi:['Periksa nomor kuitansi, nominal dan terbilang yang mengikuti Termin 1.','Tanggal kuitansi harus setelah invoice.','Lengkapi tanda tangan dan meterai pada tempat yang ditentukan template.'],
+ surat_kuasa:['Unduh template, periksa pemberi kuasa dan penerima yang sama dengan pemilik rekening.','Lengkapi tanggal setelah PKS, tanda tangan seluruh pemberi dan penerima kuasa, serta meterai.','Unggah seluruh halaman hasil tanda tangan yang jelas dan terbaca.']
 };
-export const validDate=(value:string)=>/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
-export const kuasaSource=(fields:Record<string,string>)=>JSON.stringify(['pemberiKuasa','penerimaKuasa','penandatanganNama','penandatanganJabatan','namaBank','nomorRekening','namaPemilik','judulProgram','tempatTandaTangan','tanggalKuasa'].map(key=>fields[key]||''));
+export const kuasaSource=(fields:Record<string,string>)=>JSON.stringify(['pemberiKuasa','pemberiKuasaList','penerimaKuasa','penandatanganNama','penandatanganJabatan','namaBank','nomorRekening','namaPemilik','judulProgram','tempatTandaTangan','tanggalKuasa'].map(key=>fields[key]||''));
 export const requiresKuasaUpdate=(j:any)=>j?.fields.jenisRekening==='kuasa'&&j.files.kuasa?.source!==kuasaSource(j.fields);
 export interface Journey {
+ pksReview?:PksReview;
+ datePolicy?: 'legacy' | 'chronology';
+ agreement?: {agreementStart:string;agreementEnd:string};
  rabDraft?: {rows:(string|number|null)[][];lineIds:string[]}; rabDraftRevision?: number;
  status: 'draf' | 'menunggu' | 'revisi' | 'selesai'; lastSection: Section;
  fields: Record<string, string>; files: Record<string, { id: string; name: string; mime: string; width?: number; height?: number; source?: string; stale?: boolean }>;
@@ -45,9 +51,11 @@ export function ensureJourney(c: any, r: any): Journey {
   jenisRekening:'kampus', namaBank:'', nomorRekening:'', namaPemilik:'', pemberiKuasa:'', penerimaKuasa:'',
   penandatanganNama:'', penandatanganJabatan:'', tempatTandaTangan:c.city || '',
   nomorSuratPermohonan:'', tanggalSuratPermohonan:'', nomorInvois:'', tanggalInvois:'', nomorKuitansi:'', tanggalKuitansi:'',
-  nomorPksKampus:'', tanggalPerjanjian:PKS_DATE, tanggalKuasa:''
+  nomorPksKampus:'', tanggalPerjanjian:'', tanggalKuasa:''
  }};
+ journey.datePolicy??=journey.status==='draf'&&!journey.history.length&&!r.payment?.paidAt&&!r.payment?.submittedAt?'chronology':'legacy';
  journey.fields.tanggalKuasa??='';
+ if(journey.datePolicy==='chronology')journey.fields.pemberiKuasaList??='';
  // Add fields lazily without replacing an existing draft or guessing codes from old names.
  for(const field of Object.values(LOCATION_FIELDS))journey.fields[field]??='';
  journey.fields.lokasiAlamatLengkap??='';
@@ -67,11 +75,22 @@ export function pfNumberForDocument(journey:Pick<Journey,'pf'>):string {
 export function mergeInput(c: any, r: any, settings: any) {
  const f = ensureJourney(c,r).fields;
  return {campus:{...c, code:c.acronym || c.id, program:{...c.program, address:f.alamat,village:f.desa,district:f.kecamatan,regency:f.kabupaten,...(f.lokasiProvinsiId?{province:f.lokasiProvinsi,postalCode:f.lokasiKodePos}:{}),mentor:f.mentor,coordinator:f.koordinator}},
-  award:{...c.award,programTitle:f.judulProgram,programYear:c.programYear}, settings,
+  award:{...c.award,programTitle:f.judulProgram,programYear:c.programYear}, settings:journeySettings(r.journey,settings),
   disbursement:{requestedSen:r.versions.at(-1)?.term1Sen || 0,properties:{...f,nomorPksPf:pfNumberForDocument(r.journey)}},
   rekening:{namaBank:f.namaBank,nomorRekening:f.nomorRekening,namaPemilik:[f.namaPemilik]}};
 }
+export function journeySettings(j:Journey,settings:any) {
+ if(j.datePolicy!=='chronology')return settings;
+ j.agreement??={agreementStart:(settings?.agreementStart||'').slice(0,10),agreementEnd:(settings?.agreementEnd||'').slice(0,10)};
+ return {...settings,...j.agreement};
+}
 export const settingsSource=(settings:any)=>JSON.stringify(['pfSignatoryName','pfSignatoryTitle','agreementStart','agreementEnd','reportDeadline'].map(k=>settings?.[k]||''));
+export const PF_PKS_PREPARATION = 'PDF PKS terbaru belum siap. Admin PF perlu membuka Pencairan > kampus ini > PKS, lalu menekan Siapkan PDF PKS. Setelah PDF siap, kampus dapat mengirim perbaikan.';
+export function submissionProblem(view:{journey:Pick<Journey,'datePolicy'>;blockers:{text:string}[];stale:MergeKind[]}) {
+ if(view.blockers.length)return view.blockers[0].text;
+ if(view.journey.datePolicy==='chronology'&&view.stale.includes('pks'))return PF_PKS_PREPARATION;
+ return view.stale.length?'Buat ulang dokumen dari data terbaru: '+view.stale.map(kind=>MERGE_LABEL[kind]).join(', ')+'.':'';
+}
 export function validateJourney(c:any,r:any,settings:any,tags:Record<MergeKind,string[]>) {
  const j=ensureJourney(c,r),v=r.versions.at(-1),f=j.fields,BUDGET=c.award?.amountSen??0,LIMIT=Math.floor(BUDGET*0.7);
  const missing=Object.fromEntries(MERGE_KINDS.map(k=>[k,missingFor(tags[k],buildMergeData(mergeInput(c,r,settings)))]));
@@ -91,13 +110,15 @@ export function validateJourney(c:any,r:any,settings:any,tags:Record<MergeKind,s
  for(const [key,label] of [['rekening','Foto Buku Rekening'],['kop','Kop surat']])if(!j.files[key])blockers.push({section:sectionForField(key),text:label+' belum diunggah.'});
  if(j.files.rekening?.stale)blockers.push({section:'administrasi',text:'Data rekening berubah. Unggah kembali Foto Buku Rekening yang sesuai; berkas sebelumnya tetap dapat dilihat.'});
  if(f.jenisRekening==='kuasa'){
-  require('surat','pemberiKuasa','Pemberi kuasa');require('surat','penerimaKuasa','Penerima kuasa');
+  if(j.datePolicy==='chronology'){if(!validGrantors(f))warn('surat','pemberiKuasaList','Isi nama dan jabatan semua pemberi kuasa.');}else require('surat','pemberiKuasa','Pemberi kuasa');require('surat','penerimaKuasa','Penerima kuasa');
   if(!j.files.kuasa)blockers.push({section:'surat',text:'Surat kuasa wajib diunggah untuk rekening pihak yang diberi kuasa.'});
   else if(!['menunggu','selesai'].includes(j.status)&&j.files.kuasa.source!==kuasaSource(f))blockers.push({section:'surat',text:'Data surat kuasa berubah. Unduh template terbaru dan unggah ulang hasil tanda tangan.'});
   if(f.penerimaKuasa.trim()&&f.namaPemilik.trim()&&f.penerimaKuasa.trim().toLowerCase()!==f.namaPemilik.trim().toLowerCase())blockers.push({section:'surat',text:'Penerima kuasa harus sama dengan pemilik rekening.'});
-  if(f.pemberiKuasa.trim()&&f.penandatanganNama.trim()&&f.pemberiKuasa.trim().toLowerCase()!==f.penandatanganNama.trim().toLowerCase())blockers.push({section:'surat',text:'Pemberi kuasa harus sama dengan penandatangan kampus.'});
+  if(j.datePolicy!=='chronology'&&f.pemberiKuasa.trim()&&f.penandatanganNama.trim()&&f.pemberiKuasa.trim().toLowerCase()!==f.penandatanganNama.trim().toLowerCase())blockers.push({section:'surat',text:'Pemberi kuasa harus sama dengan penandatangan kampus.'});
  }
- if(!['menunggu','selesai'].includes(j.status)){
+ if(j.datePolicy==='chronology'){
+  for(const error of chronologyErrors(f,(c.award?.skDate||'').slice(0,10),journeySettings(j,settings)))warn(error.key==='skDate'?'sk':['tanggalPerjanjian','agreementStart','agreementEnd'].includes(error.key)?'pks':'surat',error.key,error.text);
+ }else if(!['menunggu','selesai'].includes(j.status)){
   if(f.tanggalPerjanjian!==PKS_DATE)warn('pks','tanggalPerjanjian','Tanggal PKS ditetapkan 17 Juni 2026. Simpan draf untuk menggunakan tanggal ini.');
   for(const [key,label] of [['tanggalSuratPermohonan','Surat permohonan'],['tanggalInvois','Invoice'],['tanggalKuitansi','Kuitansi'],...(f.jenisRekening==='kuasa'?[['tanggalKuasa','Surat kuasa']]:[])]){
    if(!validDate(f[key]||''))warn('surat',key,label+': isi tanggal yang valid.');
@@ -123,7 +144,7 @@ export function journeyView(c:any,r:any,settings:any,templates:Record<MergeKind,
  const {missing,blockers}=validateJourney(c,r,settings,tags);
  const validation={campus:{id:c.id,name:c.name,acronym:c.acronym,programYear:c.programYear,award:c.award},settings,tags,
   version:v?{totalSen:v.totalSen,term1Sen:v.term1Sen,term2Sen:v.term2Sen,campusStep:v.campusStep,lines:v.lines.map((l:any)=>({level:l.level,volume:l.volume,flags:{term1Volume:l.flags?.term1Volume}}))}:null};
- const stale=MERGE_KINDS.filter(k=>{const d=r.documents.find((d:any)=>d.kind===k);return !d?.versions.some((v:any)=>(v.id===d.currentVersionId||j.status==='selesai'&&d.signedReceived)&&v.origin==='generated'&&v.journeyRevision===j.documentRevisions![k]&&(j.status==='selesai'||v.generation?.settingsSource===settingsSource(settings)));});
+ const stale=MERGE_KINDS.filter(k=>{const d=r.documents.find((d:any)=>d.kind===k);return !d?.versions.some((v:any)=>(v.id===d.currentVersionId||j.status==='selesai'&&(d.signedReceived||d.versions.some((scan:any)=>scan.id===d.currentVersionId&&scan.signed&&scan.generation?.sourceVersionId===v.id)))&&v.origin==='generated'&&(k!=='pks'||j.datePolicy!=='chronology'||v.mime==='application/pdf'&&j.pksReview?.complete===true)&&v.journeyRevision===j.documentRevisions![k]&&(j.status==='selesai'||v.generation?.settingsSource===settingsSource(journeySettings(j,settings))));});
  return {validation,journey:j,pf:{nomorPksPf:pfNumber(j),name:settings.pfSignatoryName,title:settings.pfSignatoryTitle},campus:{id:c.id,name:c.name},summary:{amountSen:BUDGET,limitSen:LIMIT,skNumber:c.award?.skNumber||''},rab:v?{id:v.id,number:v.number,totalSen:v.totalSen,term1Sen:v.term1Sen,term2Sen:v.term2Sen,status:v.status}:null,missing,blockers,stale,
   pendingRevisionScopes:[...new Set(openRevisions(j).flatMap(request=>revisionPending(r,request)).filter(scope=>scope!=='dokumen'))],
   revisionBlockers:[...new Set([...openRevisions(j).filter(request=>revisionPending(r,request).length).map(request=>request.kind),...r.documents.filter((d:any)=>d.status==='perlu_revisi'&&!(d.kind==='surat_kuasa'&&j.fields.jenisRekening==='kampus')&&!openRevisions(j).some(request=>request.kind===d.kind||request.scopes.includes('rab')&&['rab_penuh','rab','rab_tahap2'].includes(d.kind))).map((d:any)=>d.kind)])],
@@ -131,6 +152,7 @@ export function journeyView(c:any,r:any,settings:any,templates:Record<MergeKind,
 }
 export function touchJourney(c:any,r:any,kinds:readonly string[]=MERGE_KINDS) {
  const j=ensureJourney(c,r);j.revision++;
+ if(kinds.includes('pks'))delete j.pksReview;
  if(j.status==='revisi')j.revisionDocuments=[...new Set([...(j.revisionDocuments||[]),...kinds])];
  for(const kind of kinds){j.documentRevisions![kind]=j.revision;for(const key of Object.keys(j.checklist!))if(key.startsWith(kind+'-'))delete j.checklist![key];}
  if(j.status==='selesai')j.status='draf';
@@ -144,5 +166,5 @@ export function changedLetters(c:any,r:any,settings:any,templates:Record<MergeKi
  const current=r.journey.fields;
  const prior=buildMergeData(mergeInput(c,{...r,journey:{...r.journey,fields:before}},settings));
  const next=buildMergeData(mergeInput(c,r,settings));
- return MERGE_KINDS.filter(kind=>templateTags(templates[kind]).some(key=>prior[key as keyof typeof prior]!==next[key as keyof typeof next])||before.jenisRekening!==current.jenisRekening&&['pks','permohonan'].includes(kind));
+ return MERGE_KINDS.filter(kind=>r.journey.datePolicy==='chronology'&&['penandatanganNama','penandatanganJabatan'].some(key=>before[key]!==current[key])||templateTags(templates[kind]).some(key=>prior[key as keyof typeof prior]!==next[key as keyof typeof next])||before.jenisRekening!==current.jenisRekening&&['pks','permohonan'].includes(kind));
 }

@@ -12,5 +12,5 @@ export function mapUser(r: Record<string, unknown>) {
 
 /** Which roles an actor may hand out. Only the super admin grants admin; nobody grants super admin from the app. */
 export function grantable(actor: Actor): string[] {
-  return actor.superAdmin ? ['baru', 'campus', 'admin'] : ['baru', 'campus'];
+  return actor.superAdmin ? ['baru', 'campus', 'admin', 'legal'] : ['baru', 'campus', 'legal'];
 }

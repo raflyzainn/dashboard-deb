@@ -10,12 +10,10 @@
 
   /** Program settings per program year, typed once and used by every campus of that year in the generated documents. */
   interface Row { id: string; programYear: string; pfSignatoryName: string; pfSignatoryTitle: string; agreementStart: string; agreementEnd: string; reportDeadline: string }
-  type Key = Exclude<keyof Row, 'id' | 'programYear'>;
+  type Key = 'pfSignatoryName' | 'pfSignatoryTitle' | 'reportDeadline';
   const FIELDS: { key: Key; label: string; type: 'text' | 'date' }[] = [
     { key: 'pfSignatoryName', label: 'Penandatangan Pertamina Foundation', type: 'text' },
     { key: 'pfSignatoryTitle', label: 'Jabatan penandatangan', type: 'text' },
-    { key: 'agreementStart', label: 'Masa perjanjian mulai', type: 'date' },
-    { key: 'agreementEnd', label: 'Masa perjanjian selesai', type: 'date' },
     { key: 'reportDeadline', label: 'Batas waktu laporan', type: 'date' }
   ];
   const YEAR_LABEL: Record<string, string> = { kedua: 'Tahun Kedua', ketiga: 'Tahun Ketiga' };
@@ -56,14 +54,15 @@
   <a href="/admin/pencairan" class="inline-flex w-fit items-center gap-1 text-sm font-semibold text-[#0066B2] hover:underline"><Icon name="back" size={14} />Kembali ke direktori</a>
   <header>
     <h1 class="text-2xl font-bold text-slate-900">Pengaturan program</h1>
-    <p class="mt-1 text-sm text-slate-600">Penandatangan Pertamina Foundation, masa perjanjian, dan batas waktu laporan dipakai oleh semua kampus pada tahun program yang sama.</p>
+    <p class="mt-1 text-sm text-slate-600">Penandatangan PF dan batas waktu laporan diatur bersama per tahun program.</p>
   </header>
+  <p class="rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm leading-relaxed text-blue-900">Untuk mengatur masa perjanjian kampus, buka Pencairan, pilih kampus, lalu isi Data PKS. Pengajuan lama tetap mengikuti aturan sebelumnya.</p>
   {#if notice}<div class="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800" role="status">{notice}</div>{/if}
   {#if error}<div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">{error}</div>{/if}
   {#if !rows.length && !error}<p class="text-sm text-slate-500">Memuat pengaturan…</p>{/if}
   <div class="grid gap-4 xl:grid-cols-2">
     {#each rows as row (row.programYear)}
-      <EditableSection title={YEAR_LABEL[row.programYear] || row.programYear} description="Dicetak pada PKS setiap kampus tahun ini." icon="settings" bind:editing={editing[row.programYear]} saving={saving === row.programYear} dirty={dirty(row)} onEdit={() => start(row)} onSave={() => save(row)}>
+      <EditableSection title={YEAR_LABEL[row.programYear] || row.programYear} description="Penandatangan PF dan batas waktu laporan bersama." icon="settings" bind:editing={editing[row.programYear]} saving={saving === row.programYear} dirty={dirty(row)} onEdit={() => start(row)} onSave={() => save(row)}>
         {#snippet view()}
           <dl class="grid gap-3 sm:grid-cols-2">
             {#each FIELDS as f (f.key)}<ReadField label={f.label} value={f.type === 'date' ? dateWords(row[f.key]) : row[f.key]} />{/each}
@@ -72,8 +71,7 @@
         {#snippet edit()}
           <div class="grid gap-3 sm:grid-cols-2">
             {#each FIELDS as f (f.key)}
-              <label class="grid gap-1 text-xs font-semibold text-slate-600">{f.label}
-                {#if f.type === 'date'}
+              <label class="grid gap-1 text-xs font-semibold text-slate-600"><span class="field-caption">{f.label}</span>{#if f.type === 'date'}
                   <input type="date" class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal text-slate-900" aria-required="true" bind:value={draft[row.programYear][f.key]} />
                 {:else}
                   <input class="min-h-[38px] rounded-lg border border-slate-300 px-2.5 text-sm font-normal text-slate-900" aria-required="true" bind:value={draft[row.programYear][f.key]} maxlength="120" />

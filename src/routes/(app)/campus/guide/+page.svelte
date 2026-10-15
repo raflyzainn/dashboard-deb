@@ -9,6 +9,13 @@
       action: 'Buka Beranda'
     },
     {
+      icon: 'campus',
+      title: 'Profil & Monitoring Program',
+      description: 'Lengkapi kontak, lokasi, informasi program, dan indikator kesiapan rencana aksi. Isi langsung pada bagian yang diperlukan, lalu pilih Simpan perubahan. Admin PF melihat data yang sama.',
+      href: 'profile',
+      action: 'Buka Profil & Monitoring'
+    },
+    {
       icon: 'payments',
       title: 'Pencairan Dana',
       description:
@@ -47,7 +54,7 @@
     <p
       class="[&&]:mt-[0px] [&&]:mb-[24px] [&&]:leading-[1.6] [&&]:max-w-[620px] [&&]:text-[15px] [&&]:text-[#e0eeff] [&&]:mx-[0px] max-[600.01px]:[&&]:text-[14px]"
     >
-      Gunakan Beranda untuk melihat langkah berikutnya, lalu buka Pencairan Dana untuk memantau dan melengkapi dokumen kampus Anda.
+      Gunakan Beranda untuk melihat langkah berikutnya, Profil & Monitoring Program untuk melengkapi data kampus, dan Pencairan Dana untuk memantau serta melengkapi dokumen.
     </p>
     <a
       class="[-webkit-tap-highlight-color:transparent] [&&]:text-[#1256b6] [&&]:[text-decoration-line:none] [&&]:[text-decoration-thickness:initial] [&&]:[text-decoration-style:initial] [&&]:[text-decoration-color:initial] [&&]:inline-flex [&&]:items-center [&&]:gap-y-[16px] [&&]:gap-x-[16px] [&&]:[background-image:initial] [&&]:[background-color:rgb(255,_255,_255)] [&&]:text-[14px] [&&]:font-[700] [&&]:px-[18px] [&&]:py-[13px] [&&]:rounded-[9px] [&:focus-visible]:[outline-color:rgb(244,_190,_64)] [&:focus-visible]:[outline-style:solid] [&:focus-visible]:[outline-width:3px] [&:focus-visible]:outline-offset-[5px] guide-start"
@@ -61,7 +68,7 @@
         class="[&&]:mt-[0px] [&&]:mb-[9px] font-[600] [&&]:text-[#173963] [&&]:text-[21px] tracking-[-0.01em] [&&]:mx-[0px] max-[600.01px]:[&&]:text-[19px]"
         id="features-title"
       >
-        Dua halaman utama
+        Halaman utama
       </h2>
       <p
         class="[&&]:mt-[0px] [&&]:mb-[20px] [&&]:leading-[1.6] [&&]:text-[14px] [&&]:text-[#475569] [&&]:mx-[0px]"
@@ -130,3 +137,5 @@
     </div>
   </aside>
 </div>
+
+<section class="mt-5 rounded-2xl border border-blue-100 bg-white p-5"><h2 class="font-bold">Pelaporan setelah dana Tahap 1 diterima</h2><p class="mt-2">Catat satu bukti untuk setiap invois/pindaian. Lengkapi laporan pelaksanaan, infografis PDF, video MP4 maksimal 2 menit, dan artikel (teks web, Word atau PDF). Simpan draf lalu kirim setiap keluaran untuk diperiksa. Perbaiki versi yang diminta admin; riwayat tetap tersedia.</p><p class="mt-2">LPJ selesai setelah semua bukti Sesuai dan admin menekan Selesaikan LPJ. Empat keluaran Sesuai menandai pelaporan tahunan lengkap.</p><a class="mt-3 inline-block text-blue-700 underline" href="/campus/pelaporan">Buka Pelaporan</a></section>
