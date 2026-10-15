@@ -13,6 +13,16 @@
 <div class="grid gap-2 text-sm" aria-label="Bukti transfer">
  {#if details&&data.disbursement.paidAt}<section aria-label="Rincian pembayaran Tahap 1" class="rounded-lg bg-white p-3"><h3 class="font-semibold">Pembayaran Tahap 1</h3><dl class="mt-2 grid gap-2 sm:grid-cols-3"><div><dt>Tanggal pembayaran</dt><dd class="font-semibold">{new Intl.DateTimeFormat('id-ID',{dateStyle:'long',timeZone:'Asia/Jakarta'}).format(new Date(data.disbursement.paidAt))}</dd></div><div><dt>Jumlah dibayar</dt><dd class="font-semibold">{formatSen(data.disbursement.paidSen)}</dd></div><div><dt>Referensi transfer</dt><dd class="break-all font-semibold">{data.disbursement.paidRef||'Belum dicantumkan'}</dd></div></dl></section>{/if}
  {#if proof}<a href={base} target="_blank" rel="noopener" class="w-fit font-semibold text-[#0066B2] hover:underline">Lihat bukti transfer · {proof.name}</a>{:else}<p class="text-slate-500">Bukti transfer belum dilampirkan (opsional).</p>{/if}
- {#if editable}<div class="flex flex-wrap items-end gap-2"><label class="grid min-w-0 gap-1 text-xs font-semibold text-slate-600">Bukti transfer (opsional)<input bind:this={input} aria-label="Bukti transfer (opsional)" type="file" accept=".pdf,.png,.jpg,.jpeg" disabled={busy} class="max-w-full text-sm" onchange={e=>{file=e.currentTarget.files?.[0]||null;error='';}}/><span class="font-normal">PDF/PNG/JPG · maksimal 2 MB</span></label><button type="button" class="min-h-10 rounded-lg border border-slate-300 px-3 font-semibold text-[#0066B2] disabled:opacity-40" disabled={!file||busy} onclick={upload}>{busy?'Menyimpan…':'Simpan bukti transfer'}</button></div>{/if}
+ {#if editable}
+ <div class="flex flex-wrap items-center gap-2">
+  <label class="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 text-xs font-semibold text-[#0066B2] hover:bg-blue-50 focus-within:outline-2 focus-within:outline-blue-400">
+   <span>Pilih file</span>
+   <input bind:this={input} aria-label="Pilih file bukti transfer" type="file" accept=".pdf,.png,.jpg,.jpeg" disabled={busy} class="sr-only" onchange={e=>{file=e.currentTarget.files?.[0]||null;error='';}}/>
+  </label>
+  <span class="max-w-56 truncate text-xs text-slate-500" title={file?.name}>{file?.name || 'Belum ada file dipilih'}</span>
+  <button type="button" class="min-h-9 rounded-lg bg-[#0066B2] px-3 text-xs font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-40" disabled={!file||busy} onclick={upload}>{busy?'Menyimpan...':'Simpan bukti transfer'}</button>
+ </div>
+ <p class="text-xs text-slate-500">PDF/PNG/JPG &middot; maksimal 2 MB</p>
+ {/if}
  {#if error}<p class="text-red-700" role="alert">{error}</p>{/if}
 </div>

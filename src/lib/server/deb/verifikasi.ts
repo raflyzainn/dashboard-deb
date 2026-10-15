@@ -1,3 +1,4 @@
+import { pksApproved } from '../../pengajuan/pks-review';
 import type PocketBase from 'pocketbase';
 import { PreviewError } from './preview-error';
 
@@ -53,7 +54,8 @@ export async function readVerification(pb: PocketBase, rawCode: string): Promise
   if(record.documentVersion){
     const version=await pb.collection('document_versions').getOne(record.documentVersion,opts);
     const issued=(Object.values(version.generation?.verifiedFiles||{}) as {code:string;approved:boolean}[]).find(file=>file.code===code);
-    if(issued){
+    if(version.generation?.pksCode===code){const document=await pb.collection('documents').getOne(version.document,opts),payment=await pb.collection('disbursements').getOne(document.disbursement,opts),journey=payment.applicationData;local=true;status=journey?.pksReview?.versionId!==version.id?'Versi lama - sumber PKS telah berubah':pksApproved(journey)?'PDF disetujui PF dan Legal':'Draf - belum disetujui PF dan Legal';}
+    else if(issued){
       local=true;
       const document=await pb.collection('documents').getOne(version.document,opts);
       const payment=await pb.collection('disbursements').getOne(document.disbursement,opts);

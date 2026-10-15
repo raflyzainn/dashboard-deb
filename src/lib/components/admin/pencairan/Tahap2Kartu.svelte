@@ -14,6 +14,7 @@
   let { campusId }: { campusId: string } = $props();
   let data = $state<Data | null>(null);
   let error = $state('');
+  let lpjReady = $state(false);
 
   const dateOnly = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' });
   const day = (iso: string) => { const d = new Date(iso.includes('T') || iso.includes(' ') ? iso : iso + 'T00:00:00'); return Number.isNaN(d.getTime()) ? iso : dateOnly.format(d); };
@@ -23,7 +24,7 @@
   const aboveThirty = $derived(data ? (paid ? data.payment.paidSen < data.summary.limitSen : Boolean(data.summary.requestedSen) && data.summary.requestedSen < data.summary.limitSen) : false);
 
   const items = $derived([
-    ...(import.meta.env.MODE==='pocketbase-local'?[]:[{ title: 'Laporan realisasi Tahap 1 (LPJ)', hint: 'Satu invois, satu pindaian, satu entri per pengeluaran', href: `/admin/pencairan/${campusId}/lpj` }]),
+    { title: 'LPJ dan keluaran pelaporan', hint: 'Periksa bukti dan empat keluaran program', href: `/admin/pencairan/${campusId}/pelaporan` },
     { title: 'RAB 30%', hint: 'Total sama dengan sisa Tahap 2', href: '' },
     { title: 'Permohonan pencairan Tahap 2', hint: 'Nominal sama dengan sisa', href: '' },
     { title: 'Kuitansi Tahap 2', hint: 'Nominal dan terbilang', href: '' },
@@ -31,7 +32,7 @@
   ]);
 
   async function load() {
-    try { data = await dataService.api.get<Data>(`/api/pencairan/${campusId}/lampiran`); error = ''; }
+    try { lpjReady = (await dataService.api.get<{ t2Ready: boolean }>(`/api/pencairan/${campusId}/lpj`)).t2Ready; data = await dataService.api.get<Data>(`/api/pencairan/${campusId}/lampiran`); error = ''; }
     catch (e) { error = e instanceof Error ? e.message : 'Halaman belum dapat dimuat.'; }
   }
   $effect(() => { untrack(() => { void load(); }); });
@@ -64,11 +65,12 @@
 
     <p class="rounded-xl border border-slate-200/70 bg-white/80 px-4 py-3 text-sm font-medium text-slate-800">{import.meta.env.MODE==='pocketbase-local'?'Pembagian dan ekspor RAB 30% tersedia pada halaman RAB. Proses pencairan Tahap 2 belum dibuka.':'Tahap 2 dibuka setelah laporan realisasi Tahap 1 diterima.'}</p>
 
+    <p class="rounded-xl bg-blue-50 p-4 text-sm">{lpjReady ? 'Prasyarat LPJ Tahap 1 sudah terpenuhi.' : 'Prasyarat Tahap 2: semua bukti LPJ Sesuai dan admin menyatakan LPJ selesai.'} Pengajuan dan pembayaran Tahap 2 penuh belum tersedia.</p>
     <ul class="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 xl:grid-cols-3" aria-label="Butir Tahap 2">
       {#each items as item (item.title)}
         <li class="grid gap-2 rounded-xl border border-slate-200/70 bg-white p-4 shadow-[0_10px_30px_#0b254508]">
           <span class="text-sm font-semibold text-slate-900">{item.title}</span>
-          <span class="inline-flex w-fit rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">Belum ada</span>
+          <span class="inline-flex w-fit rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{item.href ? (lpjReady ? 'LPJ selesai' : 'Perlu pemeriksaan LPJ') : 'Belum tersedia'}</span>
           <span class="text-xs text-slate-500">{item.hint}</span>
           {#if item.href}<a href={item.href} class="text-xs font-semibold text-[#0066B2] hover:underline">Buka laporan realisasi Tahap 1</a>{/if}
         </li>
