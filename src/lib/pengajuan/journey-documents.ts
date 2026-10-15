@@ -53,7 +53,9 @@ export function journeyDocx(kind:MergeKind|'surat_kuasa',c:any,r:any,settings:an
    +identity([['Nama bank','{namaBank}'],['Nomor rekening','{nomorRekening}'],['Atas nama','{namaPemilikRekening}']])
    +paragraph('Demikian surat kuasa ini dibuat untuk digunakan sebagai kelengkapan pengajuan pencairan dana program tersebut.', 'both',false,280)
    +paragraph('{tempatSurat}, {tanggalKuasa}','right',false,200)
-   +table([['Pemberi kuasa','Penerima kuasa'],['Meterai Rp10.000',''],['',''],[givers.length?'{pemberiNama0}':'','{penerimaKuasa}'],[givers.length?'{pemberiJabatan0}':'',''],...givers.slice(1).flatMap((giver,index)=>[['Pemberi kuasa '+(index+2),''],['',''],['{pemberiNama'+(index+1)+'}',''],['{pemberiJabatan'+(index+1)+'}','']])],[4536,4536]);
+   +table([['Pemberi kuasa','Penerima kuasa'],['Meterai Rp10.000',''],['',''],[givers.length?'{pemberiNama0}':'','{penerimaKuasa}'],[givers.length?'{pemberiJabatan0}':'','']],[4536,4536])
+   // Separate signature blocks let the PDF renderer move each giver to the next page intact.
+   +givers.slice(1).map((giver,index)=>paragraph('','left',false,0)+table([['Pemberi kuasa '+(index+2),''],['',''],['{pemberiNama'+(index+1)+'}',''],['{pemberiJabatan'+(index+1)+'}','']],[4536,4536])).join('');
   const xml=zip.file('word/document.xml')!.asText();
   // A4, 2.5 cm margins. Do not inherit the sample letterhead/header from permohonan.
   const section='<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1417" w:right="1417" w:bottom="1417" w:left="1417" w:header="708" w:footer="708"/></w:sectPr>';

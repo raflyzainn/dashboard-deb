@@ -10,13 +10,13 @@
   import Snapshot from './Snapshot.svelte';
   let { campusId }: { campusId: string } = $props();
   let data = $state<MonitoringWorkspace | null>(null), period = $state(''), month = $state(currentMonth());
-  let program = $state(emptyProgram()), heroes = $state<Hero[]>([]), incomeRp = $state<number | undefined>(), electricity = $state<number | undefined>(), biogas = $state<number | undefined>(), note = $state('');
+  let program = $state(emptyProgram()), heroes = $state<Hero[]>([]), incomeRp = $state<number | null | undefined>(), electricity = $state<number | null | undefined>(), biogas = $state<number | null | undefined>(), note = $state('');
   let busy = $state(false), uploads = $state(0), error = $state(''), notice = $state(''), baseline = $state(''), operationId = '', operationPayload = '';
   const monthRow = $derived(data?.months.find(m => m.month === month));
   const pending = $derived(monthRow?.status === 'pending');
   const active = $derived(data?.periods.some(p => p.id === period && p.state === 'active') ?? false);
   const disabled = $derived(busy || uploads > 0 || pending || !active || app.readOnly);
-  const input = $derived<MonthInput>({ month, incomeSen: incomeRp === undefined ? null : Math.round(incomeRp * 100), electricityKwh: electricity ?? null, biogasM3: biogas ?? null, note });
+  const input = $derived<MonthInput>({ month, incomeSen: incomeRp == null ? null : Math.round(incomeRp * 100), electricityKwh: electricity ?? null, biogasM3: biogas ?? null, note });
   const serialized = $derived(JSON.stringify({ program, heroes, input }));
   const dirty = $derived(Boolean(data && baseline && serialized !== baseline));
   const completeRows = $derived.by(() => {
@@ -28,7 +28,7 @@
     data = next; program = JSON.parse(JSON.stringify(next.program)); heroes = JSON.parse(JSON.stringify(next.heroes));
     const saved = next.months.find(m => m.month === month)?.payload;
     incomeRp = saved?.incomeSen == null ? undefined : saved.incomeSen / 100; electricity = saved?.electricityKwh ?? undefined; biogas = saved?.biogasM3 ?? undefined; note = saved?.note || '';
-    baseline = JSON.stringify({ program, heroes, input: { month, incomeSen: incomeRp === undefined ? null : Math.round(incomeRp * 100), electricityKwh: electricity ?? null, biogasM3: biogas ?? null, note } });
+    baseline = JSON.stringify({ program, heroes, input: { month, incomeSen: incomeRp == null ? null : Math.round(incomeRp * 100), electricityKwh: electricity ?? null, biogasM3: biogas ?? null, note } });
   }
   async function load(initial = false) {
     busy = true; error = '';
