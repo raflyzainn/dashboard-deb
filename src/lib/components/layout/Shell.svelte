@@ -4,6 +4,7 @@
   import { goto } from '$app/navigation';
   import { app } from '$lib/state.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
+  import CampusLogo from '$lib/components/ui/CampusLogo.svelte';
   let accountMenu = $state(false);
   import type { Snippet } from 'svelte';
   let { children }: { children: Snippet } = $props();
@@ -209,11 +210,13 @@
           class="flex cursor-pointer list-none items-center gap-2 rounded-lg p-1 text-[#17365f] hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-400 [&::-webkit-details-marker]:hidden"
           aria-label="Buka menu akun"
         >
-          <span
+          {#if campus}
+            <CampusLogo code={campusProfile?.acronym || campusProfile?.initials} initials={campusProfile?.initials} size={38} rounded="rounded-full" />
+          {:else}<span
             class="flex size-[38px] items-center justify-center rounded-full border-2 border-white bg-[#e6f1ff] text-[11px] font-bold text-[#075fc7] shadow-[0_0_0_1px_#c6ddf5]"
           >
             {app.session?.role === 'admin' ? 'PF' : legal ? 'LG' : campusProfile?.initials}
-          </span>
+          </span>{/if}
           <span class="max-[700px]:hidden">
             <strong class="block text-[12px] leading-4">{app.session?.name?.replace(/\b(lokal|local|dummy|demo|simulasi)\b/gi, '').replace(/\s+/g, ' ').trim()}</strong>
             <small class="block text-[11px] text-[#475569]"

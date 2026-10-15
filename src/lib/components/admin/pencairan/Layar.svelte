@@ -44,6 +44,7 @@
   let error = $state('');
   let notice = $state('');
   let busy = $state(false);
+  let refreshing = $state(false);
   let refresh = $state(0);
   let selectedVersionId = $state('');
   let draft = $state<Record<string, string | boolean>>({});
@@ -200,14 +201,16 @@
 
   function say(message: string) { notice = message; if (noticeTimer) clearTimeout(noticeTimer); if (message) noticeTimer = setTimeout(() => (notice = ''), 4000); }
   function apply(next: KartuData, message = '') { data = next; error = ''; refresh++; if (message) say(message); }
-  async function load() {
-    if (busy) return;
+  async function load(manual = false) {
+    if (busy || refreshing) return;
+    if (manual) { refreshing = true; notice = ''; }
     const generation = ++loadGeneration;
     try {
       const next = await dataService.api.get<KartuData>(`/api/pencairan/${campusId}`);
-      if (generation === loadGeneration) apply(next);
+      if (generation === loadGeneration) apply(next, manual ? 'Status terbaru berhasil dimuat.' : '');
     }
     catch (e) { if (generation === loadGeneration) error = reportError(e instanceof Error ? e.message : 'Layar belum dapat dimuat.'); }
+    finally { if (manual) refreshing = false; }
   }
   $effect(() => { untrack(() => { void load(); }); });
   $effect(() => onChange(() => void load(), { campus: campusId }));
@@ -377,7 +380,7 @@
       <section aria-label="Progres pencairan" class="my-2 grid gap-2 rounded-xl border border-blue-100 bg-blue-50/60 p-4 text-sm text-slate-700">
         <p class="text-sm text-slate-700">Nilai SK <strong class="tabular-nums text-slate-900">{formatSen(data.summary.amountSen)}</strong></p>
         {#if data.disbursement.paidAt}<BuktiTransfer {campusId} {data} details/>{/if}
-        <div class="flex flex-wrap items-center justify-between gap-2"><h2 class="font-bold text-slate-900">Progres Tahap 1 · {data.readiness.done} dari {data.readiness.total} selesai</h2><button type="button" class="font-semibold text-[#0066B2] disabled:opacity-50" disabled={busy} onclick={load}>Perbarui status</button></div>
+        <div class="flex flex-wrap items-center justify-between gap-2"><h2 class="font-bold text-slate-900">Progres Tahap 1 · {data.readiness.done} dari {data.readiness.total} selesai</h2><Button size="sm" variant="secondary" icon="reset" loading={refreshing} disabled={busy||refreshing} onclick={()=>void load(true)}>{refreshing?'Memperbarui…':'Perbarui status'}</Button></div>
         {#if belumAda.length}<p><strong class="text-slate-900">{hasJourney && data.rab ? 'Belum diajukan' : 'Belum ada'} ({belumAda.length}):</strong> {belumAda.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}
         {#if revisionLabels.length}<p><strong class="text-amber-900">Perlu revisi ({revisionLabels.length}):</strong> {revisionLabels.join(', ')}.</p>{/if}
         {#if menungguPf.length}<p><strong class="text-[#015a9a]">Menunggu PF ({menungguPf.length}):</strong> {menungguPf.map(k => KIND_SHORT[k]).join(', ')}.</p>{/if}

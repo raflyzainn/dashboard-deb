@@ -21,3 +21,10 @@ Komponen bukti transfer bersama menampilkan pratinjau gambar/PDF dengan tombol b
 QA browser: gambar bukti lokal Papua dimuat di admin dan kampus; layar kampus 390 px tanpa overflow. Bukti PDF lokal Universitas Pertamina tampil dalam viewer. Pemeriksaan ini hanya membaca berkas yang sudah ada, tanpa mengubah pembayaran.
 
 Build final `npm run build` berhasil exit 0 pada worktree `fix/revisi-pks-asli-opsional`, berbasis GitLab production `775bb42`. Adapter Cloudflare selesai. Warning yang masih ada: aksesibilitas tabindex pada Layar, deprecation punycode, dan ukuran chunk besar. Hasil ini membuktikan build lokal, bukan deployment production.
+
+## Respons tombol Perbarui status
+Tombol memakai komponen Button dengan indikator Memperbarui dan konfirmasi Status terbaru berhasil dimuat. QA browser akun Kampus QA Lokal 3: berhasil memuat; simulasi respons 503 menampilkan error, tombol aktif kembali, dan retry berhasil. Tidak mengubah status pengajuan.
+
+
+## Logo akun kampus
+Avatar header memakai CampusLogo yang sudah tersedia, dengan inisial sebagai fallback. Alias UNISVET dan STAI SUSHA dipetakan ke logo IVET dan STAI Siak. QA browser: logo Politeknik Negeri Fakfak tampil dan berkas gambar berhasil dimuat. Inventaris lokal: 40 kampus mitra memiliki berkas logo; empat kampus QA lokal tidak memiliki logo. Test pemetaan ditambahkan, belum dijalankan.
