@@ -273,7 +273,7 @@
     <div class="hidden overflow-hidden rounded-lg border border-slate-200 bg-white md:block">
       <table class="w-full border-collapse text-sm">
         <thead class="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">
-          <tr><th class="px-3 py-2.5">Dokumen</th><th class="px-3 py-2.5">Dokumen final</th><th class="px-3 py-2.5">Pindaian bertanda tangan</th><th class="px-3 py-2.5">Asli</th></tr>
+          <tr><th class="px-3 py-2.5">Dokumen</th><th class="px-3 py-2.5">Dokumen final</th><th class="px-3 py-2.5">Pindaian bertanda tangan</th><th class="px-3 py-2.5">Asli (opsional)</th></tr>
         </thead>
         <tbody>
           {#each rows as row (row.kind)}
@@ -293,7 +293,7 @@
           <div class="flex items-baseline justify-between gap-2"><span class="font-semibold text-slate-900">{row.label}</span>{#if row.hint}<span class="text-[11px] text-slate-500">{row.hint}</span>{/if}</div>
           <div><span class="block text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">Dokumen final</span><div class="mt-1">{@render cellFinal(row)}</div></div>
           <div><span class="block text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">Pindaian bertanda tangan</span><div class="mt-1">{@render cellScan(row)}</div></div>
-          <div><span class="block text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">Asli</span><div class="mt-1">{@render cellAsli(row)}</div></div>
+          <div><span class="block text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">Asli (opsional)</span><div class="mt-1">{@render cellAsli(row)}</div></div>
         </article>
       {/each}
     </div>
@@ -302,6 +302,7 @@
   <div class="flex flex-wrap items-center gap-2 border-t border-slate-200 bg-white px-4 py-2.5">
     <span class={checkedScans === 4 ? chipOk : chipInfo}>{checkedScans} dari 4 pindaian sesuai</span>
     <span class={received === 4 ? chipOk : chipInfo}>{received} dari 4 asli diterima</span>
+    <p class="w-full text-xs text-slate-600">Penerimaan dokumen asli bersifat opsional dan tidak menghambat pembayaran. Pindaian bertanda tangan tetap harus diperiksa PF.</p>
     {#if checkedScans<4}<p class="w-full text-xs text-slate-600">Klik Bandingkan pada setiap pindaian, lalu centang Sesuai dengan dokumen final setelah diperiksa. Penerimaan asli dicatat terpisah.</p>{/if}
     {#if missingLine}<span class="text-xs font-medium text-amber-900">{missingLine}</span>{/if}
     {#if error}<span class="text-xs font-medium text-red-700" role="alert">{error}</span>{/if}
