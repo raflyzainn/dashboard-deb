@@ -18,7 +18,7 @@
  import { REVISION_SCOPES, canRevise, canEditField, canUploadFile, openRevisions, editableSections, revisionSection, type EditableSection } from '$lib/pengajuan/revisions';
  import { grantors } from '$lib/pengajuan/grantors';
  import { minimumDate } from '$lib/pengajuan/dates';
- import { sections, sectionLabels, PKS_DATE, LETTER_MIN_DATE, type Section, validateJourney, requiresKuasaUpdate } from '$lib/pengajuan/journey';
+ import { sections, sectionLabels, PKS_DATE, LETTER_MIN_DATE, PF_PKS_PREPARATION, type Section, validateJourney, requiresKuasaUpdate } from '$lib/pengajuan/journey';
  let {campusId,embedded=false,onloaded=()=>{}}:{campusId:string;embedded?:boolean;onloaded?:()=>void}=$props();
  let remoteChanged=$state(false);
  let reducedMotion=$state(false);
@@ -52,13 +52,16 @@
   return validateJourney(v.campus,{journey:{...data.journey,fields},versions:v.version?[v.version]:[]},v.settings,v.tags).blockers;
  });
  const editableScope=$derived(revisionSection(section) as EditableSection);
- const locked=$derived(Boolean(data&&(data.paid||data.journey.status!=='draf'&&(!editableSections.includes(editableScope)||!canRevise(data.journey,editableScope)))));
+ const locked=$derived(Boolean(data&&(data.paid||data.journey.status!=='draf'&&!(section==='ringkasan'&&data.journey.status==='revisi'&&openRevisions(data.journey).length)&&(!editableSections.includes(editableScope)||!canRevise(data.journey,editableScope)))));
+ const waitingForPfPks=$derived(Boolean(data&&!data.paid&&['draf','revisi'].includes(data.journey.status)&&data.journey.datePolicy==='chronology'&&data.stale.includes('pks')));
  let requestForm=$state(false),requestReason=$state('');
  const sectionRequest=$derived(data?.journey.editRequests?.filter((request:any)=>request.section===editableScope).at(-1));
  $effect(()=>{void section;untrack(()=>{requestForm=false;requestReason='';});});
  const requests=$derived(openRevisions(data?.journey));
  const pendingRevisionLabels=$derived((data?.pendingRevisionScopes||[]).map((scope:keyof typeof REVISION_SCOPES)=>REVISION_SCOPES[scope].label));
  const sectionRequests=$derived(requests.filter(request=>request.scopes.some(scope=>REVISION_SCOPES[scope].section===editableScope)));
+ const sectionNotes=$derived([...new Set(sectionRequests.map(request=>request.note))]);
+ const canGenerate=(kind:string)=>!locked&&(kind!=='pks'||data?.journey.datePolicy!=='chronology')&&(data?.journey.status!=='revisi'||data.journey.revisionDocuments?.includes(kind)&&data.stale.includes(kind));
  const fieldLocked=(key:string)=>locked||(busy&&!saving)||!canEditField(data?.journey,key);
  const fileLocked=(key:string)=>locked||busy||!canUploadFile(data?.journey,key);
  const btn='min-h-11 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-[#0066B2] disabled:opacity-40';
@@ -113,11 +116,12 @@
  }
  async function generateAll(){
   if(!await save())return;busy=true;error='';message='';
-  try{let next=data;for(const kind of MERGE_KINDS)if(next.stale.includes(kind)&&!(kind==='pks'&&next.journey.datePolicy==='chronology'))next=await dataService.api.post(base+'/dokumen/'+kind,{expectedRevision:next.serverRevision});sync(next);preview='pks';message=next.stale.includes('pks')?'Surat pencairan sudah disiapkan. PKS masih perlu disiapkan ulang oleh Admin PF.':'Semua dokumen siap diperiksa.';}
+  try{let next=data;for(const kind of MERGE_KINDS)if(next.stale.includes(kind)&&canGenerate(kind))next=await dataService.api.post(base+'/dokumen/'+kind,{expectedRevision:next.serverRevision});sync(next);preview='pks';message=next.stale.includes('pks')?'Surat pencairan sudah disiapkan. PKS masih perlu disiapkan ulang oleh Admin PF.':'Semua dokumen siap diperiksa.';}
   catch(e){error = reportError(e instanceof Error?e.message:String(e));void load();}finally{busy=false;}
  }
  async function submit(){
   if(!await save())return;
+  if(waitingForPfPks){error=reportError(PF_PKS_PREPARATION);return;}
   if(data.journey.status==='revisi'&&pendingRevisionLabels.length){error=reportError('Belum ada perubahan pada '+pendingRevisionLabels.join(', ')+'. Perbaiki semua bagian yang dibuka PF sebelum mengirim.');return;}
   busy=true;error='';message='';
   try{if(data.journey.status==='revisi'){let next=data;for(const kind of next.stale.filter((kind:string)=>kind!=='pks'||next.journey.datePolicy!=='chronology'))next=await dataService.api.post(base+'/dokumen/'+kind,{expectedRevision:next.serverRevision});sync(next);}
@@ -193,7 +197,8 @@
   </nav>{/if}
   <section class={embedded?'min-w-0':'min-w-0 rounded-xl border border-slate-200 bg-white p-4 sm:p-5'} aria-label="Isi pengajuan">
    {#if !embedded||section!=='rab'}<h2 class="mb-2 text-xl font-bold">{sectionLabels[index]}</h2>{/if}
-   {#if sectionRequests.length}<aside class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm" aria-label="Catatan revisi bagian ini"><h3 class="font-semibold text-amber-950">Catatan perbaikan dari PF</h3>{#each sectionRequests as request}<p class="mt-1 whitespace-pre-wrap text-amber-950">{request.note}</p>{/each}</aside>{/if}
+   {#if sectionNotes.length}<aside class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm" aria-label="Catatan revisi bagian ini"><h3 class="font-semibold text-amber-950">Catatan perbaikan dari PF</h3>{#each sectionNotes as note}<p class="mt-1 whitespace-pre-wrap text-amber-950">{note}</p>{/each}</aside>{/if}
+   {#if waitingForPfPks&&['pks','ringkasan'].includes(section)}<aside class="mb-4 space-y-3 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm" aria-label="Menunggu PDF PKS dari PF"><h3 class="font-semibold">Menunggu PDF PKS terbaru dari Admin PF</h3><p>{PF_PKS_PREPARATION}</p><Button size="sm" variant="secondary" icon="reset" disabled={busy||dirty} onclick={()=>void load()}>Perbarui status dokumen</Button></aside>{/if}
    {#if locked}<p class="mb-3 text-sm text-slate-500">Hanya lihat. Data dapat diubah setelah akses revisi disetujui admin.</p>{:else if ['program','administrasi','penandatangan','surat','pks'].includes(section)}<p class="mb-3 text-xs text-slate-500"><span class="font-bold text-red-600">*</span> {data.journey.status==='revisi'?'Wajib dilengkapi sebelum mengirim perbaikan.':'Wajib dilengkapi sebelum mengajukan. Anda tetap dapat berpindah menu.'} Draf boleh disimpan saat isian belum lengkap.</p>{/if}
    {#if section==='sk'}
     <p class="mb-4 text-sm text-slate-600">Gunakan nilai bantuan dalam SK sebagai acuan seluruh anggaran.</p>
@@ -246,9 +251,9 @@
     {#if data.journey.history.length}<details class="mt-4 rounded-lg border p-3"><summary class="cursor-pointer text-sm font-semibold">Riwayat pengajuan ({data.journey.history.length})</summary>{#each [...data.journey.history].reverse() as packet}<div class="mt-3 border-t pt-3 text-sm"><strong>Pengajuan {packet.number} · {new Date(packet.created).toLocaleString('id-ID')}</strong><p>{packet.fields.judulProgram} · {packet.fields.namaBank} · {maskAccountNumber(packet.fields.nomorRekening || '')}</p></div>{/each}</details>{/if}
    {/if}
    {#if section!=='rab'&&blockers.some((b:any)=>section==='ringkasan'||b.section===section)}<aside class="mt-4 rounded-lg bg-amber-50 p-3"><h3 class="text-sm font-semibold">Masih perlu dilengkapi</h3><ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-900">{#each blockers.filter((b:any)=>section==='ringkasan'||b.section===section) as b}<li>{b.text}{#if section==='pks'&&data.journey.datePolicy==='chronology'}<p class="mt-3 text-sm text-slate-600">PF menyiapkan PDF PKS. Setelah nomor kampus diisi, PF menyiapkan ulang PDF lengkap. Dokumen kampus tetap bertanda DRAF sampai PF dan Legal menyetujui.</p>{#if data.journey.pksReview}<a class={btn+' inline-block mt-3'} href={base+'/pks-pdf'} target="_blank" rel="noreferrer">Lihat PDF PKS</a>{/if}{/if}{#if section==='ringkasan'} <button type="button" class="font-semibold underline" onclick={()=>navigate(b.section)}>Buka {sectionLabels[sections.indexOf(b.section)]||b.section}</button>{/if}</li>{/each}</ul></aside>{/if}
-   {#if section==='ringkasan'&&data.journey.status!=='revisi'}
+   {#if section==='ringkasan'}
     <section class="mt-5 grid gap-3" aria-label="Dokumen otomatis">
-     <div class="flex flex-wrap items-center justify-between gap-3"><h3 class="font-bold">Dokumen dari data pengajuan</h3>{#if !locked&&data.stale.some((kind:string)=>kind!=='pks'||data.journey.datePolicy!=='chronology')}<button class={docBtn} disabled={busy||blockers.length>0} onclick={generateAll}>{data.journey.datePolicy==='chronology'?'Siapkan surat pencairan':'Siapkan semua dokumen'}</button>{/if}</div>
+     <div class="flex flex-wrap items-center justify-between gap-3"><h3 class="font-bold">Dokumen dari data pengajuan</h3>{#if data.stale.some(canGenerate)}<button class={docBtn} disabled={busy||blockers.length>0} onclick={generateAll}>{data.journey.datePolicy==='chronology'?'Siapkan surat pencairan':'Siapkan semua dokumen'}</button>{/if}</div>
      {#each MERGE_KINDS as kind}
       {@const doc=data.documents.find((d:any)=>d.kind===kind)}
       {@const signed=signedVersion(kind)}
@@ -256,7 +261,7 @@
        <div class="flex flex-wrap items-center justify-between gap-3">
         <div><h4 class="inline font-semibold text-[#17365f]">{MERGE_LABEL[kind]}</h4><span class="ml-2 text-xs text-slate-500">{doc?.status==='sesuai'?'Sesuai':doc?.status==='perlu_revisi'?'Perlu revisi':doc?.status==='menunggu_review'?'Menunggu PF':'Draf'}</span><p class="mt-1 text-xs text-slate-500">{data.stale.includes(kind)?kind==='pks'&&data.journey.datePolicy==='chronology'?'Menunggu PDF terbaru dari Admin PF':latest(kind)?'Data berubah, buat ulang dokumen':'Belum dibuat':'Menggunakan data terbaru'}{latest(kind)?` / versi ${latest(kind).number}`:''}</p></div>
         <div class="flex flex-wrap gap-2">
-         {#if !locked&&!(kind==='pks'&&data.journey.datePolicy==='chronology')&&(data.journey.status!=='revisi'||data.stale.includes(kind))}<Button size="sm" variant="secondary" disabled={busy||blockers.length>0} onclick={()=>generate(kind)}>{latest(kind)?'Buat ulang':'Buat'} {MERGE_LABEL[kind]}</Button>{/if}
+         {#if canGenerate(kind)}<Button size="sm" variant="secondary" disabled={busy||blockers.length>0} onclick={()=>generate(kind)}>{latest(kind)?'Buat ulang':'Buat'} {MERGE_LABEL[kind]}</Button>{/if}
          {#if canPreview(kind)}<Button size="sm" variant="secondary" icon="download" label={'Unduh PDF '+MERGE_LABEL[kind]} disabled={!!downloadingPdf} onclick={()=>downloadPdf(kind)}>{downloadingPdf===kind?'Menyiapkan PDF...':'PDF'}</Button>{#if kind!=='pks'||data.journey.datePolicy!=='chronology'}<a aria-label={'Unduh DOCX '+MERGE_LABEL[kind]} class={docBtn} href={docUrl(kind)} download>DOCX</a>{/if}{/if}
          {#if data.journey.status==='selesai'&&!data.paid&&!doc?.signedReceived}<Button size="sm" icon="upload" disabled={busy} onclick={()=>openScan(kind)}>{signed?'Ganti pindaian':'Unggah bertanda tangan'}</Button>{/if}
         </div>
@@ -279,7 +284,7 @@
     </section>
     {#if preview==='surat_kuasa'}<section class="mt-4 min-w-0 overflow-hidden rounded-lg border"><h3 class="border-b p-3 font-semibold">Pratinjau {preview==='surat_kuasa'?'surat kuasa':MERGE_LABEL[preview]}</h3>{#key preview+data.journey.revision}<FileViewer src={docUrl(preview)} mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document" name={preview+'.docx'} height={620}/>{/key}</section>{/if}
    {/if}
-   {#if data.journey.status==='revisi'&&!locked}<footer class="mt-6 grid gap-3 border-t pt-4"><p class="text-sm text-slate-600">Dokumen yang terdampak diperbarui saat perbaikan dikirim. Persetujuan bagian lain tetap tersimpan.</p><button class={blue+' justify-self-end'} disabled={busy||blockers.length>0||!requests.length||!dirty&&pendingRevisionLabels.length>0} onclick={submit}>Kirim perbaikan</button>{#if pendingRevisionLabels.length}<p class="text-sm text-amber-900">Bagian yang masih perlu perubahan tersimpan: {pendingRevisionLabels.join(', ')}.</p>{:else if data.revisionBlockers?.length}<p class="text-sm text-amber-900">Perbaiki isian atau berkas sesuai catatan PF sebelum mengirim.</p>{/if}</footer>{:else if section!=='rab'}<footer class="mt-6 flex flex-wrap justify-between gap-3 border-t pt-4"><div class="flex flex-wrap gap-2">{#if index>0}<button class={btn} disabled={busy} onclick={()=>navigate(sections[index-1])}>Kembali</button>{/if}</div>{#if section==='ringkasan'}{#if !locked}<button class={blue} disabled={busy||dirty||blockers.length>0||data.stale.length>0||data.revisionBlockers?.length>0} onclick={submit}>{data.journey.status==='revisi'?'Kirim perbaikan':'Ajukan untuk diperiksa'}</button>{/if}{:else}<button class={blue} disabled={busy} onclick={()=>navigate(sections[index+1])}>Lanjut: {sectionLabels[index+1]}</button>{/if}</footer>{/if}
+   {#if data.journey.status==='revisi'&&!locked}<footer class="mt-6 grid gap-3 border-t pt-4"><p class="text-sm text-slate-600">Surat pencairan yang terdampak diperbarui saat perbaikan dikirim. PDF PKS disiapkan Admin PF. Persetujuan bagian lain tetap tersimpan.</p><button class={blue+' justify-self-end'} disabled={busy||waitingForPfPks||blockers.length>0||!requests.length||!dirty&&pendingRevisionLabels.length>0} onclick={submit}>Kirim perbaikan</button>{#if pendingRevisionLabels.length}<p class="text-sm text-amber-900">Bagian yang masih perlu perubahan tersimpan: {pendingRevisionLabels.join(', ')}.</p>{:else if data.revisionBlockers?.length}<p class="text-sm text-amber-900">Perbaiki isian atau berkas sesuai catatan PF sebelum mengirim.</p>{/if}</footer>{:else if section!=='rab'}<footer class="mt-6 flex flex-wrap justify-between gap-3 border-t pt-4"><div class="flex flex-wrap gap-2">{#if index>0}<button class={btn} disabled={busy} onclick={()=>navigate(sections[index-1])}>Kembali</button>{/if}</div>{#if section==='ringkasan'}{#if !locked}<button class={blue} disabled={busy||dirty||blockers.length>0||data.stale.length>0||data.revisionBlockers?.length>0} onclick={submit}>{data.journey.status==='revisi'?'Kirim perbaikan':'Ajukan untuk diperiksa'}</button>{/if}{:else}<button class={blue} disabled={busy} onclick={()=>navigate(sections[index+1])}>Lanjut: {sectionLabels[index+1]}</button>{/if}</footer>{/if}
    {#if section==='ringkasan'&&data.revisionBlockers?.length&&!locked}<p class="mt-3 text-sm text-amber-900">Selesaikan catatan revisi sebelum mengirim ulang: {data.revisionBlockers.map((k:Kind)=>KIND_SHORT[k]).join(', ')}. Unggah berkas pengganti, buat ulang dokumen, atau perbaiki alokasi RAB sesuai catatan PF.</p>{/if}
    {#if section==='ringkasan'&&data.stale.length&&!locked}<p class="mt-3 text-sm text-amber-900">{data.stale.includes('pks')&&data.journey.datePolicy==='chronology'?'PKS menunggu PDF terbaru dari Admin PF. Siapkan surat lain yang belum tersedia, lalu perbarui status setelah PF selesai.':'Buat semua dokumen dari data terbaru sebelum mengajukan.'}</p>{/if}
    {#if locked&&editableSections.includes(editableScope)}

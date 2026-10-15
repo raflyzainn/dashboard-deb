@@ -3,7 +3,7 @@ import { validGrantors } from './grantors';
 import { validQuantity } from './rab-model';
 import { chronologyErrors, validDate } from './dates';
 export { validDate } from './dates';
-import { buildMergeData, missingFor, templateTags, MERGE_KINDS, type MergeKind } from '../merge';
+import { buildMergeData, missingFor, templateTags, MERGE_KINDS, MERGE_LABEL, type MergeKind } from '../merge';
 import { LOCATION_FIELDS, programLocationErrors } from './location';
 import { canRevise, openRevisions, revisionPending, type RevisionRequest, type EditRequest } from './revisions';
 
@@ -85,6 +85,12 @@ export function journeySettings(j:Journey,settings:any) {
  return {...settings,...j.agreement};
 }
 export const settingsSource=(settings:any)=>JSON.stringify(['pfSignatoryName','pfSignatoryTitle','agreementStart','agreementEnd','reportDeadline'].map(k=>settings?.[k]||''));
+export const PF_PKS_PREPARATION = 'PDF PKS terbaru belum siap. Admin PF perlu membuka Pencairan > kampus ini > PKS, lalu menekan Siapkan PDF PKS. Setelah PDF siap, kampus dapat mengirim perbaikan.';
+export function submissionProblem(view:{journey:Pick<Journey,'datePolicy'>;blockers:{text:string}[];stale:MergeKind[]}) {
+ if(view.blockers.length)return view.blockers[0].text;
+ if(view.journey.datePolicy==='chronology'&&view.stale.includes('pks'))return PF_PKS_PREPARATION;
+ return view.stale.length?'Buat ulang dokumen dari data terbaru: '+view.stale.map(kind=>MERGE_LABEL[kind]).join(', ')+'.':'';
+}
 export function validateJourney(c:any,r:any,settings:any,tags:Record<MergeKind,string[]>) {
  const j=ensureJourney(c,r),v=r.versions.at(-1),f=j.fields,BUDGET=c.award?.amountSen??0,LIMIT=Math.floor(BUDGET*0.7);
  const missing=Object.fromEntries(MERGE_KINDS.map(k=>[k,missingFor(tags[k],buildMergeData(mergeInput(c,r,settings)))]));

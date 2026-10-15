@@ -115,7 +115,7 @@ export async function directory(pb: PocketBase): Promise<DirectoryRow[]> {
     const assessment = assess(statuses, { submissionStatus:disbursement?.submissionStatus,
       suratKuasaRequired: disbursement?.submissionStatus ? disbursement.applicationData?.fields?.jenisRekening === 'kuasa' : suratKuasaRequired,
       redChecks: disbursement?.submissionStatus ? 0 : list.filter(c => c.level === 'bad').length,
-      paidAt: String(disbursement?.paidAt || ''), originalsAll: docs.filter(d => d.generated).every(d => d.originalReceived), lampiranCount });
+      paidAt: String(disbursement?.paidAt || ''), signedAll: docs.filter(d => d.generated).every(d => d.signedReceived), lampiranCount });
     const checkedAt = own.map(d => String(d.updated || '')).sort().pop() || '';
     const timeline = payoutTimeline({ paidAt: disbursement?.paidAt, stage: disbursement?.stage, hasRab: rabVersions.some(v => v.campus === campus.id),
       documents: docs, journey: disbursement?.submissionStatus ? { ...disbursement.applicationData, status: disbursement.submissionStatus } : undefined });
@@ -192,7 +192,7 @@ export async function workspace(pb: PocketBase, campusId: string) {
   const bankRow = bank.items[0] || null;
   const { checks: list, suratKuasaRequired } = checks(docs, summary, { campus, bankResult: String(bankRow?.bankResult || 'belum'), rab, sheets: sheetTotals(allRabVersions) });
   const statuses = Object.fromEntries(docs.map(d => [d.kind, d.status])) as Record<Kind, Status>;
-  const readiness = assess(statuses, { submissionStatus:disbursement?.submissionStatus, suratKuasaRequired, redChecks: list.filter(c => c.level === 'bad').length, paidAt: String(disbursement.paidAt || ''), originalsAll: docs.filter(d => d.generated).every(d => d.originalReceived), lampiranCount: attachments.length });
+  const readiness = assess(statuses, { submissionStatus:disbursement?.submissionStatus, suratKuasaRequired, redChecks: list.filter(c => c.level === 'bad').length, paidAt: String(disbursement.paidAt || ''), signedAll: docs.filter(d => d.generated).every(d => d.signedReceived), lampiranCount: attachments.length });
   return {
     campus, summary,
     disbursement: { id: disbursement.id, stage: Number(disbursement.stage || 1), requestedSen, paidSen: Number(disbursement.paidSen || 0), paidAt: String(disbursement.paidAt || ''), paidRef: disbursement.paidRef || '', paidByName: disbursement.paidByName || '', properties: (disbursement.properties || {}) as Record<string, unknown>, clauseChecked: Boolean(disbursement.clauseChecked), templateMode: disbursement.templateMode || 'standard', revision: Number(disbursement.revision || 1) },
@@ -421,7 +421,7 @@ export async function recordPayment(pb: PocketBase, actor: AuditActor & { id: st
     if(Number(current.requestedSen)!==input.paidSen)throw new PreviewError(409,'Nominal pengajuan berubah. Muat data terbaru.');
     if(!current.paidAt){
       const view=await workspace(pb,campusId);
-      if(view.readiness.state!=='siap_dibayar')throw new PreviewError(400,'Lengkapi pemeriksaan, dokumen bertanda tangan/asli dan lampiran sebelum mencatat pembayaran.');
+      if(view.readiness.state!=='siap_dibayar')throw new PreviewError(400,'Lengkapi pemeriksaan, pindaian bertanda tangan yang sesuai dan lampiran sebelum mencatat pembayaran.');
       if(view.documents.some(doc=>doc.generated&&(!doc.signedReceived||!doc.versions.find(v=>v.id===doc.currentVersionId)?.signed)))throw new PreviewError(400,'Lengkapi pindaian bertanda tangan versi terbaru sebelum mencatat pembayaran.');
       const {readiness}=await import('./lampiran');
       const attachment=await readiness(pb,campusId),latest=attachment.attachments[0];
