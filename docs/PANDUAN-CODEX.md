@@ -1,5 +1,9 @@
 # Panduan proyek untuk Codex
 
+## Tematik DEB — 15 Oktober 2026
+
+Profil Program → Informasi program kini memiliki satu pilihan Tematik DEB (Ketahanan Pangan, Pesisir Modern, Wisata Energi) dan penjelasan maksimal 1.000 karakter. Nilai disimpan di JSON profil existing dan tampil pada Ringkasan admin. Nilai kosong tetap didukung untuk profil lama. Implementasi dan QA lokal port 5176: [Tematik DEB](QA-TEMATIK-DEB-2026-10-15.md).
+
 ## Profil & Monitoring Program - 14 Oktober 2026
 
 Kartu Profil Program kini menjadi **Profil & Monitoring Program**, tetap di `/campus/profile`. Kampus mengisi pendapatan/energi bulanan, bukti program, cerita/foto Local Hero dan melihat rumus estimasi. Admin memeriksa per bulan lewat Review Kampus > Monitoring bulanan. Akses monitoring tidak menunggu pembayaran T1. Modul indikator legacy tetap terpisah.

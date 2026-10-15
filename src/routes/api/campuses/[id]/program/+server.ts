@@ -4,12 +4,13 @@ import { auditData } from '$lib/server/deb/audit';
 import { atomic, StoreRecord } from '$lib/server/deb/rest-store';
 import { readJsonBody } from '$lib/server/deb/request-body';
 import { PROGRAM_READINESS_FIELDS } from '$lib/program-readiness';
+import { validProgramThematic, THEMATIC_DESCRIPTION_LIMIT } from '$lib/program-thematics';
 import { parseContacts, contactError, normalizedPhone, serializeContacts, preserveHeroMetadata } from '$lib/contacts';
 
 /** Profil DEB fields an admin or the owning campus may write. Contacts use one string per group (see src/lib/contacts.ts). */
 const ALLOWED = ['mentor', 'coordinator', 'localHero', 'subholding', 'operatingUnit', 'actionPlanTemplate', 'replicationVillage', 'sourceStatus', 'pfTeam', 'description', 'budget', 'currentClass', 'targetClass',
   'address', 'mapUrl', 'coordinates', 'province', 'provinceId', 'regencyId', 'regency', 'districtId', 'district', 'villageId', 'village', 'postalCode', 'signatoryName', 'signatoryTitle', 'theme', 'programTitle',
-  ...PROGRAM_READINESS_FIELDS.map(([key]) => key)];
+  'thematic', 'thematicDescription', ...PROGRAM_READINESS_FIELDS.map(([key]) => key)];
 
 export const PATCH: RequestHandler = event => secured(event, ANY, async ({ actor, pb }) => {
   const id = recordId(event.params.id, 'Kampus');
@@ -23,12 +24,14 @@ export const PATCH: RequestHandler = event => secured(event, ANY, async ({ actor
     if (!ALLOWED.includes(key)) fail(400, 'Isian program tidak dikenal.');
     if (!actor.admin && key === 'pfTeam') fail(403, 'Tim Pendamping dikelola oleh admin.');
     if (typeof value !== 'string' || value.length > 10000) fail(400, 'Isian program tidak valid.');
+    if (key === 'thematic' && !validProgramThematic(value.trim())) fail(400, 'Pilih tematik DEB yang tersedia.');
+    if (key === 'thematicDescription' && value.length > THEMATIC_DESCRIPTION_LIMIT) fail(400, 'Penjelasan tematik maksimal 1.000 karakter.');
     if (['mentor', 'coordinator', 'localHero'].includes(key)) {
       const contacts = parseContacts(value);
       const error = contacts.map(contactError).find(Boolean);
       if (error) fail(400, error);
       values[key] = serializeContacts(contacts.map(contact => ({ ...contact, phone: normalizedPhone(contact.phone) })));
-    } else values[key] = value;
+    } else values[key] = key === 'thematic' || key === 'thematicDescription' ? value.trim() : value;
   }
   if (!Object.keys(values).length) return ok({ ok: true });
   const before = (campus.program && typeof campus.program === 'object' ? campus.program : {}) as Record<string, unknown>;

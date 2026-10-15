@@ -7,6 +7,7 @@ export interface PreviewAccount { key: string; name: string; role: Role; disburs
 export interface LocationDto { campusId: string; province: string; island: string; longitude: number | null; latitude: number | null; approximate: boolean }
 export interface Bootstrap { session: AppSession; data: Snapshot; locations: LocationDto[]; capabilities: { readOnly: boolean }; loadedAt: string }
 export interface ProgramProfile {
+  thematic?: string | null; thematicDescription?: string | null;
   simulatedFields?: string[];
   mentor?: string | null; coordinator?: string | null; localHero?: string | null;
   subholding?: string | null; operatingUnit?: string | null; actionPlanTemplate?: string | null;
