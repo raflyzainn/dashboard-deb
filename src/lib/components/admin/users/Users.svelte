@@ -14,7 +14,7 @@
 
   let { campusId = '' }: { campusId?: string } = $props();
   const scope = $derived(campusId ? `?campus=${encodeURIComponent(campusId)}` : '');
-  interface User { id: string; name: string; email: string; role: 'baru' | 'campus' | 'admin' | 'super_admin'; active: boolean; campusId: string; created: string; lastLoginAt: string; passwordChangeRequired: boolean }
+  interface User { id: string; name: string; email: string; role: 'baru' | 'campus' | 'admin' | 'super_admin' | 'legal'; active: boolean; campusId: string; created: string; lastLoginAt: string; passwordChangeRequired: boolean }
   interface CampusOption { id: string; name: string; initials: string; contacts?: { mentor: string; coordinator: string; localHero: string } }
 
   let users = $state<User[]>([]);
@@ -23,7 +23,7 @@
   let error = $state('');
   let notice = $state('');
   let query = $state('');
-  let filter = $state<'semua' | 'baru' | 'admin' | 'campus' | 'nonaktif'>('semua');
+  let filter = $state<'semua' | 'baru' | 'admin' | 'campus' | 'legal' | 'nonaktif'>('semua');
   let page = $state(1);
   const pageSize = 10;
   let refresh = $state(0);
@@ -41,8 +41,8 @@
   let sharing = $state<{ user: User; password: string } | null>(null);
 
   const superAdmin = $derived(Boolean(app.session?.superAdmin));
-  const roleOptions = $derived(campusId ? ['campus'] : superAdmin ? ['baru', 'campus', 'admin'] : ['baru', 'campus']);
-  const roleLabel: Record<string, string> = { baru: 'Baru', campus: 'Kampus', admin: 'Admin', super_admin: 'Super admin' };
+  const roleOptions = $derived(campusId ? ['campus'] : superAdmin ? ['baru', 'campus', 'admin', 'legal'] : ['baru', 'campus', 'legal']);
+  const roleLabel: Record<string, string> = { baru: 'Baru', campus: 'Kampus', admin: 'Admin', super_admin: 'Super admin', legal: 'Legal' };
   const time = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' });
   const campusName = (id: string) => campuses.find(c => c.id === id)?.name || '';
   const selectedCampus = $derived(campuses.find(c => c.id === created.campus));
@@ -170,7 +170,7 @@
       <input class="min-h-[42px] w-full rounded-xl border border-slate-300 pl-9 pr-3 text-sm outline-none focus:border-[#0066B2] focus:ring-2 focus:ring-blue-100" type="search" placeholder="Cari nama, email, atau kampus" bind:value={query} oninput={() => (page = 1)} />
     </label>
     {#if !campusId}<div class="flex flex-wrap gap-1.5" role="group" aria-label="Saring menurut peran">
-      {#each [['semua', 'Semua'], ['baru', 'Menunggu peran'], ['admin', 'Admin'], ['campus', 'Kampus'], ['nonaktif', 'Nonaktif']] as [key, label]}
+      {#each [['semua', 'Semua'], ['baru', 'Menunggu peran'], ['admin', 'Admin'], ['legal', 'Legal'], ['campus', 'Kampus'], ['nonaktif', 'Nonaktif']] as [key, label]}
         <button type="button" class="rounded-full border px-3 py-1.5 text-xs font-semibold transition {filter === key ? 'border-[#0066B2] bg-[#0066B2] text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}" aria-pressed={filter === key} onclick={() => { filter = key as typeof filter; page = 1; }}>{label}</button>
       {/each}
     </div>{/if}
@@ -232,18 +232,17 @@
   <Modal title={editing.role === 'baru' ? 'Beri peran' : 'Ubah akun'} onclose={() => (editing = null)}>
     <form class="grid gap-4" onsubmit={(e) => { e.preventDefault(); void save(); }}>
       {#if editing.role === 'campus'}
-        <label class="grid gap-1.5 text-sm font-medium text-slate-700">Email<input class="min-h-[42px] rounded-xl border border-slate-300 px-3 text-sm" type="email" bind:value={draft.email} maxlength="254" required /></label>
+        <label class="grid gap-1.5 text-sm font-medium text-slate-700"><span class="field-caption">Email</span><input class="min-h-[42px] rounded-xl border border-slate-300 px-3 text-sm" type="email" bind:value={draft.email} maxlength="254" required /></label>
         <p class="text-xs text-slate-600">Perubahan email mengakhiri sesi login lama. Pastikan alamat milik penerima yang benar.</p>
       {:else}<p class="text-sm text-slate-600">{editing.email}</p>{/if}
-      <label class="grid gap-1.5 text-sm font-medium text-slate-700">Nama<input class="min-h-[42px] rounded-xl border border-slate-300 px-3 text-sm" bind:value={draft.name} required /></label>
+      <label class="grid gap-1.5 text-sm font-medium text-slate-700"><span class="field-caption">Nama</span><input class="min-h-[42px] rounded-xl border border-slate-300 px-3 text-sm" bind:value={draft.name} required /></label>
       <label class="grid gap-1.5 text-sm font-medium text-slate-700">Peran
         <select class="min-h-[42px] rounded-xl border border-slate-300 px-3 text-sm" bind:value={draft.role} disabled={!!campusId}>
           {#each roleOptions as role}<option value={role}>{roleLabel[role]}</option>{/each}
         </select>
       </label>
       {#if draft.role === 'campus'}
-        <label class="grid gap-1.5 text-sm font-medium text-slate-700">Kampus
-          <select class="min-h-[42px] rounded-xl border border-slate-300 px-3 text-sm" bind:value={draft.campus} required disabled={!!campusId}>
+        <label class="grid gap-1.5 text-sm font-medium text-slate-700"><span class="field-caption">Kampus</span><select class="min-h-[42px] rounded-xl border border-slate-300 px-3 text-sm" bind:value={draft.campus} required disabled={!!campusId}>
             <option value="">Pilih kampus</option>
             {#each campuses as c}<option value={c.id}>{c.name}</option>{/each}
           </select>
@@ -287,9 +286,9 @@
         </label>
       {/if}
       {#if nameChoice === 'manual' || !contactOptions.length || created.role !== 'campus'}
-        <label class="grid gap-1.5 text-sm font-medium text-slate-700">Nama<input class="min-h-[42px] rounded-xl border border-slate-300 px-3 text-sm" bind:value={created.name} required /></label>
+        <label class="grid gap-1.5 text-sm font-medium text-slate-700"><span class="field-caption">Nama</span><input class="min-h-[42px] rounded-xl border border-slate-300 px-3 text-sm" bind:value={created.name} required /></label>
       {:else}<p class="text-sm text-slate-600">Nama akun: {created.name}</p>{/if}
-      <label class="grid gap-1.5 text-sm font-medium text-slate-700">Email<input class="min-h-[42px] rounded-xl border border-slate-300 px-3 text-sm" type="email" bind:value={created.email} required /></label>
+      <label class="grid gap-1.5 text-sm font-medium text-slate-700"><span class="field-caption">Email</span><input class="min-h-[42px] rounded-xl border border-slate-300 px-3 text-sm" type="email" bind:value={created.email} required /></label>
       {#if created.role === 'campus' && created.campus && selectedCampus?.initials}
         <div class="flex flex-wrap gap-2 text-xs"><span class="self-center text-slate-600">Isi cepat:</span>
           <button type="button" class="rounded-lg border border-blue-200 px-3 py-2 text-[#0066B2] hover:bg-blue-50" onclick={() => (created.email = suggestedEmail('sobi'))}>Email SoBI</button>
@@ -304,14 +303,13 @@
         </select>
       </label>{/if}
       {#if created.role === 'campus' && !campusId}
-        <label class="grid gap-1.5 text-sm font-medium text-slate-700">Kampus
-          <select class="min-h-[42px] rounded-xl border border-slate-300 px-3 text-sm" bind:value={created.campus} onchange={() => { nameChoice = 'manual'; created.name = ''; }} required>
+        <label class="grid gap-1.5 text-sm font-medium text-slate-700"><span class="field-caption">Kampus</span><select class="min-h-[42px] rounded-xl border border-slate-300 px-3 text-sm" bind:value={created.campus} onchange={() => { nameChoice = 'manual'; created.name = ''; }} required>
             <option value="">Pilih kampus</option>
             {#each campuses as c}<option value={c.id}>{c.name}</option>{/each}
           </select>
         </label>
       {/if}
-      <label class="grid gap-1.5 text-sm font-medium text-slate-700">Kata sandi awal<input class="min-h-[42px] rounded-xl border border-slate-300 px-3 font-mono text-sm" bind:value={created.password} minlength="8" required /></label>
+      <label class="grid gap-1.5 text-sm font-medium text-slate-700"><span class="field-caption">Kata sandi awal</span><input class="min-h-[42px] rounded-xl border border-slate-300 px-3 font-mono text-sm" bind:value={created.password} minlength="8" required /></label>
       <p class="text-xs text-slate-500">Akun Microsoft tidak perlu dibuat di sini; akun itu terbentuk sendiri saat pertama kali masuk.</p>
       {#if formError}<p class="text-sm text-red-700">{formError}</p>{/if}
       <div class="flex justify-end gap-2"><Button variant="secondary" disabled={busy} onclick={closeCreate}>Batal</Button><Button type="submit" loading={busy}>Buat akun</Button></div>
