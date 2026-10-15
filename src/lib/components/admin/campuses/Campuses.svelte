@@ -11,6 +11,7 @@
   import RiwayatPerubahan from '$lib/components/ui/RiwayatPerubahan.svelte';
   import CampusTable from './CampusTable.svelte';
   import CampusMaster from './CampusMaster.svelte';
+  import { PROGRAM_READINESS_FIELDS } from '$lib/program-readiness';
   import Empty from '$lib/components/ui/Empty.svelte';
   import Indicators from '$lib/components/shared/indicators/Indicators.svelte';
   import Proposals from '$lib/components/shared/proposals/Proposals.svelte';
@@ -201,14 +202,14 @@
           <div
             class="grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[10px] max-[700.01px]:grid-cols-[1fr]"
           >
-            {#each [['EBT eksisting', campus.program?.existingEbt], ['Pemetaan sosial', campus.program?.socialMapping], ['Potensi konflik', campus.program?.conflict], ['IKM DEB SoBI', campus.program?.ikm], ['Kelembagaan', campus.program?.institution], ['Perizinan lahan', campus.program?.landPermit], ['Site survey', campus.program?.siteSurvey], ['Ringkasan kebutuhan intervensi', campus.program?.interventionSummary], ['Kebutuhan intervensi', campus.program?.intervention]] as [label, value]}<div
+            {#each PROGRAM_READINESS_FIELDS as [key, label]}<div
                 class="p-[12px] [background-color:rgb(247,_251,_255)] border border-[#dce9f7] rounded-[8px]"
               >
                 <strong class="block text-[12px] text-[color:var(--navy)]">{label}</strong>
                 <p
                   class="text-[13px] text-[#475569] leading-[1.55] whitespace-pre-line mt-[6px] mb-[0px]"
                 >
-                  {value || 'Belum diisi'}
+                  {campus.program?.[key] || 'Belum diisi'}
                 </p>
               </div>{/each}
           </div>

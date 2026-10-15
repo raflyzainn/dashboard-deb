@@ -1,3 +1,5 @@
+import { serverClient } from './server-client';
+import { reportingPaid } from '../../pelaporan';
 import type PocketBase from 'pocketbase';
 import type { RecordModel } from 'pocketbase';
 import type { Snapshot, AppSession } from '../../types';
@@ -143,5 +145,11 @@ export async function readNavigation(pb: PocketBase, actor: AppSession): Promise
     count('notifications', 'readAt = ""'),
     actor.campusId ? pb.collection('campuses').getOne(actor.campusId).then(map.mapCampus) : undefined
   ]);
-  return { pendingCount, revisionCount, unreadCount, ...(campus ? { campus } : {}) };
+  let canReport = false;
+  if (actor.role === 'campus' && actor.campusId) {
+    const backend = await serverClient();
+    const rows = await backend.pb.collection('disbursements').getList(1, 1, { filter: backend.pb.filter('campus = {:c} && term = 1', { c: actor.campusId }), fields: 'paidAt,paidSen', requestKey: null });
+    canReport = reportingPaid(rows.items[0]);
+  }
+  return { pendingCount, revisionCount, unreadCount, canReport, ...(campus ? { campus } : {}) };
 }

@@ -91,7 +91,7 @@
         }}
       >
         <label
-          >Nominal pencairan (Rp)<input
+          ><span class="field-caption">Nominal pencairan (Rp)</span><input
             aria-label="Nominal pencairan"
             type="number"
             min="1"
@@ -111,7 +111,7 @@
             <p class="hint">Minimum contoh: {DEMO_KPIS[i].minimum} {DEMO_KPIS[i].unit}</p>
             <div class="grid grid-cols-2 gap-3">
               <label
-                >Target ({DEMO_KPIS[i].unit})<input
+                ><span class="field-caption">Target ({DEMO_KPIS[i].unit})</span><input
                   aria-label={`Target ${DEMO_KPIS[i].label}`}
                   type="number"
                   min="0"
@@ -121,7 +121,7 @@
                   bind:value={k.target}
                 /></label
               ><label
-                >Halaman PDF<input
+                ><span class="field-caption">Halaman PDF</span><input
                   aria-label={`Halaman ${DEMO_KPIS[i].label}`}
                   type="number"
                   min="1"
@@ -257,7 +257,7 @@
         }}
       >
         <label
-          >Feedback tahap {STAGES[p.stage]}<textarea
+          ><span class="field-caption">Feedback tahap {STAGES[p.stage]}</span><textarea
             aria-label="Feedback pencairan"
             rows="3"
             maxlength="3000"

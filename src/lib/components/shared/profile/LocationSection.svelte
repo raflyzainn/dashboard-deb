@@ -27,7 +27,7 @@
   const LABEL = 'mb-1.5 block text-[13px] font-semibold text-[#17365f]';
   const HINT = 'm-0 mt-1 text-[12px] text-[#64748b]';
 
-  let { program, campusId, canEdit = true }: { program?: ProgramProfile; campusId: string; canEdit?: boolean } = $props();
+  let { program, campusId, canEdit = true, alwaysEdit = false }: { program?: ProgramProfile; campusId: string; canEdit?: boolean; alwaysEdit?: boolean } = $props();
 
   const uid = $props.id();
 
@@ -103,6 +103,7 @@
     description="Alamat dan titik peta."
     icon="pin"
     bind:editing
+    {alwaysEdit}
     {canEdit}
     {saving}
     {dirty}
