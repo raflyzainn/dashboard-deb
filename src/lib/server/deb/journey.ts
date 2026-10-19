@@ -1,4 +1,5 @@
 import { payoutTimeline } from '../../payout-progress';
+import { KINDS } from '../../pencairan';
 import { mintCode, verificationUrl } from './verifikasi';
 import { qrPng } from '../../qr';
 /** Relational persistence for the shared application workflow. Loads all workflow data and files from PocketBase and server storage. */
@@ -65,6 +66,8 @@ export function journeyRequest(event:RequestEvent,legal=false):Promise<Response>
     const r:any={payment,versions:rv.map(v=>({...v,active:payment.rabVersion===v.id,...(v.campusStep?{quantityAllocation:true}:{}),lines:ordered(rl.filter(l=>l.version===v.id))})),
      documents:copies(store,'documents').filter(d=>d.kind!=='laporan').map(d=>{const rs=reviews.filter(v=>v.document===d.id).sort((a,b)=>a.created.localeCompare(b.created));return {...d,currentVersionId:d.currentVersion,generated:MERGE_KINDS.includes(d.kind),versions:dv.filter(v=>v.document===d.id).sort((a,b)=>a.number-b.number).map(v=>({...v,journeyRevision:v.generation?.journeyRevision,fields:v.fields||{},reviews:rs.filter(x=>x.version===v.id)})),reviews:rs,notes:notes.filter(n=>n.document===d.id),decidedByName:rs.at(-1)?.actorName||'',decidedAt:rs.at(-1)?.created||''};}),
      bankCheck:copies(store,'bank_checks')[0]||null,attachments:copies(store,'attachments'),entries:[],templates:[],journey:{...payment.applicationData,status:payment.submissionStatus,revision:payment.applicationData?.revision||1,history}};
+    // Preview/imported submissions may lack slots; persist missing ones only with a successful write in this transaction.
+    for(const kind of KINDS)if(!r.documents.some((d:any)=>d.kind===kind))r.documents.push({id:uid(),kind,status:kind==='sk'?'perlu_konfirmasi':'belum_ada',currentVersionId:'',generated:MERGE_KINDS.some(generated=>generated===kind),versions:[],reviews:[],notes:[],signedReceived:false,originalReceived:false});
     if(!r.journey.fields){delete r.journey;ensureJourney(c,r);r.journey.status=payment.submissionStatus;r.journey.history=history;r.journey.datePolicy=payment.submissionStatus==='draf'&&!history.length&&!payment.paidAt&&!payment.submittedAt?'chronology':'legacy';r.journey.pf={nomorPksPf:payment.properties?.nomorPksPf||''};}
     const settingsRows=copies(store,'program_settings'),files:Record<string,Blob>={},refs:Record<string,string>={};
     for(const v of dv)if(v.r2Key)refs[v.id]=v.r2Key;
@@ -94,6 +97,8 @@ export function journeyRequest(event:RequestEvent,legal=false):Promise<Response>
      if(!record)record=new StoreRecord(name);
      record.id=data.id;Object.assign(record.data,next);store.save(record);
     };
+    // Upload versions reference their slot, so create missing parents before versions in the same batch.
+    for(const d of r.documents)if(!store.records.get('documents')!.some(record=>record.id===d.id))put('documents',{id:d.id,disbursement:payment.id,kind:d.kind,status:d.status,currentVersion:''});
     if(route==='pengajuan/pf')put('sk_awards',c.award);
     if(r.bankCheck)put('bank_checks',r.bankCheck);
     for(const v of r.versions){
