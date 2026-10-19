@@ -153,7 +153,7 @@
     busy = true; error = '';
     try {
       const { downloadRabWorkbook, linesToRows } = await import('$lib/rab-excel');
-      await downloadRabWorkbook(`RAB_${data.campus.code.replace(/\s+/g, '')}_v${version.number}.xlsx`, { university: data.campus.name.toUpperCase(), penuh: linesToRows(version.lines, 'penuh'), tahap1: linesToRows(version.lines, 'tahap1'), tahap2: linesToRows(version.lines, 'tahap2') });
+      await downloadRabWorkbook(`RAB_${data.campus.code.replace(/\s+/g, '')}_v${version.number}.xlsx`, { university: data.campus.name.toUpperCase(), penuh: linesToRows(version.lines, 'penuh'), tahap1: linesToRows(version.lines, 'tahap1'), tahap2: linesToRows(version.lines, 'tahap2'), signing: data.signing });
     } catch (e) { fail(e, 'Berkas belum dapat diunduh.'); }
     finally { busy = false; }
   }

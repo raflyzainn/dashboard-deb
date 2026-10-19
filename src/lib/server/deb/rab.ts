@@ -9,6 +9,7 @@ import { auditData, type AuditActor, type AuditInput } from './audit';
 import { atomic, StoreRecord, type RestStore } from './rest-store';
 import { payoutReads, assertPayoutEditable, assertRevision } from './pencairan-store';
 import { campusWithAward, ensureDisbursement, context } from './pencairan';
+import { parseContacts } from '../../contacts';
 
 /**
  * Managed RAB: versions per campus, four level lines, checks against Batas Tahap 1, approval that turns the RAB 70% total into the nominal of Tahap 1.
@@ -79,7 +80,8 @@ export async function overview(pb: PocketBase, campusId: string, versionId = '')
     summary: { skNumber: award.skNumber, amountSen, limitSen: limitSen(amountSen) },
     disbursement: { id: disbursement.id, stage: Number(disbursement.stage || 1), requestedSen: Number(disbursement.requestedSen || 0), rabVersionId: disbursement.rabVersion || '', clauseChecked: Boolean(disbursement.clauseChecked), revision: Number(disbursement.revision || 1) },
     versions, version: chosen ? { ...chosen, lines } : null,
-    checks: chosen ? checksFor(lines, amountSen) : []
+    checks: chosen ? checksFor(lines, amountSen) : [],
+    signing: { place: '', mentor: parseContacts(campus.contacts.mentor)[0]?.name || '', coordinator: parseContacts(campus.contacts.coordinator)[0]?.name || '' }
   };
 }
 

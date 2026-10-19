@@ -22,7 +22,7 @@ export const PKS_DATE = '2026-06-17';
 export const PF_PKS_PENDING = 'masih menunggu surat dari PF';
 export const LETTER_MIN_DATE = '2026-06-18';
 export const documentGuides: Record<string, string[]> = {
- pks:['Siapkan dua rangkap PKS dengan isi yang sama.','Gunakan satu perwakilan kampus yang berwenang; nama dan jabatan harus konsisten.','Lengkapi tanda tangan para pihak dan meterai pada tempat yang ditentukan template.','Periksa tanggal PKS yang ditetapkan PF dan lampiran sesuai jenis rekening.'],
+ pks:['Siapkan dua rangkap PKS dengan isi yang sama.','PKS ditandatangani pejabat kampus yang berwenang; nama dan jabatan harus sama dengan isian Penandatangan Kampus.','Lengkapi tanda tangan para pihak dan meterai pada tempat yang ditentukan template.','Periksa tanggal PKS yang ditetapkan PF dan lampiran sesuai jenis rekening.'],
  permohonan:['Periksa kop, nomor surat, identitas kampus, dan nominal Termin 1.','Tanggal permohonan harus setelah PKS.','Lengkapi tanda tangan serta lampiran RAB, invoice, kuitansi, rekening, dan PKS.'],
  invois:['Periksa nomor invoice, nominal Termin 1, serta nama bank, rekening, dan pemilik.','Tanggal invoice pada atau setelah permohonan.','Lengkapi tanda tangan dan meterai pada tempat yang ditentukan template.'],
  kuitansi:['Periksa nomor kuitansi, nominal dan terbilang yang mengikuti Termin 1.','Tanggal kuitansi harus setelah invoice.','Lengkapi tanda tangan dan meterai pada tempat yang ditentukan template.'],
@@ -166,5 +166,5 @@ export function changedLetters(c:any,r:any,settings:any,templates:Record<MergeKi
  const current=r.journey.fields;
  const prior=buildMergeData(mergeInput(c,{...r,journey:{...r.journey,fields:before}},settings));
  const next=buildMergeData(mergeInput(c,r,settings));
- return MERGE_KINDS.filter(kind=>r.journey.datePolicy==='chronology'&&['penandatanganNama','penandatanganJabatan'].some(key=>before[key]!==current[key])||templateTags(templates[kind]).some(key=>prior[key as keyof typeof prior]!==next[key as keyof typeof next])||before.jenisRekening!==current.jenisRekening&&['pks','permohonan'].includes(kind));
+ return MERGE_KINDS.filter(kind=>templateTags(templates[kind]).some(key=>prior[key as keyof typeof prior]!==next[key as keyof typeof next])||before.jenisRekening!==current.jenisRekening&&['pks','permohonan'].includes(kind));
 }

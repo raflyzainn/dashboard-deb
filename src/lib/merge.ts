@@ -76,7 +76,7 @@ export const PROPERTY_FIELDS: { key: string; label: string; type: 'text' | 'date
   { key: 'nomorKuitansi', label: 'Nomor kuitansi', type: 'text' },
   { key: 'tanggalKuitansi', label: 'Tanggal kuitansi', type: 'date' },
   { key: 'tempatTandaTangan', label: 'Tempat surat dibuat', type: 'text', hint: 'Kota tempat surat permohonan dibuat.' },
-  { key: 'penandatanganNama', label: 'Pejabat penandatangan kampus', type: 'text', hint: 'Nama pejabat yang menandatangani PKS mewakili kampus.' },
+  { key: 'penandatanganNama', label: 'Pejabat penandatangan PKS', type: 'text', hint: 'Nama pejabat yang menandatangani PKS mewakili kampus. Surat pencairan ditandatangani mentor.' },
   { key: 'penandatanganJabatan', label: 'Jabatan pejabat penandatangan', type: 'text' }
 ];
 

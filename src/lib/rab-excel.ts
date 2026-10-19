@@ -9,7 +9,9 @@ import type ExcelJS from 'exceljs';
 
 /** One row of a sheet: headings carry a code and a name; items carry the calculation, volume, unit, unit price and amount in rupiah. */
 export interface RabRow { no: string; uraian: string; calculation?: string; satuan?: string; volume?: number | null; hargaSatuan?: number | null; jumlah?: number | null }
-export interface RabWorkbookInput { title?: string; university?: string; village?: string; penuh: RabRow[]; tahap1: RabRow[]; tahap2: RabRow[] }
+/** Names for the signature block, from the program profile. The date is the day of the download unless given. */
+export interface RabSigning { place: string; mentor: string; coordinator: string; date?: Date }
+export interface RabWorkbookInput { title?: string; university?: string; village?: string; penuh: RabRow[]; tahap1: RabRow[]; tahap2: RabRow[]; signing?: RabSigning }
 
 export const SHEET_FULL = 'RAB 100%';
 export const SHEET_T1 = 'RAB 70%';
@@ -134,10 +136,12 @@ function rabSheet(wb: ExcelJS.Workbook, name: string, rows: RabRow[], input: Rab
   cell(grand, COL.uraian).alignment = { horizontal: 'right' };
   cell(grand, COL.amount).value = sumFormula(kelompokRows);
   styleRow(grand, true, HEAD_FILL);
-  // Signature block as in the official form.
-  cell(grand + 2, COL.calcStart + 5).value = '…........................, (DD-MM-YY)';
+  // Signature block as in the official form; the template keeps the blanks, an export fills them.
+  const signing = input.signing;
+  const signedOn = signing ? new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(signing.date ?? new Date()) : '';
+  cell(grand + 2, COL.calcStart + 5).value = signing ? `${signing.place || '…........................'}, ${signedOn}` : '…........................, (DD-MM-YY)';
   cell(grand + 4, COL.uraian).value = 'Tandatangan'; cell(grand + 4, COL.calcStart + 5).value = 'Tandatangan';
-  cell(grand + 8, COL.uraian).value = '(Nama Mentor)'; cell(grand + 8, COL.calcStart + 5).value = '(Nama Koordinator)';
+  cell(grand + 8, COL.uraian).value = signing?.mentor || '(Nama Mentor)'; cell(grand + 8, COL.calcStart + 5).value = signing?.coordinator || '(Nama Koordinator)';
   return ws;
 }
 
