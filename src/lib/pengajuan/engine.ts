@@ -102,11 +102,23 @@ function refreshPksSettings(c:any,r:any,settings:any,user:AppSession){
    if(kuasa){
     if(write)throw Error('Gunakan unduh template surat kuasa.');
     const f=view.journey.fields;
-    if(f.jenisRekening!=='kuasa'||['judulProgram','penerimaKuasa','namaBank','nomorRekening','namaPemilik','penandatanganNama','penandatanganJabatan','tempatTandaTangan'].some(k=>!f[k]?.trim())||!validDate(f.tanggalKuasa||'')||f.tanggalKuasa<=(view.journey.datePolicy==='chronology'?f.tanggalPerjanjian:PKS_DATE)||!validDate(f.tanggalPerjanjian)|| (view.journey.datePolicy==='chronology'?!validGrantors(f):!f.pemberiKuasa.trim()||f.pemberiKuasa.trim().toLowerCase()!==f.penandatanganNama.trim().toLowerCase())||f.penerimaKuasa.trim().toLowerCase()!==f.namaPemilik.trim().toLowerCase()||!/^\d{5,40}$/.test(f.nomorRekening))throw Error('Lengkapi identitas pemberi/penerima kuasa, rekening, dan tanggal setelah PKS sebelum mengunduh template.');
+    if(f.jenisRekening!=='kuasa')throw Error('Template surat kuasa hanya diperlukan untuk Rekening Bersama. Pilih jenis rekening di tab Rekening Penerima.');
+    const required=[['judulProgram','Nama kegiatan / program','Data Program'],['penerimaKuasa','Nama penerima kuasa','Rekening Penerima'],['namaBank','Nama bank','Rekening Penerima'],['nomorRekening','Nomor rekening','Rekening Penerima'],['namaPemilik','Nama pemilik rekening','Rekening Penerima'],['penandatanganNama','Nama penandatangan kampus','Penandatangan Kampus'],['penandatanganJabatan','Jabatan penandatangan','Penandatangan Kampus'],['tempatTandaTangan','Kota tempat surat dibuat','Penandatangan Kampus']];
+    const missing=required.filter(([key])=>!f[key]?.trim());
+    if(missing.length)throw Error('Sebelum mengunduh template surat kuasa: '+missing.map(([,label,tab])=>'isi '+label+' di tab '+tab).join('; ')+'.');
+    if(!/^\d{5,40}$/.test(f.nomorRekening))throw Error('Perbaiki Nomor rekening di tab Rekening Penerima: gunakan 5–40 angka tanpa spasi atau tanda baca.');
+    if(view.journey.datePolicy==='chronology'){
+     if(!validGrantors(f))throw Error('Lengkapi nama dan jabatan setiap pemberi kuasa di tab Rekening Penerima. Tambahkan minimal satu pemberi kuasa; nama dan jabatan masing-masing maksimal 200 karakter.');
+    }else if(!f.pemberiKuasa?.trim()||f.pemberiKuasa.trim().toLowerCase()!==f.penandatanganNama.trim().toLowerCase())throw Error('Isi Nama pemberi kuasa di tab Rekening Penerima sama dengan Nama penandatangan kampus di tab Penandatangan Kampus.');
+    if(f.penerimaKuasa.trim().toLowerCase()!==f.namaPemilik.trim().toLowerCase())throw Error('Samakan Nama penerima kuasa dengan Nama pemilik rekening di tab Rekening Penerima.');
+    if(!validDate(f.tanggalPerjanjian||''))throw Error('Tanggal perjanjian di tab PKS belum tersedia atau tidak valid. Minta Admin PF menetapkan tanggal PKS sebelum mengunduh template surat kuasa.');
+    if(!validDate(f.tanggalKuasa||''))throw Error('Isi Tanggal surat kuasa yang valid di tab Rekening Penerima.');
+    const pksDate=view.journey.datePolicy==='chronology'?f.tanggalPerjanjian:PKS_DATE;
+    if(f.tanggalKuasa<=pksDate)throw Error('Perbaiki Tanggal surat kuasa di tab Rekening Penerima: harus setelah tanggal PKS ('+pksDate+').');
    }else if(parts[5]==='pks'&&view.journey.datePolicy==='chronology'){const blockers=view.blockers.filter((b:any)=>['sk','program','rab','administrasi','penandatangan'].includes(b.section)||b.section==='pks'&&!/nomor/i.test(b.text));if(blockers.length)throw Error(blockers[0].text);}
    else if(view.blockers.length)throw Error('Lengkapi data pengajuan sebelum membuat dokumen.');
    const snapshot=await transaction(s=>{const db=(s as any).workflow,c=s.data.campuses.find(c=>c.id===parts[2]),r=db.campuses[parts[2]],settings=db.settings.find((v:any)=>v.programYear===c?.programYear);refreshPksSettings(c,r,settings,user);return {c,r,settings,kop:s.files[view.journey.files.kop?.id]};});
-   if(!snapshot.kop&&parts[5]!=='pks')throw Error('Kop surat belum tersedia.');
+   if(!snapshot.kop&&parts[5]!=='pks')throw Error(view.journey.files.kop?'Berkas kop surat tersimpan tidak dapat dibaca. Unggah ulang Kop surat kampus di tab Identitas Surat dan Kop.':'Unggah Kop surat kampus di tab Identitas Surat dan Kop sebelum mengunduh dokumen.');
    expectedRevision=snapshot.r.journey.revision;renderedSettings=settingsSource(journeySettings(snapshot.r.journey,snapshot.settings));if(expectedRevision!==view.journey.revision)throw Error('Data berubah saat dokumen dibuat. Coba kembali.');
    generated=journeyDocx(kuasa?'surat_kuasa':parts[5] as MergeKind,snapshot.c,snapshot.r,snapshot.settings,templates!,snapshot.kop?{bytes:new Uint8Array(await snapshot.kop.arrayBuffer()),mime:snapshot.kop.type,width:view.journey.files.kop.width,height:view.journey.files.kop.height}:undefined,!kuasa&&view.journey.status!=='selesai'&&!(parts[5]==='pks'&&view.journey.datePolicy==='chronology'));
    if(!write)return generated;
