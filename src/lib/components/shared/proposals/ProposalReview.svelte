@@ -59,8 +59,7 @@
       }}
     >
       <label class="grid gap-[8px] text-[14px] font-semibold text-[#17365f]">
-        {proposal.reviewNote ? 'Perbarui tanggapan' : 'Tulis tanggapan'}
-        <textarea
+       <span class="field-caption">{proposal.reviewNote ? 'Perbarui tanggapan' : 'Tulis tanggapan'}</span> <textarea
           aria-label="Isi tanggapan admin"
           rows="3"
           required
@@ -102,7 +101,7 @@
     }}
   >
     <label class="grid gap-2 text-sm"
-      >Tulis komentar<textarea
+      ><span class="field-caption">Tulis komentar</span><textarea
         aria-label="Komentar proposal"
         class="w-full rounded-lg border border-slate-300 p-3"
         rows="3"

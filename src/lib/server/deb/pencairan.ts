@@ -1,3 +1,4 @@
+import { pksApproved } from '../../pengajuan/pks-review';
 import type PocketBase from 'pocketbase';
 import type { RecordModel } from 'pocketbase';
 import { versionHolds, type RabVersionShare } from '../../rab';
@@ -8,7 +9,7 @@ import { writeAudit, auditData, type AuditActor } from './audit';
 import { versionKey, mimeFor, extensionOf, ALLOWED_EXTENSIONS, type Storage } from './r2';
 import { scanDocx, type DocScan } from './docscan';
 import { checkedFileMime } from '../../upload-file';
-import { validDate } from '../../pengajuan/journey';
+import { journeySettings, settingsSource, validDate } from '../../pengajuan/journey';
 import { atomic, StoreRecord } from './rest-store';
 import { payoutReads, payoutRecord, assertPayoutEditable, assertRevision } from './pencairan-store';
 import { payoutTimeline, type CampusPayoutProgress } from '../../payout-progress';
@@ -114,7 +115,7 @@ export async function directory(pb: PocketBase): Promise<DirectoryRow[]> {
     const assessment = assess(statuses, { submissionStatus:disbursement?.submissionStatus,
       suratKuasaRequired: disbursement?.submissionStatus ? disbursement.applicationData?.fields?.jenisRekening === 'kuasa' : suratKuasaRequired,
       redChecks: disbursement?.submissionStatus ? 0 : list.filter(c => c.level === 'bad').length,
-      paidAt: String(disbursement?.paidAt || ''), originalsAll: docs.filter(d => d.generated).every(d => d.originalReceived), lampiranCount });
+      paidAt: String(disbursement?.paidAt || ''), signedAll: docs.filter(d => d.generated).every(d => d.signedReceived), lampiranCount });
     const checkedAt = own.map(d => String(d.updated || '')).sort().pop() || '';
     const timeline = payoutTimeline({ paidAt: disbursement?.paidAt, stage: disbursement?.stage, hasRab: rabVersions.some(v => v.campus === campus.id),
       documents: docs, journey: disbursement?.submissionStatus ? { ...disbursement.applicationData, status: disbursement.submissionStatus } : undefined });
@@ -191,7 +192,7 @@ export async function workspace(pb: PocketBase, campusId: string) {
   const bankRow = bank.items[0] || null;
   const { checks: list, suratKuasaRequired } = checks(docs, summary, { campus, bankResult: String(bankRow?.bankResult || 'belum'), rab, sheets: sheetTotals(allRabVersions) });
   const statuses = Object.fromEntries(docs.map(d => [d.kind, d.status])) as Record<Kind, Status>;
-  const readiness = assess(statuses, { submissionStatus:disbursement?.submissionStatus, suratKuasaRequired, redChecks: list.filter(c => c.level === 'bad').length, paidAt: String(disbursement.paidAt || ''), originalsAll: docs.filter(d => d.generated).every(d => d.originalReceived), lampiranCount: attachments.length });
+  const readiness = assess(statuses, { submissionStatus:disbursement?.submissionStatus, suratKuasaRequired, redChecks: list.filter(c => c.level === 'bad').length, paidAt: String(disbursement.paidAt || ''), signedAll: docs.filter(d => d.generated).every(d => d.signedReceived), lampiranCount: attachments.length });
   return {
     campus, summary,
     disbursement: { id: disbursement.id, stage: Number(disbursement.stage || 1), requestedSen, paidSen: Number(disbursement.paidSen || 0), paidAt: String(disbursement.paidAt || ''), paidRef: disbursement.paidRef || '', paidByName: disbursement.paidByName || '', properties: (disbursement.properties || {}) as Record<string, unknown>, clauseChecked: Boolean(disbursement.clauseChecked), templateMode: disbursement.templateMode || 'standard', revision: Number(disbursement.revision || 1) },
@@ -410,11 +411,17 @@ export async function recordPayment(pb: PocketBase, actor: AuditActor & { id: st
     // Identical retry succeeds even with the revision from before the first successful request.
     if(before.tanggalBayar.slice(0,10)===after.tanggalBayar&&before.jumlah===after.jumlah&&before.referensi===after.referensi&&before.catatan===after.catatan)return current as RecordModel;
     assertRevision(current.revision,input.expectedRevision);
+    if(current.applicationData?.datePolicy==='chronology'&&!pksApproved(current.applicationData))throw new PreviewError(400,'PKS harus disetujui PF dan Legal sebelum pembayaran.');
+    if(current.applicationData?.datePolicy==='chronology'&&!current.paidAt){
+      const j=current.applicationData,version=tx.records.get('document_versions')?.find(v=>v.id===j.pksReview?.versionId);
+      const settings=tx.records.get('program_settings')?.find(v=>v.data.programYear===campus.programYear)?.data;
+      if(version?.data.generation?.settingsSource!==settingsSource(journeySettings(j,settings)))throw new PreviewError(400,'Pengaturan PF berubah. PKS perlu diperiksa ulang oleh PF dan Legal.');
+    }
     if(current.submissionStatus&&current.submissionStatus!=='selesai')throw new PreviewError(400,'Selesaikan revisi dan pemeriksaan pengajuan sebelum mencatat pembayaran.');
     if(Number(current.requestedSen)!==input.paidSen)throw new PreviewError(409,'Nominal pengajuan berubah. Muat data terbaru.');
     if(!current.paidAt){
       const view=await workspace(pb,campusId);
-      if(view.readiness.state!=='siap_dibayar')throw new PreviewError(400,'Lengkapi pemeriksaan, dokumen bertanda tangan/asli dan lampiran sebelum mencatat pembayaran.');
+      if(view.readiness.state!=='siap_dibayar')throw new PreviewError(400,'Lengkapi pemeriksaan, pindaian bertanda tangan yang sesuai dan lampiran sebelum mencatat pembayaran.');
       if(view.documents.some(doc=>doc.generated&&(!doc.signedReceived||!doc.versions.find(v=>v.id===doc.currentVersionId)?.signed)))throw new PreviewError(400,'Lengkapi pindaian bertanda tangan versi terbaru sebelum mencatat pembayaran.');
       const {readiness}=await import('./lampiran');
       const attachment=await readiness(pb,campusId),latest=attachment.attachments[0];
@@ -424,7 +431,7 @@ export async function recordPayment(pb: PocketBase, actor: AuditActor & { id: st
     const audit=new StoreRecord('audit');Object.assign(audit.data,auditData({actor,action:`mencatat pembayaran Tahap ${term}`,context:context(campusId,term),collection:'disbursements',record:payment.id,campus:campusId,before,after}));tx.save(audit);
     for(const user of tx.records.get('users')||[]){const notice=new StoreRecord('notifications');Object.assign(notice.data,{recipientUser:user.id,campus:campusId,eventType:'pencairan_bayar',eventKey:`pencairan_bayar:${payment.id}:${current.revision}:${user.id}`,sourceId:payment.id,title:`Dana Tahap ${term} sudah ditransfer`,body:`${formatSen(input.paidSen)} untuk ${campus.name} ditransfer pada ${input.paidAt}.`,target:'/campus/pencairan',simulated:false});tx.save(notice);}
     return current as RecordModel;
-  },payoutReads(pb,campusId));
+  },{...payoutReads(pb,campusId),program_settings:{filter:pb.filter('programYear = {:year}',{year:campus.programYear})}});
 }
 
 export async function reviewDocument(pb: PocketBase, actor: AuditActor, campusId: string, kind: Kind, decision: 'sesuai' | 'perlu_revisi' | 'perlu_konfirmasi' | 'tidak_perlu', note: string, options: { imported?: boolean } = {}) {

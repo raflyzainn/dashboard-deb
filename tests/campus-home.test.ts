@@ -10,3 +10,9 @@ test('campus greeting follows WIB at each time boundary', () => {
   assert.equal(pageRequest(new URL('https://example.test/campus/dashboard')).view, 'static');
   assert.equal(pageRequest(new URL('https://example.test/admin/dashboard')).view, 'dashboard');
 });
+
+test('campus profile uses its own navigation data without requesting the blocked dashboard API', () => {
+  assert.deepEqual(pageRequest(new URL('https://example.test/campus/profile')), { view: 'static' });
+  assert.deepEqual(pageRequest(new URL('https://example.test/campus/profile/?period=other')), { view: 'static' });
+  assert.equal(pageRequest(new URL('https://example.test/admin/dashboard')).view, 'dashboard');
+});

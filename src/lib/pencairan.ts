@@ -79,7 +79,7 @@ export interface Assessment {
 /** Joins names the Indonesian way: "a, b, dan c". */
 export const joinNames = (names: string[]) => names.length <= 1 ? names.join('') : names.length === 2 ? `${names[0]} dan ${names[1]}` : `${names.slice(0, -1).join(', ')}, dan ${names[names.length - 1]}`;
 /** The same reading of a campus everywhere: dashboard rows, the card, the campus view. Pure, so the browser can recompute it after an edit. */
-export function assess(statuses: Record<Kind, Status>, input: { suratKuasaRequired: boolean | null; redChecks: number; paidAt: string; originalsAll: boolean; lampiranCount: number; submissionStatus?: string }): Assessment {
+export function assess(statuses: Record<Kind, Status>, input: { suratKuasaRequired: boolean | null; redChecks: number; paidAt: string; signedAll: boolean; lampiranCount: number; submissionStatus?: string }): Assessment {
   const items = Object.fromEntries(KINDS.map(k => [k, statuses[k] || (k === 'sk' ? 'perlu_konfirmasi' : 'belum_ada')])) as Record<Kind, ItemState>;
   if (input.suratKuasaRequired === false && items.surat_kuasa !== 'sesuai') items.surat_kuasa = 'tidak_perlu';
   const active = KINDS.filter(k => items[k] !== 'tidak_perlu');
@@ -95,7 +95,7 @@ export function assess(statuses: Record<Kind, Status>, input: { suratKuasaRequir
   let state: CampusState;
   if (input.paidAt) state = 'dibayar';
   else if (pendingSubmission) state = input.submissionStatus==='menunggu'?'menunggu_admin':'menunggu_kampus';
-  else if (lengkap && input.originalsAll && input.lampiranCount > 0) state = 'siap_dibayar';
+  else if (lengkap && input.signedAll && input.lampiranCount > 0) state = 'siap_dibayar';
   else if (lengkap) state = 'lengkap';
   else if (belum === active.length) state = 'belum_ada';
   else if (adminWait || allDone) state = 'menunggu_admin';

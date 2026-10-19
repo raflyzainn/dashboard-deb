@@ -1,5 +1,42 @@
 # Panduan proyek untuk Codex
 
+## Tematik DEB — 15 Oktober 2026
+
+Profil Program → Informasi program kini memiliki satu pilihan Tematik DEB (Ketahanan Pangan, Pesisir Modern, Wisata Energi) dan penjelasan maksimal 1.000 karakter. Nilai disimpan di JSON profil existing dan tampil pada Ringkasan admin. Nilai kosong tetap didukung untuk profil lama. Implementasi dan QA lokal port 5176: [Tematik DEB](QA-TEMATIK-DEB-2026-10-15.md).
+
+## Profil & Monitoring Program - 14 Oktober 2026
+
+Kartu Profil Program kini menjadi **Profil & Monitoring Program**, tetap di `/campus/profile`. Kampus mengisi pendapatan/energi bulanan, bukti program, cerita/foto Local Hero dan melihat rumus estimasi. Admin memeriksa per bulan lewat Review Kampus > Monitoring bulanan. Akses monitoring tidak menunggu pembayaran T1. Modul indikator legacy tetap terpisah.
+
+Implementasi ini lokal di branch fitur; QA browser terblokir dan belum ada publikasi. Baca [catatan implementasi dan batas QA](QA-MONITORING-2026-10-14.md) untuk rumus, migrasi lokal, checklist dan skenario yang belum diuji.
+
+
+## Pelaporan kampus — 14 Oktober 2026
+
+Sesuai arahan 19 Oktober 2026, dropdown akun kampus menyediakan menu **Pencairan** setelah Beranda, menuju `/campus/pencairan`; kartu Beranda tetap tersedia. Pelaporan pada kartu/menu hanya tampil setelah pembayaran T1. Pada halaman review admin, berkas keluaran terbaru langsung dipratinjau: PDF/Word memakai FileViewer existing, video memakai pemutar, dan artikel teks ditampilkan langsung.
+
+QA menu 19 Oktober 2026 melalui Playwright pada port 5176, akun Universitas Gadjah Mada: desktop 1366 px dan mobile 390 px, klik/Enter membuka Pencairan, dropdown menutup, dan `aria-current="page"` tetap benar setelah reload. Menu muat tanpa overflow horizontal; tidak ada pageerror selama pemeriksaan. Screenshot lokal `.local/pencairan-menu-mobile-20261019.png`. Tes terminal/check/lint dan alur transaksi pencairan tidak dijalankan pada perubahan navigasi ini.
+
+Tampilan Pelaporan menampilkan Keluaran dan LPJ bersama dalam satu halaman form sesuai arahan terbaru pengguna. Tombol bagian hanya melompat ke bagian terkait, tanpa menyembunyikan form lainnya. Kartu, ringkasan dana, input/tombol, tabel dan penyelesaian memakai tampilan ringkas; tabel bukti dapat digeser pada mobile. QA perubahan visual dilakukan di 5177 sebagaimana laporan di bawah.
+
+Kampus membuka `/campus/pelaporan` setelah pembayaran T1 memiliki tanggal dan nominal positif. Keluaran laporan/infografis/video/artikel memakai collection `report_versions`, terpisah dari dokumen wajib pencairan. Simpan menghasilkan draf berversi; Kirim mengunci konten sampai admin memeriksa. Artikel mendukung teks web, DOCX atau PDF. Video MP4 maksimal 40 MB dan dua menit, dokumen maksimal 20 MB.
+
+LPJ menggunakan bukti existing, dengan revisi/riwayat dan deduplikasi retry. Semua bukti Sesuai belum otomatis selesai: admin harus menekan Selesaikan LPJ. Status selesai mengunci bukti dan menjadi prasyarat LPJ menuju T2. Buka kembali wajib alasan dan membatalkan kesiapan itu. Empat keluaran versi terkini Sesuai menandai pelaporan tahunan lengkap. Form narasi/generator infografis menunggu template, dan paket T2 penuh belum tersedia.
+
+QA fitur ini menggunakan frontend 5177 agar 5176 tetap berjalan. [Runbook schema lokal](pencairan-deb/RUNBOOK-PELAPORAN-LOKAL.md) dan [hasil QA aktual](QA-PELAPORAN-KAMPUS-2026-10-14.md) membedakan verifikasi browser, tes tertulis yang belum dijalankan dan perubahan yang belum dipublikasikan.
+
+## P1 PKS dan Legal — implementasi lokal 14 Oktober 2026
+
+Pada branch `feat/p1-t1-legal`, pengajuan baru memakai tanggal relatif, periode per pengajuan, PDF PKS yang diperiksa PF dan Legal, serta role Legal yang dapat diberikan Admin biasa. Sidebar Legal memakai Shell Admin dengan menu terbatas. Data PKS PF tampil langsung dalam grid responsif; timeline delapan tahap tetap satu baris dengan gulir mendatar pada layar kecil. Panduan alur, sumber Excel, checklist QA dan batas verifikasi ada di [P1 PKS dan Legal](pencairan-deb/P1-LEGAL-2026-10-14.md). Pengiriman hanya ke branch fitur; belum diterapkan ke production. Instruksi lama tentang tanggal PKS tetap hanya berlaku untuk pengajuan legacy.
+
+## Profil Program kampus — 14 Oktober 2026
+
+Kontak program memakai pilihan negara (default Indonesia +62) dan isian Nomor WhatsApp. Format divalidasi dengan `libphonenumber-js/max` pada formulir dan API profil; saat disimpan nomor dinormalisasi ke format internasional. Nomor lama yang ambigu tidak diberi tautan WhatsApp. Validasi format tidak membuktikan nomor aktif, kepemilikan, atau pendaftaran WhatsApp; tidak ada OTP maupun pengiriman pesan otomatis.
+
+Beranda memiliki kartu **Lengkapi Profil Program** menuju `/campus/profile`; akses juga tersedia dari menu akun dan Panduan Aplikasi. Kampus dapat mengubah kontak, lokasi, informasi/deskripsi program, kategori kelas, target kategori, Subholding, estimasi RAB, serta sembilan isian kesiapan rencana aksi. Data memakai `campuses.program` yang sama dengan Ringkasan admin. Khusus kampus, setiap bagian langsung menampilkan formulir dengan Simpan perubahan/Batalkan perubahan. Admin tetap memakai Ubah sebelum mengedit. Membatalkan mengembalikan nilai tersimpan; menyimpan satu bagian mempertahankan draf bagian lain. Tim Pendamping (`pfTeam`) tidak dibawa ke form; nilai lama dipertahankan dan API menolak perubahan field itu dari kampus.
+
+Akses tambahan hanya membuka halaman profil dan PATCH `/api/campuses/:id/program`. Server memeriksa kepemilikan kampus sebelum membaca profil. Pembacaan profil memakai data kampus sendiri dari navigasi; API dashboard/indikator/proposal/forum tetap tertutup untuk kampus. Perubahan profil tidak otomatis menimpa isian atau dokumen pada pengajuan yang sudah dibuat. Checklist dan batas verifikasi: [Profil Program kampus](QA-PROFIL-PROGRAM-KAMPUS-2026-10-14.md).
+
 ## Progres pencairan pada Peta Persebaran — 13 Oktober 2026
 
 Peta, legenda, rata-rata dan ringkasan wilayah memakai `campusPayouts` yang sama dengan Kampus Mitra: butir pemeriksaan selesai dibagi total butir. Detail pin menampilkan tahap, jumlah berkas tersimpan dan butir selesai. Unggah atau submit belum berarti pemeriksaan selesai; ini bukan persentase dana dibayar. Koordinat dan pengelompokan wilayah tetap mengikuti data existing. Bukti Chrome desktop/mobile: [QA peta progres pencairan](QA-PETA-PROGRES-PENCAIRAN-2026-10-13.md). Bagian peta berbasis indikator di bawah menjadi riwayat.
@@ -195,3 +232,14 @@ Pembayaran dan penyimpanan lampiran mengirim `expectedRevision` dari workspace. 
 Rute kampus yang diizinkan mencakup Beranda, Pencairan Dana, Panduan dan Notifikasi. Ikon notifikasi harus membuka `/campus/notifications`, bukan dialihkan kembali ke Beranda.
 
 Unggahan memeriksa isi berkas, menormalkan MIME, memakai key objek unik, dan membatasi dekompresi Office. Pindaian harus mengikuti sumber generated terbaru; versi baru membatalkan penerimaan asli. Lampiran dan pembayaran memeriksa versi sumber aktif. Rincian implementasi, hasil browser, dan batas konkurensi jalur lama tercatat di [laporan QA 7 Oktober](pencairan-deb/QA-EDGE-CASES-DAN-14-REVISI-2026-10-07.md). Jangan menyamakan QA lokal dengan bukti production atau test suite terminal.
+
+### Penyesuaian tab Profil dan Monitoring (14 Oktober 2026)
+Halaman `/campus/profile` memakai header dan tab bergaris bawah mengikuti detail kampus admin. Hanya tab aktif terlihat; perpindahan tab mempertahankan draf. Local Hero tetap berada dalam kontak Profil Program dan juga bisa ditambah di Monitoring Bulanan. Data yang sudah disimpan disinkronkan, sedangkan draf yang belum disimpan dipertahankan. Cerita/foto dilengkapi melalui Monitoring Bulanan.
+
+### Pelaporan satu halaman dan pratinjau berkas
+Pelaporan menampilkan Keluaran Program dan LPJ bersamaan tanpa tab sesuai arahan terakhir pengguna. Header Pelaporan dan Pencairan kampus mengikuti Profil & Monitoring. Kartu keluaran sejajar dalam tiap baris. Gunakan FileViewer existing untuk pratinjau dokumen, pemutar untuk video, dan Button berbingkai untuk aksi berkas. Pilihan berkas Pelaporan/LPJ dapat dipratinjau sebelum disimpan; jangan menganggap file sudah tersimpan hanya karena pratinjau lokal muncul.
+
+### Monitoring Kampus admin
+Menu Review Kampus diganti menjadi Monitoring Kampus. `/admin/verifikasi` langsung membuka monitoring bulanan; `?tab=monitoring` tetap kompatibel. Indikator terdahulu diakses melalui Riwayat indikator (`?tab=indikator`). Admin memilih kampus/periode untuk melihat tabel data bulanan tersimpan termasuk draf. Pemeriksaan Sesuai/Perlu revisi tetap hanya untuk versi yang sudah dikirim. Kartu ringkasan menghitung versi kiriman sesuai kampus, periode, dan bulan. Perubahan ini belum di-QA karena pengguna meminta QA ditahan sampai halaman admin diubah.
+
+Monitoring Kampus admin memakai lebar konten penuh dan rata kiri mengikuti shell admin. Filter dikelompokkan dalam panel; keadaan kosong selebar konten. Editor parameter rumus dihapus dari halaman ini. Admin melihat hasil perhitungan, data dan bukti; rincian rumus tetap tersedia pada sisi kampus. QA tetap ditahan sesuai arahan pengguna.

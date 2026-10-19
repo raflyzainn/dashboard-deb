@@ -94,3 +94,24 @@ test('journey notification and business changes share commit, rollback and retry
   assert.ok(db.rows.notifications.every(r=>r.eventType==='pencairan_edit_access'&&r.body.includes('Koreksi lokasi')));
  });
 });
+
+
+test('campus stage notices follow timeline changes and skip unchanged stages',async()=>{
+ const source=await readFile('src/lib/server/deb/journey.ts','utf8');
+ const start=source.indexOf('    const stageAfter=timeline().label;');
+ assert.ok(start>=0);
+ const block=source.slice(start,source.indexOf('    if(legalBefore',start));
+ const execute=new Function('stageBefore','timeline','notify',block);
+ const notices:any[][]=[];
+ const notify=(...args:any[])=>notices.push(args);
+ execute('Pemeriksaan PF',()=>({label:'Pemeriksaan PF'}),notify);
+ assert.equal(notices.length,0);
+ execute('Pemeriksaan PF',()=>({label:'Pemeriksaan Legal'}),notify);
+ assert.equal(notices.length,1);
+ assert.equal(notices[0][0],'campus');
+ assert.equal(notices[0][1],'pencairan_tahap');
+ assert.match(notices[0][3],/Pemeriksaan PF.*Pemeriksaan Legal/);
+ assert.equal(notices[0][4],'/campus/pencairan?bagian=ringkasan&butir=ringkasan');
+ execute('Tanda tangan',()=>({label:'Pembayaran'}),notify);
+ assert.equal(notices.length,2);
+});

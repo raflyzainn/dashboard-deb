@@ -1,12 +1,13 @@
 import type { Period, PeriodState } from './periods';
 import type { ForumCategoryId } from './forum';
-export type Role = 'campus' | 'admin' | 'baru' | 'finance';
+export type Role = 'campus' | 'admin' | 'baru' | 'finance' | 'legal';
 export interface SessionIdentity { role: Role; name: string; campusId?: string; campusRole?: 'mentor' | 'sobi' }
 export interface AppSession extends SessionIdentity { id: string; email?: string; superAdmin?: boolean; passwordChangeRequired?: boolean }
 export interface PreviewAccount { key: string; name: string; role: Role; disbursementStarted?: boolean }
 export interface LocationDto { campusId: string; province: string; island: string; longitude: number | null; latitude: number | null; approximate: boolean }
 export interface Bootstrap { session: AppSession; data: Snapshot; locations: LocationDto[]; capabilities: { readOnly: boolean }; loadedAt: string }
 export interface ProgramProfile {
+  thematic?: string | null; thematicDescription?: string | null;
   simulatedFields?: string[];
   mentor?: string | null; coordinator?: string | null; localHero?: string | null;
   subholding?: string | null; operatingUnit?: string | null; actionPlanTemplate?: string | null;

@@ -5,7 +5,7 @@
   import { saveProgram, text } from './program-form';
 
   const TITLE = 'Deskripsi program';
-  let { value = '', campusId, canEdit = true }: { value?: string | null; campusId: string; canEdit?: boolean } = $props();
+  let { value = '', campusId, canEdit = true, alwaysEdit = false }: { value?: string | null; campusId: string; canEdit?: boolean; alwaysEdit?: boolean } = $props();
 
   const uid = $props.id();
   const stored = $derived(text(value).trim());
@@ -28,6 +28,7 @@
     description="Ringkasan program per poin."
     icon="proposal"
     bind:editing
+    {alwaysEdit}
     {canEdit}
     {saving}
     {dirty}

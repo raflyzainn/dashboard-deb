@@ -359,7 +359,7 @@
     >
       <label
         class="[background-image:initial]! [background-color:rgb(243,_248,_255)]! text-center items-center text-[#4376a8]! px-[18px] py-[28px] border-[1.5px] border-dashed border-[color:rgb(205,_223,_242)]! rounded-[10px] [&>span]:text-[12px] [&>span]:font-[400] [&_input]:text-[12px] [&_input]:w-[auto] [&_input]:max-w-[100%] [&_input]:p-[8px] [&_input]:border-[0px] [&_input]:border-none [&_input]:border-[color:currentcolor] upload-zone"
-        ><Icon name="upload" size={32} /><strong class="font-[600]">Pilih dokumen proposal</strong
+        ><Icon name="upload" size={32} /><strong class="field-caption font-[600]">Pilih dokumen proposal</strong
         ><span>PDF · Maksimal 40 MB</span><input
           class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#17365f] max-w-[100%] px-[12px] py-[11px] border-[1px] border-solid border-[color:rgb(212,_225,_241)] rounded-[7px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(39,_144,_232)] [&::placeholder]:text-[#64748b]"
           type="file"
@@ -375,7 +375,7 @@
         >
           <Icon name="proposal" size={18} />{file.name} · {size(file.size)}
         </p>{/if}<label
-        >Catatan versi<textarea
+        ><span class="field-caption">Catatan versi</span><textarea
           class="[font-style:inherit] [font-variant-ligatures:inherit] [font-variant-caps:inherit] [font-variant-numeric:inherit] [font-variant-east-asian:inherit] [font-variant-alternates:inherit] [font-variant-position:inherit] [font-variant-emoji:inherit] [font-weight:inherit] [font-stretch:inherit] text-[14px] leading-[inherit] [font-family:inherit] [font-optical-sizing:inherit] [font-size-adjust:inherit] [font-kerning:inherit] [font-feature-settings:inherit] [font-variation-settings:inherit] [font-language-override:inherit] [-webkit-tap-highlight-color:transparent] [background-image:initial] [background-color:rgb(255,_255,_255)] text-[#17365f] max-w-[100%] [resize:vertical] min-h-[85px] px-[12px] py-[11px] border-[1px] border-solid border-[color:rgb(212,_225,_241)] rounded-[7px] [&:focus]:[outline-color:#7fc1ff] [&:focus]:[outline-style:solid] [&:focus]:[outline-width:2px] [&:focus]:outline-offset-[1px] [&:focus]:border-[color:rgb(39,_144,_232)] [&::placeholder]:text-[#64748b]"
           readonly={app.readOnly}
           rows="4"

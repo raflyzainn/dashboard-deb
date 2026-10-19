@@ -1,13 +1,13 @@
 <script lang="ts">
   // Program facts from the action plan, read only first.
   import type { ProgramProfile } from '$lib/types';
+  import { PROGRAM_THEMATICS, THEMATIC_DESCRIPTION_LIMIT } from '$lib/program-thematics';
   import EditableSection from '$lib/components/ui/EditableSection.svelte';
   import ReadField from '$lib/components/ui/ReadField.svelte';
   import { budgetDigits, changedValues, formatRupiah, groupDigits, onlyDigits, saveProgram, text } from './program-form';
 
   const TITLE = 'Informasi program';
   const FIELDS = [
-    ['pfTeam', 'Tim pendamping'],
     ['subholding', 'Subholding'],
     ['operatingUnit', 'Unit operasi Pertamina terdekat'],
     ['currentClass', 'Kategori kelas saat ini'],
@@ -16,19 +16,19 @@
     ['replicationVillage', 'Desa replikasi'],
     ['sourceStatus', 'Status pada sumber']
   ] as const;
-  type InfoKey = (typeof FIELDS)[number][0] | 'budget';
+  type InfoKey = (typeof FIELDS)[number][0] | 'budget' | 'thematic' | 'thematicDescription';
   type Draft = Record<InfoKey, string>;
 
   const INPUT =
     'w-full rounded-lg border border-[#cfe0f5] bg-white px-3 py-2.5 text-sm text-[#17365f] focus:border-[#075fc7] focus:outline-none focus:ring-2 focus:ring-[#075fc7]/20 disabled:bg-[#f5f9ff] disabled:text-[#64748b]';
   const LABEL = 'mb-1.5 block text-[13px] font-semibold text-[#17365f]';
 
-  let { program, campusId, canEdit = true }: { program?: ProgramProfile; campusId: string; canEdit?: boolean } = $props();
+  let { program, campusId, canEdit = true, alwaysEdit = false }: { program?: ProgramProfile; campusId: string; canEdit?: boolean; alwaysEdit?: boolean } = $props();
 
   const uid = $props.id();
   // Budget is kept as plain digits while editing and stored as "Rp 75.000.000".
   const baseline = $derived.by(() => {
-    const values = { budget: budgetDigits(program?.budget) } as Draft;
+    const values = { budget: budgetDigits(program?.budget), thematic: text(program?.thematic), thematicDescription: text(program?.thematicDescription) } as Draft;
     for (const [key] of FIELDS) values[key] = text(program?.[key]);
     return values;
   });
@@ -44,7 +44,7 @@
   const dirty = $derived(Object.keys(changes).length > 0);
 
   function emptyDraft() {
-    return Object.fromEntries([...FIELDS.map(([key]) => [key, '']), ['budget', '']]) as Draft;
+    return Object.fromEntries([...FIELDS.map(([key]) => [key, '']), ['budget', ''], ['thematic', ''], ['thematicDescription', '']]) as Draft;
   }
 
   async function save() {
@@ -73,6 +73,7 @@
     description="Data rencana aksi program."
     icon="campus"
     bind:editing
+    {alwaysEdit}
     {canEdit}
     {saving}
     {dirty}
@@ -82,6 +83,8 @@
   >
     {#snippet view()}
       <dl class="m-0 grid gap-x-8 gap-y-5 min-[700px]:grid-cols-2">
+        <ReadField label="Tematik DEB" value={text(program?.thematic)} />
+        <ReadField label="Penjelasan tematik" value={text(program?.thematicDescription)} multiline />
         {#each FIELDS as [key, label]}
           <ReadField {label} value={text(program?.[key])} multiline />
         {/each}
@@ -90,6 +93,19 @@
     {/snippet}
     {#snippet edit()}
       <div class="grid gap-x-5 gap-y-4 min-[700px]:grid-cols-2">
+        <div class="min-w-0 min-[700px]:col-span-2">
+          <label class={LABEL} for={`${uid}-thematic`}>Tematik DEB</label>
+          <select id={`${uid}-thematic`} class={INPUT} bind:value={draft.thematic} disabled={saving} aria-describedby={`${uid}-thematic-hint`}>
+            <option value="">Pilih tematik DEB</option>
+            {#each PROGRAM_THEMATICS as thematic}<option value={thematic}>{thematic}</option>{/each}
+          </select>
+          <p id={`${uid}-thematic-hint`} class="m-0 mt-1 text-[12px] text-[#64748b]">Pilih satu tema utama program. Ekonomi dan ekonomi sirkular menjadi pendekatan pada ketiga tema.</p>
+        </div>
+        <div class="min-w-0 min-[700px]:col-span-2">
+          <label class={LABEL} for={`${uid}-thematic-description`}>Penjelasan tematik</label>
+          <textarea id={`${uid}-thematic-description`} class={INPUT} rows="3" maxlength={THEMATIC_DESCRIPTION_LIMIT} bind:value={draft.thematicDescription} disabled={saving} aria-describedby={`${uid}-thematic-description-hint`} placeholder="Jelaskan kegiatan program dan kaitannya dengan tema yang dipilih."></textarea>
+          <p id={`${uid}-thematic-description-hint`} class="m-0 mt-1 text-[12px] text-[#64748b]">{draft.thematicDescription.length} / 1.000 karakter</p>
+        </div>
         {#each FIELDS as [key, label]}
           <div class="min-w-0">
             <label class={LABEL} for={`${uid}-${key}`}>{label}</label>

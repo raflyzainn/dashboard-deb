@@ -90,6 +90,8 @@
     instance.attributionControl.setPrefix(false);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
+      // OSM requires a site referrer even when navigation started from the private login page.
+      referrerPolicy: 'strict-origin-when-cross-origin',
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(instance);
     instance.on('click', (event: Leaflet.LeafletMouseEvent) => {
