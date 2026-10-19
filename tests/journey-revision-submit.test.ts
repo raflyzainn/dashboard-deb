@@ -29,10 +29,11 @@ test('revision view distinguishes unchanged user input from documents awaiting r
 
 test('compiled submit rechecks saved scopes before generating, while document-only revision proceeds',async t=>{
  const source=await readFile('src/lib/components/campus/pencairan/CampusJourney.svelte','utf8');
- const submit=source.slice(source.indexOf(' async function submit(){'),source.indexOf(' function latest('));
+ const submit=source.slice(source.indexOf(' async function submit(){'),source.indexOf(' function signedVersion('));
+ const generation=source.split('\n').find(line=>line.includes('const canGenerate='));assert.ok(generation);
  const pending=source.split('\n').find(line=>line.includes('const pendingRevisionLabels='));assert.ok(pending);
  const harness=`const REVISION_SCOPES=${JSON.stringify(REVISION_SCOPES)};
- let data=$state(null),busy=$state(false),error=$state(''),message=$state('');${pending}
+ let data=$state(null),busy=$state(false),error=$state(''),message=$state('');const locked=false,waitingForPfPks=false;${pending}${generation}
  let afterSave;const calls=[];const base='/test',reportError=x=>x,sync=next=>data=next;
  const save=async()=>{if(afterSave)data=afterSave;return true;};
  const dataService={api:{post:async(url)=>{calls.push(url);return {...data,stale:[]};}}};
@@ -42,9 +43,10 @@ test('compiled submit rechecks saved scopes before generating, while document-on
  const compiled=compileModule(javascript,{filename:'Submit.svelte.js',generate:'client'}).js.code.replace(/from ['"](svelte[^'"]*)['"]/g,(_match,id)=>`from ${JSON.stringify(import.meta.resolve(id))}`);
  const dir=await mkdtemp(join(tmpdir(),'deb-revision-submit-'));t.after(()=>rm(dir,{recursive:true,force:true}));await writeFile(join(dir,'submit.mjs'),compiled);
  const {api}=await import(pathToFileURL(join(dir,'submit.mjs')).href);
- const response=(pendingRevisionScopes:string[])=>({journey:{status:'revisi'},pendingRevisionScopes,stale:['pks'],serverRevision:2});
+ const response=(pendingRevisionScopes:string[])=>({journey:{status:'revisi',revisionDocuments:['pks']},pendingRevisionScopes,stale:['pks'],serverRevision:2});
  api.setup(response(['program']));await api.submit();assert.deepEqual(api.calls,[]);assert.match(api.error,/Data Program/);
  api.setup(response(['program']),response([]));await api.submit();assert.deepEqual(api.calls,['/test/dokumen/pks','/test/submit']);
  api.setup(response([]));await api.submit();assert.deepEqual(api.calls,['/test/dokumen/pks','/test/submit']);
  api.setup(response(['program']),response(['surat']));await api.submit();assert.deepEqual(api.calls,[]);assert.match(api.error,/Identitas Surat dan Kop/);
+ api.setup({...response([]),stale:['pks','invois'],journey:{status:'revisi',revisionDocuments:['invois']}});await api.submit();assert.deepEqual(api.calls,['/test/dokumen/invois','/test/submit']);
 });
