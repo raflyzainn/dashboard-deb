@@ -124,7 +124,7 @@
   if(waitingForPfPks){error=reportError(PF_PKS_PREPARATION);return;}
   if(data.journey.status==='revisi'&&pendingRevisionLabels.length){error=reportError('Belum ada perubahan pada '+pendingRevisionLabels.join(', ')+'. Perbaiki semua bagian yang dibuka PF sebelum mengirim.');return;}
   busy=true;error='';message='';
-  try{if(data.journey.status==='revisi'){let next=data;for(const kind of next.stale.filter((kind:string)=>kind!=='pks'||next.journey.datePolicy!=='chronology'))next=await dataService.api.post(base+'/dokumen/'+kind,{expectedRevision:next.serverRevision});sync(next);}
+  try{if(data.journey.status==='revisi'){let next=data;for(const kind of next.stale.filter(canGenerate))next=await dataService.api.post(base+'/dokumen/'+kind,{expectedRevision:next.serverRevision});sync(next);}
    sync(await dataService.api.post(base+'/submit',{expectedRevision:data.serverRevision}));message='Pengajuan terkirim. PF akan memeriksa RAB dan dokumen Anda.';}
   catch(e){error = reportError(e instanceof Error?e.message:String(e));}finally{busy=false;}
  }

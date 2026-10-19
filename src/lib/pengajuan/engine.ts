@@ -60,6 +60,16 @@ function revisePfData(c:any,r:any,user:AppSession){
 }
 
 function refreshPksSettings(c:any,r:any,settings:any,user:AppSession){
+   if(r.journey?.datePolicy==='legacy'&&r.journey.history.length&&!r.payment.paidAt){
+    const source=settingsSource(journeySettings(r.journey,settings));
+    for(const kind of MERGE_KINDS){
+     const doc=r.documents.find((d:any)=>d.kind===kind),version=doc?.versions.filter((v:any)=>v.origin==='generated').at(-1);
+     if(version&&version.generation?.settingsSource!==source&&!(r.journey.status==='revisi'&&r.journey.revisionDocuments?.includes(kind))){
+      requestRevision(c,r,kind,['dokumen'],'Pengaturan PF berubah. Siapkan dokumen terbaru dan ajukan pemeriksaan ulang.',user);
+      doc.status='perlu_revisi';
+     }
+    }
+   }
    if(r.journey?.datePolicy==='chronology'&&r.journey.pksReview&&!r.payment.paidAt){
     const pdf=r.documents.find((d:any)=>d.kind==='pks')?.versions.find((v:any)=>v.id===r.journey.pksReview.versionId);
     if(pdf?.generation?.settingsSource!==settingsSource(journeySettings(r.journey,settings))){

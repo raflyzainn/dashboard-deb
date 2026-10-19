@@ -45,6 +45,24 @@ test('Admin biasa boleh memberi Legal tetapi bukan Admin',()=>{
  assert.ok(grantable({superAdmin:true} as any).includes('legal'));
 });
 
+test('legacy PF settings changes open only outdated letters and preserve bank-only access',async()=>{
+ const campus={id:'campus',name:'Kampus QA',programYear:'kedua',award:{amountSen:2000000000}};
+ const documents=['pks','permohonan','invois','kuitansi'].map(kind=>({kind,status:'menunggu_review',signedReceived:true,originalReceived:true,currentVersionId:kind,notes:[],reviews:[],versions:[{id:kind,origin:'generated',generation:{settingsSource:'nilai lama'}}]}));
+ const journey:any={status:'revisi',datePolicy:'legacy',revision:1,fields:{},files:{},history:[{}],revisionDocuments:[],revisionRequests:[{id:'bank',kind:'rekening',scopes:['administrasi'],status:'open',baseline:{}}],documentRevisions:{pks:1,permohonan:1,invois:1,kuitansi:1}};
+ const state:any={data:{campuses:[campus]},files:{},workflow:{campuses:{campus:{journey,documents,payment:{paidAt:''},versions:[],attachments:[]}},settings:[{programYear:'kedua',pfSignatoryName:'PF baru'}]}};
+ let sequence=0;
+ const engine=createEngine(async()=>({id:'qa',name:'QA',role:'campus',campusId:'campus'} as any),{transaction:async action=>action(state),origin:'http://localhost',amountSen:2000000000,id:()=>String(++sequence)});
+ await engine.get('/api/pencairan/campus');
+ assert.deepEqual(journey.revisionDocuments,['pks','permohonan','invois','kuitansi']);
+ assert.equal(journey.revisionRequests.length,5);
+ assert.ok(journey.revisionRequests.slice(1).every((request:any)=>request.scopes.join()==='dokumen'));
+ assert.ok(documents.every(doc=>doc.status==='perlu_revisi'&&!doc.signedReceived));
+ const revision=journey.revision;
+ await engine.get('/api/pencairan/campus');
+ assert.equal(journey.revision,revision);
+ assert.equal(journey.revisionRequests.length,5);
+});
+
 test('pindaian alur baru diunggah kampus dan menunggu pemeriksaan PF',async()=>{
  const campus={id:'campus',name:'Kampus QA',programYear:'kedua',award:{amountSen:2000000000}};
  const doc={kind:'permohonan',generated:true,status:'sesuai',currentVersionId:'final',signedReceived:false,originalReceived:false,notes:[],reviews:[],versions:[{id:'final',number:1,origin:'generated',journeyRevision:1}]};
