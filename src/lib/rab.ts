@@ -39,6 +39,8 @@ export interface RabOverview {
   versions: RabVersionInfo[];
   version: (RabVersionInfo & { lines: RabLine[] }) | null;
   checks: RabCheck[];
+  /** Signature block of an exported workbook: the first mentor and coordinator of the profile and the city of the letters. */
+  signing?: { place: string; mentor: string; coordinator: string };
 }
 
 function letters(index: number, upper: boolean) {

@@ -199,7 +199,7 @@
   if(!v||busy||dirty)return;busy=true;error='';
   try{
    const {downloadRabWorkbook,linesToRows}=await import('$lib/rab-excel');
-   await downloadRabWorkbook(`RAB_${share}_${campusId}_v${v.number}.xlsx`,{university:data!.campus.name,penuh:linesToRows(v.lines,'penuh'),tahap1:linesToRows(v.lines,'tahap1'),tahap2:linesToRows(v.lines,'tahap2')},share);showSaved('File RAB siap. Unduhan dimulai.');
+   await downloadRabWorkbook(`RAB_${share}_${campusId}_v${v.number}.xlsx`,{university:data!.campus.name,penuh:linesToRows(v.lines,'penuh'),tahap1:linesToRows(v.lines,'tahap1'),tahap2:linesToRows(v.lines,'tahap2'),signing:data!.signing},share);showSaved('File RAB siap. Unduhan dimulai.');
   }catch(e){error = reportError(e instanceof Error?e.message:String(e));}finally{busy=false;}
  }
 </script>

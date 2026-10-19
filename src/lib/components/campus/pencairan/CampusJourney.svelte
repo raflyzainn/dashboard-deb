@@ -17,6 +17,7 @@
  import ProgramLocation from '$lib/components/shared/profile/ProgramLocation.svelte';
  import { REVISION_SCOPES, canRevise, canEditField, canUploadFile, openRevisions, editableSections, revisionSection, type EditableSection } from '$lib/pengajuan/revisions';
  import { grantors } from '$lib/pengajuan/grantors';
+ import { parseContacts } from '$lib/contacts';
  import { minimumDate } from '$lib/pengajuan/dates';
  import { sections, sectionLabels, PKS_DATE, LETTER_MIN_DATE, PF_PKS_PREPARATION, type Section, validateJourney, requiresKuasaUpdate } from '$lib/pengajuan/journey';
  let {campusId,embedded=false,onloaded=()=>{}}:{campusId:string;embedded?:boolean;onloaded?:()=>void}=$props();
@@ -69,7 +70,7 @@
  const blue='min-h-11 rounded-lg bg-[#0066B2] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40';
  const input='min-h-11 w-full min-w-0 rounded-lg border border-slate-300 bg-white p-2 text-sm disabled:bg-slate-50 disabled:text-slate-500';
  const programFields=[['judulProgram','Nama kegiatan / program'],['alamat','Alamat kampus']];
- const adminFields=[['namaBank','Nama bank'],['nomorRekening','Nomor rekening'],['namaPemilik','Nama pemilik rekening'],['penandatanganNama','Nama penandatangan kampus'],['penandatanganJabatan','Jabatan penandatangan'],['tempatTandaTangan','Kota tempat surat dibuat']];
+ const adminFields=[['namaBank','Nama bank'],['nomorRekening','Nomor rekening'],['namaPemilik','Nama pemilik rekening'],['penandatanganNama','Nama penandatangan PKS'],['penandatanganJabatan','Jabatan penandatangan PKS'],['tempatTandaTangan','Kota tempat surat dibuat']];
  function setGrantor(index:number,key:'name'|'title',value:string){const values=grantors(fields);values[index]={...values[index],[key]:value};fields.pemberiKuasaList=JSON.stringify(values);}
  const letterFields=[['nomorSuratPermohonan','Nomor surat permohonan'],['tanggalSuratPermohonan','Tanggal surat permohonan'],['nomorInvois','Nomor invoice'],['tanggalInvois','Tanggal invoice'],['nomorKuitansi','Nomor kuitansi'],['tanggalKuitansi','Tanggal kuitansi']];
  function sync(next:any,submitted?:Record<string,string>){if(disposed)return;const current=$state.snapshot(fields);data=next;fields={...next.journey.fields};if(next.journey.datePolicy!=='chronology'&&!next.paid&&!['menunggu','selesai'].includes(next.journey.status))fields.tanggalPerjanjian=PKS_DATE;saved=JSON.stringify(fields);if(submitted)for(const key of Object.keys(current))if(current[key]!==submitted[key])fields[key]=current[key];onloaded();}
@@ -232,8 +233,9 @@
     {/if}
    {:else if section==='penandatangan'}
 <div class="grid gap-4 ">
-       <p class="text-sm text-slate-600">Gunakan satu perwakilan kampus yang berwenang, misalnya dosen atau pejabat kampus. Nama dan jabatan yang sama akan dipakai pada PKS dan dokumen pencairan.</p>
+       <p class="text-sm text-slate-600">PKS ditandatangani pejabat kampus yang berwenang, misalnya rektor, wakil rektor, atau mentor.</p>
        <div class="grid gap-4 sm:grid-cols-2">{#each adminFields.slice(3) as [key,label]}<label class="grid gap-1 text-sm font-semibold"><span class="field-caption">{label}</span><input class={input} required={key!=='kecamatan'} bind:value={fields[key]} disabled={fieldLocked(key)} inputmode={key==='nomorRekening'?'numeric':'text'} maxlength="2000"/></label>{/each}</div>
+       <div class="grid gap-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm"><span class="field-caption font-semibold">Penandatangan RAB, surat permohonan, invois, dan kuitansi</span><span class="font-semibold text-slate-900">{parseContacts(fields.mentor)[0]?.name||'Belum diisi'} (Mentor)</span><span class="text-slate-600">Diambil dari Data Program. Ubah di Data Program bila perlu.</span></div>
       </div>
    {:else if section==='surat'}
     <p class="mb-4 text-sm text-slate-600">Lengkapi identitas surat dan unggah kop yang akan dipakai pada dokumen pencairan.</p>

@@ -84,8 +84,6 @@ export function journeyDocx(kind:MergeKind|'surat_kuasa',c:any,r:any,settings:an
   }
   if(r.journey.datePolicy==='chronology'&&kind!=='pks'&&kind!=='surat_kuasa'&&/^Koordinator$/i.test(text.trim())){p.parentNode?.removeChild(p);continue;}
   if(r.journey.datePolicy==='chronology'&&kind!=='pks'&&kind!=='surat_kuasa'&&/^\{namaKoordinator\}$/.test(text.trim())){p.parentNode?.removeChild(p);continue;}
-  if(r.journey.datePolicy==='chronology'&&kind!=='pks'&&kind!=='surat_kuasa'&&/^Mentor(?: DEB)?$/i.test(text.trim()))next='{jabatanPenandatangan}';
-  if(r.journey.datePolicy==='chronology'&&kind!=='pks'&&kind!=='surat_kuasa')next=next.replace(/\{nama(?:Mentor|Koordinator)(Kapital|Kecil)?\}/g,(_m,suffix)=>'{namaPenandatangan'+(suffix||'')+'}').replace(/\{jabatan(?:Mentor|Koordinator)\}/g,'{jabatanPenandatangan}');
   if(r.journey.fields.jenisRekening==='kampus'&&/surat\s+kuasa/i.test(text)){
    if(kind==='pks'&&/^Surat\s+Kuasa\s*\(copy\);?$/i.test(text.trim())){p.parentNode?.removeChild(p);continue;}
    if(kind==='permohonan')next=next.replace(/Copy\s+Surat\s+Kuasa\s+dan\s+/i,'Copy ');
