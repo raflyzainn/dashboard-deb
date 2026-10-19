@@ -13,7 +13,9 @@ Implementasi ini lokal di branch fitur; QA browser terblokir dan belum ada publi
 
 ## Pelaporan kampus — 14 Oktober 2026
 
-Menu Pencairan Dana tidak tampil di dropdown akun kampus sesuai arahan terbaru; kampus membukanya lewat kartu Beranda. Pelaporan pada kartu/menu hanya tampil setelah pembayaran T1. Pada halaman review admin, berkas keluaran terbaru langsung dipratinjau: PDF/Word memakai FileViewer existing, video memakai pemutar, dan artikel teks ditampilkan langsung.
+Sesuai arahan 19 Oktober 2026, dropdown akun kampus menyediakan menu **Pencairan** setelah Beranda, menuju `/campus/pencairan`; kartu Beranda tetap tersedia. Pelaporan pada kartu/menu hanya tampil setelah pembayaran T1. Pada halaman review admin, berkas keluaran terbaru langsung dipratinjau: PDF/Word memakai FileViewer existing, video memakai pemutar, dan artikel teks ditampilkan langsung.
+
+QA menu 19 Oktober 2026 melalui Playwright pada port 5176, akun Universitas Gadjah Mada: desktop 1366 px dan mobile 390 px, klik/Enter membuka Pencairan, dropdown menutup, dan `aria-current="page"` tetap benar setelah reload. Menu muat tanpa overflow horizontal; tidak ada pageerror selama pemeriksaan. Screenshot lokal `.local/pencairan-menu-mobile-20261019.png`. Tes terminal/check/lint dan alur transaksi pencairan tidak dijalankan pada perubahan navigasi ini.
 
 Tampilan Pelaporan menampilkan Keluaran dan LPJ bersama dalam satu halaman form sesuai arahan terbaru pengguna. Tombol bagian hanya melompat ke bagian terkait, tanpa menyembunyikan form lainnya. Kartu, ringkasan dana, input/tombol, tabel dan penyelesaian memakai tampilan ringkas; tabel bukti dapat digeser pada mobile. QA perubahan visual dilakukan di 5177 sebagaimana laporan di bawah.
 
