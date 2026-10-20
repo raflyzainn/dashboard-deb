@@ -5,8 +5,8 @@ Keputusan 53. Branch `feat/dashboard-capaian-kampus`, dibuat dari `production` (
 ## Perubahan
 
 - Kampus: `src/routes/(app)/campus/laporan-eksisting/+page.svelte`, kartu di Beranda, menu akun, izin rute dan API kampus (`src/lib/campus-access.ts`, `src/lib/page-data.ts`).
-- Admin: tab Laporan Eksisting di `/admin/verifikasi` (`src/lib/components/shared/laporan-eksisting/LaporanReview.svelte`, `LaporanView.svelte`).
-- Server: `src/lib/server/deb/laporan-eksisting.ts`, API `/api/laporan-eksisting/[campus]` (GET, simpan, kirim), `/files` (unggah), `/files/[id]` (unduh), `/api/admin/laporan-eksisting` (daftar, periksa).
+- Admin: tab Laporan Eksisting di `/admin/verifikasi`, hanya melihat (`src/lib/components/shared/laporan-eksisting/LaporanAdmin.svelte`, `LaporanView.svelte`). Tidak ada pemeriksaan atau persetujuan PF.
+- Server: `src/lib/server/deb/laporan-eksisting.ts`, API `/api/laporan-eksisting/[campus]` (GET, simpan, kirim), `/files` (unggah), `/files/[id]` (unduh), `/api/admin/laporan-eksisting` (daftar semua kampus dan statusnya).
 - `src/lib/server/deb/report-file.ts`: validasi MP4 juga mengembalikan ukuran tampilan video (rotasi diperhitungkan). Pelaporan tidak berubah perilakunya.
 - `src/lib/laporan-eksisting.ts`: pilar, kategori foto, batas, status, kelengkapan.
 - Monitoring Bulanan: status bulan berwarna tegas dan catatan revisi PF.
@@ -24,10 +24,10 @@ Dev server lokal 5176 dan PocketBase lokal 8097. Video uji dari `tests/fixtures/
 | Video landscape tersimpan, peringatan resolusi di bawah 1080p tampil, ganti dan hapus video | Lulus |
 | Kirim ke PF terkunci sampai 4 deskripsi, 3 kategori foto, dan video lengkap; daftar kekurangan tampil | Lulus |
 | Konfirmasi saat meninggalkan halaman dengan isian belum disimpan | Lulus |
-| Terkirim: status Menunggu pemeriksaan, isian terkunci | Lulus |
-| Admin: hitungan status, foto dan video tampil, Minta revisi wajib catatan, Nyatakan Sesuai | Lulus |
-| Kampus melihat Perlu revisi dengan catatan PF, kirim ulang, lalu Sesuai | Lulus |
-| Notifikasi admin (menunggu pemeriksaan) dan kampus (perlu revisi, sesuai) | Lulus |
+| Terkirim: status Terkirim dengan waktu kirim; tombol kirim nonaktif sampai ada perubahan | Lulus |
+| Mengubah laporan terkirim menjadikannya draf dengan pemberitahuan, lalu Kirim pembaruan | Lulus |
+| Admin: hitungan Terkirim, Draf, Belum mengisi; foto dan video tampil; tanpa tombol persetujuan | Lulus |
+| Notifikasi admin saat kampus mengirim | Lulus |
 | Monitoring Bulanan tidak menampilkan berkas Laporan Eksisting; Pelaporan video tetap menerima MP4 seperti sebelumnya | Lulus |
 | `/campus/capaian` tidak lagi tersedia | Lulus |
 | Desktop 1366 px dan ponsel 390 px, kampus dan admin, tanpa geser halaman | Lulus |

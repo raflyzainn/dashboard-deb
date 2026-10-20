@@ -15,7 +15,8 @@ export const PHOTOS = [
 ] as const;
 export type PillarKey = (typeof PILLARS)[number]['key'];
 export type PhotoKey = (typeof PHOTOS)[number]['key'];
-export type LaporanStatus = 'draft' | 'pending' | 'approved' | 'revision';
+/** Draft until sent; editing a sent report makes it a draft again until it is sent once more. No PF review. */
+export type LaporanStatus = 'draft' | 'submitted';
 
 export const FILE_PERIOD = 'laporan-eksisting';
 export const TEXT_LIMIT = 2000;
@@ -29,19 +30,17 @@ export interface LaporanEksisting extends Record<PillarKey, string> {
   foto: Record<PhotoKey, string[]>;
   video: string;
   status: LaporanStatus;
-  note: string;
   revision: number;
   submittedAt: string;
-  reviewedAt: string;
-  reviewerName: string;
 }
 export interface LaporanFile { id: string; kind: string; originalName: string; mime: string; size: number }
 export interface LaporanWorkspace { campusId: string; campusName: string; laporan: LaporanEksisting; files: LaporanFile[] }
-export interface LaporanQueueItem { campusId: string; campusName: string; status: LaporanStatus; submittedAt: string; reviewedAt: string }
+/** Admin list row; 'kosong' when the campus has not started. */
+export interface LaporanQueueItem { campusId: string; campusName: string; status: LaporanStatus | 'kosong'; submittedAt: string }
 
 export const emptyLaporan = (): LaporanEksisting => ({
   energi: '', ekonomi: '', sosial: '', kelembagaan: '', foto: { aset: [], usaha: [], masyarakat: [] }, video: '',
-  status: 'draft', note: '', revision: 0, submittedAt: '', reviewedAt: '', reviewerName: ''
+  status: 'draft', revision: 0, submittedAt: ''
 });
 
 /** Reads whatever is stored (possibly nothing or an older shape) into a complete report. */
@@ -56,9 +55,8 @@ export function normalizeLaporan(value: unknown): LaporanEksisting {
     ...Object.fromEntries(PILLARS.map(p => [p.key, str(v[p.key])])),
     foto: Object.fromEntries(PHOTOS.map(p => [p.key, ids(v.foto?.[p.key])])) as Record<PhotoKey, string[]>,
     video: str(v.video),
-    status: ['draft', 'pending', 'approved', 'revision'].includes(v.status) ? v.status : 'draft',
-    note: str(v.note), revision: Number.isSafeInteger(v.revision) ? v.revision : 0,
-    submittedAt: str(v.submittedAt), reviewedAt: str(v.reviewedAt), reviewerName: str(v.reviewerName)
+    status: v.status === 'submitted' ? 'submitted' : 'draft',
+    revision: Number.isSafeInteger(v.revision) ? v.revision : 0, submittedAt: str(v.submittedAt)
   };
 }
 
@@ -71,6 +69,4 @@ export function laporanMissing(l: LaporanEksisting): string[] {
   ];
 }
 
-export const laporanStatusLabel = (s: LaporanStatus) => ({ draft: 'Draf', pending: 'Menunggu pemeriksaan', approved: 'Sesuai', revision: 'Perlu revisi' })[s];
-/** The campus can change the report while it is a draft or sent back for revision. */
-export const laporanEditable = (s: LaporanStatus) => s === 'draft' || s === 'revision';
+export const laporanStatusLabel = (s: LaporanStatus | 'kosong') => ({ draft: 'Draf', submitted: 'Terkirim', kosong: 'Belum mengisi' })[s];

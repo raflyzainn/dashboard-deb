@@ -1,6 +1,6 @@
 <script lang="ts">
   import MonitoringReview from '$lib/components/shared/monitoring/MonitoringReview.svelte';
-  import LaporanReview from '$lib/components/shared/laporan-eksisting/LaporanReview.svelte';
+  import LaporanAdmin from '$lib/components/shared/laporan-eksisting/LaporanAdmin.svelte';
   import { page } from '$app/state';
   import { app } from '$lib/state.svelte';
   import { dataService } from '$lib/data/service';
@@ -101,7 +101,7 @@
   <a class="whitespace-nowrap border-b-2 px-0 pb-[13px] pt-4 no-underline {page.url.searchParams.get('tab') === 'laporan-eksisting' ? 'border-[#1681df] font-bold text-[#075fc7]' : 'border-transparent text-[#64748b]'}" aria-current={page.url.searchParams.get('tab') === 'laporan-eksisting' ? 'page' : undefined} href="/admin/verifikasi?tab=laporan-eksisting">Laporan Eksisting</a>
   <a class="whitespace-nowrap border-b-2 px-0 pb-[13px] pt-4 no-underline {page.url.searchParams.get('tab') === 'indikator' ? 'border-[#1681df] font-bold text-[#075fc7]' : 'border-transparent text-[#64748b]'}" aria-current={page.url.searchParams.get('tab') === 'indikator' ? 'page' : undefined} href="/admin/verifikasi?tab=indikator">Riwayat indikator</a>
 </nav>
-{#if page.url.searchParams.get('tab') === 'laporan-eksisting'}<LaporanReview />{:else if page.url.searchParams.get('tab') !== 'indikator'}<MonitoringReview />{:else}
+{#if page.url.searchParams.get('tab') === 'laporan-eksisting'}<LaporanAdmin />{:else if page.url.searchParams.get('tab') !== 'indikator'}<MonitoringReview />{:else}
 <div
   class="flex items-center justify-between gap-y-[20px] gap-x-[20px] mb-[27px] [&_p]:text-[14px] [&_p]:text-[#637796] [&_p]:mt-[8px] max-[900.01px]:[&_h1]:text-[24px] max-[700.01px]:items-start max-[700.01px]:gap-y-[15px] max-[700.01px]:gap-x-[15px] max-[700.01px]:mb-[22px] max-[700.01px]:flex-wrap max-[700.01px]:[&_h1]:text-[23px] max-[700.01px]:[&_p]:text-[14px] max-[700.01px]:[&_p]:leading-[1.65] max-[700.01px]:[&_p]:max-w-[340px] max-[700.01px]:[&_.period]:hidden page-heading"
 >

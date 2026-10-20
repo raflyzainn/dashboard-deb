@@ -4,7 +4,7 @@
   import { dataService } from '$lib/data/service';
   import Icon from '$lib/components/ui/Icon.svelte';
   import PillarIcon from '$lib/components/shared/laporan-eksisting/PillarIcon.svelte';
-  import { PILLARS, PHOTOS, TEXT_LIMIT, PHOTO_LIMIT, PHOTO_MB, VIDEO_MB, VIDEO_KIND, photoKind, laporanMissing, laporanEditable, laporanStatusLabel, emptyLaporan, type LaporanWorkspace, type PhotoKey } from '$lib/laporan-eksisting';
+  import { PILLARS, PHOTOS, TEXT_LIMIT, PHOTO_LIMIT, PHOTO_MB, VIDEO_MB, VIDEO_KIND, photoKind, laporanMissing, laporanStatusLabel, emptyLaporan, type LaporanWorkspace, type PhotoKey } from '$lib/laporan-eksisting';
 
   const campusId = $derived(app.session?.campusId || '');
   let ws = $state<LaporanWorkspace | null>(null);
@@ -16,10 +16,12 @@
   const serialized = $derived(JSON.stringify({ ...Object.fromEntries(PILLARS.map(p => [p.key, draft[p.key]])), foto: draft.foto, video: draft.video }));
   const dirty = $derived(Boolean(ws && baseline && serialized !== baseline));
   const status = $derived(ws?.laporan.status || 'draft');
-  const editable = $derived(laporanEditable(status) && !app.readOnly);
+  const editable = $derived(!app.readOnly);
   const missing = $derived(laporanMissing(draft));
   const total = PILLARS.length + PHOTOS.length + 1;
-  const tone: Record<string, string> = { revision: 'bg-orange-100 text-orange-900 ring-1 ring-orange-400', approved: 'bg-green-50 text-green-800 ring-1 ring-green-300', pending: 'bg-blue-50 text-blue-800 ring-1 ring-blue-200', draft: 'bg-slate-100 text-slate-700 ring-1 ring-slate-300' };
+  const tone: Record<string, string> = { submitted: 'bg-green-50 text-green-800 ring-1 ring-green-300', draft: 'bg-slate-100 text-slate-700 ring-1 ring-slate-300' };
+  const sentAt = $derived(ws?.laporan.submittedAt ? new Date(ws.laporan.submittedAt).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' }) : '');
+  const unchangedSent = $derived(status === 'submitted' && !dirty);
   const fileUrl = (id: string) => `/api/laporan-eksisting/${campusId}/files/${id}`;
 
   function apply(next: LaporanWorkspace) {
@@ -50,9 +52,9 @@
   }
   async function submit() {
     if (!ws || !editable || missing.length) return;
-    if (!window.confirm('Kirim Laporan Eksisting ke PF? Isian terkunci sampai PF selesai memeriksa.')) return;
+    if (!window.confirm(ws.laporan.submittedAt ? 'Kirim pembaruan Laporan Eksisting ke PF?' : 'Kirim Laporan Eksisting ke PF?')) return;
     busy = true; error = ''; notice = '';
-    try { if (dirty) await post('save'); await post('submit'); videoError = ''; videoWarning = ''; notice = 'Laporan terkirim dan menunggu pemeriksaan PF.'; }
+    try { if (dirty) await post('save'); await post('submit'); videoError = ''; videoWarning = ''; notice = 'Laporan terkirim ke PF.'; }
     catch (e) { error = e instanceof Error ? e.message : 'Laporan belum terkirim.'; }
     finally { busy = false; }
   }
@@ -141,7 +143,7 @@
     </div>
     {#if ws}
       <div class="flex flex-wrap items-center gap-3">
-        <span class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold {tone[status]}">{#if status === 'revision'}<Icon name="alert" size={16} />{:else if status === 'approved'}<Icon name="check" size={16} />{/if}{laporanStatusLabel(status)}</span>
+        <span class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold {tone[status]}">{#if status === 'submitted'}<Icon name="check" size={16} />{/if}{laporanStatusLabel(status)}</span>
         {#if editable}<span class="text-[13px] text-slate-600">{total - missing.length} dari {total} bagian lengkap</span>{/if}
       </div>
     {/if}
@@ -152,12 +154,10 @@
   {:else if !ws}
     <div class="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-800" role="alert">{error}<button type="button" class="ml-3 font-semibold underline" onclick={() => load(campusId)}>Coba lagi</button></div>
   {:else}
-    {#if status === 'revision'}
-      <div class="flex items-start gap-2 rounded-xl border border-orange-300 bg-orange-50 p-4 text-sm text-orange-950" role="status"><Icon name="alert" size={18} /><div><strong>Laporan perlu revisi.</strong>{#if ws.laporan.note}{' '}Catatan PF: {ws.laporan.note}{/if}<p class="mt-1">Perbaiki isian, lalu kirim ulang ke PF.</p></div></div>
-    {:else if status === 'pending'}
-      <p class="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900" role="status">Laporan sudah dikirim dan sedang diperiksa PF. Isian terkunci sampai pemeriksaan selesai.</p>
-    {:else if status === 'approved'}
-      <p class="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-900" role="status">Laporan dinyatakan Sesuai oleh PF.{#if ws.laporan.note}{' '}Catatan PF: {ws.laporan.note}{/if}</p>
+    {#if status === 'submitted'}
+      <p class="flex items-start gap-2 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-900" role="status"><Icon name="check" size={18} /><span>Laporan terkirim ke PF pada {sentAt}. Isian masih bisa diperbarui lalu dikirim ulang.</span></p>
+    {:else if sentAt}
+      <p class="flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900" role="status"><Icon name="alert" size={18} /><span>Ada perubahan yang belum dikirim. Terakhir dikirim {sentAt}. Kirim pembaruan agar PF melihat isian terbaru.</span></p>
     {/if}
     {#if error}<p class="rounded-xl bg-red-50 p-3 text-sm text-red-800" role="alert">{error}</p>{/if}
     {#if notice}<p class="rounded-xl bg-green-50 p-3 text-sm text-green-800" role="status">{notice}</p>{/if}
@@ -245,9 +245,9 @@
 
     {#if editable}
       <div class="flex flex-wrap items-center justify-end gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4">
-        <span class="mr-auto text-[13px] {missing.length ? 'text-orange-800' : 'text-green-800'}">{missing.length ? `Lengkapi ${missing.join(', ')} sebelum mengirim.` : 'Semua bagian lengkap. Laporan siap dikirim.'}</span>
+        <span class="mr-auto text-[13px] {missing.length ? 'text-orange-800' : 'text-green-800'}">{missing.length ? `Lengkapi ${missing.join(', ')} sebelum mengirim.` : unchangedSent ? 'Laporan sudah terkirim. Ubah isian bila ada pembaruan.' : 'Semua bagian lengkap. Laporan siap dikirim.'}</span>
         <button type="button" class="min-h-11 cursor-pointer rounded-lg border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-800 hover:border-[#0066B2] disabled:cursor-not-allowed disabled:opacity-60" disabled={busy || !!uploading || !dirty} onclick={save}>Simpan draf</button>
-        <button type="button" class="min-h-11 cursor-pointer rounded-lg bg-[#0066B2] px-5 text-sm font-semibold text-white hover:bg-[#015a9a] disabled:cursor-not-allowed disabled:bg-slate-400" disabled={busy || !!uploading || missing.length > 0} onclick={submit}>{status === 'revision' ? 'Kirim ulang ke PF' : 'Kirim ke PF'}</button>
+        <button type="button" class="min-h-11 cursor-pointer rounded-lg bg-[#0066B2] px-5 text-sm font-semibold text-white hover:bg-[#015a9a] disabled:cursor-not-allowed disabled:bg-slate-400" disabled={busy || !!uploading || missing.length > 0 || unchangedSent} onclick={submit}>{sentAt ? 'Kirim pembaruan' : 'Kirim ke PF'}</button>
       </div>
     {/if}
   {/if}
