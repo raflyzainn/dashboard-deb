@@ -352,10 +352,10 @@
         <div><p class="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">Dokumen final · v{current.final.number}</p><FileViewer src={`${base}/documents/${current.kind}/versions/${current.final.id}`} mime={current.final.mime} name={current.final.originalName} height={520} /></div>
         <div><p class="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">Pindaian bertanda tangan · v{current.signed.number}</p><FileViewer src={`${base}/documents/${current.kind}/versions/${current.signed.id}`} mime={current.signed.mime} name={current.signed.originalName} height={520} /></div>
       </div>
-      <div class="flex flex-wrap items-center gap-3 border-t border-slate-100 px-5 py-3 text-sm">
+      <div class="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 px-5 py-3 text-sm">
         {#if current.doc.signedReceived}
-          <span class={chipOk}><Icon name="check" size={14} />Sesuai dengan dokumen final</span>
           <span class="text-xs text-slate-500">{current.doc.signedReceivedByName}, {when(current.doc.signedReceivedAt, true)}</span>
+          <span class={chipOk}><Icon name="check" size={14} />Sesuai dengan dokumen final</span>
           <Button size="sm" variant="ghost" loading={busy === `signedReceived:${current.kind}`} disabled={Boolean(busy) || Boolean(data.disbursement.paidAt)} onclick={() => setFlag(current!, 'signedReceived', false)}>Batalkan</Button>
         {:else}
           <Button size="sm" icon="check" loading={busy === `signedReceived:${current.kind}`} disabled={Boolean(busy) || Boolean(data.disbursement.paidAt)} onclick={() => setFlag(current!, 'signedReceived', true)}>Sesuai dengan dokumen final</Button>

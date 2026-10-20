@@ -6,10 +6,10 @@
 </script>
 
 <svelte:head><title>Pencairan · Desa Energi Berdikari</title></svelte:head>
-<div class="mb-4">
+{#key page.params.id}<Layar campusId={page.params.id!} />{/key}
+<div class="mt-4 flex justify-end">
   <Button icon="file" href={`/admin/pencairan/${page.params.id}/pelaporan`}>
     Buka Pelaporan dan LPJ
     <Icon name="arrow" size={16} />
   </Button>
 </div>
-{#key page.params.id}<Layar campusId={page.params.id!} />{/key}
