@@ -68,6 +68,17 @@
     <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Lengkapi profil program dan pantau pencairan dana kampus Anda di sini.</p>
   </section>
 
+  <section aria-labelledby="eksisting-title" class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+    <div class="flex min-w-0 items-start gap-3">
+      <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-blue-50 text-[#0066B2]"><Icon name="file" size={19} /></span>
+      <div class="min-w-0">
+        <h2 id="eksisting-title" class="text-base font-bold text-slate-900">Laporan Eksisting</h2>
+        <p class="mt-1 text-sm leading-6 text-slate-600">Isi sekali sebelum coaching: deskripsi 4 pilar serta foto dan video kondisi DEB saat ini.</p>
+      </div>
+    </div>
+    <a href="/campus/laporan-eksisting" class="inline-flex min-h-[38px] items-center gap-2 rounded-lg bg-[#0066B2] px-4 py-2 text-sm font-semibold text-white hover:bg-[#015a9a]">Buka Laporan Eksisting <Icon name="arrow" size={16} /></a>
+  </section>
+
   <div class="grid items-stretch gap-3 [&>*]:min-w-0 {reportingPaid(data?.disbursement) ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}">
   <section aria-labelledby="profil-title" class="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
     <div class="flex items-start gap-3">
