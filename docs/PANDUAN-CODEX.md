@@ -13,6 +13,8 @@ Implementasi ini lokal di branch fitur; QA browser terblokir dan belum ada publi
 
 ## Pelaporan kampus — 14 Oktober 2026
 
+Tautan **Buka Pelaporan dan LPJ** pada detail pencairan admin memakai `Button` primary existing: gradasi biru, ikon dokumen di kiri, dan panah di kanan. Tujuan tautan tetap halaman pelaporan kampus terkait. Perubahan visual 19 Oktober 2026 diperiksa melalui diff; QA browser belum dilakukan karena sesi Playwright sedang dipakai dan browser alternatif tidak tersedia. Tes terminal/check/lint tidak dijalankan; hasil build wajib sebelum publikasi dicatat pada PR/MR.
+
 Sesuai arahan 19 Oktober 2026, dropdown akun kampus menyediakan menu **Pencairan** setelah Beranda, menuju `/campus/pencairan`; kartu Beranda tetap tersedia. Pelaporan pada kartu/menu hanya tampil setelah pembayaran T1. Pada halaman review admin, berkas keluaran terbaru langsung dipratinjau: PDF/Word memakai FileViewer existing, video memakai pemutar, dan artikel teks ditampilkan langsung.
 
 QA menu 19 Oktober 2026 melalui Playwright pada port 5176, akun Universitas Gadjah Mada: desktop 1366 px dan mobile 390 px, klik/Enter membuka Pencairan, dropdown menutup, dan `aria-current="page"` tetap benar setelah reload. Menu muat tanpa overflow horizontal; tidak ada pageerror selama pemeriksaan. Screenshot lokal `.local/pencairan-menu-mobile-20261019.png`. Tes terminal/check/lint dan alur transaksi pencairan tidak dijalankan pada perubahan navigasi ini.

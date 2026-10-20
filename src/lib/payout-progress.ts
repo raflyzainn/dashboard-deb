@@ -1,5 +1,13 @@
 import { STAGES, type Assessment } from './pencairan';
 import type { Journey } from './pengajuan/journey';
+import { pksApproved } from './pengajuan/pks-review';
+
+/** PF finished every item but the PKS still needs Legal: 'kirim' = PF has not sent it yet, 'legal' = Legal is reviewing. */
+export function legalWait(journey: any, documents: { status?: string }[]): 'kirim' | 'legal' | null {
+  if (journey?.datePolicy !== 'chronology' || journey.status !== 'menunggu' || pksApproved(journey)) return null;
+  if (journey.pksReview?.state === 'legal') return 'legal';
+  return documents.length && documents.every(d => d.status === 'sesuai' || d.status === 'tidak_perlu') ? 'kirim' : null;
+}
 
 export interface CampusPayoutProgress {
   stage: string;
@@ -20,14 +28,15 @@ export function payoutTimeline(input: {
 }) {
   const j = input.journey;
   const legal=j?.datePolicy==='chronology';
-  const stages = j ? ['Isi pengajuan', 'Siapkan dokumen', 'Kirim pengajuan', 'Pemeriksaan PF', ...(legal?['Pemeriksaan Legal']:[]), 'Tanda tangan', 'Pembayaran', 'Dana dibayar']
+  // Legal reviews the PKS within Pemeriksaan PF; the campus timeline has no separate Legal stage.
+  const stages = j ? ['Isi pengajuan', 'Siapkan dokumen', 'Kirim pengajuan', 'Pemeriksaan PF', 'Tanda tangan', 'Pembayaran', 'Dana dibayar']
     : input.paidAt ? [...STAGES, 'Dana dibayar'] : [...STAGES];
   let stage = Math.max(1, Math.min(STAGES.length, input.stage || 1));
   if (input.paidAt) stage = stages.length;
   else if (j) {
     const docs = input.documents.filter(d => d.generated);
-    if (j.status === 'selesai') stage = docs.length && docs.every(d => d.signedReceived) ? (legal?7:6) : (legal?6:5);
-    else if (j.status === 'menunggu') stage = legal&&j.pksReview?.state==='legal'?5:4;
+    if (j.status === 'selesai') stage = docs.length && docs.every(d => d.signedReceived) ? 6 : 5;
+    else if (j.status === 'menunggu') stage = 4;
     else if (j.status === 'revisi') stage = 1;
     else {
       const generated = docs.filter(d => d.versions.some(v => v.id === d.currentVersionId && v.origin === 'generated' && (!legal || d.kind !== 'pks' || j.pksReview?.complete && j.pksReview.versionId === v.id)

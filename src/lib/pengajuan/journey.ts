@@ -7,22 +7,23 @@ import { buildMergeData, missingFor, templateTags, MERGE_KINDS, MERGE_LABEL, typ
 import { LOCATION_FIELDS, programLocationErrors } from './location';
 import { canRevise, openRevisions, revisionPending, type RevisionRequest, type EditRequest } from './revisions';
 
-export const sections = ['sk', 'program', 'rab', 'administrasi', 'penandatangan', 'surat', 'pks', 'ringkasan'] as const;
+export const sections = ['sk', 'program', 'rab', 'penandatangan', 'surat', 'pks', 'administrasi', 'ringkasan'] as const;
 export type Section = typeof sections[number];
-export const sectionLabels = ['SK', 'Data Program', 'Pengajuan RAB', 'Rekening Penerima', 'Penandatangan Kampus', 'Identitas Surat dan Kop', 'PKS', 'Dokumen'];
+export const sectionLabels = ['SK', 'Data Program', 'Pengajuan RAB', 'Penandatangan Kampus', 'Identitas Surat dan Kop', 'PKS', 'Rekening Penerima', 'Dokumen'];
 
 /** Keep stored administrasi/ringkasan links compatible with the split pages. */
 export function sectionForField(key:string):Section {
  if(['namaBank','nomorRekening','namaPemilik','rekening'].includes(key))return 'administrasi';
  if(['penandatanganNama','penandatanganJabatan','tempatTandaTangan'].includes(key))return 'penandatangan';
  if(['nomorPksKampus','nomorPksPf','tanggalPerjanjian'].includes(key))return 'pks';
+ if(['pemberiKuasa','pemberiKuasaList','penerimaKuasa','tanggalKuasa','kuasa'].includes(key))return 'administrasi';
  return 'surat';
 }
 export const PKS_DATE = '2026-06-17';
 export const PF_PKS_PENDING = 'masih menunggu surat dari PF';
 export const LETTER_MIN_DATE = '2026-06-18';
 export const documentGuides: Record<string, string[]> = {
- pks:['Siapkan dua rangkap PKS dengan isi yang sama.','Gunakan satu perwakilan kampus yang berwenang; nama dan jabatan harus konsisten.','Lengkapi tanda tangan para pihak dan meterai pada tempat yang ditentukan template.','Periksa tanggal PKS yang ditetapkan PF dan lampiran sesuai jenis rekening.'],
+ pks:['Siapkan dua rangkap PKS dengan isi yang sama.','PKS ditandatangani pejabat kampus yang berwenang; nama dan jabatan harus sama dengan isian Penandatangan Kampus.','Lengkapi tanda tangan para pihak dan meterai pada tempat yang ditentukan template.','Periksa tanggal PKS yang ditetapkan PF dan lampiran sesuai jenis rekening.'],
  permohonan:['Periksa kop, nomor surat, identitas kampus, dan nominal Termin 1.','Tanggal permohonan harus setelah PKS.','Lengkapi tanda tangan serta lampiran RAB, invoice, kuitansi, rekening, dan PKS.'],
  invois:['Periksa nomor invoice, nominal Termin 1, serta nama bank, rekening, dan pemilik.','Tanggal invoice pada atau setelah permohonan.','Lengkapi tanda tangan dan meterai pada tempat yang ditentukan template.'],
  kuitansi:['Periksa nomor kuitansi, nominal dan terbilang yang mengikuti Termin 1.','Tanggal kuitansi harus setelah invoice.','Lengkapi tanda tangan dan meterai pada tempat yang ditentukan template.'],
@@ -110,19 +111,19 @@ export function validateJourney(c:any,r:any,settings:any,tags:Record<MergeKind,s
  for(const [key,label] of [['rekening','Foto Buku Rekening'],['kop','Kop surat']])if(!j.files[key])blockers.push({section:sectionForField(key),text:label+' belum diunggah.'});
  if(j.files.rekening?.stale)blockers.push({section:'administrasi',text:'Data rekening berubah. Unggah kembali Foto Buku Rekening yang sesuai; berkas sebelumnya tetap dapat dilihat.'});
  if(f.jenisRekening==='kuasa'){
-  if(j.datePolicy==='chronology'){if(!validGrantors(f))warn('surat','pemberiKuasaList','Isi nama dan jabatan semua pemberi kuasa.');}else require('surat','pemberiKuasa','Pemberi kuasa');require('surat','penerimaKuasa','Penerima kuasa');
-  if(!j.files.kuasa)blockers.push({section:'surat',text:'Surat kuasa wajib diunggah untuk rekening pihak yang diberi kuasa.'});
-  else if(!['menunggu','selesai'].includes(j.status)&&j.files.kuasa.source!==kuasaSource(f))blockers.push({section:'surat',text:'Data surat kuasa berubah. Unduh template terbaru dan unggah ulang hasil tanda tangan.'});
-  if(f.penerimaKuasa.trim()&&f.namaPemilik.trim()&&f.penerimaKuasa.trim().toLowerCase()!==f.namaPemilik.trim().toLowerCase())blockers.push({section:'surat',text:'Penerima kuasa harus sama dengan pemilik rekening.'});
-  if(j.datePolicy!=='chronology'&&f.pemberiKuasa.trim()&&f.penandatanganNama.trim()&&f.pemberiKuasa.trim().toLowerCase()!==f.penandatanganNama.trim().toLowerCase())blockers.push({section:'surat',text:'Pemberi kuasa harus sama dengan penandatangan kampus.'});
+  if(j.datePolicy==='chronology'){if(!validGrantors(f))warn('administrasi','pemberiKuasaList','Isi nama dan jabatan semua pemberi kuasa.');}else require('administrasi','pemberiKuasa','Pemberi kuasa');require('administrasi','penerimaKuasa','Penerima kuasa');
+  if(!j.files.kuasa)blockers.push({section:'administrasi',text:'Surat kuasa wajib diunggah untuk Rekening Bersama.'});
+  else if(!['menunggu','selesai'].includes(j.status)&&j.files.kuasa.source!==kuasaSource(f))blockers.push({section:'administrasi',text:'Data surat kuasa berubah. Unduh template terbaru dan unggah ulang hasil tanda tangan.'});
+  if(f.penerimaKuasa.trim()&&f.namaPemilik.trim()&&f.penerimaKuasa.trim().toLowerCase()!==f.namaPemilik.trim().toLowerCase())blockers.push({section:'administrasi',text:'Penerima kuasa harus sama dengan pemilik rekening.'});
+  if(j.datePolicy!=='chronology'&&f.pemberiKuasa.trim()&&f.penandatanganNama.trim()&&f.pemberiKuasa.trim().toLowerCase()!==f.penandatanganNama.trim().toLowerCase())blockers.push({section:'administrasi',text:'Pemberi kuasa harus sama dengan penandatangan kampus.'});
  }
  if(j.datePolicy==='chronology'){
-  for(const error of chronologyErrors(f,(c.award?.skDate||'').slice(0,10),journeySettings(j,settings)))warn(error.key==='skDate'?'sk':['tanggalPerjanjian','agreementStart','agreementEnd'].includes(error.key)?'pks':'surat',error.key,error.text);
+  for(const error of chronologyErrors(f,(c.award?.skDate||'').slice(0,10),journeySettings(j,settings)))warn(error.key==='skDate'?'sk':['tanggalPerjanjian','agreementStart','agreementEnd'].includes(error.key)?'pks':sectionForField(error.key),error.key,error.text);
  }else if(!['menunggu','selesai'].includes(j.status)){
   if(f.tanggalPerjanjian!==PKS_DATE)warn('pks','tanggalPerjanjian','Tanggal PKS ditetapkan 17 Juni 2026. Simpan draf untuk menggunakan tanggal ini.');
   for(const [key,label] of [['tanggalSuratPermohonan','Surat permohonan'],['tanggalInvois','Invoice'],['tanggalKuitansi','Kuitansi'],...(f.jenisRekening==='kuasa'?[['tanggalKuasa','Surat kuasa']]:[])]){
-   if(!validDate(f[key]||''))warn('surat',key,label+': isi tanggal yang valid.');
-   else if(f[key]<=PKS_DATE)warn('surat',key,label+': tanggal harus setelah 17 Juni 2026.');
+   if(!validDate(f[key]||''))warn(sectionForField(key),key,label+': isi tanggal yang valid.');
+   else if(f[key]<=PKS_DATE)warn(sectionForField(key),key,label+': tanggal harus setelah 17 Juni 2026.');
   }
  }
  for(const [key,label] of [['nomorSuratPermohonan','Nomor permohonan'],['nomorInvois','Nomor invoice'],['nomorKuitansi','Nomor kuitansi'],['nomorPksKampus','Nomor PKS kampus']])require(sectionForField(key),key,label);
@@ -166,5 +167,5 @@ export function changedLetters(c:any,r:any,settings:any,templates:Record<MergeKi
  const current=r.journey.fields;
  const prior=buildMergeData(mergeInput(c,{...r,journey:{...r.journey,fields:before}},settings));
  const next=buildMergeData(mergeInput(c,r,settings));
- return MERGE_KINDS.filter(kind=>r.journey.datePolicy==='chronology'&&['penandatanganNama','penandatanganJabatan'].some(key=>before[key]!==current[key])||templateTags(templates[kind]).some(key=>prior[key as keyof typeof prior]!==next[key as keyof typeof next])||before.jenisRekening!==current.jenisRekening&&['pks','permohonan'].includes(kind));
+ return MERGE_KINDS.filter(kind=>templateTags(templates[kind]).some(key=>prior[key as keyof typeof prior]!==next[key as keyof typeof next])||before.jenisRekening!==current.jenisRekening&&['pks','permohonan'].includes(kind));
 }

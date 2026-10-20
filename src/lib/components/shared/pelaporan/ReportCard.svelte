@@ -3,10 +3,12 @@
   import { dataService } from '$lib/data/service';
   import { reportLabels, reportStatusLabels, type ReportKind, type ReportVersion } from '$lib/pelaporan';
   import Button from '$lib/components/ui/Button.svelte';
+  import Modal from '$lib/components/ui/Modal.svelte';
   import FileViewer from '$lib/components/admin/pencairan/FileViewer.svelte';
   let { campusId, kind, latest, history, mode, onChanged }: { campusId: string; kind: ReportKind; latest?: ReportVersion; history: ReportVersion[]; mode: 'admin' | 'campus'; onChanged: () => Promise<void> } = $props();
   let format = $state('text'), title = $state(''), body = $state(''), note = $state(''), file = $state<File | null>(null);
   let busy = $state(false), error = $state(''), notice = $state(''), operationId = $state('');
+  let showInfographicGuide = $state(false);
   let previous = '';
   $effect(() => {
     const id = latest?.id || '';
@@ -37,7 +39,7 @@
 </script>
 
 <section class="min-w-0 rounded-xl border border-slate-200/80 bg-white p-4" aria-label={reportLabels[kind]}>
-  <div class="flex flex-wrap items-center justify-between gap-2"><h2 class="text-sm font-bold text-slate-900">{reportLabels[kind]}</h2><span class="rounded-md px-2 py-0.5 text-xs font-semibold {latest?.status === 'sesuai' ? 'bg-green-50 text-green-800' : latest?.status === 'perlu_revisi' ? 'bg-amber-50 text-amber-800' : 'bg-blue-50 text-blue-700'}">{latest ? reportStatusLabels[latest.status] : 'Belum diisi'}</span></div>
+  <div class="flex flex-wrap items-center justify-between gap-2"><div class="flex items-center gap-1"><h2 class="text-sm font-bold text-slate-900">{reportLabels[kind]}</h2>{#if kind === 'infografis'}<button type="button" class="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-[#0066B2] hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" aria-label="Lihat ketentuan infografis" aria-haspopup="dialog" title="Ketentuan infografis" onclick={() => showInfographicGuide = true}><span class="flex size-5 items-center justify-center rounded-full border border-current text-xs font-bold" aria-hidden="true">?</span></button>{/if}</div><span class="rounded-md px-2 py-0.5 text-xs font-semibold {latest?.status === 'sesuai' ? 'bg-green-50 text-green-800' : latest?.status === 'perlu_revisi' ? 'bg-amber-50 text-amber-800' : 'bg-blue-50 text-blue-700'}">{latest ? reportStatusLabels[latest.status] : 'Belum diisi'}</span></div>
   <p class="mt-1 text-xs leading-5 text-slate-500">{kind === 'video' ? 'MP4 maksimal 40 MB, durasi paling lama 2 menit.' : kind === 'infografis' ? 'Unggah infografis PDF, maksimal 20 MB.' : kind === 'artikel' ? 'Tulis di web atau unggah Word/PDF, maksimal 20 MB.' : 'Unggah laporan PDF atau Word DOCX, maksimal 20 MB.'}</p>
   {#if latest}
     <div class="mt-3 border-t border-slate-100 pt-2 text-xs">
@@ -80,3 +82,18 @@
   {/if}
   {#if history.length > 1}<details class="mt-3 border-t border-slate-100 pt-2 text-xs"><summary>Riwayat versi ({history.length - 1})</summary><ul class="mt-2 grid gap-2">{#each history.filter(v => v.id !== latest?.id) as version}<li class="min-w-0"><strong>Versi {version.version} · {reportStatusLabels[version.status]}</strong>{#if version.format === 'file'}<Button size="sm" variant="secondary" icon="file" target="_blank" href={`/api/pencairan/${campusId}/pelaporan/${version.id}`}>Buka versi {version.version}</Button>{:else}<details><summary>{version.title}</summary><p class="whitespace-pre-wrap break-words">{version.body}</p></details>{/if}{#if version.note}<p class="whitespace-pre-wrap">{version.note}</p>{/if}</li>{/each}</ul></details>{/if}
 </section>
+
+{#if showInfographicGuide}
+  <Modal title="Ketentuan Infografis" onclose={() => showInfographicGuide = false}>
+    <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900"><strong>Contoh ketentuan (dummy)</strong><p>Isi berikut hanya untuk pratinjau tampilan, belum menjadi ketentuan resmi PF.</p></div>
+    <h3 class="mt-5 text-sm font-bold text-slate-900">Contoh isi infografis</h3>
+    <ul class="mt-2 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-700">
+      <li>Cantumkan nama program, nama kampus, lokasi, dan periode pelaksanaan.</li>
+      <li>Tampilkan ringkasan kegiatan, capaian utama, dan jumlah penerima manfaat.</li>
+      <li>Sertakan foto kegiatan serta sumber data untuk angka yang ditampilkan.</li>
+      <li>Gunakan teks yang mudah dibaca, warna yang konsisten, dan tata letak yang ringkas.</li>
+    </ul>
+    <div class="mt-5 rounded-lg bg-slate-50 p-3 text-sm leading-6 text-slate-700"><strong>Format unggahan saat ini</strong><p>PDF, maksimal 20 MB. Ketentuan contoh di atas tidak menambah pembatasan unggahan.</p></div>
+    <div class="mt-5 flex justify-end"><Button variant="secondary" onclick={() => showInfographicGuide = false}>Tutup</Button></div>
+  </Modal>
+{/if}

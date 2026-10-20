@@ -8,6 +8,7 @@
   import Button from '$lib/components/ui/Button.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
   import FileViewer from './FileViewer.svelte';
+  import { legalWait } from '$lib/payout-progress';
 
   /**
    * Closing row "Tanda tangan": one table for the four letters the system issues. Per row: the final document (preview, save with its
@@ -58,6 +59,9 @@
   const chipBtn = `${chip} cursor-pointer border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white`;
   const chipMain = `${chip} cursor-pointer border-[#0066B2] bg-[#0066B2] text-white hover:bg-[#015a9a] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-[#0066B2]`;
   const chipOk = `${chip} border-transparent bg-green-50 text-green-800`;
+  /** Bandingkan after the scan is marked Sesuai: still a button, green to show the result. */
+  const chipOkBtn = `${chip} cursor-pointer border-green-300 bg-green-50 text-green-800 shadow-sm hover:border-green-500 hover:bg-green-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#55a9f2]`;
+  const scanWait = $derived(!(data as any).journey || (data as any).journey.status === 'selesai' ? 'Menunggu pindaian dari kampus.' : legalWait((data as any).journey, data.documents) ? 'Dibuka setelah Legal menyetujui PKS.' : 'Dibuka setelah semua butir disetujui.');
   const chipInfo = `${chip} border-transparent bg-blue-50 text-[#015a9a]`;
   const lineClass: Record<Line['level'], string> = { ok: 'bg-green-50 text-green-800', warn: 'bg-amber-50 text-amber-900', info: 'bg-blue-50 text-[#015a9a]' };
   const lineMark: Record<Line['level'], string> = { ok: '✓', warn: '!', info: 'i' };
@@ -235,7 +239,7 @@
   <div class="flex flex-wrap items-center gap-1.5">
     {#if row.signed}
       <a class={chipBtn} href={`${base}/documents/${row.kind}/versions/${row.signed.id}`} target="_blank" rel="noopener noreferrer" title={row.signed.originalName}>v{row.signed.number} · {when(row.signed.created)}</a>
-      <button type="button" class={row.doc.signedReceived ? chipOk : chipBtn} onclick={() => open('compare', row.kind)}>{#if row.doc.signedReceived}✓ {/if}Bandingkan</button>
+      <button type="button" class={row.doc.signedReceived ? chipOkBtn : chipBtn} title={`Bandingkan pindaian ${row.label} dengan dokumen final`} onclick={() => open('compare', row.kind)}><Icon name={row.doc.signedReceived ? 'check' : 'eye'} size={14} />Bandingkan</button>
     {/if}
     {#if row.signed && !row.doc.signedReceived}<button type="button" class={chipMain} aria-label={`Tandai pindaian ${row.label} sesuai`} disabled={Boolean(busy) || Boolean(data.disbursement.paidAt)} onclick={() => setFlag(row, 'signedReceived', true)}>Sesuai</button>{/if}
     {#if (data as any).journey?.datePolicy!=='chronology'}
@@ -243,7 +247,7 @@
       <Icon name="upload" size={14} />{busy === `scan:${row.kind}` ? 'Mengunggah…' : row.signed ? 'Unggah ulang' : 'Unggah pindaian'}
       <input type="file" class="sr-only" accept=".pdf,.png,.jpg,.jpeg,.webp" disabled={!row.final || Boolean(busy) || Boolean(data.disbursement.paidAt)} onchange={(e) => pickScan(row, e)} />
     </label>
-    {:else if !row.signed}<span class="text-xs text-slate-500">Menunggu pindaian dari kampus.</span>{/if}
+    {:else if !row.signed}<span class="text-xs text-slate-500">{scanWait}</span>{/if}
   </div>
   {#if row.signed}<p class="mt-2 text-xs {row.doc.signedReceived?'text-green-700':'text-amber-800'}">{row.doc.signedReceived?'Pindaian sesuai dengan dokumen final':'Menunggu pemeriksaan PF'}</p>{/if}
 {/snippet}
@@ -303,7 +307,7 @@
     <span class={checkedScans === 4 ? chipOk : chipInfo}>{checkedScans} dari 4 pindaian sesuai</span>
     <span class={received === 4 ? chipOk : chipInfo}>{received} dari 4 asli diterima</span>
     <p class="w-full text-xs text-slate-600">Penerimaan dokumen asli bersifat opsional dan tidak menghambat pembayaran. Pindaian bertanda tangan tetap harus diperiksa PF.</p>
-    {#if checkedScans<4}<p class="w-full text-xs text-slate-600">Klik Bandingkan pada setiap pindaian, lalu centang Sesuai dengan dokumen final setelah diperiksa. Penerimaan asli dicatat terpisah.</p>{/if}
+    {#if checkedScans<4}<p class="w-full text-xs text-slate-600">Klik Bandingkan pada setiap pindaian, lalu tekan Sesuai dengan dokumen final setelah diperiksa. Penerimaan asli dicatat terpisah.</p>{/if}
     {#if missingLine}<span class="text-xs font-medium text-amber-900">{missingLine}</span>{/if}
     {#if error}<span class="text-xs font-medium text-red-700" role="alert">{error}</span>{/if}
     <span class="ml-auto flex items-center gap-2">
@@ -348,11 +352,14 @@
         <div><p class="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">Dokumen final · v{current.final.number}</p><FileViewer src={`${base}/documents/${current.kind}/versions/${current.final.id}`} mime={current.final.mime} name={current.final.originalName} height={520} /></div>
         <div><p class="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">Pindaian bertanda tangan · v{current.signed.number}</p><FileViewer src={`${base}/documents/${current.kind}/versions/${current.signed.id}`} mime={current.signed.mime} name={current.signed.originalName} height={520} /></div>
       </div>
-      <div class="flex flex-wrap items-center gap-3 border-t border-slate-100 px-5 py-3 text-sm">
-        <label class="inline-flex cursor-pointer items-center gap-2 font-semibold text-slate-800">
-          <input type="checkbox" class="size-4 accent-[#0066B2]" checked={current.doc.signedReceived} disabled={Boolean(busy)} onchange={(e) => setFlag(current!, 'signedReceived', (e.currentTarget as HTMLInputElement).checked)} />Sesuai dengan dokumen final
-        </label>
-        {#if current.doc.signedReceived}<span class="text-xs text-slate-500">{current.doc.signedReceivedByName}, {when(current.doc.signedReceivedAt, true)}</span>{/if}
+      <div class="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 px-5 py-3 text-sm">
+        {#if current.doc.signedReceived}
+          <span class="text-xs text-slate-500">{current.doc.signedReceivedByName}, {when(current.doc.signedReceivedAt, true)}</span>
+          <span class={chipOk}><Icon name="check" size={14} />Sesuai dengan dokumen final</span>
+          <Button size="sm" variant="ghost" loading={busy === `signedReceived:${current.kind}`} disabled={Boolean(busy) || Boolean(data.disbursement.paidAt)} onclick={() => setFlag(current!, 'signedReceived', false)}>Batalkan</Button>
+        {:else}
+          <Button size="sm" icon="check" loading={busy === `signedReceived:${current.kind}`} disabled={Boolean(busy) || Boolean(data.disbursement.paidAt)} onclick={() => setFlag(current!, 'signedReceived', true)}>Sesuai dengan dokumen final</Button>
+        {/if}
       </div>
 
     {:else if modal.type === 'compare'}
