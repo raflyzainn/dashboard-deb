@@ -8,6 +8,7 @@ test('campus greeting follows WIB at each time boundary', () => {
     assert.equal(campusGreeting(new Date(`2026-09-21T${time}:00+07:00`)), expected);
   }
   assert.equal(pageRequest(new URL('https://example.test/campus/dashboard')).view, 'static');
+  assert.equal(pageRequest(new URL('https://example.test/campus/laporan-eksisting')).view, 'static');
   assert.equal(pageRequest(new URL('https://example.test/admin/dashboard')).view, 'dashboard');
 });
 
