@@ -28,12 +28,13 @@
  <p class="text-slate-600">Pilih format file Excel. Isi kedua format sama, yaitu RAB {label} versi {version}. Pratinjau menampilkan baris pertama.</p>
  <div class="mt-4 grid gap-3">
   {#each options as option}
-   <div class="group relative grid gap-3 rounded-xl border border-slate-200 bg-white p-4 transition has-[button:hover]:border-[#0066B2] has-[button:hover]:bg-blue-50/40 has-[button:focus-visible]:outline-2 has-[button:focus-visible]:outline-offset-2 has-[button:focus-visible]:outline-[#0066B2] md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
+   <!-- isolate keeps the preview's layer inside the card, under the sticky dialog header. -->
+   <div class="group relative isolate grid gap-3 rounded-xl border border-slate-200 bg-white p-4 transition has-[button:hover]:border-[#0066B2] has-[button:hover]:bg-blue-50/40 has-[button:focus-visible]:outline-2 has-[button:focus-visible]:outline-offset-2 has-[button:focus-visible]:outline-[#0066B2]">
     <div class="grid content-start gap-2">
      <!-- The button stretches over the card; the preview sits above it so it can scroll sideways. -->
      <button type="button" class="flex cursor-pointer items-start justify-between gap-3 text-left outline-none after:absolute after:inset-0 after:rounded-xl" onclick={()=>onchoose(option.format)}><strong class="text-slate-900">{option.title}</strong><span class="grid size-7 shrink-0 place-items-center rounded-full bg-[#0066B2] text-white group-has-[button:hover]:bg-[#005493]"><Icon name="download" size={14}/></span></button>
      <p class="text-sm font-semibold text-[#0066B2]">{option.use}</p>
-     <ul class="grid list-disc gap-1 pl-5 text-sm text-slate-600">{#each option.points as point}<li>{point}</li>{/each}</ul>
+     <ul class="grid list-disc gap-x-6 gap-y-1 pl-5 text-sm text-slate-600 sm:grid-cols-3">{#each option.points as point}<li>{point}</li>{/each}</ul>
     </div>
     <div class="relative z-10 grid min-w-0 content-start overflow-hidden rounded-lg border border-slate-300 bg-white" aria-label={`Pratinjau ${option.title}`} role="img">
      <span class="block min-w-0 overflow-x-auto">
