@@ -21,7 +21,7 @@ Perbaikan dari QA alur Pencairan Tahap 1 di lingkungan lokal. Branch `fix/pencai
   - Tombol Bandingkan memakai ikon, garis, kursor tangan, dan warna hover. Hijau dengan centang bila pindaian sudah sesuai.
   - Di dialog Bandingkan, centang diganti tombol "Sesuai dengan dokumen final". Setelah ditekan, dialog menampilkan label hijau, nama dan waktu, serta tombol Batalkan. Isi baris tombol rata kanan.
 - `PembayaranView.svelte`: dialog "Catat pembayaran Tahap 1?" menampilkan jumlah, tanggal bayar, dan referensi. Batal dan Esc tidak mencatat apa pun.
-- `admin/pencairan/[id]/+page.svelte`: tombol Buka Pelaporan dan LPJ dipindah ke kanan bawah, di bawah layar kampus.
+- `admin/pencairan/[id]/+page.svelte`: tombol Buka Pelaporan dan LPJ dipindah ke kanan atas, di atas layar kampus. Diperiksa juga di layar ponsel 390 px.
 - `CampusJourney.svelte`: dialog "Ajukan untuk diperiksa?" dengan pilihan Periksa lagi atau Ya, ajukan. Kirim perbaikan saat revisi tetap langsung, tanpa dialog.
 
 Karena tahap Legal tidak ada lagi di linimasa kampus, kampus tidak menerima notifikasi perubahan tahap ke Pemeriksaan Legal. Notifikasi berikutnya muncul saat tahap berubah menjadi Tanda tangan.
