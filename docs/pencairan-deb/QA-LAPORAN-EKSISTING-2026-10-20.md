@@ -32,4 +32,18 @@ Dev server lokal 5176 dan PocketBase lokal 8097. Video uji dari `tests/fixtures/
 | `/campus/capaian` tidak lagi tersedia | Lulus |
 | Desktop 1366 px dan ponsel 390 px, kampus dan admin, tanpa geser halaman | Lulus |
 
+
+## Simpan otomatis (branch `feat/laporan-eksisting-autosave`)
+
+| Skenario | Hasil |
+| --- | --- |
+| Mengetik lalu berhenti: penanda Perubahan belum tersimpan, lalu Tersimpan otomatis pukul sekian tanpa menekan Simpan draf | Lulus |
+| Mengetik lagi saat penyimpanan berjalan: ketikan tidak tertimpa dan ikut tersimpan | Lulus |
+| Spasi di akhir isian tidak memicu penyimpanan berulang | Lulus |
+| Muat ulang halaman: isian tetap ada | Lulus |
+| Pindah halaman setelah tersimpan otomatis: tanpa dialog konfirmasi | Lulus |
+| Kirim langsung setelah mengetik: disimpan dulu lalu terkirim | Lulus |
+| Unggah foto pada laporan terkirim: tersimpan, pemberitahuan perubahan belum dikirim tampil | Lulus |
+| Desktop 1366 px dan ponsel 390 px tanpa geser halaman | Lulus |
+
 Tidak ada page error atau respons API 4xx atau 5xx yang tidak diharapkan. Tes terminal, check, dan lint tidak dijalankan sesuai AGENTS.md. Data production tidak diubah.
