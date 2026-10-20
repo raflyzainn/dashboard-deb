@@ -4,6 +4,7 @@
   import { formatSen } from '$lib/pencairan';
   import type { KartuData } from './kartu-types';
   import Icon from '$lib/components/ui/Icon.svelte';
+  import Modal from '$lib/components/ui/Modal.svelte';
   import BuktiTransfer from './BuktiTransfer.svelte';
 
   /** Closing row "Pembayaran": one card with the Tahap 1 transfer, and while unpaid one bar with three values and one button. */
@@ -13,6 +14,7 @@
   let paidRef = $state('');
   let busy = $state(false);
   let error = $state('');
+  let confirming = $state(false);
 
   const dateOnly = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' });
   const dayOf = (iso: string) => { const d = new Date(iso.includes('T') || iso.includes(' ') ? iso : iso + 'T00:00:00'); return Number.isNaN(d.getTime()) ? iso.slice(0, 10) : dateOnly.format(d); };
@@ -31,7 +33,7 @@
     busy = true; error = '';
     try {
       const next = await dataService.api.patch<KartuData>(`/api/pencairan/${campusId}/pembayaran`, { paidAt, paidSen: requested, paidRef: paidRef.trim(), paidNote: '', expectedRevision:data.disbursement.revision });
-      paidAt = ''; paidRef = '';
+      paidAt = ''; paidRef = ''; confirming = false;
       onchange(next, 'Pembayaran Tahap 1 tercatat.');
     } catch (e) { error = reportError(e instanceof Error ? e.message : 'Pembayaran belum tercatat.'); }
     finally { busy = false; }
@@ -60,7 +62,7 @@
   </div>
 
   {#if !paid}
-    <form class="flex flex-wrap items-end gap-2 border-t border-slate-200 bg-white px-4 py-2.5" onsubmit={(e) => { e.preventDefault(); void save(); }}>
+    <form class="flex flex-wrap items-end gap-2 border-t border-slate-200 bg-white px-4 py-2.5" onsubmit={(e) => { e.preventDefault(); if (ready && !busy) confirming = true; }}>
       <label class={field}><span class="field-caption">Tanggal bayar</span><input type="date" class={input} bind:value={paidAt} disabled={Boolean(reason) || busy} required /></label>
       <div class={field}>Jumlah<span class="flex min-h-[34px] items-center rounded-lg border border-slate-200 bg-slate-50 px-2 text-[13px] font-medium normal-case tracking-normal text-slate-900 tabular-nums">{requested ? formatSen(requested) : 'Belum ditetapkan'}</span></div>
       <label class="{field} min-w-[200px] flex-1"><span class="field-caption">Referensi transfer</span><input type="text" class={input} bind:value={paidRef} maxlength="120" disabled={Boolean(reason) || busy} required /></label>
@@ -73,3 +75,21 @@
     </form>
   {/if}
 </div>
+
+{#if confirming}
+  <Modal title="Catat pembayaran Tahap 1?" onclose={() => { if (!busy) confirming = false; }}>
+    <dl class="grid gap-2 text-sm sm:grid-cols-3">
+      <div class="grid gap-0.5"><dt class="text-xs text-slate-500">Jumlah</dt><dd class="font-semibold tabular-nums text-slate-900">{formatSen(requested)}</dd></div>
+      <div class="grid gap-0.5"><dt class="text-xs text-slate-500">Tanggal bayar</dt><dd class="font-semibold text-slate-900">{dayOf(paidAt)}</dd></div>
+      <div class="grid min-w-0 gap-0.5"><dt class="text-xs text-slate-500">Referensi</dt><dd class="break-words font-semibold text-slate-900">{paidRef.trim()}</dd></div>
+    </dl>
+    <p class="mt-3 text-sm text-slate-700">Setelah dicatat, kampus melihat Tahap 1 sudah dibayar dan data pembayaran terkunci.</p>
+    {#if error}<p class="mt-3 text-sm text-red-700" role="alert">{error}</p>{/if}
+    <div class="mt-4 flex flex-wrap justify-end gap-2">
+      <button type="button" class="min-h-[36px] rounded-lg border border-slate-300 bg-white px-4 text-[13px] font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40" disabled={busy} onclick={() => (confirming = false)}>Batal</button>
+      <button type="button" class={btnGreen} disabled={busy || !ready} onclick={() => void save()}>
+        {#if busy}<span class="size-4 rounded-full border-2 border-current border-t-transparent [animation:spin_0.8s_linear_infinite]" aria-hidden="true"></span>{:else}<Icon name="check" size={15} />{/if}Ya, catat pembayaran
+      </button>
+    </div>
+  </Modal>
+{/if}

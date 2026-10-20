@@ -1,5 +1,13 @@
 import { STAGES, type Assessment } from './pencairan';
 import type { Journey } from './pengajuan/journey';
+import { pksApproved } from './pengajuan/pks-review';
+
+/** PF finished every item but the PKS still needs Legal: 'kirim' = PF has not sent it yet, 'legal' = Legal is reviewing. */
+export function legalWait(journey: any, documents: { status?: string }[]): 'kirim' | 'legal' | null {
+  if (journey?.datePolicy !== 'chronology' || journey.status !== 'menunggu' || pksApproved(journey)) return null;
+  if (journey.pksReview?.state === 'legal') return 'legal';
+  return documents.length && documents.every(d => d.status === 'sesuai' || d.status === 'tidak_perlu') ? 'kirim' : null;
+}
 
 export interface CampusPayoutProgress {
   stage: string;
@@ -14,7 +22,7 @@ export function payoutTimeline(input: {
   journey?: Pick<Journey, 'status' | 'revision' | 'documentRevisions' | 'files' | 'fields' | 'pf' | 'datePolicy' | 'pksReview'>;
   hasRab: boolean;
   documents: {
-    kind: string; generated: boolean; signedReceived: boolean; currentVersionId: string;
+    kind: string; generated: boolean; signedReceived: boolean; currentVersionId: string; status?: string;
     versions: { id: string; origin: string; journeyRevision?: number; generation?: { journeyRevision?: number } }[];
   }[];
 }) {
@@ -27,7 +35,7 @@ export function payoutTimeline(input: {
   else if (j) {
     const docs = input.documents.filter(d => d.generated);
     if (j.status === 'selesai') stage = docs.length && docs.every(d => d.signedReceived) ? (legal?7:6) : (legal?6:5);
-    else if (j.status === 'menunggu') stage = legal&&j.pksReview?.state==='legal'?5:4;
+    else if (j.status === 'menunggu') stage = legalWait(j, input.documents)?5:4;
     else if (j.status === 'revisi') stage = 1;
     else {
       const generated = docs.filter(d => d.versions.some(v => v.id === d.currentVersionId && v.origin === 'generated' && (!legal || d.kind !== 'pks' || j.pksReview?.complete && j.pksReview.versionId === v.id)
