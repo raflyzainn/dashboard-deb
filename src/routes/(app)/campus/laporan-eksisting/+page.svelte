@@ -10,7 +10,7 @@
   let ws = $state<LaporanWorkspace | null>(null);
   let draft = $state(emptyLaporan());
   let baseline = $state('');
-  let loading = $state(true), busy = $state(false), uploading = $state(''), error = $state(''), notice = $state('');
+  let loading = $state(true), busy = $state(false), uploading = $state(''), error = $state('');
   let videoError = $state(''), videoWarning = $state('');
   let saving = $state(false), savedAt = $state(''), saveError = $state('');
   const AUTOSAVE_MS = 1500;
@@ -46,7 +46,8 @@
    * baseline, never the fields, so text typed while a save is on its way stays and is saved next.
    */
   let queue: Promise<void> = Promise.resolve();
-  function persist(): Promise<void> {
+  /** `message` shows in the app snackbar once the save lands, as other auto saving pages do. */
+  function persist(message = 'Draf Laporan Eksisting tersimpan otomatis.'): Promise<void> {
     const run = queue.then(async () => {
       if (!ws || !editable || !dirty) return;
       const body = snapshot(), sent = JSON.stringify(body);
@@ -55,6 +56,7 @@
         ws = await dataService.api.post<LaporanWorkspace>(`/api/laporan-eksisting/${campusId}`, { action: 'save', expectedRevision: ws.laporan.revision, laporan: body });
         baseline = sent; saveError = '';
         savedAt = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        app.toast = message;
       } catch (e) { saveError = e instanceof Error ? e.message : 'Laporan belum tersimpan.'; throw e; }
       finally { saving = false; }
     });
@@ -72,16 +74,16 @@
   async function save() {
     if (!ws || !editable) return;
     error = '';
-    try { await persist(); } catch { /* shown by the save indicator */ }
+    try { await persist('Draf Laporan Eksisting tersimpan.'); } catch { /* shown by the save indicator */ }
   }
   async function submit() {
     if (!ws || !editable || missing.length) return;
     if (!window.confirm(ws.laporan.submittedAt ? 'Kirim pembaruan Laporan Eksisting ke PF?' : 'Kirim Laporan Eksisting ke PF?')) return;
-    busy = true; error = ''; notice = '';
+    busy = true; error = '';
     try {
       await persist();
       apply(await dataService.api.post<LaporanWorkspace>(`/api/laporan-eksisting/${campusId}`, { action: 'submit', expectedRevision: ws!.laporan.revision }));
-      videoError = ''; videoWarning = ''; notice = 'Laporan terkirim ke PF.';
+      videoError = ''; videoWarning = ''; app.toast = 'Laporan Eksisting terkirim ke PF.';
     }
     catch (e) { error = e instanceof Error ? e.message : 'Laporan belum terkirim.'; }
     finally { busy = false; }
@@ -92,9 +94,9 @@
     return (await dataService.api.post<{ id: string }>(`/api/laporan-eksisting/${campusId}/files`, form)).id;
   }
   /** Uploads, then saves the draft right away so a chosen file is never lost. */
-  async function afterUpload(change: () => void) {
+  async function afterUpload(change: () => void, message: string) {
     change();
-    await persist();
+    await persist(message);
   }
   async function addPhotos(event: Event, key: PhotoKey) {
     const input = event.currentTarget as HTMLInputElement, files = [...(input.files || [])]; input.value = '';
@@ -103,19 +105,18 @@
     if (files.length > room) { error = `Maksimal ${PHOTO_LIMIT} foto per kategori.`; return; }
     const big = files.find(f => f.size > PHOTO_MB * 1024 * 1024);
     if (big) { error = `${big.name} lebih dari ${PHOTO_MB} MB. Perkecil ukurannya lalu unggah lagi.`; return; }
-    uploading = key; error = ''; notice = '';
+    uploading = key; error = '';
     try {
       const ids: string[] = [];
       for (const file of files) ids.push(await uploadFile(file, photoKind(key)));
-      await afterUpload(() => { draft.foto[key] = [...draft.foto[key], ...ids]; });
-      notice = 'Foto tersimpan.';
+      await afterUpload(() => { draft.foto[key] = [...draft.foto[key], ...ids]; }, ids.length > 1 ? `${ids.length} foto tersimpan.` : 'Foto tersimpan.');
     } catch (e) { error = e instanceof Error ? e.message : 'Foto belum terunggah.'; }
     finally { uploading = ''; }
   }
   async function removePhoto(key: PhotoKey, id: string) {
     if (!window.confirm('Hapus foto ini dari laporan?')) return;
     busy = true; error = '';
-    try { await afterUpload(() => { draft.foto[key] = draft.foto[key].filter(x => x !== id); }); notice = 'Foto dihapus dari laporan.'; }
+    try { await afterUpload(() => { draft.foto[key] = draft.foto[key].filter(x => x !== id); }, 'Foto dihapus dari laporan.'); }
     catch (e) { error = e instanceof Error ? e.message : 'Foto belum terhapus.'; }
     finally { busy = false; }
   }
@@ -132,7 +133,7 @@
   async function addVideo(event: Event) {
     const input = event.currentTarget as HTMLInputElement, file = input.files?.[0]; input.value = '';
     if (!file || !ws) return;
-    videoError = ''; videoWarning = ''; error = ''; notice = '';
+    videoError = ''; videoWarning = ''; error = '';
     if (!file.name.toLowerCase().endsWith('.mp4')) { videoError = 'Video harus berupa MP4.'; return; }
     if (file.size > VIDEO_MB * 1024 * 1024) { videoError = `Video lebih dari ${VIDEO_MB} MB. Perpendek atau kompres video, lalu unggah lagi.`; return; }
     try {
@@ -142,14 +143,14 @@
       if (Math.min(meta.width, meta.height) < 1080) videoWarning = `Resolusi video ${meta.width} × ${meta.height}, di bawah 1080p. Unggah versi resolusi lebih tinggi bila ada.`;
     } catch (e) { videoError = e instanceof Error ? e.message : 'Video tidak dapat dibaca.'; return; }
     uploading = 'video';
-    try { const id = await uploadFile(file, VIDEO_KIND); await afterUpload(() => { draft.video = id; }); notice = 'Video tersimpan.'; }
+    try { const id = await uploadFile(file, VIDEO_KIND); await afterUpload(() => { draft.video = id; }, 'Video tersimpan.'); }
     catch (e) { videoError = e instanceof Error ? e.message : 'Video belum terunggah.'; }
     finally { uploading = ''; }
   }
   async function removeVideo() {
     if (!window.confirm('Hapus video ini dari laporan?')) return;
     busy = true; error = ''; videoWarning = '';
-    try { await afterUpload(() => { draft.video = ''; }); notice = 'Video dihapus dari laporan.'; }
+    try { await afterUpload(() => { draft.video = ''; }, 'Video dihapus dari laporan.'); }
     catch (e) { error = e instanceof Error ? e.message : 'Video belum terhapus.'; }
     finally { busy = false; }
   }
@@ -195,7 +196,6 @@
     {/if}
     {#if error}<p class="rounded-xl bg-red-50 p-3 text-sm text-red-800" role="alert">{error}</p>{/if}
     {#if saveError}<p class="flex flex-wrap items-center gap-2 rounded-xl bg-red-50 p-3 text-sm text-red-800" role="alert">Isian belum tersimpan otomatis: {saveError}<button type="button" class="cursor-pointer font-semibold underline" onclick={save}>Coba simpan lagi</button></p>{/if}
-    {#if notice}<p class="rounded-xl bg-green-50 p-3 text-sm text-green-800" role="status">{notice}</p>{/if}
 
     <div class="flex flex-wrap items-start gap-5">
       <section aria-labelledby="pilar-title" class="flex min-w-0 flex-[1_1_520px] flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5">

@@ -46,4 +46,13 @@ Dev server lokal 5176 dan PocketBase lokal 8097. Video uji dari `tests/fixtures/
 | Unggah foto pada laporan terkirim: tersimpan, pemberitahuan perubahan belum dikirim tampil | Lulus |
 | Desktop 1366 px dan ponsel 390 px tanpa geser halaman | Lulus |
 
+
+## Kampus mitra dan snackbar (branch `feat/laporan-eksisting-kampus-mitra`)
+
+| Skenario | Hasil |
+| --- | --- |
+| Kampus mitra, tab Laporan Eksisting: kampus yang memperbarui laporan, kampus draf, dan kampus yang belum mengisi | Lulus |
+| Tab Ringkasan dan tab lain tetap seperti sebelumnya; desktop 1366 px dan ponsel 390 px tanpa geser halaman | Lulus |
+| Snackbar saat tersimpan otomatis, unggah foto, dan hapus foto; hilang sendiri setelah 4 detik | Lulus |
+
 Tidak ada page error atau respons API 4xx atau 5xx yang tidak diharapkan. Tes terminal, check, dan lint tidak dijalankan sesuai AGENTS.md. Data production tidak diubah.
