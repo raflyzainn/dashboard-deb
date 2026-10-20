@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { replaceState } from '$app/navigation';
+  import { onMount } from 'svelte';
   import Monitoring from '$lib/components/shared/monitoring/Monitoring.svelte';
   import { app } from '$lib/state.svelte';
   import ProgramContacts from '$lib/components/shared/ProgramContacts.svelte';
@@ -14,6 +15,8 @@
     { id: 'monitoring', label: 'Monitoring Bulanan', description: 'Catat pendapatan dan produksi energi per bulan, lengkapi bukti, lalu kirim untuk diperiksa admin PF.' }
   ];
   let activeId = $state('profil');
+  // A link to a given month (from Capaian Program) starts at the top, where the month and its status are.
+  onMount(() => { if (page.url.searchParams.has('bulan')) window.scrollTo({ top: 0 }); });
   $effect(() => { activeId = page.url.hash.slice(1) || 'profil'; });
   const active = $derived(tabs.find(tab => tab.id === activeId) || tabs[0]);
   let monitoringOpened = $state(false);
@@ -53,7 +56,7 @@
       {#key campus.id}<ReadinessSection program={campus.program} campusId={campus.id} canEdit={!app.readOnly} alwaysEdit />{/key}
     </div>
     <div id="panel-monitoring" role="tabpanel" aria-labelledby="tab-monitoring" hidden={active.id !== 'monitoring'} tabindex="0" class="focus-visible:outline-blue-500">
-      {#if monitoringOpened}{#key campus.id}<Monitoring campusId={campus.id} />{/key}{/if}
+      {#if monitoringOpened}{#key campus.id}<Monitoring campusId={campus.id} initialMonth={page.url.searchParams.get('bulan') || ''} />{/key}{/if}
     </div>
   {:else}
     <p class="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">Data kampus belum tersedia. Muat ulang halaman atau hubungi admin untuk memeriksa hubungan akun dengan kampus.</p>

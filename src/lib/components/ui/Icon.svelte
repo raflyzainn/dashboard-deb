@@ -6,6 +6,7 @@
     sebaran: 'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6Zm6-3v15m6-12v15',
     leaf: 'M5 18C2 6 12 3 21 3c0 10-4 18-14 16M6 18 16 8',
     dashboard: 'M3 3h7v7H3zM14 3h7v4h-7zM14 11h7v10h-7zM3 14h7v7H3z',
+    chart: 'M3 3v18h18M7 15l4-4 3 3 5-6',
     campus: 'm3 9 9-6 9 6M4 21h16M6 10v7m6-7v7m6-7v7M3 9h18',
     campuses: 'm3 9 9-6 9 6M4 21h16M6 10v7m6-7v7m6-7v7M3 9h18',
     indicators: 'M4 5h2m4 0h10M4 12h2m4 0h10M4 19h2m4 0h10',

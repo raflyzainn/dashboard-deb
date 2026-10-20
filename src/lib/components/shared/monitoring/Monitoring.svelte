@@ -5,15 +5,18 @@
   import { app } from '$lib/state.svelte';
   import { EVIDENCE, emptyProgram, currentMonth, statusLabel, latestApproved, type MonitoringWorkspace, type MonthInput, type Hero, type CompleteMonth } from '$lib/monitoring';
   import Button from '$lib/components/ui/Button.svelte';
+  import Icon from '$lib/components/ui/Icon.svelte';
   import FormulaPanel from './FormulaPanel.svelte';
   import EvidenceInput from './EvidenceInput.svelte';
   import Snapshot from './Snapshot.svelte';
-  let { campusId }: { campusId: string } = $props();
-  let data = $state<MonitoringWorkspace | null>(null), period = $state(''), month = $state(currentMonth());
+  let { campusId, initialMonth = '' }: { campusId: string; initialMonth?: string } = $props();
+  let data = $state<MonitoringWorkspace | null>(null), period = $state(''), month = $state(untrack(() => /^\d{4}-(0[1-9]|1[0-2])$/.test(initialMonth) && initialMonth <= currentMonth() ? initialMonth : currentMonth()));
   let program = $state(emptyProgram()), heroes = $state<Hero[]>([]), incomeRp = $state<number | null | undefined>(), electricity = $state<number | null | undefined>(), biogas = $state<number | null | undefined>(), note = $state('');
   let busy = $state(false), uploads = $state(0), error = $state(''), notice = $state(''), baseline = $state(''), operationId = '', operationPayload = '';
   const monthRow = $derived(data?.months.find(m => m.month === month));
   const pending = $derived(monthRow?.status === 'pending');
+  const statusTone: Record<string, string> = { revision: 'bg-orange-100 text-orange-900 ring-1 ring-orange-400', approved: 'bg-green-50 text-green-800 ring-1 ring-green-300', pending: 'bg-blue-50 text-blue-800 ring-1 ring-blue-200', draft: 'bg-slate-100 text-slate-700 ring-1 ring-slate-300' };
+  const revisionNote = $derived(monthRow?.status === 'revision' ? data?.versions.filter(v => v.month === month).sort((a, b) => b.version - a.version)[0]?.note || '' : '');
   const active = $derived(data?.periods.some(p => p.id === period && p.state === 'active') ?? false);
   const disabled = $derived(busy || uploads > 0 || pending || !active || app.readOnly);
   const input = $derived<MonthInput>({ month, incomeSen: incomeRp == null ? null : Math.round(incomeRp * 100), electricityKwh: electricity ?? null, biogasM3: biogas ?? null, note });
@@ -75,10 +78,11 @@
     {#if data}<label class="grid gap-1 text-sm font-medium">Periode monitoring<select class="rounded-lg border border-slate-300 bg-white p-2" value={period} onchange={choosePeriod} disabled={busy || uploads > 0}>{#each data.periods as p}<option value={p.id}>{p.name}{p.state === 'archived' ? ' (arsip)' : p.state === 'draft' ? ' (belum aktif)' : ''}</option>{/each}</select></label>{/if}
     <label class="grid gap-1 text-sm font-medium">Bulan monitoring<input class="rounded-lg border border-slate-300 bg-white p-2" type="month" min="2000-01" max={currentMonth()} value={month} onchange={chooseMonth} disabled={busy || uploads > 0} /></label>
     <Button variant="secondary" size="sm" disabled={busy || uploads > 0} onclick={() => { if (confirmLeave()) void load(); }}>Muat ulang data</Button>
-    <span class="rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800">{statusLabel(monthRow?.status || 'draft')}</span>
+    <span class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold {statusTone[monthRow?.status || 'draft'] || statusTone.draft}">{#if monthRow?.status === 'revision'}<Icon name="alert" size={16} />{:else if monthRow?.status === 'approved'}<Icon name="check" size={16} />{/if}{statusLabel(monthRow?.status || 'draft')}</span>
   </div>
   {#if data}
     {#if !active}<p class="rounded-xl bg-amber-50 p-3 text-sm">Periode ini tidak aktif; data hanya dapat dibaca.</p>{/if}
+    {#if monthRow?.status === 'revision'}<div class="flex items-start gap-2 rounded-xl border border-orange-300 bg-orange-50 p-3 text-sm text-orange-950" role="status"><Icon name="alert" size={18} /><div><strong>Bulan ini perlu revisi.</strong>{#if revisionNote}{' '}Catatan PF: {revisionNote}{/if}<p class="mt-1">Perbaiki isian, simpan draf, lalu kirim ulang ke PF.</p></div></div>{/if}
     {#if pending}<p class="rounded-xl bg-blue-50 p-3 text-sm">Bulan ini sedang diperiksa. Isian terkunci; pilih bulan lain untuk mengisi monitoring berikutnya.</p>{/if}
     <fieldset disabled={disabled} class="min-w-0 space-y-4 disabled:opacity-80">
       <section class="rounded-xl border border-slate-200 bg-white p-4">
