@@ -122,7 +122,7 @@ async function inspect(pb: PocketBase, campusId: string): Promise<Plan> {
       const generated = [...mine].reverse().find(r => r.origin === 'generated');
       if(generated&&Number(signed.number)<Number(generated.number))return {...base,blocker:'Pindaian bertanda tangan bukan versi dokumen terbaru'};
       if(signed.generation?.sourceVersionId&&signed.generation.sourceVersionId!==generated?.id)return {...base,blocker:'Dokumen sumber tanda tangan telah diganti'};
-      if(!doc.signedReceived)return {...base,blocker:'Pindaian belum ditandai sesuai oleh PF. Buka Tanda tangan, pilih Bandingkan, lalu centang Sesuai dengan dokumen final'};
+      if(!doc.signedReceived)return {...base,blocker:'Pindaian belum ditandai sesuai oleh PF. Buka Tanda tangan, pilih Bandingkan, lalu tekan Sesuai dengan dokumen final'};
       if (!partType(signed.originalName || '', signed.mime || '')) return { ...base, version: toVersion(signed), blocker: 'Unggah pindaian bertanda tangan dalam PDF atau gambar' };
       const mark = sesuaiMark(doc, signed.id);
       return { ...base, ready: true, version: toVersion(signed), state: `Versi ${signed.number}, pindaian bertanda tangan`, checkedByName: mark.name, checkedAt: mark.at, checkedVersion: mark.version };

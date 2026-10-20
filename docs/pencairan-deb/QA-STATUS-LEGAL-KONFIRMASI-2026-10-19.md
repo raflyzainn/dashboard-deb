@@ -19,6 +19,7 @@ Perbaikan dari QA alur Pencairan Tahap 1 di lingkungan lokal. Branch `fix/pencai
 - `TandaTanganView.svelte`:
   - Kolom pindaian menulis "Dibuka setelah Legal menyetujui PKS." selama Legal belum menyetujui.
   - Tombol Bandingkan memakai ikon, garis, kursor tangan, dan warna hover. Hijau dengan centang bila pindaian sudah sesuai.
+  - Di dialog Bandingkan, centang diganti tombol "Sesuai dengan dokumen final". Setelah ditekan, dialog menampilkan label hijau, nama dan waktu, serta tombol Batalkan.
 - `PembayaranView.svelte`: dialog "Catat pembayaran Tahap 1?" menampilkan jumlah, tanggal bayar, dan referensi. Batal dan Esc tidak mencatat apa pun.
 - `CampusJourney.svelte`: dialog "Ajukan untuk diperiksa?" dengan pilihan Periksa lagi atau Ya, ajukan. Kirim perbaikan saat revisi tetap langsung, tanpa dialog.
 
@@ -41,6 +42,7 @@ Playwright dengan Chrome, aplikasi `127.0.0.1:5176` dan PocketBase lokal `127.0.
 | Legal menyetujui; kampus masuk tahap Tanda tangan dan mengunggah empat pindaian | Lulus |
 | Centang Sesuai lalu Esc pada dialog Bandingkan untuk empat dokumen: dialog tertutup, tetap di butir Tanda tangan | Lulus |
 | Enter dalam dialog Bandingkan tidak berpindah halaman | Lulus |
+| Tombol Sesuai dengan dokumen final menandai pindaian (1 dari 4), Esc menutup dialog tanpa pindah halaman, Batalkan mengembalikan ke 0 dari 4 | Lulus |
 | Tombol Bandingkan: kursor pointer sebelum dan sesudah sesuai; garis dan latar berubah saat hover | Lulus |
 | Catat pembayaran membuka dialog berisi jumlah, tanggal, dan referensi; Batal dan Esc tidak mencatat | Lulus |
 | Enter pada form pembayaran membuka dialog, bukan langsung mencatat | Lulus |
