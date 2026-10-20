@@ -12,8 +12,12 @@
   let baseline = $state('');
   let loading = $state(true), busy = $state(false), uploading = $state(''), error = $state(''), notice = $state('');
   let videoError = $state(''), videoWarning = $state('');
+  let saving = $state(false), savedAt = $state(''), saveError = $state('');
+  const AUTOSAVE_MS = 1500;
 
-  const serialized = $derived(JSON.stringify({ ...Object.fromEntries(PILLARS.map(p => [p.key, draft[p.key]])), foto: draft.foto, video: draft.video }));
+  /** What the server stores: text trimmed, so trailing spaces never count as an unsaved change. */
+  const snapshot = () => ({ ...Object.fromEntries(PILLARS.map(p => [p.key, draft[p.key].trim()])), foto: draft.foto, video: draft.video });
+  const serialized = $derived(JSON.stringify(snapshot()));
   const dirty = $derived(Boolean(ws && baseline && serialized !== baseline));
   const status = $derived(ws?.laporan.status || 'draft');
   const editable = $derived(!app.readOnly);
@@ -27,7 +31,7 @@
   function apply(next: LaporanWorkspace) {
     ws = next;
     draft = JSON.parse(JSON.stringify(next.laporan));
-    baseline = JSON.stringify({ ...Object.fromEntries(PILLARS.map(p => [p.key, draft[p.key]])), foto: draft.foto, video: draft.video });
+    baseline = JSON.stringify(snapshot());
   }
   async function load(id: string) {
     loading = true; error = '';
@@ -37,24 +41,48 @@
   }
   $effect(() => { if (campusId) void load(campusId); });
 
-  async function post(action: 'save' | 'submit') {
-    const body = action === 'save'
-      ? { action, expectedRevision: ws!.laporan.revision, laporan: { ...Object.fromEntries(PILLARS.map(p => [p.key, draft[p.key]])), foto: draft.foto, video: draft.video } }
-      : { action, expectedRevision: ws!.laporan.revision };
-    apply(await dataService.api.post<LaporanWorkspace>(`/api/laporan-eksisting/${campusId}`, body));
+  /**
+   * Saves the draft. Saves run one after another so the revision always matches; the answer only moves the
+   * baseline, never the fields, so text typed while a save is on its way stays and is saved next.
+   */
+  let queue: Promise<void> = Promise.resolve();
+  function persist(): Promise<void> {
+    const run = queue.then(async () => {
+      if (!ws || !editable || !dirty) return;
+      const body = snapshot(), sent = JSON.stringify(body);
+      saving = true;
+      try {
+        ws = await dataService.api.post<LaporanWorkspace>(`/api/laporan-eksisting/${campusId}`, { action: 'save', expectedRevision: ws.laporan.revision, laporan: body });
+        baseline = sent; saveError = '';
+        savedAt = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      } catch (e) { saveError = e instanceof Error ? e.message : 'Laporan belum tersimpan.'; throw e; }
+      finally { saving = false; }
+    });
+    queue = run.catch(() => undefined);
+    return run;
   }
+  // Auto save a moment after typing stops; every keystroke restarts the wait.
+  $effect(() => {
+    serialized;
+    if (!dirty || !editable || uploading) return;
+    const timer = setTimeout(() => void persist().catch(() => undefined), AUTOSAVE_MS);
+    return () => clearTimeout(timer);
+  });
+  function saveOnHide() { if (document.visibilityState === 'hidden' && dirty) void persist().catch(() => undefined); }
   async function save() {
     if (!ws || !editable) return;
-    busy = true; error = ''; notice = '';
-    try { await post('save'); notice = 'Draf tersimpan.'; }
-    catch (e) { error = e instanceof Error ? e.message : 'Laporan belum tersimpan.'; }
-    finally { busy = false; }
+    error = '';
+    try { await persist(); } catch { /* shown by the save indicator */ }
   }
   async function submit() {
     if (!ws || !editable || missing.length) return;
     if (!window.confirm(ws.laporan.submittedAt ? 'Kirim pembaruan Laporan Eksisting ke PF?' : 'Kirim Laporan Eksisting ke PF?')) return;
     busy = true; error = ''; notice = '';
-    try { if (dirty) await post('save'); await post('submit'); videoError = ''; videoWarning = ''; notice = 'Laporan terkirim ke PF.'; }
+    try {
+      await persist();
+      apply(await dataService.api.post<LaporanWorkspace>(`/api/laporan-eksisting/${campusId}`, { action: 'submit', expectedRevision: ws!.laporan.revision }));
+      videoError = ''; videoWarning = ''; notice = 'Laporan terkirim ke PF.';
+    }
     catch (e) { error = e instanceof Error ? e.message : 'Laporan belum terkirim.'; }
     finally { busy = false; }
   }
@@ -66,7 +94,7 @@
   /** Uploads, then saves the draft right away so a chosen file is never lost. */
   async function afterUpload(change: () => void) {
     change();
-    await post('save');
+    await persist();
   }
   async function addPhotos(event: Event, key: PhotoKey) {
     const input = event.currentTarget as HTMLInputElement, files = [...(input.files || [])]; input.value = '';
@@ -132,6 +160,7 @@
 </script>
 
 <svelte:window onbeforeunload={beforeUnload} />
+<svelte:document onvisibilitychange={saveOnHide} />
 <svelte:head><title>Laporan Eksisting · Desa Energi Berdikari</title></svelte:head>
 
 <div class="mx-auto grid w-full max-w-6xl grid-cols-1 gap-5 [&>*]:min-w-0">
@@ -145,6 +174,11 @@
       <div class="flex flex-wrap items-center gap-3">
         <span class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold {tone[status]}">{#if status === 'submitted'}<Icon name="check" size={16} />{/if}{laporanStatusLabel(status)}</span>
         {#if editable}<span class="text-[13px] text-slate-600">{total - missing.length} dari {total} bagian lengkap</span>{/if}
+        {#if editable}
+          <span class="inline-flex items-center gap-1.5 text-[13px] {saveError ? 'font-semibold text-red-700' : 'text-slate-600'}" role="status" aria-live="polite">
+            {#if saving}Menyimpan…{:else if saveError}<Icon name="alert" size={14} />Belum tersimpan{:else if dirty}Perubahan belum tersimpan{:else if savedAt}<Icon name="check" size={14} />Tersimpan otomatis pukul {savedAt}{/if}
+          </span>
+        {/if}
       </div>
     {/if}
   </header>
@@ -160,12 +194,13 @@
       <p class="flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900" role="status"><Icon name="alert" size={18} /><span>Ada perubahan yang belum dikirim. Terakhir dikirim {sentAt}. Kirim pembaruan agar PF melihat isian terbaru.</span></p>
     {/if}
     {#if error}<p class="rounded-xl bg-red-50 p-3 text-sm text-red-800" role="alert">{error}</p>{/if}
+    {#if saveError}<p class="flex flex-wrap items-center gap-2 rounded-xl bg-red-50 p-3 text-sm text-red-800" role="alert">Isian belum tersimpan otomatis: {saveError}<button type="button" class="cursor-pointer font-semibold underline" onclick={save}>Coba simpan lagi</button></p>{/if}
     {#if notice}<p class="rounded-xl bg-green-50 p-3 text-sm text-green-800" role="status">{notice}</p>{/if}
 
     <div class="flex flex-wrap items-start gap-5">
       <section aria-labelledby="pilar-title" class="flex min-w-0 flex-[1_1_520px] flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5">
         <div class="flex items-center gap-2.5"><span class="rounded-lg bg-[var(--navy)] px-2.5 py-1 text-xs font-bold text-white">Bagian 1</span><h2 id="pilar-title" class="text-lg font-bold text-slate-900">Infografis 4 Pilar</h2></div>
-        <p class="-mt-2 text-[13px] text-slate-600">Satu deskripsi per pilar tentang kondisi DEB saat ini.</p>
+        <p class="-mt-2 text-[13px] text-slate-600">Satu deskripsi per pilar tentang kondisi DEB saat ini. Isian tersimpan otomatis.</p>
         {#each PILLARS as p}
           <div class="flex flex-col gap-1.5">
             <label for={`pilar-${p.key}`} class="flex items-center gap-2.5">
@@ -246,7 +281,7 @@
     {#if editable}
       <div class="flex flex-wrap items-center justify-end gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4">
         <span class="mr-auto text-[13px] {missing.length ? 'text-orange-800' : 'text-green-800'}">{missing.length ? `Lengkapi ${missing.join(', ')} sebelum mengirim.` : unchangedSent ? 'Laporan sudah terkirim. Ubah isian bila ada pembaruan.' : 'Semua bagian lengkap. Laporan siap dikirim.'}</span>
-        <button type="button" class="min-h-11 cursor-pointer rounded-lg border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-800 hover:border-[#0066B2] disabled:cursor-not-allowed disabled:opacity-60" disabled={busy || !!uploading || !dirty} onclick={save}>Simpan draf</button>
+        <button type="button" class="min-h-11 cursor-pointer rounded-lg border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-800 hover:border-[#0066B2] disabled:cursor-not-allowed disabled:opacity-60" disabled={busy || saving || !!uploading || !dirty} onclick={save}>Simpan draf</button>
         <button type="button" class="min-h-11 cursor-pointer rounded-lg bg-[#0066B2] px-5 text-sm font-semibold text-white hover:bg-[#015a9a] disabled:cursor-not-allowed disabled:bg-slate-400" disabled={busy || !!uploading || missing.length > 0 || unchangedSent} onclick={submit}>{sentAt ? 'Kirim pembaruan' : 'Kirim ke PF'}</button>
       </div>
     {/if}
