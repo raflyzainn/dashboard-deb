@@ -14,7 +14,7 @@ const opts = { requestKey: null } as const;
 const SCAN_EXTENSIONS = ['pdf', 'png', 'jpg', 'jpeg', 'webp'];
 
 export interface LpjEntry { id: string; date: string; reference: string; payee: string; amountSen: number; memo: string; rabLineId: string; rabCode: string; rabTitle: string; originalName: string; status: string; created: string; createdByName: string; note: string; revision: number; history: { revision: number; originalName: string; note: string }[] }
-export interface RabNode { id: string; code: string; title: string; level: number; amountSen: number }
+export interface RabNode { id: string; code: string; title: string; level: number; amountSen: number; term1Sen: number }
 
 export async function lpjSummary(pb: PocketBase, campusId: string) {
   const { campus, award } = await campusWithAward(pb, campusId);
@@ -26,7 +26,7 @@ export async function lpjSummary(pb: PocketBase, campusId: string) {
   const version = approved?.items[0];
   if (version) {
     const lines = await pb.collection('rab_lines').getFullList({ filter: pb.filter('version = {:v}', { v: version.id }), sort: 'order', ...opts });
-    nodes = lines.filter(l => Number(l.level) <= 3).map(l => ({ id: l.id, code: l.code || '', title: l.title || '', level: Number(l.level), amountSen: Number(l.amountSen || 0) }));
+    nodes = lines.filter(l => Number(l.level) <= 3).map(l => ({ id: l.id, code: l.code || '', title: l.title || '', level: Number(l.level), amountSen: Number(l.amountSen || 0), term1Sen: Number(l.term1Sen || 0) }));
   }
   const byId = new Map(nodes.map(n => [n.id, n]));
   const creators = Array.from(new Set(entries.map(e => e.createdBy).filter(Boolean)));

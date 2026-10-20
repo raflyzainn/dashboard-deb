@@ -1,7 +1,7 @@
 <script lang="ts">
   import ErrorSnackbar from '$lib/components/ui/ErrorSnackbar.svelte';
   import { page } from '$app/state';
-  import { goto } from '$app/navigation';
+  import { goto, afterNavigate } from '$app/navigation';
   import { app } from '$lib/state.svelte';
   import Icon from '$lib/components/ui/Icon.svelte';
   import CampusLogo from '$lib/components/ui/CampusLogo.svelte';
@@ -14,6 +14,7 @@
   const campus = $derived(app.session?.role === 'campus');
   const labels = $derived({
     guide: 'Panduan aplikasi',
+    capaian: 'Capaian Program',
     profile: 'Profil & Monitoring Program',
     pelaporan: 'Pelaporan',
     settings: 'Pengaturan',
@@ -52,6 +53,13 @@
   const prefix = $derived(`/${app.session?.role}`);
   const section = $derived(page.url.pathname.split('/')[2] as keyof typeof labels);
   const revisionCount = $derived(app.navigation.revisionCount);
+  /** A campus page reached from Capaian Program (any link or the account menu) keeps it in the breadcrumb; ?from=capaian keeps it after a reload. */
+  let viaCapaian = $state(false);
+  afterNavigate(({ from, to }) => {
+    if (!to || from?.url.pathname === to.url.pathname) return;
+    viaCapaian = Boolean(from?.url.pathname.startsWith('/campus/capaian'));
+  });
+  const fromCapaian = $derived(campus && section !== 'capaian' && section !== 'dashboard' && (viaCapaian || page.url.searchParams.get('from') === 'capaian'));
   const campusProfile = $derived(app.navigation.campus);
   const unreadCount = $derived(app.navigation.unreadCount);
   function closeDrawer() {
@@ -179,6 +187,10 @@
         {#if campus && section !== 'dashboard'}
           <a href="/campus/dashboard" class="rounded text-[#0066B2] hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500" onclick={() => (accountMenu = false)}>Beranda</a>
           <span aria-hidden="true">/</span>
+          {#if fromCapaian}
+            <a href="/campus/capaian" class="rounded text-[#0066B2] hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500">Capaian Program</a>
+            <span aria-hidden="true">/</span>
+          {/if}
         {/if}
         <strong class="font-[600]" aria-current="page">{campus && section === 'pencairan' ? 'Pencairan Dana' : labels[section] || 'Detail'}</strong></nav
       >
@@ -243,7 +255,7 @@
           </div>
           <nav class="p-2" aria-label="Menu akun">
             {#if campus}
-              {#each [{ key: 'dashboard', label: 'Beranda', icon: 'dashboard' }, { key: 'pencairan', label: 'Pencairan', icon: 'payments' }, { key: 'profile', label: 'Profil & Monitoring Program', icon: 'campus' }, ...(app.navigation.canReport ? [{ key: 'pelaporan', label: 'Pelaporan', icon: 'file' }] : []), { key: 'guide', label: 'Panduan Aplikasi', icon: 'faq' }] as item}
+              {#each [{ key: 'dashboard', label: 'Beranda', icon: 'dashboard' }, { key: 'capaian', label: 'Capaian Program', icon: 'chart' }, { key: 'pencairan', label: 'Pencairan', icon: 'payments' }, { key: 'profile', label: 'Profil & Monitoring Program', icon: 'campus' }, ...(app.navigation.canReport ? [{ key: 'pelaporan', label: 'Pelaporan', icon: 'file' }] : []), { key: 'guide', label: 'Panduan Aplikasi', icon: 'faq' }] as item}
                 <a class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm hover:bg-blue-50" href={`/campus/${item.key}`} onclick={() => (accountMenu = false)} role="menuitem" aria-current={section === item.key ? 'page' : undefined}>
                   <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600"><Icon name={item.icon} size={18} /></span>{item.label}
                 </a>
