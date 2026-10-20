@@ -22,7 +22,9 @@ test('timeline belum siap diajukan jika PKS baru berupa sumber DOCX',()=>{
  assert.equal(payoutTimeline({journey,hasRab:true,documents}).stage,2);
  journey.pksReview={complete:true,versionId:'pks'};
  const ready=payoutTimeline({journey,hasRab:true,documents});
- assert.equal(ready.stage,3);assert.equal(ready.stages.length,8);
+ assert.equal(ready.stage,3);assert.equal(ready.stages.length,7);
+ // Legal reviews the PKS within Pemeriksaan PF; the campus never sees a Legal stage.
+ assert.equal(payoutTimeline({journey:{...journey,status:'menunggu',pksReview:{...journey.pksReview,state:'legal'}},hasRab:true,documents}).label,'Pemeriksaan PF');
 });
 
 test('pengaturan PF berubah membatalkan persetujuan dan final pengajuan belum dibayar',async()=>{

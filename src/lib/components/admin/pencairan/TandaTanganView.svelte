@@ -307,7 +307,7 @@
     <span class={checkedScans === 4 ? chipOk : chipInfo}>{checkedScans} dari 4 pindaian sesuai</span>
     <span class={received === 4 ? chipOk : chipInfo}>{received} dari 4 asli diterima</span>
     <p class="w-full text-xs text-slate-600">Penerimaan dokumen asli bersifat opsional dan tidak menghambat pembayaran. Pindaian bertanda tangan tetap harus diperiksa PF.</p>
-    {#if checkedScans<4}<p class="w-full text-xs text-slate-600">Klik Bandingkan pada setiap pindaian, lalu centang Sesuai dengan dokumen final setelah diperiksa. Penerimaan asli dicatat terpisah.</p>{/if}
+    {#if checkedScans<4}<p class="w-full text-xs text-slate-600">Klik Bandingkan pada setiap pindaian, lalu tekan Sesuai dengan dokumen final setelah diperiksa. Penerimaan asli dicatat terpisah.</p>{/if}
     {#if missingLine}<span class="text-xs font-medium text-amber-900">{missingLine}</span>{/if}
     {#if error}<span class="text-xs font-medium text-red-700" role="alert">{error}</span>{/if}
     <span class="ml-auto flex items-center gap-2">
@@ -352,11 +352,14 @@
         <div><p class="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">Dokumen final · v{current.final.number}</p><FileViewer src={`${base}/documents/${current.kind}/versions/${current.final.id}`} mime={current.final.mime} name={current.final.originalName} height={520} /></div>
         <div><p class="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">Pindaian bertanda tangan · v{current.signed.number}</p><FileViewer src={`${base}/documents/${current.kind}/versions/${current.signed.id}`} mime={current.signed.mime} name={current.signed.originalName} height={520} /></div>
       </div>
-      <div class="flex flex-wrap items-center gap-3 border-t border-slate-100 px-5 py-3 text-sm">
-        <label class="inline-flex cursor-pointer items-center gap-2 font-semibold text-slate-800">
-          <input type="checkbox" class="size-4 accent-[#0066B2]" checked={current.doc.signedReceived} disabled={Boolean(busy)} onchange={(e) => setFlag(current!, 'signedReceived', (e.currentTarget as HTMLInputElement).checked)} />Sesuai dengan dokumen final
-        </label>
-        {#if current.doc.signedReceived}<span class="text-xs text-slate-500">{current.doc.signedReceivedByName}, {when(current.doc.signedReceivedAt, true)}</span>{/if}
+      <div class="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 px-5 py-3 text-sm">
+        {#if current.doc.signedReceived}
+          <span class="text-xs text-slate-500">{current.doc.signedReceivedByName}, {when(current.doc.signedReceivedAt, true)}</span>
+          <span class={chipOk}><Icon name="check" size={14} />Sesuai dengan dokumen final</span>
+          <Button size="sm" variant="ghost" loading={busy === `signedReceived:${current.kind}`} disabled={Boolean(busy) || Boolean(data.disbursement.paidAt)} onclick={() => setFlag(current!, 'signedReceived', false)}>Batalkan</Button>
+        {:else}
+          <Button size="sm" icon="check" loading={busy === `signedReceived:${current.kind}`} disabled={Boolean(busy) || Boolean(data.disbursement.paidAt)} onclick={() => setFlag(current!, 'signedReceived', true)}>Sesuai dengan dokumen final</Button>
+        {/if}
       </div>
 
     {:else if modal.type === 'compare'}
