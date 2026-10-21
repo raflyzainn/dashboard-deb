@@ -15,3 +15,5 @@ export interface ReportWorkspace {
 export function reportingPaid(payment: { paidAt?: unknown; paidSen?: unknown } | undefined) { return Boolean(payment?.paidAt) && Number(payment?.paidSen) > 0; }
 
 export function lpjEvidenceReady(payment: { paidAt?: unknown; paidSen?: unknown } | undefined, entries: { status: string }[]) { return reportingPaid(payment) && entries.length > 0 && entries.every(e => e.status === 'sesuai'); }
+/** True when LPJ evidence amounts add up to more than the Tahap 1 money received (decision 54). */
+export function lpjExceedsReceived(receivedSen: number, amountsSen: number[]) { return amountsSen.reduce((sum, a) => sum + a, 0) > receivedSen; }
