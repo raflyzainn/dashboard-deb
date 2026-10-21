@@ -85,15 +85,14 @@
 
 {#if showInfographicGuide}
   <Modal title="Ketentuan Infografis" onclose={() => showInfographicGuide = false}>
-    <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900"><strong>Contoh ketentuan (dummy)</strong><p>Isi berikut hanya untuk pratinjau tampilan, belum menjadi ketentuan resmi PF.</p></div>
-    <h3 class="mt-5 text-sm font-bold text-slate-900">Contoh isi infografis</h3>
+    <h3 class="text-sm font-bold text-slate-900">Isi infografis</h3>
     <ul class="mt-2 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-700">
       <li>Cantumkan nama program, nama kampus, lokasi, dan periode pelaksanaan.</li>
       <li>Tampilkan ringkasan kegiatan, capaian utama, dan jumlah penerima manfaat.</li>
       <li>Sertakan foto kegiatan serta sumber data untuk angka yang ditampilkan.</li>
       <li>Gunakan teks yang mudah dibaca, warna yang konsisten, dan tata letak yang ringkas.</li>
     </ul>
-    <div class="mt-5 rounded-lg bg-slate-50 p-3 text-sm leading-6 text-slate-700"><strong>Format unggahan saat ini</strong><p>PDF, maksimal 20 MB. Ketentuan contoh di atas tidak menambah pembatasan unggahan.</p></div>
+    <div class="mt-5 rounded-lg bg-slate-50 p-3 text-sm leading-6 text-slate-700"><strong>Format unggahan saat ini</strong><p>PDF, maksimal 20 MB.</p></div>
     <div class="mt-5 flex justify-end"><Button variant="secondary" onclick={() => showInfographicGuide = false}>Tutup</Button></div>
   </Modal>
 {/if}
