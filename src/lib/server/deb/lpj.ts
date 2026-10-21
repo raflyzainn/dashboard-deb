@@ -4,7 +4,7 @@ import { type AuditActor } from './audit';
 import { extensionOf, mimeFor, type Storage } from './r2';
 import { campusWithAward, context } from './pencairan';
 import { formatSen } from '../../pencairan';
-import { reportingPaid, lpjEvidenceReady } from '../../pelaporan';
+import { reportingPaid, lpjEvidenceReady, lpjExceedsReceived } from '../../pelaporan';
 import { checkedFileMime } from '../../upload-file';
 import { atomic, StoreRecord, type RestStore } from './rest-store';
 import { auditData } from './audit';
@@ -32,7 +32,7 @@ export async function lpjSummary(pb: PocketBase, campusId: string) {
   const creators = Array.from(new Set(entries.map(e => e.createdBy).filter(Boolean)));
   const names = creators.length ? new Map((await pb.collection('users').getFullList({ filter: creators.map(id => pb.filter('id = {:id}', { id })).join(' || '), fields: 'id,name,email', ...opts })).map(u => [u.id, u.name || u.email])) : new Map();
   const list: LpjEntry[] = entries.map(e => ({ id: e.id, date: e.date || '', reference: e.reference || '', payee: e.payee || '', amountSen: Number(e.amountSen || 0), memo: e.memo || '', rabLineId: e.rabLine || '', rabCode: byId.get(e.rabLine)?.code || '', rabTitle: byId.get(e.rabLine)?.title || '', originalName: e.originalName || '', status: e.status || 'menunggu_review', created: e.created, createdByName: names.get(e.createdBy) || 'Sistem', note: e.note || '', revision: e.revision || 1, history: (e.history || []).map((h: any) => ({ revision: h.revision, originalName: h.originalName, note: h.note })) }));
-  const receivedSen = Number(disbursement.paidSen || 0) || Number(disbursement.requestedSen || 0);
+  const receivedSen = receivedOf(disbursement);
   const reportedSen = list.reduce((sum, e) => sum + e.amountSen, 0);
   const acceptedSen = list.filter(e => e.status === 'sesuai').reduce((sum, e) => sum + e.amountSen, 0);
   const completion = disbursement.properties?.lpjCompletion || null;
@@ -42,6 +42,10 @@ export async function lpjSummary(pb: PocketBase, campusId: string) {
     entries: list, rabNodes: nodes, hasApprovedRab: Boolean(version)
   };
 }
+
+const receivedOf = (payment: Record<string, any>) => Number(payment.paidSen || 0) || Number(payment.requestedSen || 0);
+const amountsOf = (entries: StoreRecord[], keep: (entry: StoreRecord) => boolean) => entries.filter(keep).map(e => Number(e.data.amountSen || 0));
+const exceeded = (receivedSen: number) => new PreviewError(409, `Total bukti melebihi dana Tahap 1 yang diterima (${formatSen(receivedSen)}). Periksa jumlah pada bukti.`);
 
 export interface NewEntry { operationId: string; date: string; reference: string; payee: string; amountSen: number; memo: string; rabLine: string }
 function lpjReads(pb: PocketBase, campus: string) {
@@ -102,6 +106,9 @@ export async function addEntry(pb: PocketBase, storage: Storage, actor: AuditAct
       if (history.length >= 100) throw new PreviewError(400, 'Batas riwayat bukti tercapai. Hubungi admin.');
       entry.set('history', [...history, { operationId: entry.data.operationId, inputHash: entry.data.inputHash, revision: entry.getInt('revision') || 1, date: entry.data.date, reference: entry.data.reference, payee: entry.data.payee, amountSen: entry.data.amountSen, memo: entry.data.memo, rabLine: entry.data.rabLine, r2Key: entry.data.r2Key, originalName: entry.data.originalName, note: entry.data.note, changedAt: new Date().toISOString() }]);
     }
+    // Evidence still under revision does not count; it is replaced or corrected before it can be accepted.
+    const active = amountsOf(store.records.get('lpj_entries')!, e => e.id !== entry.id && e.getString('status') !== 'perlu_revisi');
+    if (lpjExceedsReceived(receivedOf(payment.data), [...active, input.amountSen])) throw exceeded(receivedOf(payment.data));
     Object.assign(entry.data, { operationId: input.operationId, inputHash, disbursement: payment.id, rabLine: input.rabLine, date: input.date + ' 00:00:00.000Z', reference: input.reference.trim(), payee: input.payee.trim(), amountSen: input.amountSen, memo: input.memo.trim(), r2Key: key, originalName: file.name, status: 'menunggu_review', note: '', createdBy: actor.id, revision: replacing ? (entry.getInt('revision') || 1) + 1 : 1 });
     store.save(entry); logLpj(store, actor, campusId, entry.id, replacing ? 'memperbaiki bukti LPJ' : 'menambah bukti LPJ'); notifyLpj(store, campusId, entry, true); return entry.data;
   }, lpjReads(pb, campusId));
@@ -109,10 +116,11 @@ export async function addEntry(pb: PocketBase, storage: Storage, actor: AuditAct
 export async function reviewEntry(pb: PocketBase, actor: AuditActor, campusId: string, entryId: string, status: 'sesuai' | 'perlu_revisi' | 'menunggu_review', note: string, expectedRevision: number) {
   if (note.length > 2000 || (status === 'perlu_revisi' && !note.trim())) throw new PreviewError(400, 'Catatan revisi wajib diisi, maksimal 2.000 karakter.');
   return atomic(pb, store => {
-    openLpj(store);
-    const entry = store.records.get('lpj_entries')!.find(r => r.id === entryId);
+    const payment = openLpj(store), entries = store.records.get('lpj_entries')!;
+    const entry = entries.find(r => r.id === entryId);
     if (!entry) throw new PreviewError(404, 'Bukti tidak ditemukan.');
     if ((entry.getInt('revision') || 1) !== expectedRevision) throw new PreviewError(409, 'Bukti sudah berubah. Muat ulang sebelum menilai.');
+    if (status === 'sesuai' && lpjExceedsReceived(receivedOf(payment.data), amountsOf(entries, e => e.id === entryId || e.getString('status') === 'sesuai'))) throw exceeded(receivedOf(payment.data));
     entry.set('status', status); entry.set('note', note.trim()); entry.set('revision', expectedRevision + 1); store.save(entry);
     logLpj(store, actor, campusId, entryId, `menilai bukti LPJ ${status}`, note.trim());
     if (status === 'perlu_revisi') notifyLpj(store, campusId, entry, false);
@@ -125,6 +133,7 @@ export async function finishLpj(pb: PocketBase, actor: AuditActor, campusId: str
     if (!payment || !reportingPaid(payment.data)) throw new PreviewError(409, 'Dana Tahap 1 belum dibayar.');
     const entries = store.records.get('lpj_entries')!;
     if (!reopen && !lpjEvidenceReady(payment.data, entries.map(e => ({ status: e.getString('status') })))) throw new PreviewError(409, 'Semua bukti LPJ harus dinilai Sesuai terlebih dahulu.');
+    if (!reopen && lpjExceedsReceived(receivedOf(payment.data), amountsOf(entries, e => e.getString('status') === 'sesuai'))) throw exceeded(receivedOf(payment.data));
     if (Boolean(payment.data.properties?.lpjCompletion) === !reopen) return;
     payment.set('properties', { ...payment.data.properties, lpjCompletion: reopen ? null : { completedAt: new Date().toISOString(), completedBy: actor.name, actorId: actor.id } }); store.save(payment);
     logLpj(store, actor, campusId, payment.id, reopen ? 'membuka kembali LPJ' : 'menyelesaikan LPJ', reason.trim());

@@ -6,6 +6,7 @@
  import Icon from '$lib/components/ui/Icon.svelte';
  import Modal from '$lib/components/ui/Modal.svelte';
  import RabItemsEditor from './RabItemsEditor.svelte';
+ import RabDownloadDialog from './RabDownloadDialog.svelte';
  import { beforeNavigate, goto } from '$app/navigation';
  import { dataService } from '$lib/data/service';
  import { onChange } from '$lib/realtime.svelte';
@@ -18,6 +19,7 @@
  let editingAdmin=$state(false),remoteChanged=$state(false),editorDirty=$state(false);
  let itemEditor=$state<RabItemsEditor>();
  let itemsReady=$state(false);
+ let downloadShare=$state<'penuh'|'tahap1'|'tahap2'|null>(null);
  let reducedMotion=$state(false);
  function reloadRemote(){leave(()=>{editingAdmin=false;sync();remoteChanged=false;saveFailed=false;void load();});}
  let edits=$state<Record<string,{volume:number;price:number;first:number}>>({});
@@ -202,6 +204,15 @@
    await downloadRabWorkbook(`RAB_${share}_${campusId}_v${v.number}.xlsx`,{university:data!.campus.name,penuh:linesToRows(v.lines,'penuh'),tahap1:linesToRows(v.lines,'tahap1'),tahap2:linesToRows(v.lines,'tahap2'),signing:data!.signing},share);showSaved('File RAB siap. Unduhan dimulai.');
   }catch(e){error = reportError(e instanceof Error?e.message:String(e));}finally{busy=false;}
  }
+ /** The same version in the campus template layout: one item per row, no signature block. */
+ async function exportTemplate(share:'penuh'|'tahap1'|'tahap2'){
+  if(!v||busy||dirty)return;busy=true;error='';
+  try{
+   const {downloadTemplateWorkbook}=await import('$lib/rab-template-excel');
+   await downloadTemplateWorkbook(`RAB_${share}_template_${campusId}_v${v.number}.xlsx`,{university:data!.campus.name,program:(data!.campus as any).program?.programTitle||'',share,lines:v.lines});showSaved('File RAB siap. Unduhan dimulai.');
+  }catch(e){error = reportError(e instanceof Error?e.message:String(e));}finally{busy=false;}
+ }
+ function chooseDownload(format:'resmi'|'template'){const share=downloadShare;downloadShare=null;if(share)void (format==='resmi'?exportRab(share):exportTemplate(share));}
 </script>
 
 {#snippet itemPagination(position:string)}
@@ -243,7 +254,7 @@
   <p class="text-xs text-slate-500">Periksa RAB untuk melanjutkan. Pembagian item yang tidak berubah dipertahankan; item baru atau yang jumlah/harganya berubah perlu dibagi kembali.</p><button class={blue+' justify-self-end'} disabled={busy||!itemsReady} onclick={inspectItems}>Periksa RAB 100%</button>
  {:else if v}
   <div class="flex flex-wrap items-center gap-2" aria-label="Unduh hasil RAB">
-   {#each [['penuh','100%'],['tahap1','70%'],['tahap2','30%']] as [share,label]}<button class="group inline-flex min-h-11 items-center justify-between gap-4 rounded-xl border border-slate-200/80 bg-white px-4 py-2.5 text-sm font-semibold text-[#0066B2] shadow-sm transition hover:border-blue-200 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0066B2] disabled:cursor-not-allowed disabled:opacity-40" disabled={busy||dirty||(share!=='penuh'&&(allocated!==items.length||invalid))} onclick={()=>exportRab(share as 'penuh'|'tahap1'|'tahap2')}><span>Unduh RAB {label}</span><span class="grid size-6 shrink-0 place-items-center rounded-full bg-[#0066B2] text-white transition group-hover:bg-[#005493]"><Icon name="download" size={14}/></span></button>{/each}
+   {#each [['penuh','100%'],['tahap1','70%'],['tahap2','30%']] as [share,label]}<button class="group inline-flex min-h-11 items-center justify-between gap-4 rounded-xl border border-slate-200/80 bg-white px-4 py-2.5 text-sm font-semibold text-[#0066B2] shadow-sm transition hover:border-blue-200 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0066B2] disabled:cursor-not-allowed disabled:opacity-40" disabled={busy||dirty||(share!=='penuh'&&(allocated!==items.length||invalid))} onclick={()=>downloadShare=share as 'penuh'|'tahap1'|'tahap2'}><span>Unduh RAB {label}</span><span class="grid size-6 shrink-0 place-items-center rounded-full bg-[#0066B2] text-white transition group-hover:bg-[#005493]"><Icon name="download" size={14}/></span></button>{/each}
   </div>
   {#if dirty}<p class="text-xs text-slate-500">Simpan perubahan untuk mengunduh RAB terbaru.</p>{/if}
   <div class="rounded-xl border p-4 {v.status==='disetujui'?'border-green-200 bg-green-50 text-green-900':v.status==='menunggu'?'border-blue-200 bg-blue-50 text-blue-900':'border-amber-200 bg-amber-50 text-amber-950'}">
@@ -394,6 +405,9 @@
  <div class="fixed inset-x-4 bottom-5 z-50 mx-auto flex w-fit max-w-[calc(100%-2rem)] items-center gap-3 rounded-xl bg-slate-900 px-4 py-3 text-sm text-white shadow-lg" role="status" aria-live="polite" transition:fly={{y:16,duration:reducedMotion?0:200}}><span aria-hidden="true">&#10003;</span><span>{noticeText}</span><button type="button" class="grid size-9 shrink-0 place-items-center rounded-lg hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white" aria-label="Tutup notifikasi" onclick={()=>savedNotice=false}>&#215;</button></div>
 {/if}
 
+{#if downloadShare&&v}
+ <RabDownloadDialog share={downloadShare} lines={v.lines} version={v.number} campus={data!.campus.name} program={(data!.campus as any).program?.programTitle||''} signing={data!.signing} onchoose={chooseDownload} onclose={()=>downloadShare=null}/>
+{/if}
 {#if pendingLeave}
  <Modal title="Perubahan RAB belum disimpan" onclose={()=>pendingLeave=null}>
   <p class="text-slate-600">Perubahan RAB belum tersimpan. Jika dilanjutkan, perubahan ini akan dibuang. Draf yang sudah disimpan tetap tersedia.</p>

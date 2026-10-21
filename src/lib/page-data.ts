@@ -17,7 +17,7 @@ export function pageRequest(url: URL): PageRequest {
   return request;
 }
 function routeRequest(url: URL): PageRequest {
-  if (/^\/campus\/(dashboard|profile|pelaporan|lpj)\/?$/.test(url.pathname)) return { view: 'static' };
+  if (/^\/campus\/(dashboard|laporan-eksisting|profile|pelaporan|lpj)\/?$/.test(url.pathname)) return { view: 'static' };
   const [, , section, id] = url.pathname.split('/');
   switch (section) {
     case 'profile': case 'settings': return { view: 'dashboard' };
