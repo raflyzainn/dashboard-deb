@@ -14,6 +14,7 @@
   const campus = $derived(app.session?.role === 'campus');
   const labels = $derived({
     guide: 'Panduan aplikasi',
+    'laporan-eksisting': 'Laporan Eksisting',
     profile: 'Profil & Monitoring Program',
     pelaporan: 'Pelaporan',
     settings: 'Pengaturan',
@@ -243,7 +244,7 @@
           </div>
           <nav class="p-2" aria-label="Menu akun">
             {#if campus}
-              {#each [{ key: 'dashboard', label: 'Beranda', icon: 'dashboard' }, { key: 'pencairan', label: 'Pencairan', icon: 'payments' }, { key: 'profile', label: 'Profil & Monitoring Program', icon: 'campus' }, ...(app.navigation.canReport ? [{ key: 'pelaporan', label: 'Pelaporan', icon: 'file' }] : []), { key: 'guide', label: 'Panduan Aplikasi', icon: 'faq' }] as item}
+              {#each [{ key: 'dashboard', label: 'Beranda', icon: 'dashboard' }, { key: 'laporan-eksisting', label: 'Laporan Eksisting', icon: 'file' }, { key: 'pencairan', label: 'Pencairan', icon: 'payments' }, { key: 'profile', label: 'Profil & Monitoring Program', icon: 'campus' }, ...(app.navigation.canReport ? [{ key: 'pelaporan', label: 'Pelaporan', icon: 'file' }] : []), { key: 'guide', label: 'Panduan Aplikasi', icon: 'faq' }] as item}
                 <a class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm hover:bg-blue-50" href={`/campus/${item.key}`} onclick={() => (accountMenu = false)} role="menuitem" aria-current={section === item.key ? 'page' : undefined}>
                   <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600"><Icon name={item.icon} size={18} /></span>{item.label}
                 </a>

@@ -3,7 +3,7 @@ import type { ReportKind } from '../../pelaporan';
 import { PreviewError } from './preview-error';
 
 type Box = { type: string; start: number; end: number };
-export function checkedReportFile(kind: ReportKind, name: string, bytes: ArrayBuffer): { mime: string; durationSeconds?: number } {
+export function checkedReportFile(kind: ReportKind, name: string, bytes: ArrayBuffer): { mime: string; durationSeconds?: number; width?: number; height?: number } {
   const fail = (message: string): never => { throw new PreviewError(400, message); };
   const limit = (kind === 'video' ? 40 : 20) * 1024 * 1024;
   if (!bytes.byteLength || bytes.byteLength > limit) fail(`Berkas harus berisi data dan maksimal ${limit / 1024 / 1024} MB.`);
@@ -105,13 +105,23 @@ export function checkedReportFile(kind: ReportKind, name: string, bytes: ArrayBu
   const top = boxes(0, bytes.byteLength), ftyp = one(top, 'ftyp');
   if (ftyp.end - ftyp.start < 8 || !top.some(b => b.type === 'mdat' && b.end > b.start)) fail('Isi video MP4 tidak lengkap.');
   const movie = boxes(one(top, 'moov').start, one(top, 'moov').end);
+  /** Displayed size of a video track: tkhd width and height, swapped when the matrix rotates by 90 or 270 degrees (phones store portrait this way). */
+  function dimensions(tkhd: Box) {
+    const v1 = data[tkhd.start] === 1, matrix = tkhd.start + (v1 ? 52 : 40), size = tkhd.start + (v1 ? 88 : 76);
+    // Unknown size stays undefined: Pelaporan does not need it, Laporan Eksisting refuses it.
+    if (tkhd.end - tkhd.start < (v1 ? 96 : 84)) return undefined;
+    const w = view.getUint32(size) / 65536, h = view.getUint32(size + 4) / 65536;
+    const rotated = view.getInt32(matrix) === 0 && Math.abs(view.getInt32(matrix + 4)) === 65536;
+    return rotated ? { width: h, height: w } : { width: w, height: h };
+  }
+  let shape: { width: number; height: number } | undefined;
   const times = [duration(one(movie, 'mvhd'))]; let video = false;
   for (const track of movie.filter(b => b.type === 'trak')) {
     const trackChildren = boxes(track.start, track.end), media = one(trackChildren, 'mdia'), children = boxes(media.start, media.end), handler = one(children, 'hdlr');
     if (handler.end - handler.start < 12) fail('Track video tidak valid.');
-    if (ascii(handler.start + 8, 4) === 'vide') { samples(trackChildren, children, top, movie); video = true; }
+    if (ascii(handler.start + 8, 4) === 'vide') { samples(trackChildren, children, top, movie); video = true; const tkhd = trackChildren.find(b => b.type === 'tkhd'); if (tkhd) shape ??= dimensions(tkhd); }
     times.push(duration(one(children, 'mdhd')));
   }
   if (!video) fail('MP4 tidak memiliki track video.');
-  return { mime: 'video/mp4', durationSeconds: Math.max(...times) };
+  return { mime: 'video/mp4', durationSeconds: Math.max(...times), ...shape };
 }

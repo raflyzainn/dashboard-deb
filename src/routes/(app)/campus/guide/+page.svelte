@@ -47,7 +47,7 @@
     "title": "Periksa tanggal dan PDF PKS dari PF",
     "actor": "Admin PF",
     "summary": "PF menetapkan tanggal dan masa perjanjian kampus, lalu menyiapkan PDF PKS.",
-    "detail": "Untuk pengajuan baru dengan alur Legal, Admin PF menetapkan nomor/tanggal SK, tanggal PKS dan masa perjanjian per kampus, lalu menyiapkan PDF PKS. Urutan tanggal: SK ≤ PKS < permohonan ≤ invoice < kuitansi. Tanggal surat kuasa harus setelah PKS; awal masa perjanjian tidak boleh setelah akhirnya. Mengubah satu tanggal tidak otomatis mengubah tanggal lainnya. Contoh: SK 1 Juni 2026, PKS 14 Oktober 2026, permohonan dan invoice 15 Oktober 2026, kuitansi 16 Oktober 2026."
+    "detail": "Admin PF menetapkan nomor dan tanggal SK, tanggal PKS dan masa perjanjian kampus, lalu menyiapkan PDF PKS. Isi tanggal permohonan, invoice, kuitansi dan surat kuasa sesuai tanggal sebenarnya pada dokumen, dengan urutan berikut: semuanya harus setelah tanggal PKS; permohonan dan invoice boleh di hari yang sama; kuitansi harus setelah invoice. Contoh: bila PKS bertanggal 14 Oktober, permohonan dan invoice paling cepat 15 Oktober dan kuitansi paling cepat 16 Oktober. Mengubah satu tanggal tidak otomatis mengubah tanggal lainnya."
   },
   {
     "title": "Siapkan dokumen dan kirim pengajuan",
@@ -56,16 +56,16 @@
     "detail": "Buka Dokumen untuk menyiapkan permohonan, invoice dan kuitansi. PKS disiapkan oleh PF; kampus dapat membaca PDF-nya. Kedua nomor PKS harus lengkap dan PDF PKS harus sesuai data terbaru sebelum pengajuan dikirim. Jika sumber PKS berubah, tunggu PF menyiapkan ulang PDF, lalu pilih Perbarui status dokumen. Draf tersimpan belum berarti terkirim: tekan Ajukan untuk diperiksa setelah seluruh syarat lengkap."
   },
   {
-    "title": "Tunggu pemeriksaan PF → Legal",
-    "actor": "PF \u2192 Legal",
-    "summary": "Tunggu pemeriksaan PF dan persetujuan PKS oleh Legal. Tindak lanjuti jika diminta revisi.",
-    "detail": "PF memeriksa pengajuan dan mengirim PKS ke Legal. Legal menyetujui PKS atau mengembalikannya kepada PF dengan catatan. Jika diminta revisi, perbaiki bagian yang dibuka PF lalu kirim perbaikan; PDF PKS yang berubah harus disiapkan ulang oleh PF dan diperiksa kembali. Dokumen masih berupa draf sampai pemeriksaan PF dan persetujuan Legal selesai."
+    "title": "Tunggu pemeriksaan PF",
+    "actor": "Admin PF",
+    "summary": "Tunggu pemeriksaan PF. Tindak lanjuti jika diminta revisi.",
+    "detail": "PF memeriksa pengajuan dan PKS. Jika diminta revisi, perbaiki bagian yang dibuka PF lalu kirim perbaikan; PDF PKS yang berubah harus disiapkan ulang oleh PF dan diperiksa kembali. Dokumen masih berupa draf sampai pemeriksaan PF selesai."
   },
   {
     "title": "Tandatangani dan unggah pindaian",
     "actor": "Kampus \u2192 PF",
     "summary": "Unduh dokumen final, tandatangani, lalu unggah pindaian untuk diperiksa PF.",
-    "detail": "Setelah seluruh pemeriksaan selesai dan PKS disetujui Legal, unduh dokumen final. Ikuti checklist tanda tangan, meterai dan dua rangkap PKS. Pilih Unggah bertanda tangan pada kartu dokumen di Dokumen, lalu Kirim pindaian. Gunakan PDF, PNG, JPG atau WebP yang jelas dan lengkap agar dapat digabungkan menjadi lampiran; DOCX adalah dokumen sumber, bukan pindaian. PF membandingkan pindaian dengan dokumen final sebelum menerimanya."
+    "detail": "Setelah pemeriksaan PF selesai, unduh dokumen final. Ikuti checklist tanda tangan, meterai dan dua rangkap PKS. Pilih Unggah bertanda tangan pada kartu dokumen di Dokumen, lalu Kirim pindaian. Gunakan PDF, PNG, JPG atau WebP yang jelas dan lengkap agar dapat digabungkan menjadi lampiran; DOCX adalah dokumen sumber, bukan pindaian. PF membandingkan pindaian dengan dokumen final sebelum menerimanya."
   },
   {
     "title": "Pantau lampiran dan pembayaran",
