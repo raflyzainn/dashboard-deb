@@ -47,7 +47,7 @@
     "title": "Periksa tanggal dan PDF PKS dari PF",
     "actor": "Admin PF",
     "summary": "PF menetapkan tanggal dan masa perjanjian kampus, lalu menyiapkan PDF PKS.",
-    "detail": "Untuk pengajuan baru dengan alur Legal, Admin PF menetapkan nomor/tanggal SK, tanggal PKS dan masa perjanjian per kampus, lalu menyiapkan PDF PKS. Urutan tanggal: SK ≤ PKS < permohonan ≤ invoice < kuitansi. Tanggal surat kuasa harus setelah PKS; awal masa perjanjian tidak boleh setelah akhirnya. Mengubah satu tanggal tidak otomatis mengubah tanggal lainnya. Contoh: SK 1 Juni 2026, PKS 14 Oktober 2026, permohonan dan invoice 15 Oktober 2026, kuitansi 16 Oktober 2026."
+    "detail": "Untuk pengajuan baru dengan alur Legal, Admin PF menetapkan nomor/tanggal SK, tanggal PKS dan masa perjanjian per kampus, lalu menyiapkan PDF PKS. Urutan tanggal: SK ≤ PKS < permohonan ≤ invoice < kuitansi. Tanggal surat kuasa harus setelah PKS; awal masa perjanjian tidak boleh setelah akhirnya. Mengubah satu tanggal tidak otomatis mengubah tanggal lainnya. Contoh: bila PKS 14 Oktober 2026, permohonan dan invoice 15 Oktober 2026, kuitansi 16 Oktober 2026."
   },
   {
     "title": "Siapkan dokumen dan kirim pengajuan",
